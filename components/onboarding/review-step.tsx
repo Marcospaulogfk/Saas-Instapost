@@ -1,87 +1,124 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronLeft, Sparkles, Plus, Target, DollarSign, BookOpen, Users, Upload, X } from "lucide-react"
+import {
+  ChevronLeft,
+  Sparkles,
+  Plus,
+  Target,
+  DollarSign,
+  BookOpen,
+  Users,
+  X,
+  Loader2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 
-interface ReviewStepProps {
-  onBack: () => void
-  onSubmit: () => void
+interface InitialAnalysis {
+  name: string
+  description: string
+  target_audience: string
+  tone_of_voice: string
+  visual_style: string
+  main_objective: "sell" | "inform" | "engage" | "community"
+  brand_colors: string[]
+  instagram_handle: string
 }
 
-const toneOptions = [
-  "Profissional",
-  "Casual",
-  "Divertido",
-  "Educativo",
-  "Inspirador",
-  "Provocador",
-  "Tecnico",
-  "Acolhedor",
-]
+export interface ReviewFormData {
+  name: string
+  description: string
+  instagram_handle: string
+  target_audience: string
+  tone_of_voice: string
+  visual_style: string
+  main_objective: "sell" | "inform" | "engage" | "community"
+  brand_colors: string[]
+}
 
-const styleOptions = [
-  "Minimalista",
-  "Vibrante",
-  "Cinematografico",
-  "Corporate",
-  "Grunge",
-  "Soft",
-  "Brutalist",
-  "Retro",
-]
+interface ReviewStepProps {
+  initial: InitialAnalysis | null
+  onBack: () => void
+  onSubmit: (data: ReviewFormData) => Promise<void>
+}
 
-const goalOptions = [
+const goalOptions: Array<{
+  id: ReviewFormData["main_objective"]
+  icon: typeof Target
+  label: string
+}> = [
   { id: "engage", icon: Target, label: "Engajar audiencia" },
-  { id: "sales", icon: DollarSign, label: "Gerar vendas" },
-  { id: "educate", icon: BookOpen, label: "Educar/Informar" },
+  { id: "sell", icon: DollarSign, label: "Gerar vendas" },
+  { id: "inform", icon: BookOpen, label: "Educar/Informar" },
   { id: "community", icon: Users, label: "Construir comunidade" },
 ]
 
-const defaultColors = ["#F97316", "#DC2626", "#FBBF24", "#000000", "#FFFFFF"]
+const DEFAULT_COLORS = ["#E84D1E", "#1A1A1A", "#FAF8F5"]
 
-export function ReviewStep({ onBack, onSubmit }: ReviewStepProps) {
-  const [brandName, setBrandName] = useState("Culturize-se")
-  const [description, setDescription] = useState(
-    "Plataforma de conteudo sobre churrasco, gastronomia e cultura brasileira. Compartilhamos dicas, receitas e historias que celebram a nossa culinaria."
-  )
-  const [audience, setAudience] = useState(
-    "Entusiastas de churrasco e gastronomia, 25-45 anos, majoritariamente masculino, classe media-alta, interessados em lifestyle e cultura."
-  )
-  const [selectedTones, setSelectedTones] = useState(["Casual", "Inspirador"])
-  const [selectedStyles, setSelectedStyles] = useState(["Cinematografico", "Vibrante"])
-  const [selectedGoal, setSelectedGoal] = useState("engage")
-  const [colors, setColors] = useState(defaultColors)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => setLogoPreview(reader.result as string)
-      reader.readAsDataURL(file)
-    }
+export function ReviewStep({ initial, onBack, onSubmit }: ReviewStepProps) {
+  const seed = initial ?? {
+    name: "",
+    description: "",
+    target_audience: "",
+    tone_of_voice: "",
+    visual_style: "",
+    main_objective: "engage" as const,
+    brand_colors: DEFAULT_COLORS,
+    instagram_handle: "",
   }
 
-  const toggleTone = (tone: string) => {
-    setSelectedTones((prev) =>
-      prev.includes(tone) ? prev.filter((t) => t !== tone) : [...prev, tone]
-    )
+  const [name, setName] = useState(seed.name)
+  const [description, setDescription] = useState(seed.description)
+  const [instagramHandle, setInstagramHandle] = useState(seed.instagram_handle)
+  const [audience, setAudience] = useState(seed.target_audience)
+  const [tone, setTone] = useState(seed.tone_of_voice)
+  const [visualStyle, setVisualStyle] = useState(seed.visual_style)
+  const [goal, setGoal] = useState<ReviewFormData["main_objective"]>(
+    seed.main_objective,
+  )
+  const [colors, setColors] = useState<string[]>(
+    seed.brand_colors.length > 0 ? seed.brand_colors : DEFAULT_COLORS,
+  )
+  const [submitting, setSubmitting] = useState(false)
+
+  const updateColor = (index: number, value: string) => {
+    setColors((prev) => prev.map((c, i) => (i === index ? value : c)))
+  }
+  const addColor = () => {
+    if (colors.length < 6) setColors([...colors, "#888888"])
+  }
+  const removeColor = (index: number) => {
+    setColors((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const toggleStyle = (style: string) => {
-    setSelectedStyles((prev) =>
-      prev.includes(style) ? prev.filter((s) => s !== style) : [...prev, style]
-    )
+  const canSubmit =
+    name.trim().length > 0 &&
+    description.trim().length > 0 &&
+    audience.trim().length > 0 &&
+    tone.trim().length > 0 &&
+    colors.length >= 1
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return
+    setSubmitting(true)
+    await onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      instagram_handle: instagramHandle.trim().replace(/^@/, ""),
+      target_audience: audience.trim(),
+      tone_of_voice: tone.trim(),
+      visual_style: visualStyle.trim(),
+      main_objective: goal,
+      brand_colors: colors,
+    })
+    setSubmitting(false)
   }
 
   return (
     <div className="max-h-[70vh] overflow-y-auto pr-2">
-      {/* Back button */}
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -90,14 +127,17 @@ export function ReviewStep({ onBack, onSubmit }: ReviewStepProps) {
         Voltar
       </button>
 
-      {/* Title */}
-      <h2 className="text-3xl font-bold mb-2">Confira o que descobrimos</h2>
+      <h2 className="text-3xl font-bold mb-2">
+        {initial ? "Confira o que descobrimos" : "Cadastre sua marca"}
+      </h2>
       <p className="text-muted-foreground mb-8">
-        Edite o que precisar - voce sempre pode ajustar depois
+        {initial
+          ? "Edite o que precisar — voce sempre pode ajustar depois."
+          : "Preencha os campos abaixo. Voce pode editar tudo depois."}
       </p>
 
       <div className="space-y-8">
-        {/* Identity section */}
+        {/* Identidade */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Identidade
@@ -106,9 +146,10 @@ export function ReviewStep({ onBack, onSubmit }: ReviewStepProps) {
           <div className="space-y-2">
             <Label>Nome da marca</Label>
             <Input
-              value={brandName}
-              onChange={(e) => setBrandName(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="bg-surface"
+              placeholder="Ex: Culturize-se"
             />
           </div>
 
@@ -118,177 +159,157 @@ export function ReviewStep({ onBack, onSubmit }: ReviewStepProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-surface min-h-[80px]"
+              placeholder="O que sua marca faz, em 2-3 frases"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Instagram (opcional)</Label>
+            <Input
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+              className="bg-surface"
+              placeholder="@seuhandle"
             />
           </div>
         </section>
 
-        {/* Logo upload section */}
-        <section className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Logo da marca <span className="text-xs normal-case font-normal">(opcional)</span>
-          </h3>
-          <div className="flex items-start gap-4">
-            <div className="relative">
-              {logoPreview ? (
-                <div className="relative">
-                  <div
-                    className="w-24 h-24 rounded-xl border-2 border-border bg-surface bg-cover bg-center"
-                    style={{ backgroundImage: `url(${logoPreview})` }}
-                  />
-                  <button
-                    onClick={() => setLogoPreview(null)}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:opacity-90"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <label
-                  htmlFor="logo-upload"
-                  className="cursor-pointer w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-1"
-                >
-                  <Upload className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Upload</span>
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                  />
-                </label>
-              )}
-            </div>
-            <div className="flex-1 pt-2">
-              <p className="text-sm text-foreground mb-1">PNG, JPG ou SVG (até 2MB)</p>
-              <p className="text-xs text-muted-foreground">
-                A logo aparecerá automaticamente nos seus carrosséis. Você pode mudar a posição
-                e tamanho no editor.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Audience section */}
+        {/* Audiencia */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Audiencia
           </h3>
-
           <div className="space-y-2">
             <Label>Publico-alvo</Label>
             <Textarea
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
               className="bg-surface min-h-[60px]"
+              placeholder="Perfil do publico-alvo"
             />
           </div>
         </section>
 
-        {/* Tone of voice section */}
+        {/* Tom de voz */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Tom de voz
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {toneOptions.map((tone) => (
-              <Badge
-                key={tone}
-                variant={selectedTones.includes(tone) ? "default" : "outline"}
-                className={`cursor-pointer transition-colors ${
-                  selectedTones.includes(tone)
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-                onClick={() => toggleTone(tone)}
-              >
-                {tone}
-              </Badge>
-            ))}
-          </div>
+          <Textarea
+            value={tone}
+            onChange={(e) => setTone(e.target.value)}
+            className="bg-surface min-h-[60px]"
+            placeholder="Ex: casual, autoral, com toque de humor seco"
+          />
+          <p className="text-xs text-muted-foreground">
+            Adjetivos separados por virgula — vai guiar a copy gerada.
+          </p>
         </section>
 
-        {/* Visual style section */}
+        {/* Estilo visual */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Estilo visual
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {styleOptions.map((style) => (
-              <Badge
-                key={style}
-                variant={selectedStyles.includes(style) ? "default" : "outline"}
-                className={`cursor-pointer transition-colors ${
-                  selectedStyles.includes(style)
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-                onClick={() => toggleStyle(style)}
-              >
-                {style}
-              </Badge>
-            ))}
-          </div>
+          <Textarea
+            value={visualStyle}
+            onChange={(e) => setVisualStyle(e.target.value)}
+            className="bg-surface min-h-[60px]"
+            placeholder="Ex: minimalista, alto contraste, editorial"
+          />
         </section>
 
-        {/* Goal section */}
+        {/* Objetivo */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Objetivo principal
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            {goalOptions.map((goal) => (
+            {goalOptions.map((opt) => (
               <button
-                key={goal.id}
-                onClick={() => setSelectedGoal(goal.id)}
+                key={opt.id}
+                type="button"
+                onClick={() => setGoal(opt.id)}
                 className={`p-4 rounded-lg border text-left transition-colors ${
-                  selectedGoal === goal.id
+                  goal === opt.id
                     ? "border-primary bg-primary/10"
                     : "border-border hover:border-primary/50"
                 }`}
               >
-                <goal.icon
+                <opt.icon
                   className={`w-5 h-5 mb-2 ${
-                    selectedGoal === goal.id ? "text-primary" : "text-muted-foreground"
+                    goal === opt.id ? "text-primary" : "text-muted-foreground"
                   }`}
                 />
-                <span className="text-sm font-medium">{goal.label}</span>
+                <span className="text-sm font-medium">{opt.label}</span>
               </button>
             ))}
           </div>
         </section>
 
-        {/* Colors section */}
+        {/* Cores */}
         <section className="space-y-4">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Cores da marca (auto-extraidas)
+            Cores da marca {initial ? "(auto-extraidas)" : ""}
           </h3>
-          <div className="flex gap-3 items-center">
-            {colors.map((color, index) => (
-              <button
-                key={index}
-                className="w-10 h-10 rounded-lg border-2 border-border hover:border-primary/50 transition-colors"
-                style={{ backgroundColor: color }}
-              />
+          <div className="flex gap-3 items-center flex-wrap">
+            {colors.map((c, i) => (
+              <div key={i} className="flex flex-col items-center gap-1 group">
+                <div className="relative">
+                  <input
+                    type="color"
+                    value={c}
+                    onChange={(e) => updateColor(i, e.target.value)}
+                    className="w-12 h-12 rounded-lg border-2 border-border cursor-pointer bg-transparent"
+                  />
+                  {colors.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeColor(i)}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground items-center justify-center opacity-0 group-hover:flex hover:opacity-100"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  {c.toUpperCase()}
+                </span>
+              </div>
             ))}
-            <button className="w-10 h-10 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center">
-              <Plus className="w-4 h-4 text-muted-foreground" />
-            </button>
+            {colors.length < 6 && (
+              <button
+                type="button"
+                onClick={addColor}
+                className="w-12 h-12 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center self-start"
+              >
+                <Plus className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
           </div>
         </section>
       </div>
 
-      {/* Bottom actions */}
       <div className="flex gap-4 mt-8 pt-6 border-t border-border">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={onBack} disabled={submitting}>
           Voltar
         </Button>
         <Button
           className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={onSubmit}
+          onClick={handleSubmit}
+          disabled={!canSubmit || submitting}
         >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Salvar marca
+          {submitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Salvar marca
+            </>
+          )}
         </Button>
       </div>
     </div>

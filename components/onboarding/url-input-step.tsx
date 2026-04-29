@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 
 interface UrlInputStepProps {
   onBack: () => void
-  onSubmit: () => void
+  onSubmit: (url: string) => void
 }
 
 export function UrlInputStep({ onBack, onSubmit }: UrlInputStepProps) {
@@ -16,14 +16,14 @@ export function UrlInputStep({ onBack, onSubmit }: UrlInputStepProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (url.trim()) {
-      onSubmit()
+    const trimmed = url.trim()
+    if (trimmed) {
+      onSubmit(trimmed)
     }
   }
 
   return (
     <div>
-      {/* Back button */}
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-8"
@@ -32,13 +32,11 @@ export function UrlInputStep({ onBack, onSubmit }: UrlInputStepProps) {
         Voltar
       </button>
 
-      {/* Title */}
       <h2 className="text-3xl font-bold mb-2">Qual e a URL da sua marca?</h2>
       <p className="text-muted-foreground mb-8">
         Site oficial, pagina de Instagram, ou qualquer link publico
       </p>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
           <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -52,7 +50,11 @@ export function UrlInputStep({ onBack, onSubmit }: UrlInputStepProps) {
         </div>
 
         <div className="flex gap-2">
-          <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+          <Badge
+            variant="outline"
+            className="cursor-pointer hover:bg-muted"
+            onClick={() => setUrl("https://instagram.com/")}
+          >
             Nao tem site? Use seu @ do Instagram
           </Badge>
         </div>
@@ -69,7 +71,8 @@ export function UrlInputStep({ onBack, onSubmit }: UrlInputStepProps) {
       </form>
 
       <p className="text-xs text-muted-foreground text-center mt-6">
-        Vamos analisar apenas informacoes publicamente disponiveis, nada alem disso
+        Vamos analisar apenas informacoes publicamente disponiveis, nada alem
+        disso
       </p>
     </div>
   )

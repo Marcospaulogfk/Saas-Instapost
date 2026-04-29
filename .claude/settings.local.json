@@ -1,7 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git ls-remote *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(sed -i -E 's|\\(\\\\.supabase\\\\.co\\)/rest/v1/?$|\\\\1|' .env.local)",
+      "Bash(grep -c \"^NEXT_PUBLIC_SUPABASE_URL=https://[^/]*\\\\.supabase\\\\.co$\" .env.local)",
+      "Bash(node scripts/verify-supabase.mjs)",
+      "Skill(claude-api)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"http://localhost:3000/onboarding\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/teste\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/onboarding/analyze -H 'Content-Type: application/json' -d '{}' -o /dev/null -w '%{http_code}\\\\n')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"http://localhost:3000/dashboard/criar/ia\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/projects/generate -H 'Content-Type: application/json' -d '{}' -o /dev/null -w '%{http_code}\\\\n')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"http://localhost:3000/dashboard/projetos/abc-fake\")"
     ]
   }
 }
