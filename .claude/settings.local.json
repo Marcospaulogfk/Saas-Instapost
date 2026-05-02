@@ -20,7 +20,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"http://localhost:3000/dashboard/projetos/abc-fake\")",
       "Bash(curl *)",
       "Bash(git pull *)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(git checkout *)",
+      "Bash(node *)"
     ]
   }
 }

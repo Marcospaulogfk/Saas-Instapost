@@ -39,6 +39,21 @@
   --lime: #D1FE17;
   --lime-dim: rgba(209, 254, 23, 0.65);
 
+  /* === Template Editorial (canvas Konva — namespace isolado) === */
+  --editorial-bg-dark: #0A0A0F;
+  --editorial-bg-darker: #050507;
+  --editorial-bg-navy: #0F0F1F;
+  --editorial-bg-cream: #F5F2EC;
+  --editorial-bg-white: #FFFFFF;
+  --editorial-bg-sepia: #3A2818;
+  --editorial-purple: #7C3AED;
+  --editorial-purple-light: #A78BFA;
+  --editorial-purple-pale: #DDD6FE;
+  --editorial-text-white: #FFFFFF;
+  --editorial-text-dark: #0A0A0F;
+  --editorial-text-gray-light: #C4C4C4;
+  --editorial-text-gray-dark: #4A4A4A;
+
   /* === Borders === */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.12);
