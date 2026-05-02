@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -37,9 +37,24 @@ const OBJECTIVES = [
 ] as const
 
 const TEMPLATES = [
-  { value: "editorial", label: "Editorial", description: "Magazine, premium" },
-  { value: "cinematic", label: "Cinematic", description: "Dramático, viral" },
-  { value: "hybrid", label: "Hybrid", description: "News, esporte" },
+  {
+    value: "editorial",
+    label: "Editorial",
+    description: "Magazine, tipografia premium",
+    tag: "Premium",
+  },
+  {
+    value: "cinematic",
+    label: "Cinematic",
+    description: "Foto + overlay dramático",
+    tag: "Viral",
+  },
+  {
+    value: "hybrid",
+    label: "Hybrid",
+    description: "Mix tipografia e imagem",
+    tag: "Versátil",
+  },
 ] as const
 
 const FONTS = [
@@ -53,21 +68,9 @@ const FONTS = [
 ] as const
 
 const MODES = [
-  {
-    value: "all_ai",
-    label: "Tudo IA",
-    description: "Flux Schnell em tudo",
-  },
-  {
-    value: "smart_mix",
-    label: "Misto Inteligente",
-    description: "Claude decide por slide",
-  },
-  {
-    value: "all_unsplash",
-    label: "Tudo Unsplash",
-    description: "Custo zero",
-  },
+  { value: "all_ai", label: "Tudo IA", description: "Flux Schnell em tudo" },
+  { value: "smart_mix", label: "Misto Inteligente", description: "Claude decide por slide" },
+  { value: "all_unsplash", label: "Tudo Unsplash", description: "Custo zero" },
 ] as const
 
 type Objective = (typeof OBJECTIVES)[number]["value"]
@@ -135,7 +138,7 @@ export function Wizard({ brands }: WizardProps) {
       setLoadingMessage((prev) => {
         if (prev.includes("Claude")) return "Gerando imagens..."
         if (prev.includes("imagens")) return "Salvando no banco..."
-        return "Quase la..."
+        return "Quase lá..."
       })
     }, 7000)
 
@@ -169,19 +172,18 @@ export function Wizard({ brands }: WizardProps) {
     }
   }
 
-  const canSubmit =
-    !!brandId && topic.trim().length >= 10 && !loading
+  const canSubmit = !!brandId && topic.trim().length >= 10 && !loading
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {brands.length > 1 && (
         <div className="space-y-2">
-          <Label>Marca</Label>
+          <Label className="text-sm text-text-secondary">Marca</Label>
           <Select value={brandId} onValueChange={handleBrandChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background-secondary/60 border-border-subtle h-11">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background-tertiary border-border-medium">
               {brands.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
                   {b.name}
@@ -192,20 +194,20 @@ export function Wizard({ brands }: WizardProps) {
         </div>
       )}
       {brands.length === 1 && activeBrand && (
-        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
-          <span className="text-muted-foreground">Marca: </span>
-          <span className="font-medium">{activeBrand.name}</span>
+        <div className="rounded-lg border border-border-subtle bg-gradient-card backdrop-blur-xl px-4 py-3 text-sm">
+          <span className="text-text-muted">Marca: </span>
+          <span className="font-medium text-text-primary">{activeBrand.name}</span>
         </div>
       )}
 
       <div className="space-y-2">
-        <Label>Tema do carrossel</Label>
+        <Label className="text-sm text-text-secondary">Tema do carrossel</Label>
         <Textarea
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           rows={3}
-          placeholder="Sobre o que vai ser o carrossel? (min 10 chars)"
-          className="bg-card"
+          placeholder="Sobre o que vai ser o carrossel? (mín 10 caracteres)"
+          className="bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm resize-none"
         />
       </div>
 
@@ -216,23 +218,36 @@ export function Wizard({ brands }: WizardProps) {
         onChange={(v) => setObjective(v as Objective)}
       />
 
-      <CardChoiceGroup
-        label="Template visual"
-        options={TEMPLATES}
-        value={template}
-        onChange={(v) => setTemplate(v as TemplateKey)}
-      />
+      {/* Galeria de templates com preview visual */}
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <Label className="text-sm text-text-secondary">Template visual</Label>
+          <span className="text-xs text-text-muted">
+            Selecionado: <span className="text-purple-300 font-medium">{TEMPLATES.find((t) => t.value === template)?.label}</span>
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {TEMPLATES.map((tpl) => (
+            <TemplateCard
+              key={tpl.value}
+              template={tpl}
+              selected={tpl.value === template}
+              onSelect={() => setTemplate(tpl.value)}
+            />
+          ))}
+        </div>
+      </div>
 
       <div className="space-y-2">
-        <Label>Tipografia</Label>
+        <Label className="text-sm text-text-secondary">Tipografia</Label>
         <Select
           value={fontFamily}
           onValueChange={(v) => setFontFamily(v as FontKey)}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-background-secondary/60 border-border-subtle h-11">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background-tertiary border-border-medium">
             {FONTS.map((f) => (
               <SelectItem key={f.value} value={f.value}>
                 {f.label}
@@ -243,17 +258,17 @@ export function Wizard({ brands }: WizardProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Numero de slides</Label>
+        <Label className="text-sm text-text-secondary">Número de slides</Label>
         <div className="grid grid-cols-3 gap-2 max-w-xs">
           {[5, 7, 10].map((n) => (
             <button
               key={n}
               type="button"
               onClick={() => setNSlides(n as 5 | 7 | 10)}
-              className={`h-10 rounded-md border text-sm font-medium ${
+              className={`h-11 rounded-lg border text-sm font-medium transition-all ${
                 n === nSlides
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/40"
+                  ? "border-purple-600 bg-purple-600/10 text-purple-300 shadow-glow-sm"
+                  : "border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-purple-600/40 hover:text-text-primary"
               }`}
             >
               {n}
@@ -263,14 +278,14 @@ export function Wizard({ brands }: WizardProps) {
       </div>
 
       <CardChoiceGroup
-        label="Modo de geracao"
+        label="Modo de geração"
         options={MODES}
         value={mode}
         onChange={(v) => setMode(v as Mode)}
       />
 
       {error && (
-        <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive whitespace-pre-wrap">
+        <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger whitespace-pre-wrap">
           {error}
         </div>
       )}
@@ -279,7 +294,7 @@ export function Wizard({ brands }: WizardProps) {
         type="button"
         onClick={onGenerate}
         disabled={!canSubmit}
-        className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+        className="w-full h-12"
       >
         {loading ? (
           <>
@@ -295,10 +310,152 @@ export function Wizard({ brands }: WizardProps) {
       </Button>
 
       {loading && (
-        <p className="text-xs text-muted-foreground text-center">
-          ~10-30s no total. Imagens sao geradas em paralelo.
+        <p className="text-xs text-text-muted text-center">
+          ~10-30s no total. Imagens são geradas em paralelo.
         </p>
       )}
+    </div>
+  )
+}
+
+interface TemplateCardProps {
+  template: (typeof TEMPLATES)[number]
+  selected: boolean
+  onSelect: () => void
+}
+
+function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`group relative text-left rounded-xl border overflow-hidden transition-all ${
+        selected
+          ? "border-purple-600 shadow-glow ring-2 ring-purple-600/30"
+          : "border-border-subtle hover:border-purple-600/40 hover:shadow-glow-sm"
+      }`}
+    >
+      {/* Preview area */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-background-secondary">
+        {template.value === "editorial" && <EditorialPreview />}
+        {template.value === "cinematic" && <CinematicPreview />}
+        {template.value === "hybrid" && <HybridPreview />}
+
+        {selected && (
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(209,254,23,0.6)]">
+            <Check className="w-3.5 h-3.5 text-zinc-950" strokeWidth={3} />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-3 bg-background-secondary/80 backdrop-blur-xl border-t border-border-subtle">
+        <div className="flex items-center justify-between mb-0.5">
+          <p className="text-sm font-display font-semibold text-text-primary">
+            {template.label}
+          </p>
+          <span className="text-[10px] uppercase tracking-wider text-purple-300 bg-purple-600/15 border border-purple-600/30 rounded px-1.5 py-0.5">
+            {template.tag}
+          </span>
+        </div>
+        <p className="text-xs text-text-muted">{template.description}</p>
+      </div>
+    </button>
+  )
+}
+
+/** Preview do template Editorial — magazine, tipografia em destaque, layout limpo */
+function EditorialPreview() {
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-purple-950/60 to-black p-4 flex flex-col justify-between">
+      <div>
+        <div className="text-[7px] tracking-[0.2em] text-purple-300 uppercase mb-2 font-mono">
+          ISSUE #07 — DESIGN
+        </div>
+        <div className="space-y-1.5">
+          <div className="h-2.5 w-full bg-white/85 rounded-sm" />
+          <div className="h-2.5 w-4/5 bg-white/85 rounded-sm" />
+          <div className="h-2.5 w-2/3 bg-white/55 rounded-sm" />
+        </div>
+        <div className="mt-3 space-y-0.5">
+          <div className="h-1 w-full bg-white/30 rounded-full" />
+          <div className="h-1 w-5/6 bg-white/30 rounded-full" />
+          <div className="h-1 w-4/6 bg-white/25 rounded-full" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-1 w-8 bg-purple-400 rounded-full" />
+        <div className="text-[7px] tracking-wider text-white/40">01/07</div>
+      </div>
+    </div>
+  )
+}
+
+/** Preview do template Cinematic — foto fullbleed + overlay dramático */
+function CinematicPreview() {
+  return (
+    <div className="absolute inset-0">
+      {/* "Foto" simulada com gradient + textura */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-700 via-violet-900 to-zinc-950" />
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 30%, rgba(167,139,250,0.5), transparent 50%), radial-gradient(circle at 80% 80%, rgba(124,58,237,0.4), transparent 60%)",
+        }}
+      />
+      {/* Overlay dramático bottom */}
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent" />
+      {/* Texto cinematic */}
+      <div className="absolute bottom-3 left-3 right-3">
+        <div className="h-3 w-4/5 bg-white rounded-sm mb-1" />
+        <div className="h-3 w-2/3 bg-white rounded-sm mb-2" />
+        <div className="h-1 w-1/2 bg-purple-300 rounded-full" />
+      </div>
+      {/* Indicador top */}
+      <div className="absolute top-3 left-3 flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(209,254,23,0.7)]" />
+        <span className="text-[7px] uppercase tracking-wider text-white/80 font-mono">LIVE</span>
+      </div>
+    </div>
+  )
+}
+
+/** Preview do template Hybrid — split com texto + bloco visual */
+function HybridPreview() {
+  return (
+    <div className="absolute inset-0 bg-zinc-950 grid grid-rows-[1fr_1.2fr]">
+      {/* Top: bloco visual */}
+      <div className="relative bg-gradient-to-br from-purple-600 to-purple-900 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 70% 30%, rgba(255,255,255,0.18), transparent 40%)",
+          }}
+        />
+        <div className="absolute top-2 left-2 text-[7px] tracking-[0.2em] text-white/80 uppercase font-mono">
+          NEWS
+        </div>
+        <div className="absolute bottom-2 right-2 text-2xl font-bold text-white leading-none">
+          47
+        </div>
+        <div className="absolute bottom-2 right-2 -translate-y-6 text-[7px] uppercase tracking-wider text-white/60">
+          MIN
+        </div>
+      </div>
+      {/* Bottom: texto */}
+      <div className="p-3 flex flex-col justify-between bg-black">
+        <div className="space-y-1.5">
+          <div className="h-2.5 w-full bg-white rounded-sm" />
+          <div className="h-2.5 w-4/5 bg-white rounded-sm" />
+          <div className="h-1.5 w-3/5 bg-white/60 rounded-sm" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1 h-1 rounded-full bg-purple-400" />
+          <div className="text-[7px] tracking-wider text-white/40">SYNCPOST · ESPORTE</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -316,23 +473,23 @@ function CardChoiceGroup<T extends string>({
 }) {
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label className="text-sm text-text-secondary">{label}</Label>
       <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`text-left p-3 rounded-md border transition-colors ${
+            className={`text-left p-3.5 rounded-lg border transition-all ${
               opt.value === value
-                ? "border-primary bg-primary/10"
-                : "border-border hover:border-primary/40"
+                ? "border-purple-600 bg-purple-600/10 shadow-glow-sm"
+                : "border-border-subtle bg-background-secondary/40 hover:border-purple-600/40"
             }`}
           >
-            <p className="text-sm font-medium">{opt.label}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {opt.description}
+            <p className={`text-sm font-medium ${opt.value === value ? "text-purple-200" : "text-text-primary"}`}>
+              {opt.label}
             </p>
+            <p className="text-[11px] text-text-muted mt-0.5">{opt.description}</p>
           </button>
         ))}
       </div>
