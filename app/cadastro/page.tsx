@@ -94,20 +94,13 @@ export default function CadastroPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       {/* Esquerda */}
-      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1400&q=85&auto=format&fit=crop"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-35"
-          aria-hidden
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-950/90 via-purple-950/70 to-background pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(167,139,250,0.4),transparent_60%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.3),transparent_50%)] pointer-events-none" />
-        <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
+      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-background">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,58,237,0.45),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(76,29,149,0.4),transparent_60%),linear-gradient(135deg,#0A0A0F_0%,#1C1227_50%,#0A0A0F_100%)] pointer-events-none" />
+        <div className="absolute inset-0 grid-bg-fade opacity-25 pointer-events-none" />
 
-        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-fuchsia-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
-        <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-purple-600/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+        <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-violet-700/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-purple-900/40 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-2.5">
@@ -126,7 +119,7 @@ export default function CadastroPage() {
         >
           <h2 className="text-5xl font-display font-bold leading-tight text-white">
             Comece grátis.{" "}
-            <span className="block bg-gradient-to-r from-fuchsia-300 via-purple-300 to-purple-200 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-purple-200 via-purple-400 to-purple-200 bg-clip-text text-transparent">
               Sem cartão.
             </span>
           </h2>
@@ -165,7 +158,7 @@ export default function CadastroPage() {
         >
           <div className="flex -space-x-2">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-fuchsia-400 to-purple-600" />
+              <div key={i} className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-400 to-purple-800" />
             ))}
           </div>
           <span>+1.200 criadores já usam o SyncPost</span>
@@ -174,14 +167,9 @@ export default function CadastroPage() {
 
       {/* Direita: form */}
       <div className="relative flex items-center justify-center p-6 lg:p-10 bg-background">
-        <div className="lg:hidden absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1080&q=80&auto=format&fit=crop"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-25"
-            aria-hidden
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-950/80 via-background/90 to-background pointer-events-none" />
+        <div className="lg:hidden absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.35),transparent_60%),linear-gradient(180deg,#0A0A0F_0%,#1C1227_60%,#0A0A0F_100%)]" />
+          <div className="absolute inset-0 grid-bg-fade opacity-20" />
         </div>
 
         <motion.div

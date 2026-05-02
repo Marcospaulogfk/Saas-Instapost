@@ -38,9 +38,9 @@ export function DashboardAmbient() {
       aria-hidden
       className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
     >
-      {/* Mesh blobs animados */}
+      {/* Mesh blobs animados — só roxo/violet/preto */}
       <motion.div
-        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-purple-700/25 blur-[120px]"
+        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-purple-700/30 blur-[120px]"
         animate={{
           x: [0, 80, -40, 0],
           y: [0, 60, -50, 0],
@@ -49,7 +49,7 @@ export function DashboardAmbient() {
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute top-[20%] right-[-10%] w-[550px] h-[550px] rounded-full bg-fuchsia-600/20 blur-[120px]"
+        className="absolute top-[20%] right-[-10%] w-[550px] h-[550px] rounded-full bg-violet-800/25 blur-[120px]"
         animate={{
           x: [0, -70, 50, 0],
           y: [0, 80, -30, 0],
@@ -58,7 +58,7 @@ export function DashboardAmbient() {
         transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
       <motion.div
-        className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-violet-700/22 blur-[120px]"
+        className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-purple-900/30 blur-[120px]"
         animate={{
           x: [0, 60, -80, 0],
           y: [0, -40, 60, 0],
@@ -67,7 +67,7 @@ export function DashboardAmbient() {
         transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 4 }}
       />
       <motion.div
-        className="absolute bottom-[10%] right-[15%] w-[450px] h-[450px] rounded-full bg-pink-600/15 blur-[120px]"
+        className="absolute bottom-[10%] right-[15%] w-[450px] h-[450px] rounded-full bg-violet-700/22 blur-[120px]"
         animate={{
           x: [0, -50, 70, 0],
           y: [0, 50, -60, 0],

@@ -35,6 +35,10 @@
   --danger: #EF4444;
   --info: #3B82F6;
 
+  /* === Acento neon (uso estratégico) === */
+  --lime: #D1FE17;
+  --lime-dim: rgba(209, 254, 23, 0.65);
+
   /* === Borders === */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.12);
@@ -149,6 +153,8 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
+  --color-lime: var(--lime);
+  --color-lime-dim: var(--lime-dim);
 
   --color-border-subtle: var(--border-subtle);
   --color-border-medium: var(--border-medium);
@@ -383,6 +389,13 @@
   .shadow-glow-xl { box-shadow: var(--shadow-glow-xl); }
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+
+  /* Lime accent helpers */
+  .glow-lime { box-shadow: 0 0 20px rgba(209, 254, 23, 0.35); }
+  .text-lime-glow {
+    color: var(--lime);
+    text-shadow: 0 0 12px rgba(209, 254, 23, 0.5);
+  }
 
   /* No scrollbar */
   .no-scrollbar::-webkit-scrollbar { display: none; }

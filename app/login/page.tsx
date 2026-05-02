@@ -64,24 +64,16 @@ function LoginPageInner() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* === LADO ESQUERDO: imagem AI + storytelling === */}
+      {/* === LADO ESQUERDO: mesh gradient + storytelling === */}
       <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-background">
-        {/* Imagem AI */}
-        <img
-          src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1400&q=85&auto=format&fit=crop"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-          aria-hidden
-        />
-        {/* Overlays roxo/dark pra fundir com a marca */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/90 via-background/70 to-background pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(124,58,237,0.4),transparent_60%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(167,139,250,0.25),transparent_50%)] pointer-events-none" />
-        <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
+        {/* Base preto profundo */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(124,58,237,0.45),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(76,29,149,0.35),transparent_60%),linear-gradient(135deg,#0A0A0F_0%,#1C1227_50%,#0A0A0F_100%)] pointer-events-none" />
+        <div className="absolute inset-0 grid-bg-fade opacity-25 pointer-events-none" />
 
-        {/* Orb flutuante decorativo */}
-        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-fuchsia-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        {/* Orbs animados */}
+        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-purple-600/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-violet-700/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-purple-900/40 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top: Logo */}
         <motion.div
@@ -106,7 +98,7 @@ function LoginPageInner() {
         >
           <h2 className="text-5xl font-display font-bold leading-tight text-white">
             A IA cria.{" "}
-            <span className="block bg-gradient-to-r from-purple-300 via-fuchsia-300 to-purple-200 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-purple-200 via-purple-400 to-purple-200 bg-clip-text text-transparent">
               Você publica.
             </span>
           </h2>
@@ -147,7 +139,7 @@ function LoginPageInner() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-400 to-fuchsia-600"
+                className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-400 to-purple-800"
               />
             ))}
           </div>
@@ -158,15 +150,9 @@ function LoginPageInner() {
       {/* === LADO DIREITO: form === */}
       <div className="relative flex items-center justify-center p-6 lg:p-10 bg-background">
         {/* Mobile-only background */}
-        <div className="lg:hidden absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1080&q=80&auto=format&fit=crop"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-25"
-            aria-hidden
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-950/80 via-background/90 to-background pointer-events-none" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.3),transparent_70%)] pointer-events-none" />
+        <div className="lg:hidden absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.35),transparent_60%),linear-gradient(180deg,#0A0A0F_0%,#1C1227_60%,#0A0A0F_100%)]" />
+          <div className="absolute inset-0 grid-bg-fade opacity-20" />
         </div>
 
         <motion.div

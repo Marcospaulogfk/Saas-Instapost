@@ -20,7 +20,7 @@ const PLAN_LABELS: Record<string, string> = {
   incomplete: "Incompleto",
 }
 
-// Sparkline determinístico — não muda entre SSR e client
+// Sparkline determinístico — sem mismatch SSR/client
 function sparkData(seed: number, points = 12) {
   const arr = []
   for (let i = 0; i < points; i++) {
@@ -37,6 +37,7 @@ export function StatsGrid({
   subscriptionStatus,
 }: StatsGridProps) {
   const planLabel = PLAN_LABELS[subscriptionStatus] ?? subscriptionStatus
+  const isActivePlan = subscriptionStatus === "active"
 
   const stats = [
     {
@@ -45,11 +46,9 @@ export function StatsGrid({
       delta: projectsCount > 0 ? "+12% vs mês anterior" : "Crie o primeiro",
       deltaUp: projectsCount > 0,
       icon: Sparkles,
-      gradient: "from-purple-500/20 to-purple-600/5",
-      iconBg: "bg-purple-500/15 border-purple-500/30",
-      iconColor: "text-purple-300",
       sparkColor: "#A78BFA",
       sparkSeed: 7 + projectsCount,
+      accent: "purple" as const,
     },
     {
       label: "Imagens este mês",
@@ -57,11 +56,9 @@ export function StatsGrid({
       delta: "Geradas pela IA",
       deltaUp: null,
       icon: ImageIcon,
-      gradient: "from-fuchsia-500/20 to-fuchsia-600/5",
-      iconBg: "bg-fuchsia-500/15 border-fuchsia-500/30",
-      iconColor: "text-fuchsia-300",
-      sparkColor: "#D946EF",
+      sparkColor: "#8B5CF6",
       sparkSeed: 13 + creditsUsedThisMonth,
+      accent: "purple" as const,
     },
     {
       label: "Marcas ativas",
@@ -69,23 +66,19 @@ export function StatsGrid({
       delta: brandsCount === 0 ? "Cadastre uma" : brandsCount === 1 ? "marca" : "marcas",
       deltaUp: null,
       icon: Building2,
-      gradient: "from-violet-500/20 to-violet-600/5",
-      iconBg: "bg-violet-500/15 border-violet-500/30",
-      iconColor: "text-violet-300",
-      sparkColor: "#8B5CF6",
+      sparkColor: "#A78BFA",
       sparkSeed: 23 + brandsCount,
+      accent: "purple" as const,
     },
     {
       label: "Plano atual",
       value: planLabel,
-      delta: subscriptionStatus === "trial" ? "Faça upgrade" : "ativo",
-      deltaUp: subscriptionStatus !== "trial",
+      delta: isActivePlan ? "Ativo" : "Faça upgrade",
+      deltaUp: isActivePlan,
       icon: Crown,
-      gradient: "from-pink-500/20 to-purple-700/5",
-      iconBg: "bg-pink-500/15 border-pink-500/30",
-      iconColor: "text-pink-300",
-      sparkColor: "#EC4899",
+      sparkColor: isActivePlan ? "#D1FE17" : "#A78BFA",
       sparkSeed: 41,
+      accent: (isActivePlan ? "lime" : "purple") as "lime" | "purple",
     },
   ]
 
@@ -105,11 +98,9 @@ interface StatCardProps {
     delta: string
     deltaUp: boolean | null
     icon: typeof Sparkles
-    gradient: string
-    iconBg: string
-    iconColor: string
     sparkColor: string
     sparkSeed: number
+    accent: "purple" | "lime"
   }
   index: number
 }
@@ -134,6 +125,15 @@ function StatCard({ stat, index }: StatCardProps) {
     setTilt({ x: 0, y: 0, gx: 50, gy: 50 })
   }
 
+  const isLime = stat.accent === "lime"
+  const iconBg = isLime
+    ? "bg-[rgba(209,254,23,0.12)] border-[rgba(209,254,23,0.4)]"
+    : "bg-purple-500/10 border-purple-500/30"
+  const iconColor = isLime ? "text-lime" : "text-purple-300"
+  const hoverBorder = isLime ? "hover:border-[rgba(209,254,23,0.4)]" : "hover:border-purple-600/50"
+  const hoverShadow = isLime ? "hover:glow-lime" : "hover:shadow-glow-sm"
+  const spotlightColor = isLime ? "rgba(209,254,23,0.18)" : "rgba(167,139,250,0.18)"
+
   return (
     <motion.div
       ref={ref}
@@ -147,19 +147,18 @@ function StatCard({ stat, index }: StatCardProps) {
         transition: "transform 0.15s ease-out",
         transformStyle: "preserve-3d",
       }}
-      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${stat.gradient} border border-border-subtle backdrop-blur-xl p-5 group hover:border-purple-600/50 hover:shadow-glow-sm`}
+      className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-background-secondary/90 to-background-tertiary/40 border border-border-subtle backdrop-blur-xl p-5 group ${hoverBorder} ${hoverShadow}`}
     >
-      {/* Spotlight do mouse no card */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
         style={{
-          background: `radial-gradient(400px circle at ${tilt.gx}% ${tilt.gy}%, rgba(167,139,250,0.18), transparent 50%)`,
+          background: `radial-gradient(400px circle at ${tilt.gx}% ${tilt.gy}%, ${spotlightColor}, transparent 50%)`,
         }}
       />
 
       <div className="relative flex items-start justify-between mb-4">
-        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${stat.iconBg}`}>
-          <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${iconBg}`}>
+          <stat.icon className={`w-5 h-5 ${iconColor}`} />
         </div>
         <ArrowUpRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
@@ -170,7 +169,11 @@ function StatCard({ stat, index }: StatCardProps) {
       </p>
       <p
         className={`relative text-xs ${
-          stat.deltaUp === true ? "text-success" : "text-text-muted"
+          stat.deltaUp === true
+            ? isLime
+              ? "text-lime"
+              : "text-success"
+            : "text-text-muted"
         }`}
       >
         {stat.delta}

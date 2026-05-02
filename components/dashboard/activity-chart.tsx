@@ -78,7 +78,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
           </div>
           <div>
             <div className="flex items-center gap-1.5 justify-end text-xs text-text-muted mb-1">
-              <span className="w-2 h-2 rounded-full bg-fuchsia-400" />
+              <span className="w-2 h-2 rounded-full bg-lime shadow-[0_0_8px_rgba(209,254,23,0.6)]" />
               Imagens
             </div>
             <div className="text-xl font-bold text-text-primary tabular-nums">{totalImagens}</div>
@@ -99,8 +99,8 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
                 <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="imagensArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D946EF" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#D946EF" stopOpacity={0} />
+                <stop offset="0%" stopColor="#D1FE17" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#D1FE17" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -135,7 +135,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             <Area
               type="monotone"
               dataKey="imagens"
-              stroke="#D946EF"
+              stroke="#D1FE17"
               strokeWidth={2}
               fill="url(#imagensArea)"
               name="Imagens"

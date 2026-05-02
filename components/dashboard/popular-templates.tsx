@@ -9,7 +9,7 @@ const templates = [
     id: 1,
     name: "Wesley Style",
     usageCount: 234,
-    color: "bg-gradient-to-br from-purple-500 via-violet-600 to-fuchsia-700",
+    color: "bg-gradient-to-br from-purple-500 via-violet-700 to-zinc-950",
   },
   {
     id: 2,
@@ -19,15 +19,16 @@ const templates = [
   },
   {
     id: 3,
-    name: "Vibrante Neon",
+    name: "Cinematic",
     usageCount: 156,
-    color: "bg-gradient-to-br from-fuchsia-500 via-pink-600 to-purple-700",
+    color: "bg-gradient-to-br from-violet-700 via-purple-900 to-black",
   },
   {
     id: 4,
-    name: "Cinematic",
+    name: "Bold Lime",
     usageCount: 142,
-    color: "bg-gradient-to-br from-violet-700 via-purple-800 to-indigo-900",
+    color: "bg-gradient-to-br from-purple-700 via-zinc-900 to-black",
+    accent: "lime" as const,
   },
 ]
 
@@ -57,12 +58,20 @@ export function PopularTemplates() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             whileHover={{ y: -4 }}
-            className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all cursor-pointer"
+            className={`group relative aspect-[4/5] rounded-xl overflow-hidden border ${
+              "accent" in template && template.accent === "lime"
+                ? "border-[rgba(209,254,23,0.35)] hover:border-lime hover:glow-lime"
+                : "border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm"
+            } transition-all cursor-pointer`}
           >
             <div className={`absolute inset-0 ${template.color}`} />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
 
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
+            {"accent" in template && template.accent === "lime" && (
+              <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-lime shadow-[0_0_12px_rgba(209,254,23,0.8)] animate-pulse" />
+            )}
+
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-4">
               <h3 className="font-display font-semibold text-white">{template.name}</h3>
               <p className="text-xs text-white/70 mt-0.5">
                 {template.usageCount} criadores usando
