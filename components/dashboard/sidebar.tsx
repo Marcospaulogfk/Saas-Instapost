@@ -105,7 +105,7 @@ export function DashboardSidebar({
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-tiny uppercase tracking-wider text-text-muted">Marca atual</p>
+              <p className="text-[11px] text-text-muted">Marca</p>
               <p className="text-sm font-medium text-text-primary truncate">{activeBrand.name}</p>
             </div>
             <ChevronUp className="w-4 h-4 text-text-muted" />
@@ -176,23 +176,25 @@ export function DashboardSidebar({
       {/* Credits widget */}
       <div className="p-4">
         <div className="rounded-lg bg-gradient-card border border-border-subtle p-4">
-          <p className="text-tiny uppercase tracking-wider text-text-secondary mb-2">
-            {isTrial ? "Créditos grátis" : "Créditos restantes"}
-          </p>
-          <div className="text-2xl font-bold text-text-primary mb-2 tabular-nums">
-            {remaining} <span className="text-sm text-text-muted font-normal">/ {limit}</span>
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-xs text-text-secondary">
+              {isTrial ? "Créditos grátis" : "Créditos"}
+            </p>
+            <p className="text-xs text-text-muted tabular-nums">
+              {remaining}/{limit}
+            </p>
           </div>
-          <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-background-tertiary rounded-full overflow-hidden mb-3">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${100 - progress}%` }}
+              animate={{ width: `${Math.max(2, 100 - progress)}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="h-full bg-gradient-purple"
             />
           </div>
           <Link
             href="/pricing"
-            className="text-xs text-purple-400 hover:text-purple-300 mt-3 inline-block transition-colors"
+            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
           >
             {isTrial ? "Fazer upgrade →" : "Gerenciar plano →"}
           </Link>

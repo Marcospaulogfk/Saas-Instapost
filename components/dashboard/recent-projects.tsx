@@ -35,11 +35,11 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Projetos recentes</h2>
+        <h2 className="text-h3 font-display font-semibold text-text-primary">Projetos recentes</h2>
         {projects.length > 0 && (
           <Link
             href="/dashboard/projetos"
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
           >
             Ver todos &rarr;
           </Link>
@@ -47,11 +47,11 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
       </div>
 
       {projects.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-12 text-center space-y-3">
-          <p className="text-muted-foreground">
-            Voce ainda nao criou nenhum carrossel.
+        <div className="rounded-xl border border-dashed border-border-medium bg-gradient-card backdrop-blur-xl p-12 text-center space-y-3">
+          <p className="text-text-secondary">
+            Você ainda não criou nenhum carrossel.
           </p>
-          <Button asChild>
+          <Button asChild className="bg-gradient-purple hover:shadow-glow">
             <Link href="/dashboard/criar">
               <Plus className="w-4 h-4 mr-2" />
               Criar primeiro carrossel
@@ -64,7 +64,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
             <Link
               key={project.id}
               href={`/dashboard/projetos/${project.id}`}
-              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02]"
+              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all hover:scale-[1.02]"
             >
               <div
                 className={`absolute inset-0 ${getProjectGradient(project.id)}`}

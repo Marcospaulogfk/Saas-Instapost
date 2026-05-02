@@ -3,6 +3,7 @@ import { QuickActionCard } from "@/components/dashboard/quick-action-card"
 import { RecentProjects } from "@/components/dashboard/recent-projects"
 import { BrandsSection } from "@/components/dashboard/brands-section"
 import { PopularTemplates } from "@/components/dashboard/popular-templates"
+import { ActivityChart } from "@/components/dashboard/activity-chart"
 import {
   getProfile,
   listBrands,
@@ -25,10 +26,13 @@ export default async function DashboardPage() {
     user.email?.split("@")[0] ||
     "voce"
   const credits = profile?.credits ?? 0
+  const creditsUsed = profile?.plan_credits_used_this_month ?? 0
 
   return (
-    <div className="relative p-8 space-y-8 max-w-7xl">
+    <div className="relative p-6 md:p-8 space-y-8 max-w-7xl">
+      {/* Background ambient */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-fuchsia-600/8 rounded-full blur-[120px] -z-10 pointer-events-none" />
 
       <header className="space-y-1">
         <h1 className="text-h1 font-display font-bold text-text-primary">
@@ -41,14 +45,16 @@ export default async function DashboardPage() {
         </p>
       </header>
 
+      <QuickActionCard />
+
       <StatsGrid
         projectsCount={counts.projectsCount}
         brandsCount={counts.brandsCount}
-        creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
+        creditsUsedThisMonth={creditsUsed}
         subscriptionStatus={profile?.subscription_status ?? "trial"}
       />
 
-      <QuickActionCard />
+      <ActivityChart projectsCount={counts.projectsCount} creditsUsedThisMonth={creditsUsed} />
 
       <RecentProjects projects={projects} />
 

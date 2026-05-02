@@ -7,13 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Sparkles, Mail, Lock, ArrowRight, Loader2 } from "lucide-react"
+import { Sparkles, Mail, Lock, ArrowRight, Loader2, Zap, Brain, Wand2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card } from "@/components/ui/card"
-import { Spotlight } from "@/components/ui/spotlight"
-import { SparklesField } from "@/components/ui/sparkle"
 import { signUpWithPassword, signInWithGoogle } from "@/app/actions/auth"
 
 const schema = z.object({
@@ -68,211 +65,264 @@ export default function CadastroPage() {
 
   if (submittedEmail) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden p-4">
-        <div className="absolute inset-0 aurora opacity-50 pointer-events-none" />
-        <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
-        <Spotlight className="relative z-10 w-full max-w-md">
-          <Card className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-purple shadow-glow flex items-center justify-center">
-              <Mail className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-h2 font-display font-bold gradient-text mb-2">
-              Verifique seu email
-            </h1>
-            <p className="text-text-secondary mb-6">
-              Enviamos um link de confirmação para{" "}
-              <span className="text-text-primary font-medium">{submittedEmail}</span>
-              . Clique no link para ativar sua conta.
-            </p>
-            <Button asChild variant="outline" className="w-full border-border-medium">
-              <Link href="/login">Voltar para o login</Link>
-            </Button>
-          </Card>
-        </Spotlight>
+      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden p-4">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.25),transparent_70%)] pointer-events-none" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 max-w-md w-full text-center bg-background-secondary/80 backdrop-blur-xl border border-border-subtle rounded-2xl p-10"
+        >
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-purple shadow-glow flex items-center justify-center">
+            <Mail className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-h2 font-display font-bold gradient-text mb-3">
+            Verifique seu email
+          </h1>
+          <p className="text-text-secondary mb-6">
+            Enviamos um link de confirmação para{" "}
+            <span className="text-text-primary font-medium">{submittedEmail}</span>
+            . Clique no link para ativar sua conta.
+          </p>
+          <Button asChild variant="outline" className="w-full border-border-medium">
+            <Link href="/login">Voltar para o login</Link>
+          </Button>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden p-4 py-12">
-      <div className="absolute inset-0 aurora opacity-50 pointer-events-none" />
-      <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
-      <SparklesField count={8} />
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-purple-600/15 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      {/* Esquerda */}
+      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1400&q=85&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-35"
+          aria-hidden
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-950/90 via-purple-950/70 to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(167,139,250,0.4),transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(124,58,237,0.3),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
 
-      <Spotlight className="relative z-10 w-full max-w-md">
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-fuchsia-500/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+        <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
+
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-purple shadow-glow flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-display font-bold text-2xl text-white">SyncPost</span>
+          </Link>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ delay: 0.2 }}
+          className="relative z-10 max-w-md"
         >
-          <Card className="p-8">
-            <div className="text-center mb-8">
+          <h2 className="text-5xl font-display font-bold leading-tight text-white">
+            Comece grátis.{" "}
+            <span className="block bg-gradient-to-r from-fuchsia-300 via-purple-300 to-purple-200 bg-clip-text text-transparent">
+              Sem cartão.
+            </span>
+          </h2>
+          <p className="mt-4 text-lg text-white/70 leading-relaxed">
+            2 imagens grátis pra testar. Cancele quando quiser.
+          </p>
+
+          <div className="mt-8 grid gap-3">
+            {[
+              { icon: CheckCircle2, label: "2 imagens grátis pra começar" },
+              { icon: Zap, label: "Setup em menos de 1 minuto" },
+              { icon: Brain, label: "Sem precisar de design ou copy" },
+              { icon: Wand2, label: "Templates testados pelos melhores criadores" },
+            ].map((item, i) => (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring" }}
-                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-purple shadow-glow mb-4"
+                key={item.label}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.1 }}
+                className="flex items-center gap-3 text-white/80"
               >
-                <Sparkles className="w-8 h-8 text-white" />
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-400/30 flex items-center justify-center backdrop-blur-sm">
+                  <item.icon className="w-4 h-4 text-purple-300" />
+                </div>
+                <span className="text-sm">{item.label}</span>
               </motion.div>
-              <h1 className="text-h2 font-display font-bold gradient-text mb-2">
-                Crie sua conta
-              </h1>
-              <p className="text-text-secondary">
-                Comece com 2 imagens grátis. Sem cartão de crédito.
-              </p>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="relative z-10 flex items-center gap-4 text-white/60 text-sm"
+        >
+          <div className="flex -space-x-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-fuchsia-400 to-purple-600" />
+            ))}
+          </div>
+          <span>+1.200 criadores já usam o SyncPost</span>
+        </motion.div>
+      </div>
+
+      {/* Direita: form */}
+      <div className="relative flex items-center justify-center p-6 lg:p-10 bg-background">
+        <div className="lg:hidden absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1080&q=80&auto=format&fit=crop"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-25"
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-950/80 via-background/90 to-background pointer-events-none" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 w-full max-w-md"
+        >
+          <div className="lg:hidden text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-9 h-9 rounded-lg bg-gradient-purple shadow-glow-sm flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-display font-bold text-xl text-white">SyncPost</span>
+            </Link>
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-display font-bold text-text-primary mb-2">
+              Crie sua conta
+            </h1>
+            <p className="text-text-secondary">
+              Comece com 2 imagens grátis. Sem cartão de crédito.
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-12 mb-5 border-border-medium hover:border-purple-600/50 hover:bg-purple-600/5 bg-background-secondary/40 backdrop-blur-sm"
+            onClick={onGoogle}
+            disabled={isPending}
+          >
+            <GoogleIcon className="w-5 h-5 mr-2" />
+            Cadastrar com Google
+          </Button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-px flex-1 bg-border-subtle" />
+            <span className="text-xs text-text-muted">ou com email</span>
+            <div className="h-px flex-1 bg-border-subtle" />
+          </div>
+
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <div>
+              <label htmlFor="email" className="text-sm text-text-secondary mb-1.5 block">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="seu@email.com"
+                  {...form.register("email")}
+                  aria-invalid={!!form.formState.errors.email}
+                  className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                />
+              </div>
+              {form.formState.errors.email && (
+                <p className="text-sm text-danger mt-1">{form.formState.errors.email.message}</p>
+              )}
             </div>
+
+            <div>
+              <label htmlFor="password" className="text-sm text-text-secondary mb-1.5 block">Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Mínimo 8 caracteres"
+                  {...form.register("password")}
+                  aria-invalid={!!form.formState.errors.password}
+                  className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                />
+              </div>
+              {form.formState.errors.password ? (
+                <p className="text-sm text-danger mt-1">{form.formState.errors.password.message}</p>
+              ) : (
+                <p className="text-xs text-text-muted mt-1">Mínimo 8 caracteres, com pelo menos 1 número.</p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="acceptTerms"
+                  checked={form.watch("acceptTerms")}
+                  onCheckedChange={(c) =>
+                    form.setValue("acceptTerms", c === true, { shouldValidate: true })
+                  }
+                  aria-invalid={!!form.formState.errors.acceptTerms}
+                  className="mt-0.5 border-border-medium data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                />
+                <label htmlFor="acceptTerms" className="text-sm font-normal leading-snug cursor-pointer text-text-secondary">
+                  Concordo com os{" "}
+                  <Link href="/termos" className="text-purple-400 hover:text-purple-300 transition-colors">termos de uso</Link>{" "}
+                  e a{" "}
+                  <Link href="/privacidade" className="text-purple-400 hover:text-purple-300 transition-colors">política de privacidade</Link>.
+                </label>
+              </div>
+              {form.formState.errors.acceptTerms && (
+                <p className="text-sm text-danger">{form.formState.errors.acceptTerms.message}</p>
+              )}
+            </div>
+
+            {serverError && (
+              <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
+                {serverError}
+              </div>
+            )}
 
             <Button
-              type="button"
-              variant="outline"
-              className="w-full h-11 mb-6 border-border-medium hover:border-purple-600/50 hover:bg-purple-600/5"
-              onClick={onGoogle}
+              type="submit"
+              size="lg"
+              className="w-full h-12 group bg-gradient-purple hover:shadow-glow-lg transition-all"
               disabled={isPending}
             >
-              <GoogleIcon className="w-5 h-5 mr-2" />
-              Cadastrar com Google
-            </Button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <span className="text-tiny text-text-muted uppercase tracking-wider">ou</span>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <label htmlFor="email" className="text-tiny text-text-secondary uppercase tracking-wider mb-2 block">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="seu@email.com"
-                    {...form.register("email")}
-                    aria-invalid={!!form.formState.errors.email}
-                    className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
-                  />
-                </div>
-                {form.formState.errors.email && (
-                  <p className="text-sm text-danger mt-1">{form.formState.errors.email.message}</p>
-                )}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <label htmlFor="password" className="text-tiny text-text-secondary uppercase tracking-wider mb-2 block">
-                  Senha
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Mínimo 8 caracteres"
-                    {...form.register("password")}
-                    aria-invalid={!!form.formState.errors.password}
-                    className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
-                  />
-                </div>
-                {form.formState.errors.password ? (
-                  <p className="text-sm text-danger mt-1">{form.formState.errors.password.message}</p>
-                ) : (
-                  <p className="text-xs text-text-muted mt-1">
-                    Mínimo 8 caracteres, com pelo menos 1 número.
-                  </p>
-                )}
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-1"
-              >
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    id="acceptTerms"
-                    checked={form.watch("acceptTerms")}
-                    onCheckedChange={(c) =>
-                      form.setValue("acceptTerms", c === true, { shouldValidate: true })
-                    }
-                    aria-invalid={!!form.formState.errors.acceptTerms}
-                    className="mt-0.5 border-border-medium data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                  />
-                  <label
-                    htmlFor="acceptTerms"
-                    className="text-sm font-normal leading-snug cursor-pointer text-text-secondary"
-                  >
-                    Concordo com os{" "}
-                    <Link href="/termos" className="text-purple-400 hover:text-purple-300 transition-colors">
-                      termos de uso
-                    </Link>{" "}
-                    e a{" "}
-                    <Link href="/privacidade" className="text-purple-400 hover:text-purple-300 transition-colors">
-                      política de privacidade
-                    </Link>
-                    .
-                  </label>
-                </div>
-                {form.formState.errors.acceptTerms && (
-                  <p className="text-sm text-danger">{form.formState.errors.acceptTerms.message}</p>
-                )}
-              </motion.div>
-
-              {serverError && (
-                <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
-                  {serverError}
-                </div>
+              {isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Criando conta...
+                </>
+              ) : (
+                <>
+                  Criar conta grátis
+                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </>
               )}
+            </Button>
+          </form>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full h-12 group bg-gradient-purple hover:shadow-glow-lg transition-all"
-                  disabled={isPending}
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Criando conta...
-                    </>
-                  ) : (
-                    <>
-                      Criar conta grátis
-                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </form>
-
-            <p className="text-center text-sm text-text-secondary mt-6">
-              Já tem uma conta?{" "}
-              <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
-                Entrar
-              </Link>
-            </p>
-          </Card>
+          <p className="text-center text-sm text-text-secondary mt-6">
+            Já tem uma conta?{" "}
+            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+              Entrar
+            </Link>
+          </p>
         </motion.div>
-      </Spotlight>
+      </div>
     </div>
   )
 }
