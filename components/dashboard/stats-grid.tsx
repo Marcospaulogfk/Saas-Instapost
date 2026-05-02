@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useState, MouseEvent } from "react"
 import { motion } from "framer-motion"
 import { Sparkles, Image as ImageIcon, Building2, Crown, ArrowUpRight } from "lucide-react"
 import { Area, AreaChart, ResponsiveContainer } from "recharts"
@@ -85,67 +86,116 @@ export function StatsGrid({
       iconColor: "text-pink-300",
       sparkColor: "#EC4899",
       sparkSeed: 41,
-      isHighlight: subscriptionStatus === "active",
     },
   ]
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat, i) => (
-        <motion.div
-          key={stat.label}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.07 }}
-          whileHover={{ y: -3 }}
-          className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${stat.gradient} border border-border-subtle backdrop-blur-xl p-5 group transition-all hover:border-purple-600/40 hover:shadow-glow-sm`}
-        >
-          <div className="flex items-start justify-between mb-4">
-            <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${stat.iconBg}`}>
-              <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-            </div>
-            <ArrowUpRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-
-          <p className="text-xs text-text-secondary mb-1">{stat.label}</p>
-          <p className="text-3xl font-display font-bold text-text-primary tabular-nums leading-none mb-2">
-            {stat.value}
-          </p>
-          <p
-            className={`text-xs ${
-              stat.deltaUp === true
-                ? "text-success"
-                : stat.deltaUp === false
-                  ? "text-text-muted"
-                  : "text-text-muted"
-            }`}
-          >
-            {stat.delta}
-          </p>
-
-          {/* Sparkline decorativa */}
-          <div className="absolute bottom-0 right-0 h-12 w-2/3 opacity-60 pointer-events-none">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={sparkData(stat.sparkSeed)} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id={`sparkArea-${i}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={stat.sparkColor} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={stat.sparkColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="v"
-                  stroke={stat.sparkColor}
-                  strokeWidth={1.5}
-                  fill={`url(#sparkArea-${i})`}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+        <StatCard key={stat.label} stat={stat} index={i} />
       ))}
     </div>
+  )
+}
+
+interface StatCardProps {
+  stat: {
+    label: string
+    value: string
+    delta: string
+    deltaUp: boolean | null
+    icon: typeof Sparkles
+    gradient: string
+    iconBg: string
+    iconColor: string
+    sparkColor: string
+    sparkSeed: number
+  }
+  index: number
+}
+
+function StatCard({ stat, index }: StatCardProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [tilt, setTilt] = useState({ x: 0, y: 0, gx: 50, gy: 50 })
+
+  function handleMove(e: MouseEvent<HTMLDivElement>) {
+    if (!ref.current) return
+    const r = ref.current.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width
+    const py = (e.clientY - r.top) / r.height
+    setTilt({
+      x: (py - 0.5) * -8,
+      y: (px - 0.5) * 8,
+      gx: px * 100,
+      gy: py * 100,
+    })
+  }
+  function handleLeave() {
+    setTilt({ x: 0, y: 0, gx: 50, gy: 50 })
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.07 }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      style={{
+        transform: `perspective(900px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: "transform 0.15s ease-out",
+        transformStyle: "preserve-3d",
+      }}
+      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${stat.gradient} border border-border-subtle backdrop-blur-xl p-5 group hover:border-purple-600/50 hover:shadow-glow-sm`}
+    >
+      {/* Spotlight do mouse no card */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        style={{
+          background: `radial-gradient(400px circle at ${tilt.gx}% ${tilt.gy}%, rgba(167,139,250,0.18), transparent 50%)`,
+        }}
+      />
+
+      <div className="relative flex items-start justify-between mb-4">
+        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${stat.iconBg}`}>
+          <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+        </div>
+        <ArrowUpRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+
+      <p className="relative text-xs text-text-secondary mb-1">{stat.label}</p>
+      <p className="relative text-3xl font-display font-bold text-text-primary tabular-nums leading-none mb-2">
+        {stat.value}
+      </p>
+      <p
+        className={`relative text-xs ${
+          stat.deltaUp === true ? "text-success" : "text-text-muted"
+        }`}
+      >
+        {stat.delta}
+      </p>
+
+      <div className="absolute bottom-0 right-0 h-12 w-2/3 opacity-60 pointer-events-none">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={sparkData(stat.sparkSeed)} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id={`sparkArea-${index}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={stat.sparkColor} stopOpacity={0.45} />
+                <stop offset="100%" stopColor={stat.sparkColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="v"
+              stroke={stat.sparkColor}
+              strokeWidth={1.5}
+              fill={`url(#sparkArea-${index})`}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
   )
 }

@@ -30,10 +30,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="relative p-6 md:p-8 space-y-8 max-w-7xl">
-      {/* Background ambient */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
-      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-fuchsia-600/8 rounded-full blur-[120px] -z-10 pointer-events-none" />
-
       <header className="space-y-1">
         <h1 className="text-h1 font-display font-bold text-text-primary">
           Olá, <span className="gradient-text">{displayName}</span> 👋
@@ -47,14 +43,16 @@ export default async function DashboardPage() {
 
       <QuickActionCard />
 
+      <PopularTemplates />
+
+      <ActivityChart projectsCount={counts.projectsCount} creditsUsedThisMonth={creditsUsed} />
+
       <StatsGrid
         projectsCount={counts.projectsCount}
         brandsCount={counts.brandsCount}
         creditsUsedThisMonth={creditsUsed}
         subscriptionStatus={profile?.subscription_status ?? "trial"}
       />
-
-      <ActivityChart projectsCount={counts.projectsCount} creditsUsedThisMonth={creditsUsed} />
 
       <RecentProjects projects={projects} />
 
@@ -65,8 +63,6 @@ export default async function DashboardPage() {
           project_count: b.project_count,
         }))}
       />
-
-      <PopularTemplates />
     </div>
   )
 }

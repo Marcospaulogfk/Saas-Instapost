@@ -1,5 +1,6 @@
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardTopBar } from "@/components/dashboard/top-bar"
+import { DashboardAmbient } from "@/components/dashboard/dashboard-ambient"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
 
@@ -27,7 +28,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg-fade opacity-20 pointer-events-none" />
+      <DashboardAmbient />
       <DashboardSidebar
         userName={displayName}
         userEmail={user.email ?? ""}

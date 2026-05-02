@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sparkles, ArrowUpRight, Zap, Wand2, Brain } from "lucide-react"
+import { ArrowUpRight, Zap, Wand2, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -28,8 +28,8 @@ export function QuickActionCard() {
       <div className="relative z-10 p-8 md:p-10 grid md:grid-cols-[1fr_auto] gap-8 items-center">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-xs text-white/90 mb-4">
-            <Sparkles className="w-3 h-3" />
-            Powered by AI
+            <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-300 animate-pulse" />
+            Powered by WebSync.ai
           </div>
 
           <h2 className="text-3xl md:text-4xl font-display font-bold text-white leading-tight mb-3">
@@ -54,29 +54,68 @@ export function QuickActionCard() {
             className="group/btn bg-white text-purple-900 hover:bg-white/90 shadow-glow-lg font-semibold"
           >
             <Link href="/dashboard/criar">
-              <Sparkles className="w-4 h-4 mr-2" />
               Começar agora
               <ArrowUpRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
             </Link>
           </Button>
         </div>
 
-        {/* Ilustração lateral */}
+        {/* Visual gráfico — mockup de carrossel em mini, ao invés de ícone */}
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, type: "spring" }}
-          className="hidden md:flex relative"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="hidden md:flex relative items-center justify-center w-[220px] h-[220px]"
         >
-          <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-fuchsia-400 to-purple-600 shadow-glow-xl flex items-center justify-center">
-            <Sparkles className="w-16 h-16 text-white" />
-          </div>
-          <div className="absolute -top-3 -right-3 w-10 h-10 rounded-2xl bg-white/15 border border-white/30 backdrop-blur-md flex items-center justify-center animate-float">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <div className="absolute -bottom-2 -left-3 w-9 h-9 rounded-xl bg-white/15 border border-white/30 backdrop-blur-md flex items-center justify-center animate-float" style={{ animationDelay: "1s" }}>
-            <Brain className="w-4 h-4 text-white" />
-          </div>
+          {/* Slide 3 (back) */}
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+            className="absolute w-[140px] h-[180px] rounded-2xl bg-gradient-to-br from-fuchsia-400/40 to-purple-700/60 border border-white/10 backdrop-blur-md rotate-[12deg] translate-x-7 translate-y-3 shadow-2xl"
+          >
+            <div className="p-4 space-y-1.5">
+              <div className="h-1.5 w-3/4 bg-white/20 rounded-full" />
+              <div className="h-1.5 w-1/2 bg-white/15 rounded-full" />
+            </div>
+          </motion.div>
+          {/* Slide 2 (mid) */}
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+            className="absolute w-[140px] h-[180px] rounded-2xl bg-gradient-to-br from-purple-400/50 to-fuchsia-600/70 border border-white/15 backdrop-blur-md rotate-[6deg] translate-x-3 shadow-2xl"
+          >
+            <div className="p-4 space-y-1.5">
+              <div className="h-1.5 w-2/3 bg-white/30 rounded-full" />
+              <div className="h-1.5 w-1/2 bg-white/20 rounded-full" />
+              <div className="h-1.5 w-3/4 bg-white/20 rounded-full" />
+            </div>
+          </motion.div>
+          {/* Slide 1 (front) */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="relative w-[140px] h-[180px] rounded-2xl bg-gradient-to-br from-purple-200/95 via-purple-300/95 to-fuchsia-300/95 border border-white/30 shadow-glow-xl overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.5),transparent_50%)]" />
+            <div className="relative p-4 h-full flex flex-col justify-between text-purple-900">
+              <div className="space-y-2">
+                <div className="h-2 w-3/4 bg-purple-900/40 rounded-full" />
+                <div className="h-2 w-1/2 bg-purple-900/30 rounded-full" />
+                <div className="h-1.5 w-2/3 bg-purple-900/25 rounded-full" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-purple-900" : "bg-purple-900/30"}`}
+                    />
+                  ))}
+                </div>
+                <div className="text-[8px] font-semibold tracking-wider opacity-60">SYNCPOST</div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>
