@@ -125,11 +125,7 @@ export function DashboardSidebar({
 
       {/* CTA Criar */}
       <div className="px-4 mb-4">
-        <Button
-          asChild
-          size="lg"
-          className="w-full group bg-gradient-purple hover:shadow-glow text-white"
-        >
+        <Button asChild size="lg" className="w-full group">
           <Link href="/dashboard/criar">
             <Plus className="w-4 h-4 mr-2 transition-transform group-hover:rotate-90" />
             Criar carrossel
@@ -163,7 +159,7 @@ export function DashboardSidebar({
               {item.badge && (
                 <Badge
                   variant="secondary"
-                  className="bg-purple-600/20 text-purple-300 border-purple-600/30 text-[10px] tracking-wide"
+                  className="bg-lime text-zinc-950 border-0 text-[10px] tracking-wide font-semibold shadow-[0_0_10px_rgba(209,254,23,0.4)]"
                 >
                   {item.badge}
                 </Badge>
@@ -180,21 +176,22 @@ export function DashboardSidebar({
             <p className="text-xs text-text-secondary">
               {isTrial ? "Créditos grátis" : "Créditos"}
             </p>
-            <p className="text-xs text-text-muted tabular-nums">
-              {remaining}/{limit}
+            <p className="text-xs text-text-primary tabular-nums">
+              <span className="text-lime font-semibold">{remaining}</span>
+              <span className="text-text-muted">/{limit}</span>
             </p>
           </div>
-          <div className="w-full h-1 bg-background-tertiary rounded-full overflow-hidden mb-3">
+          <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden mb-3">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.max(2, 100 - progress)}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="h-full bg-gradient-purple"
+              className="h-full bg-lime shadow-[0_0_8px_rgba(209,254,23,0.6)]"
             />
           </div>
           <Link
             href="/pricing"
-            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            className="text-xs text-lime hover:brightness-110 transition-all"
           >
             {isTrial ? "Fazer upgrade →" : "Gerenciar plano →"}
           </Link>

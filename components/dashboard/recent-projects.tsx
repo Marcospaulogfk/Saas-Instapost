@@ -51,7 +51,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
           <p className="text-text-secondary">
             Você ainda não criou nenhum carrossel.
           </p>
-          <Button asChild className="bg-gradient-purple hover:shadow-glow">
+          <Button asChild>
             <Link href="/dashboard/criar">
               <Plus className="w-4 h-4 mr-2" />
               Criar primeiro carrossel

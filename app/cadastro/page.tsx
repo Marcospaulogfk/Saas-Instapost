@@ -286,7 +286,7 @@ export default function CadastroPage() {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 group bg-gradient-purple hover:shadow-glow-lg transition-all"
+              className="w-full h-12 group"
               disabled={isPending}
             >
               {isPending ? (

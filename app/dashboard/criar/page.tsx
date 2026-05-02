@@ -35,8 +35,8 @@ export default function CriarPage() {
             <div className="relative h-full rounded-2xl border-2 border-purple-600/40 bg-gradient-to-br from-purple-600/15 via-purple-700/8 to-transparent p-8 hover:border-purple-600/70 hover:shadow-glow transition-all overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
 
-              <Badge className="absolute -top-3 left-6 bg-gradient-purple text-white border-0 shadow-glow-sm">
-                ⭐ RECOMENDADO
+              <Badge className="absolute -top-3 left-6 bg-lime text-zinc-950 border-0 font-semibold shadow-[0_0_18px_rgba(209,254,23,0.5)]">
+                RECOMENDADO
               </Badge>
 
               <div className="relative z-10">
