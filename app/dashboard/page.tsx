@@ -27,15 +27,19 @@ export default async function DashboardPage() {
   const credits = profile?.credits ?? 0
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Ola, {displayName}</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="relative p-8 space-y-8 max-w-7xl">
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+
+      <header className="space-y-1">
+        <h1 className="text-h1 font-display font-bold text-text-primary">
+          Olá, <span className="gradient-text">{displayName}</span> 👋
+        </h1>
+        <p className="text-text-secondary">
           {credits > 0
-            ? `Voce tem ${credits} ${credits === 1 ? "imagem disponivel" : "imagens disponiveis"}. Bora criar conteudo viral?`
-            : "Seus creditos acabaram. Faca upgrade pra continuar criando."}
+            ? `Você tem ${credits} ${credits === 1 ? "imagem disponível" : "imagens disponíveis"}. Bora criar conteúdo viral?`
+            : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
         </p>
-      </div>
+      </header>
 
       <StatsGrid
         projectsCount={counts.projectsCount}

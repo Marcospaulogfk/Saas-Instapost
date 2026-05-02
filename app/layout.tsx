@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-jetbrains-mono',
 })
 
 export const metadata: Metadata = {
-  title: 'InstaPost - Carrosseis para Instagram com IA',
-  description: 'Crie carrosseis virais para Instagram em minutos usando inteligencia artificial. Simples, rapido e profissional.',
-  generator: 'InstaPost',
-  keywords: ['carrossel instagram', 'IA', 'inteligencia artificial', 'social media', 'marketing digital'],
+  title: 'SyncPost — Carrosseis virais com IA',
+  description: 'Crie carrosseis virais para Instagram em minutos com IA. Templates premium, design cinematografico, em portugues.',
+  generator: 'SyncPost',
+  keywords: ['syncpost', 'carrossel instagram', 'IA', 'inteligencia artificial', 'social media', 'marketing digital'],
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0A0A0A',
+  themeColor: '#0A0A0F',
   width: 'device-width',
   initialScale: 1,
 }
@@ -27,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className="bg-background">
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="pt-BR" className={`dark ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

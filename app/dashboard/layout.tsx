@@ -26,7 +26,8 @@ export default async function DashboardLayout({
     : null
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background relative overflow-hidden">
+      <div className="absolute inset-0 grid-bg-fade opacity-20 pointer-events-none" />
       <DashboardSidebar
         userName={displayName}
         userEmail={user.email ?? ""}

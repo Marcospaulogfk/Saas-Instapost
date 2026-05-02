@@ -1,14 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
+import { motion } from "framer-motion"
+import { Sparkles, Mail, Lock, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Card } from "@/components/ui/card"
+import { Spotlight } from "@/components/ui/spotlight"
+import { SparklesField } from "@/components/ui/sparkle"
 import { signInWithPassword, signInWithGoogle } from "@/app/actions/auth"
 
 const schema = z.object({
@@ -18,6 +22,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <LoginPageInner />
+    </Suspense>
+  )
+}
+
+function LoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
@@ -54,112 +66,152 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-[440px] space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-2xl font-bold inline-block">
-            InstaPost
-          </Link>
-        </div>
+    <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden p-4">
+      <div className="absolute inset-0 aurora opacity-50 pointer-events-none" />
+      <div className="absolute inset-0 grid-bg-fade opacity-30 pointer-events-none" />
+      <SparklesField count={8} />
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-500/15 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Bem-vindo de volta
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Entre na sua conta para continuar
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-11"
-          onClick={onGoogle}
-          disabled={isPending}
+      <Spotlight className="relative z-10 w-full max-w-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <GoogleIcon className="w-5 h-5 mr-2" />
-          Entrar com Google
-        </Button>
-
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">
-            ou
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4"
-          noValidate
-        >
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...form.register("email")}
-              aria-invalid={!!form.formState.errors.email}
-            />
-            {form.formState.errors.email && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
-              <Link
-                href="/recuperar-senha"
-                className="text-sm text-primary hover:underline"
+          <Card className="p-8 relative overflow-hidden bg-gradient-card border-border-subtle">
+            <div className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-purple shadow-glow mb-4"
               >
-                Esqueci a senha
+                <Sparkles className="w-8 h-8 text-white" />
+              </motion.div>
+              <h1 className="text-h2 font-display font-bold gradient-text mb-2">
+                Bem-vindo de volta
+              </h1>
+              <p className="text-text-secondary">Entre na sua conta SyncPost</p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 mb-6 border-border-medium hover:border-purple-600/50 hover:bg-purple-600/5"
+              onClick={onGoogle}
+              disabled={isPending}
+            >
+              <GoogleIcon className="w-5 h-5 mr-2" />
+              Entrar com Google
+            </Button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-border-subtle" />
+              <span className="text-tiny text-text-muted uppercase tracking-wider">ou</span>
+              <div className="h-px flex-1 bg-border-subtle" />
+            </div>
+
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <label htmlFor="email" className="text-tiny text-text-secondary uppercase tracking-wider mb-2 block">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="seu@email.com"
+                    {...form.register("email")}
+                    aria-invalid={!!form.formState.errors.email}
+                    className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                  />
+                </div>
+                {form.formState.errors.email && (
+                  <p className="text-sm text-danger mt-1">{form.formState.errors.email.message}</p>
+                )}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="password" className="text-tiny text-text-secondary uppercase tracking-wider">
+                    Senha
+                  </label>
+                  <Link
+                    href="/recuperar-senha"
+                    className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    Esqueci a senha
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    {...form.register("password")}
+                    aria-invalid={!!form.formState.errors.password}
+                    className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                  />
+                </div>
+                {form.formState.errors.password && (
+                  <p className="text-sm text-danger mt-1">{form.formState.errors.password.message}</p>
+                )}
+              </motion.div>
+
+              {serverError && (
+                <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
+                  {serverError}
+                </div>
+              )}
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full h-12 group bg-gradient-purple hover:shadow-glow-lg transition-all"
+                  disabled={isPending}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      Entrar
+                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </form>
+
+            <p className="text-center text-sm text-text-secondary mt-6">
+              Não tem conta?{" "}
+              <Link href="/cadastro" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                Criar conta grátis
               </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...form.register("password")}
-              aria-invalid={!!form.formState.errors.password}
-            />
-            {form.formState.errors.password && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {serverError && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
-              {serverError}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            className="w-full h-11"
-            disabled={isPending}
-          >
-            {isPending ? "Entrando..." : "Entrar"}
-          </Button>
-        </form>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Nao tem conta?{" "}
-          <Link
-            href="/cadastro"
-            className="text-primary hover:underline font-medium"
-          >
-            Cadastre-se
-          </Link>
-        </p>
-      </div>
+            </p>
+          </Card>
+        </motion.div>
+      </Spotlight>
     </div>
   )
 }

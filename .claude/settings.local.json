@@ -19,7 +19,8 @@
       "Bash(curl -s -X POST http://localhost:3000/api/projects/generate -H 'Content-Type: application/json' -d '{}' -o /dev/null -w '%{http_code}\\\\n')",
       "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" \"http://localhost:3000/dashboard/projetos/abc-fake\")",
       "Bash(curl *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(wait)"
     ]
   }
 }

@@ -12,11 +12,12 @@ import { Badge } from "@/components/ui/badge"
 
 export default function ConfiguracoesPage() {
   return (
-    <div className="p-8 space-y-6 max-w-4xl">
+    <div className="relative p-8 space-y-6 max-w-4xl">
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
       <div>
-        <h1 className="text-3xl font-bold">Configuracoes</h1>
-        <p className="text-muted-foreground mt-1">
-          Gerencie sua conta, plano e preferencias.
+        <h1 className="text-h1 font-display font-bold text-text-primary">Configurações</h1>
+        <p className="text-text-secondary mt-1">
+          Gerencie sua conta, plano e preferências.
         </p>
       </div>
 
@@ -29,7 +30,7 @@ export default function ConfiguracoesPage() {
         </TabsList>
 
         <TabsContent value="perfil" className="space-y-6 pt-6">
-          <section className="rounded-xl border border-border p-6 space-y-4">
+          <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <h3 className="font-semibold">Foto de perfil</h3>
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
@@ -43,7 +44,7 @@ export default function ConfiguracoesPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-border p-6 space-y-4">
+          <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <h3 className="font-semibold">Informacoes pessoais</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -62,7 +63,7 @@ export default function ConfiguracoesPage() {
         </TabsContent>
 
         <TabsContent value="conta" className="space-y-6 pt-6">
-          <section className="rounded-xl border border-border p-6 space-y-4">
+          <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <h3 className="font-semibold">Senha</h3>
             <div className="space-y-3">
               <div className="space-y-2">
@@ -79,7 +80,7 @@ export default function ConfiguracoesPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-destructive/30 p-6 space-y-3">
+          <section className="rounded-xl border border-danger/30 bg-danger/5 p-6 space-y-3">
             <h3 className="font-semibold text-destructive">Zona de perigo</h3>
             <p className="text-sm text-muted-foreground">
               Excluir sua conta remove todos os projetos, marcas e templates de forma permanente.
@@ -91,10 +92,10 @@ export default function ConfiguracoesPage() {
         </TabsContent>
 
         <TabsContent value="plano" className="space-y-6 pt-6">
-          <section className="rounded-xl border border-border p-6 space-y-4">
+          <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Plano atual</h3>
-              <Badge variant="secondary" className="bg-primary/10 text-primary">Pro</Badge>
+              <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 border-purple-600/30">Pro</Badge>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
@@ -114,7 +115,7 @@ export default function ConfiguracoesPage() {
         </TabsContent>
 
         <TabsContent value="notificacoes" className="space-y-6 pt-6">
-          <section className="rounded-xl border border-border p-6 space-y-4">
+          <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <h3 className="font-semibold">Email</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
