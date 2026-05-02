@@ -222,6 +222,8 @@ export async function getBrandById(id: string): Promise<Brand | null> {
     description: data.description,
     logo_url: data.logo_url,
     brand_colors: normalizeColors(data.brand_colors),
+    default_template: data.default_template ?? null,
+    default_font: data.default_font ?? null,
     created_at: data.created_at,
     website_url: data.website_url,
     instagram_handle: data.instagram_handle,
