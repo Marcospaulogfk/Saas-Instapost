@@ -1,9 +1,30 @@
 "use client"
 
-interface SlideAttribution {
-  photographerName: string
-  photographerUrl: string
-}
+import {
+  Attribution,
+  HighlightedText,
+  PaginationDots,
+  Pill,
+  type SlideAttribution,
+} from "./editorial-shared"
+import {
+  CoverWesleyGemini,
+  CoverWesleyInternet,
+  CoverWesleyLabios,
+  CoverWesleyChurrasco,
+  CoverBrandsdecodedMassive,
+  CoverBrandsdecodedPortrait,
+  type CoverSlideData,
+} from "./editorial-covers"
+import {
+  SplitWesleyDark,
+  SplitBrandsdecodedLight,
+  SplitBrandsdecodedDarkSerif,
+  SplitBoloCream,
+  SplitMyPostFlowCta,
+  type SplitSlideData,
+  type SplitImageSlot,
+} from "./editorial-splits"
 
 export interface PreviewSlide {
   order_index: number
@@ -20,6 +41,14 @@ export interface PreviewSlide {
   }
 }
 
+/** Estilo visual do carrossel — escolhe família de variantes pra capa e splits. */
+export type EditorialStyle =
+  | "auto" // alternância antiga (cover/image-top/image-bg/image-bottom)
+  | "wesley" // capas wesley + splits dark
+  | "brandsdecoded" // capas brandsdecoded + splits light/dark-serif
+  | "bolo" // capa wesley-labios + splits bolo-cream
+  | "mypostflow" // capa wesley + splits mypostflow
+
 interface SlidePreviewProps {
   slide: PreviewSlide
   totalSlides: number
@@ -27,6 +56,14 @@ interface SlidePreviewProps {
   brandColors: string[]
   fontClass: string
   showDevBadges?: boolean
+  /** Estilo do template editorial. Default 'auto'. */
+  editorialStyle?: EditorialStyle
+  /** Handle exibido nas pills/avatar. Default '@brand'. */
+  handle?: string
+  /** URL do avatar (foto) — opcional, usa iniciais como fallback. */
+  handleAvatar?: string
+  /** Brand label pros styles brandsdecoded. Default 'Content Machine'. */
+  brandLabel?: string
 }
 
 export function SlidePreview({
@@ -36,20 +73,28 @@ export function SlidePreview({
   brandColors,
   fontClass,
   showDevBadges = true,
+  editorialStyle = "auto",
+  handle = "@brand",
+  handleAvatar,
+  brandLabel = "Content Machine",
 }: SlidePreviewProps) {
-  const accent = brandColors[0] || "#00D4FF"
+  const accent = brandColors[0] || "#FBBF24"
   const dark = brandColors[1] || "#1A1A1A"
   const light = brandColors[2] || "#FAF8F5"
 
   const inner =
     template === "editorial" ? (
-      <EditorialSlide
+      <EditorialSlideRouter
         slide={slide}
         totalSlides={totalSlides}
         accent={accent}
         dark={dark}
         light={light}
         fontClass={fontClass}
+        editorialStyle={editorialStyle}
+        handle={handle}
+        handleAvatar={handleAvatar}
+        brandLabel={brandLabel}
       />
     ) : template === "hybrid" ? (
       <HybridSlide
@@ -85,175 +130,252 @@ export function SlidePreview({
   )
 }
 
-function SlideImage({
-  slide,
-  dark,
-  light,
-}: {
+// ============================================================================
+// Adapter — converte PreviewSlide pra SlideData esperado pelos componentes
+// ============================================================================
+
+function toCoverSlideData(
+  slide: PreviewSlide,
+  extras: { handle: string; handleAvatar?: string; brandLabel: string },
+): CoverSlideData {
+  return {
+    title: slide.title,
+    subtitle: slide.subtitle,
+    highlight_words: slide.highlight_words,
+    image: {
+      url: slide.image.url,
+      attribution: slide.image.attribution,
+      error: slide.image.error,
+    },
+    handle: extras.handle,
+    handle_avatar: extras.handleAvatar,
+    category: slide.cta_badge || "Editorial",
+    brand_label: extras.brandLabel,
+    year_label: `${new Date().getFullYear()} //`,
+  }
+}
+
+function toSplitSlideData(
+  slide: PreviewSlide,
+  extras: { handle: string; handleAvatar?: string; brandLabel: string },
+): SplitSlideData {
+  return {
+    title: slide.title,
+    body: slide.body,
+    subtitle: slide.subtitle,
+    highlight_words: slide.highlight_words,
+    images: [
+      {
+        url: slide.image.url,
+        attribution: slide.image.attribution,
+        error: slide.image.error,
+      },
+    ],
+    handle: extras.handle,
+    handle_avatar: extras.handleAvatar,
+    category: slide.cta_badge || "Conteúdo",
+    brand_label: extras.brandLabel,
+    year_label: `${new Date().getFullYear()} //`,
+  }
+}
+
+// ============================================================================
+// Router — decide qual variant renderizar baseado em editorialStyle + index
+// ============================================================================
+
+interface RouterProps {
   slide: PreviewSlide
+  totalSlides: number
+  accent: string
   dark: string
   light: string
-}) {
-  if (slide.image.url) {
-    return (
-      <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
-        <img
-          src={slide.image.url}
-          alt=""
-          className="w-full h-full object-cover"
-        />
-      </div>
+  fontClass: string
+  editorialStyle: EditorialStyle
+  handle: string
+  handleAvatar?: string
+  brandLabel: string
+}
+
+function EditorialSlideRouter(props: RouterProps) {
+  const {
+    slide,
+    totalSlides,
+    accent,
+    dark,
+    light,
+    fontClass,
+    editorialStyle,
+    handle,
+    handleAvatar,
+    brandLabel,
+  } = props
+
+  const isCover = slide.order_index === 0
+  const isLast = slide.order_index === totalSlides - 1
+  const middleIdx = totalSlides >= 5 ? Math.floor(totalSlides / 2) : -1
+  const isMidBreak = slide.order_index === middleIdx
+
+  const coverData = toCoverSlideData(slide, { handle, handleAvatar, brandLabel })
+  const splitData = toSplitSlideData(slide, { handle, handleAvatar, brandLabel })
+
+  const baseProps = {
+    totalSlides,
+    orderIndex: slide.order_index,
+    accent,
+    fontClass,
+  }
+
+  // Debug
+  if (typeof window !== "undefined") {
+    console.log(
+      `[SlidePreview] slide ${slide.order_index + 1}/${totalSlides} · style=${editorialStyle} · ${
+        isCover ? "COVER" : isMidBreak ? "MID-BREAK" : "SPLIT"
+      }`,
     )
   }
+
+  // ===== STYLE: WESLEY =====
+  if (editorialStyle === "wesley") {
+    if (isCover) {
+      const tag = (slide.cta_badge || "").toLowerCase()
+      if (tag.includes("passo") || tag.includes("tutorial") || tag.includes("como"))
+        return <CoverWesleyGemini slide={coverData} {...baseProps} />
+      if (tag.includes("benefício") || tag.includes("ideia") || tag.includes("dica"))
+        return <CoverWesleyLabios slide={coverData} {...baseProps} />
+      if (tag.includes("erro") || tag.includes("pare") || tag.includes("não"))
+        return <CoverWesleyChurrasco slide={coverData} {...baseProps} />
+      return <CoverWesleyInternet slide={coverData} {...baseProps} />
+    }
+    const slot: SplitImageSlot = isLast
+      ? "single-bottom"
+      : isMidBreak
+        ? "composition-top"
+        : slide.order_index % 3 === 1
+          ? "single-bottom"
+          : slide.order_index % 3 === 2
+            ? "comparison-bottom"
+            : "none"
+    // composition-top precisa de 2 imagens; comparison-bottom também
+    const splitDataExpanded =
+      slot === "composition-top" || slot === "comparison-bottom"
+        ? { ...splitData, images: [splitData.images[0], splitData.images[0]] }
+        : splitData
+    return <SplitWesleyDark slide={splitDataExpanded} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: BRANDSDECODED =====
+  if (editorialStyle === "brandsdecoded") {
+    if (isCover) {
+      return <CoverBrandsdecodedMassive slide={coverData} {...baseProps} />
+    }
+    if (isMidBreak) {
+      return (
+        <SplitBrandsdecodedDarkSerif
+          slide={splitData}
+          {...baseProps}
+          imageSlot="single-bottom"
+        />
+      )
+    }
+    const slot: SplitImageSlot =
+      slide.order_index % 3 === 1
+        ? "single-top"
+        : slide.order_index % 3 === 2
+          ? "single-middle"
+          : "bottom-card"
+    const expanded =
+      slot === "bottom-card"
+        ? {
+            ...splitData,
+            images: [splitData.images[0], splitData.images[0], splitData.images[0]],
+            callout: "Esse carrossel foi feito no Claude.",
+          }
+        : splitData
+    return (
+      <SplitBrandsdecodedLight
+        slide={expanded}
+        {...baseProps}
+        imageSlot={slot}
+        titleSize="massive"
+      />
+    )
+  }
+
+  // ===== STYLE: BOLO =====
+  if (editorialStyle === "bolo") {
+    if (isCover) {
+      return <CoverWesleyLabios slide={coverData} {...baseProps} />
+    }
+    return (
+      <SplitBoloCream
+        slide={splitData}
+        {...baseProps}
+        imageSlot={isLast ? "none" : "bottom-card"}
+      />
+    )
+  }
+
+  // ===== STYLE: MYPOSTFLOW =====
+  if (editorialStyle === "mypostflow") {
+    if (isCover) {
+      return <CoverWesleyChurrasco slide={coverData} {...baseProps} />
+    }
+    if (isLast) {
+      return (
+        <SplitMyPostFlowCta
+          slide={splitData}
+          {...baseProps}
+          imageSlot="bottom-large"
+        />
+      )
+    }
+    const slot: SplitImageSlot = isMidBreak
+      ? "composition-top"
+      : slide.order_index % 2 === 1
+        ? "single-bottom"
+        : "none"
+    const expanded =
+      slot === "composition-top"
+        ? { ...splitData, images: [splitData.images[0], splitData.images[0]] }
+        : splitData
+    return <SplitWesleyDark slide={expanded} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: AUTO (legacy) =====
   return (
-    <div
-      className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
-      style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
-    >
-      {slide.image.error || "sem imagem"}
-    </div>
+    <LegacyEditorialSlide
+      slide={slide}
+      totalSlides={totalSlides}
+      accent={accent}
+      dark={dark}
+      light={light}
+      fontClass={fontClass}
+      handle={handle}
+    />
   )
 }
 
-function HighlightedText({
-  text,
-  words,
-  color,
-}: {
-  text: string
-  words: string[]
-  color: string
-}) {
-  if (!words?.length) return <>{text}</>
-  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-  const re = new RegExp(`(${escaped.join("|")})`, "gi")
-  const parts = text.split(re)
-  return (
-    <>
-      {parts.map((part, i) => {
-        const isHighlight = words.some(
-          (w) => w.toLowerCase() === part.toLowerCase(),
-        )
-        return isHighlight ? (
-          <span key={i} style={{ color }}>
-            {part}
-          </span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      })}
-    </>
-  )
-}
+// ============================================================================
+// Legacy: sistema de variantes original (cover/image-top/image-bg/image-bottom)
+// ============================================================================
 
-function Attribution({
-  attribution,
-  textColor,
-}: {
-  attribution: SlideAttribution | null
-  textColor: string
-}) {
-  if (!attribution) return null
-  return (
-    <div
-      className="absolute bottom-1.5 left-2 right-2 text-[8px] flex items-center gap-1 z-10"
-      style={{ color: textColor, opacity: 0.7 }}
-    >
-      <span>Foto: </span>
-      <a
-        href={attribution.photographerUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="underline hover:opacity-100 truncate"
-      >
-        {attribution.photographerName}
-      </a>
-      <span>/ Unsplash</span>
-    </div>
-  )
-}
+type LegacyVariant = "cover" | "image-top" | "image-bg" | "image-bottom"
 
-/**
- * Decide a variante visual:
- * - Capa (idx 0): SEMPRE foto fullbleed (cover)
- * - Quebra opcional no meio do carrossel: foto fullbleed (image-bg)
- *   — apenas em carrosséis com 5+ slides, num índice no meio
- * - Demais: layout SPLIT alternando imagem-em-cima ou imagem-embaixo
- *   (texto e imagem em áreas separadas, fundo cream/light)
- */
-type EditorialVariant = "cover" | "image-top" | "image-bg" | "image-bottom"
-
-function pickVariant(orderIndex: number, totalSlides: number): EditorialVariant {
+function pickLegacyVariant(orderIndex: number, totalSlides: number): LegacyVariant {
   if (orderIndex === 0) return "cover"
-
-  // 1 quebra fullbleed no meio (só pra 5+ slides)
-  const middleBreakIdx =
-    totalSlides >= 5 ? Math.floor(totalSlides / 2) : -1
+  const middleBreakIdx = totalSlides >= 5 ? Math.floor(totalSlides / 2) : -1
   if (orderIndex === middleBreakIdx) return "image-bg"
-
-  // Resto alterna split: ímpar = imagem em cima, par = imagem embaixo
   return orderIndex % 2 === 1 ? "image-top" : "image-bottom"
 }
 
-/** Pill arredondado com bg preto translúcido (estilo refs @emp.wesleysilva). */
-function Pill({
-  children,
-  variant = "dark",
-  className = "",
-}: {
-  children: React.ReactNode
-  variant?: "dark" | "light"
-  className?: string
-}) {
-  const isDark = variant === "dark"
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium ${className}`}
-      style={{
-        backgroundColor: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)",
-        backdropFilter: "blur(8px)",
-        color: isDark ? "#FFFFFF" : "#0A0A0F",
-      }}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** Dots de paginação. */
-function PaginationDots({
-  total,
-  active,
-  color,
-}: {
-  total: number
-  active: number
-  color: string
-}) {
-  return (
-    <div className="flex items-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <span
-          key={i}
-          className="h-1 w-1 rounded-full transition-all"
-          style={{
-            backgroundColor: color,
-            opacity: i === active ? 0.95 : 0.35,
-            transform: i === active ? "scale(1.4)" : "scale(1)",
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function EditorialSlide({
+function LegacyEditorialSlide({
   slide,
   totalSlides,
   accent,
   dark,
   light,
   fontClass,
+  handle,
 }: {
   slide: PreviewSlide
   totalSlides: number
@@ -261,24 +383,16 @@ function EditorialSlide({
   dark: string
   light: string
   fontClass: string
+  handle: string
 }) {
-  const variant = pickVariant(slide.order_index, totalSlides)
-
-  // Debug: log variant escolhido pra cada slide. Visível no DevTools.
-  if (typeof window !== "undefined") {
-    console.log(
-      `[SlidePreview] slide ${slide.order_index + 1}/${totalSlides} → variant: ${variant}`,
-    )
-  }
-
-  const handle = "@brand"
+  const variant = pickLegacyVariant(slide.order_index, totalSlides)
   const categoryTag = slide.cta_badge || "Editorial"
 
-  // Capa: foto fullbleed + overlay + título centro-baixo + pills header + dots+CTA footer
   if (variant === "cover") {
     return (
       <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
         {slide.image.url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={slide.image.url}
             alt=""
@@ -291,13 +405,11 @@ function EditorialSlide({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/10" />
 
-        {/* Header: pill-handle (esq) + pill-categoria (dir) */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
           <Pill>{handle}</Pill>
           <Pill>{categoryTag}</Pill>
         </div>
 
-        {/* Bloco de título no centro-meio (não bem no fundo) */}
         <div className="absolute inset-x-5 top-[44%] z-10 space-y-3">
           <h1
             className={`text-[2.5rem] uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
@@ -309,12 +421,9 @@ function EditorialSlide({
               color={accent}
             />
           </h1>
-          {slide.subtitle && (
-            <p className="text-sm text-white/85">{slide.subtitle}</p>
-          )}
+          {slide.subtitle && <p className="text-sm text-white/85">{slide.subtitle}</p>}
         </div>
 
-        {/* Footer: pill-tag (esq) + dots (centro) + pill-CTA (dir) */}
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-10">
           <Pill>{categoryTag}</Pill>
           <PaginationDots total={totalSlides} active={slide.order_index} color="#FFFFFF" />
@@ -326,11 +435,11 @@ function EditorialSlide({
     )
   }
 
-  // image-bg: foto fullbleed + texto sobre, título alinhado no fundo (variação do cover)
   if (variant === "image-bg") {
     return (
       <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
         {slide.image.url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={slide.image.url}
             alt=""
@@ -348,7 +457,6 @@ function EditorialSlide({
           <Pill>{categoryTag}</Pill>
         </div>
 
-        {/* Título mais embaixo no image-bg (diferente da capa que fica no centro-meio) */}
         <div className="absolute bottom-20 left-5 right-5 z-10 space-y-2.5">
           <h1
             className={`text-[2rem] uppercase leading-[1.02] tracking-tight text-white ${fontClass}`}
@@ -360,9 +468,7 @@ function EditorialSlide({
               color={accent}
             />
           </h1>
-          {slide.subtitle && (
-            <p className="text-xs text-white/85">{slide.subtitle}</p>
-          )}
+          {slide.subtitle && <p className="text-xs text-white/85">{slide.subtitle}</p>}
           {slide.body && (
             <p className="text-[11px] text-white/75 leading-relaxed line-clamp-3">
               {slide.body}
@@ -381,7 +487,7 @@ function EditorialSlide({
     )
   }
 
-  // Image-top OU image-bottom: layout split com texto e imagem em áreas separadas (sem sobrepor).
+  // image-top OU image-bottom
   const imageOnTop = variant === "image-top"
 
   return (
@@ -389,26 +495,18 @@ function EditorialSlide({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative grid grid-rows-[auto_minmax(0,1fr)_auto]"
       style={{ backgroundColor: light, color: dark }}
     >
-      {/* Header com pills (estilo refs v2) */}
       <div className="px-4 pt-4 flex items-center justify-between z-10">
         <Pill variant="light">{handle}</Pill>
         <Pill variant="light">{categoryTag}</Pill>
       </div>
 
-      {/*
-        Conteúdo principal: texto + imagem juntos (gap pequeno), ancorados pro
-        topo no image-top ou pro rodapé no image-bottom. Sem `flex-1` no texto
-        — o bloco encolhe ao tamanho natural e fica colado num lado.
-      */}
       <div
         className={`px-5 flex flex-col gap-3 min-h-0 ${
           imageOnTop ? "justify-start" : "justify-end pb-1"
         }`}
       >
-        {/* Imagem */}
-        {imageOnTop && <SlideImage slide={slide} dark={dark} light={light} />}
+        {imageOnTop && <LegacySlideImage slide={slide} dark={dark} light={light} />}
 
-        {/* Texto */}
         <div className="space-y-1.5 overflow-hidden">
           <h1
             className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
@@ -435,10 +533,9 @@ function EditorialSlide({
           )}
         </div>
 
-        {!imageOnTop && <SlideImage slide={slide} dark={dark} light={light} />}
+        {!imageOnTop && <LegacySlideImage slide={slide} dark={dark} light={light} />}
       </div>
 
-      {/* Footer com pills + dots (estilo refs v2) */}
       <div className="px-4 pb-4 pt-2 flex items-center justify-between">
         <Pill variant="light">{categoryTag}</Pill>
         <PaginationDots total={totalSlides} active={slide.order_index} color={dark} />
@@ -449,6 +546,37 @@ function EditorialSlide({
     </div>
   )
 }
+
+function LegacySlideImage({
+  slide,
+  dark,
+  light,
+}: {
+  slide: PreviewSlide
+  dark: string
+  light: string
+}) {
+  if (slide.image.url) {
+    return (
+      <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={slide.image.url} alt="" className="w-full h-full object-cover" />
+      </div>
+    )
+  }
+  return (
+    <div
+      className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
+      style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
+    >
+      {slide.image.error || "sem imagem"}
+    </div>
+  )
+}
+
+// ============================================================================
+// Templates não-editorial (mantidos)
+// ============================================================================
 
 function CinematicSlide({
   slide,
@@ -464,6 +592,7 @@ function CinematicSlide({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
       {slide.image.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={slide.image.url}
           alt=""
@@ -539,6 +668,7 @@ function HybridSlide({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-zinc-900">
       {slide.image.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={slide.image.url}
           alt=""

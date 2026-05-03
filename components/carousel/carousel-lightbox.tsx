@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   SlidePreview,
   type PreviewSlide,
+  type EditorialStyle,
 } from "@/components/carousel/slide-preview"
 
 interface CarouselLightboxProps {
@@ -15,6 +16,8 @@ interface CarouselLightboxProps {
   template: "editorial" | "cinematic" | "hybrid"
   brandColors: string[]
   fontClass: string
+  editorialStyle?: EditorialStyle
+  handle?: string
   onClose: () => void
 }
 
@@ -24,6 +27,8 @@ export function CarouselLightbox({
   template,
   brandColors,
   fontClass,
+  editorialStyle,
+  handle,
   onClose,
 }: CarouselLightboxProps) {
   const [index, setIndex] = useState(startIndex)
@@ -144,6 +149,8 @@ export function CarouselLightbox({
             totalSlides={slides.length}
             template={template}
             brandColors={brandColors}
+            editorialStyle={editorialStyle}
+            handle={handle}
             fontClass={fontClass}
             showDevBadges={false}
           />

@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label"
 import {
   SlidePreview,
   type PreviewSlide,
+  type EditorialStyle,
 } from "@/components/carousel/slide-preview"
 import { CarouselLightbox } from "@/components/carousel/carousel-lightbox"
 
@@ -59,6 +60,15 @@ const TEMPLATES = [
   { value: "cinematic", label: "Cinematic", description: "Dramático, viral" },
   { value: "hybrid", label: "Hybrid", description: "News, esporte" },
 ] as const
+
+const EDITORIAL_STYLES = [
+  { value: "auto", label: "Auto (legacy)", description: "Cover + splits alternados" },
+  { value: "wesley", label: "Wesley", description: "Capas dramáticas + splits dark" },
+  { value: "brandsdecoded", label: "Brandsdecoded", description: "Editorial premium" },
+  { value: "bolo", label: "Bolo (lista)", description: "Lista de ideias numeradas" },
+  { value: "mypostflow", label: "MyPostFlow", description: "Tech + CTA produto" },
+] as const
+type EditorialStyleKey = (typeof EDITORIAL_STYLES)[number]["value"]
 
 const MODES = [
   { value: "all_ai", label: "Tudo IA", description: "Flux Schnell em tudo" },
@@ -124,6 +134,8 @@ export default function TestePage() {
   const [template, setTemplate] = useState<typeof DEFAULTS.template>(
     DEFAULTS.template,
   )
+  const [editorialStyle, setEditorialStyle] = useState<EditorialStyleKey>("wesley")
+  const [handle, setHandle] = useState<string>("@brand")
   const [font, setFont] = useState<FontKey>(DEFAULTS.font)
   const [nSlides, setNSlides] = useState<5 | 7 | 10>(DEFAULTS.nSlides)
   const [mode, setMode] = useState<typeof DEFAULTS.mode>(DEFAULTS.mode)
@@ -263,6 +275,34 @@ export default function TestePage() {
             onChange={(v) => setTemplate(v as typeof DEFAULTS.template)}
           />
 
+          {template === "editorial" && (
+            <>
+              <div className="space-y-2">
+                <Label>Estilo Editorial</Label>
+                <select
+                  value={editorialStyle}
+                  onChange={(e) => setEditorialStyle(e.target.value as EditorialStyleKey)}
+                  className="w-full h-9 rounded-md bg-transparent border border-border px-3 text-sm"
+                >
+                  {EDITORIAL_STYLES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label} — {s.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Handle (pills/avatar)</Label>
+                <Input
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  placeholder="@brand"
+                />
+              </div>
+            </>
+          )}
+
           <div className="space-y-2">
             <Label>Tipografia</Label>
             <select
@@ -388,6 +428,8 @@ export default function TestePage() {
                         template={template}
                         brandColors={colors}
                         fontClass={fontEntry.className}
+                        editorialStyle={editorialStyle as EditorialStyle}
+                        handle={handle}
                         showDevBadges
                       />
                     </div>
@@ -443,6 +485,8 @@ export default function TestePage() {
           template={template}
           brandColors={colors}
           fontClass={fontEntry.className}
+          editorialStyle={editorialStyle as EditorialStyle}
+          handle={handle}
           onClose={() => setLightboxIndex(null)}
         />
       )}
