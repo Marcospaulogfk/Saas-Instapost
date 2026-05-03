@@ -189,6 +189,58 @@ function pickVariant(orderIndex: number): EditorialVariant {
   return cycle[(orderIndex - 1) % cycle.length]
 }
 
+/** Pill arredondado com bg preto translúcido (estilo refs @emp.wesleysilva). */
+function Pill({
+  children,
+  variant = "dark",
+  className = "",
+}: {
+  children: React.ReactNode
+  variant?: "dark" | "light"
+  className?: string
+}) {
+  const isDark = variant === "dark"
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium ${className}`}
+      style={{
+        backgroundColor: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)",
+        backdropFilter: "blur(8px)",
+        color: isDark ? "#FFFFFF" : "#0A0A0F",
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Dots de paginação. */
+function PaginationDots({
+  total,
+  active,
+  color,
+}: {
+  total: number
+  active: number
+  color: string
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: total }).map((_, i) => (
+        <span
+          key={i}
+          className="h-1 w-1 rounded-full transition-all"
+          style={{
+            backgroundColor: color,
+            opacity: i === active ? 0.95 : 0.35,
+            transform: i === active ? "scale(1.4)" : "scale(1)",
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function EditorialSlide({
   slide,
   totalSlides,
@@ -206,12 +258,20 @@ function EditorialSlide({
 }) {
   const variant = pickVariant(slide.order_index)
 
-  // Capa: foto fullbleed + overlay + título grande sobre (estilo das refs editorial premium)
+  // Debug: log variant escolhido pra cada slide. Visível no DevTools.
+  if (typeof window !== "undefined") {
+    console.log(
+      `[SlidePreview] slide ${slide.order_index + 1} → variant: ${variant}`,
+    )
+  }
+
+  const handle = "@brand"
+  const categoryTag = slide.cta_badge || "Editorial"
+
+  // Capa: foto fullbleed + overlay + título centro-baixo + pills header + dots+CTA footer
   if (variant === "cover") {
     return (
-      <div
-        className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
-      >
+      <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
         {slide.image.url ? (
           <img
             src={slide.image.url}
@@ -223,25 +283,19 @@ function EditorialSlide({
             {slide.image.error || "sem imagem"}
           </div>
         )}
-        {/* Overlay forte bottom-up pra contraste do título */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/10" />
 
-        {/* Top: edição + paginação */}
-        <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10 text-white">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-medium opacity-85">
-            {slide.cta_badge || "EDIÇÃO 01"}
-          </span>
-          <span className="text-[10px] tabular-nums opacity-70">
-            {String(slide.order_index + 1).padStart(2, "0")} /{" "}
-            {String(totalSlides).padStart(2, "0")}
-          </span>
+        {/* Header: pill-handle (esq) + pill-categoria (dir) */}
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+          <Pill>{handle}</Pill>
+          <Pill>{categoryTag}</Pill>
         </div>
 
-        {/* Bottom: título grande */}
-        <div className="absolute bottom-10 left-5 right-5 z-10 space-y-3">
+        {/* Bloco de título no centro-meio (não bem no fundo) */}
+        <div className="absolute inset-x-5 top-[44%] z-10 space-y-3">
           <h1
-            className={`text-[2.5rem] leading-[1.02] tracking-tight text-white ${fontClass}`}
-            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
+            className={`text-[2.5rem] uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
+            style={{ textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
           >
             <HighlightedText
               text={slide.title}
@@ -250,8 +304,15 @@ function EditorialSlide({
             />
           </h1>
           {slide.subtitle && (
-            <p className="text-sm text-white/80">{slide.subtitle}</p>
+            <p className="text-sm text-white/85">{slide.subtitle}</p>
           )}
+        </div>
+
+        {/* Footer: pill-tag (esq) + dots (centro) + pill-CTA (dir) */}
+        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-10">
+          <Pill>{categoryTag}</Pill>
+          <PaginationDots total={totalSlides} active={slide.order_index} color="#FFFFFF" />
+          <Pill>{`arrasta →`}</Pill>
         </div>
 
         <Attribution attribution={slide.image.attribution} textColor="#fff" />
@@ -259,7 +320,7 @@ function EditorialSlide({
     )
   }
 
-  // Bg fullbleed: imagem cobre tudo + texto sobre. Dá variedade no meio do carrossel.
+  // image-bg: foto fullbleed + texto sobre, título alinhado no fundo (variação do cover)
   if (variant === "image-bg") {
     return (
       <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
@@ -274,23 +335,18 @@ function EditorialSlide({
             {slide.image.error || "sem imagem"}
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
 
-        <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10 text-white">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-medium opacity-85">
-            {slide.cta_badge ||
-              `FUNCIONALIDADE ${String(slide.order_index).padStart(2, "0")}`}
-          </span>
-          <span className="text-[10px] tabular-nums opacity-70">
-            {String(slide.order_index + 1).padStart(2, "0")} /{" "}
-            {String(totalSlides).padStart(2, "0")}
-          </span>
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+          <Pill>{handle}</Pill>
+          <Pill>{categoryTag}</Pill>
         </div>
 
-        <div className="absolute inset-x-5 top-[40%] z-10 space-y-3">
+        {/* Título mais embaixo no image-bg (diferente da capa que fica no centro-meio) */}
+        <div className="absolute bottom-20 left-5 right-5 z-10 space-y-2.5">
           <h1
-            className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
-            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
+            className={`text-[2rem] uppercase leading-[1.02] tracking-tight text-white ${fontClass}`}
+            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}
           >
             <HighlightedText
               text={slide.title}
@@ -302,8 +358,16 @@ function EditorialSlide({
             <p className="text-xs text-white/85">{slide.subtitle}</p>
           )}
           {slide.body && (
-            <p className="text-[11px] text-white/75 leading-relaxed">{slide.body}</p>
+            <p className="text-[11px] text-white/75 leading-relaxed line-clamp-3">
+              {slide.body}
+            </p>
           )}
+        </div>
+
+        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-10">
+          <Pill>{categoryTag}</Pill>
+          <PaginationDots total={totalSlides} active={slide.order_index} color="#FFFFFF" />
+          <Pill>{`arrasta →`}</Pill>
         </div>
 
         <Attribution attribution={slide.image.attribution} textColor="#fff" />
@@ -319,22 +383,10 @@ function EditorialSlide({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative grid grid-rows-[auto_minmax(0,1fr)_auto]"
       style={{ backgroundColor: light, color: dark }}
     >
-      {/* Header */}
-      <div className="px-5 pt-5 flex items-center justify-between z-10">
-        <span
-          className="text-[10px] uppercase tracking-[0.2em] font-medium"
-          style={{ color: dark, opacity: 0.6 }}
-        >
-          {slide.cta_badge ||
-            `FUNCIONALIDADE ${String(slide.order_index).padStart(2, "0")}`}
-        </span>
-        <span
-          className="text-[10px] tabular-nums"
-          style={{ color: dark, opacity: 0.4 }}
-        >
-          {String(slide.order_index + 1).padStart(2, "0")} /{" "}
-          {String(totalSlides).padStart(2, "0")}
-        </span>
+      {/* Header com pills (estilo refs v2) */}
+      <div className="px-4 pt-4 flex items-center justify-between z-10">
+        <Pill variant="light">{handle}</Pill>
+        <Pill variant="light">{categoryTag}</Pill>
       </div>
 
       {/*
@@ -380,19 +432,11 @@ function EditorialSlide({
         {!imageOnTop && <SlideImage slide={slide} dark={dark} light={light} />}
       </div>
 
-      {/* Footer com paginação dots */}
-      <div className="px-5 pb-3 pt-2 flex items-center justify-center gap-1">
-        {Array.from({ length: totalSlides }).map((_, i) => (
-          <span
-            key={i}
-            className="h-1 rounded-full"
-            style={{
-              backgroundColor: dark,
-              width: i === slide.order_index ? 16 : 4,
-              opacity: i === slide.order_index ? 0.85 : 0.25,
-            }}
-          />
-        ))}
+      {/* Footer com pills + dots (estilo refs v2) */}
+      <div className="px-4 pb-4 pt-2 flex items-center justify-between">
+        <Pill variant="light">{categoryTag}</Pill>
+        <PaginationDots total={totalSlides} active={slide.order_index} color={dark} />
+        <Pill variant="light">{`arrasta →`}</Pill>
       </div>
 
       <Attribution attribution={slide.image.attribution} textColor={dark} />
