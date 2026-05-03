@@ -143,6 +143,22 @@ function Attribution({
   )
 }
 
+/**
+ * Decide a variante visual do slide editorial pra dar variedade.
+ * - Capa (idx 0): cover fullbleed com texto sobre (foto = bg)
+ * - Demais: alterna 3 padrões pra que slides nunca fiquem todos iguais.
+ *   Padrão `image-top`: imagem em cima, texto separado embaixo
+ *   Padrão `image-bg`:  foto fullbleed + texto sobre (com overlay)
+ *   Padrão `image-bottom`: texto em cima, imagem embaixo
+ */
+type EditorialVariant = "cover" | "image-top" | "image-bg" | "image-bottom"
+
+function pickVariant(orderIndex: number): EditorialVariant {
+  if (orderIndex === 0) return "cover"
+  const cycle = ["image-top", "image-bg", "image-bottom"] as const
+  return cycle[(orderIndex - 1) % cycle.length]
+}
+
 function EditorialSlide({
   slide,
   totalSlides,
@@ -158,20 +174,129 @@ function EditorialSlide({
   light: string
   fontClass: string
 }) {
+  const variant = pickVariant(slide.order_index)
+
+  // Capa: foto fullbleed + overlay + título grande sobre (estilo das refs editorial premium)
+  if (variant === "cover") {
+    return (
+      <div
+        className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
+      >
+        {slide.image.url ? (
+          <img
+            src={slide.image.url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
+            {slide.image.error || "sem imagem"}
+          </div>
+        )}
+        {/* Overlay forte bottom-up pra contraste do título */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
+
+        {/* Top: edição + paginação */}
+        <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10 text-white">
+          <span className="text-[10px] uppercase tracking-[0.2em] font-medium opacity-85">
+            {slide.cta_badge || "EDIÇÃO 01"}
+          </span>
+          <span className="text-[10px] tabular-nums opacity-70">
+            {String(slide.order_index + 1).padStart(2, "0")} /{" "}
+            {String(totalSlides).padStart(2, "0")}
+          </span>
+        </div>
+
+        {/* Bottom: título grande */}
+        <div className="absolute bottom-10 left-5 right-5 z-10 space-y-3">
+          <h1
+            className={`text-[2.5rem] leading-[1.02] tracking-tight text-white ${fontClass}`}
+            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
+          >
+            <HighlightedText
+              text={slide.title}
+              words={slide.highlight_words}
+              color={accent}
+            />
+          </h1>
+          {slide.subtitle && (
+            <p className="text-sm text-white/80">{slide.subtitle}</p>
+          )}
+        </div>
+
+        <Attribution attribution={slide.image.attribution} textColor="#fff" />
+      </div>
+    )
+  }
+
+  // Bg fullbleed: imagem cobre tudo + texto sobre. Dá variedade no meio do carrossel.
+  if (variant === "image-bg") {
+    return (
+      <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
+        {slide.image.url ? (
+          <img
+            src={slide.image.url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
+            {slide.image.error || "sem imagem"}
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+
+        <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10 text-white">
+          <span className="text-[10px] uppercase tracking-[0.2em] font-medium opacity-85">
+            {slide.cta_badge ||
+              `FUNCIONALIDADE ${String(slide.order_index).padStart(2, "0")}`}
+          </span>
+          <span className="text-[10px] tabular-nums opacity-70">
+            {String(slide.order_index + 1).padStart(2, "0")} /{" "}
+            {String(totalSlides).padStart(2, "0")}
+          </span>
+        </div>
+
+        <div className="absolute inset-x-5 top-[40%] z-10 space-y-3">
+          <h1
+            className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
+            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.55)" }}
+          >
+            <HighlightedText
+              text={slide.title}
+              words={slide.highlight_words}
+              color={accent}
+            />
+          </h1>
+          {slide.subtitle && (
+            <p className="text-xs text-white/85">{slide.subtitle}</p>
+          )}
+          {slide.body && (
+            <p className="text-[11px] text-white/75 leading-relaxed">{slide.body}</p>
+          )}
+        </div>
+
+        <Attribution attribution={slide.image.attribution} textColor="#fff" />
+      </div>
+    )
+  }
+
+  // Image-top OU image-bottom: layout split com texto e imagem em áreas separadas (sem sobrepor).
+  const imageOnTop = variant === "image-top"
+
   return (
     <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative grid grid-rows-[auto_minmax(0,1fr)_auto]"
       style={{ backgroundColor: light, color: dark }}
     >
-      <div className="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
+      {/* Header */}
+      <div className="px-5 pt-5 flex items-center justify-between z-10">
         <span
           className="text-[10px] uppercase tracking-[0.2em] font-medium"
           style={{ color: dark, opacity: 0.6 }}
         >
           {slide.cta_badge ||
-            (slide.order_index === 0
-              ? "EDIÇÃO 01"
-              : `FUNCIONALIDADE ${String(slide.order_index).padStart(2, "0")}`)}
+            `FUNCIONALIDADE ${String(slide.order_index).padStart(2, "0")}`}
         </span>
         <span
           className="text-[10px] tabular-nums"
@@ -182,47 +307,67 @@ function EditorialSlide({
         </span>
       </div>
 
-      {slide.image.url ? (
-        <div className="absolute top-[18%] left-5 right-5 h-[36%] rounded-md overflow-hidden">
-          <img
-            src={slide.image.url}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : (
-        <div
-          className="absolute top-[18%] left-5 right-5 h-[36%] rounded-md flex items-center justify-center text-[10px] px-2 text-center"
-          style={{ backgroundColor: dark, color: light, opacity: 0.5 }}
-        >
-          {slide.image.error || "sem imagem"}
-        </div>
-      )}
-
-      <div className="absolute bottom-12 left-5 right-5 space-y-3">
-        <h1
-          className={`text-3xl leading-[1.1] tracking-tight ${fontClass}`}
-          style={{ color: dark }}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words}
-            color={accent}
-          />
-        </h1>
-        {slide.subtitle && (
-          <p className="text-sm" style={{ color: dark, opacity: 0.7 }}>
-            {slide.subtitle}
-          </p>
-        )}
-        {slide.body && (
-          <p
-            className="text-xs leading-relaxed"
-            style={{ color: dark, opacity: 0.75 }}
+      {/* Conteúdo principal: texto e imagem em ordem invertida conforme variant */}
+      <div className={`px-5 ${imageOnTop ? "flex flex-col" : "flex flex-col-reverse"} gap-4 min-h-0`}>
+        {/* Imagem */}
+        {slide.image.url ? (
+          <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
+            <img
+              src={slide.image.url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <div
+            className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
+            style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
           >
-            {slide.body}
-          </p>
+            {slide.image.error || "sem imagem"}
+          </div>
         )}
+
+        {/* Texto */}
+        <div className="space-y-2 min-h-0 flex-1 overflow-hidden">
+          <h1
+            className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
+            style={{ color: dark }}
+          >
+            <HighlightedText
+              text={slide.title}
+              words={slide.highlight_words}
+              color={accent}
+            />
+          </h1>
+          {slide.subtitle && (
+            <p className="text-xs" style={{ color: dark, opacity: 0.7 }}>
+              {slide.subtitle}
+            </p>
+          )}
+          {slide.body && (
+            <p
+              className="text-[11px] leading-relaxed line-clamp-4"
+              style={{ color: dark, opacity: 0.75 }}
+            >
+              {slide.body}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Footer com paginação dots */}
+      <div className="px-5 pb-3 pt-2 flex items-center justify-center gap-1">
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <span
+            key={i}
+            className="h-1 rounded-full"
+            style={{
+              backgroundColor: dark,
+              width: i === slide.order_index ? 16 : 4,
+              opacity: i === slide.order_index ? 0.85 : 0.25,
+            }}
+          />
+        ))}
       </div>
 
       <Attribution attribution={slide.image.attribution} textColor={dark} />
