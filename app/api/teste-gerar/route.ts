@@ -140,6 +140,14 @@ export async function POST(req: Request) {
     )
   }
 
+  console.log("\n========== [teste-gerar] NOVA GERAÇÃO ==========")
+  console.log(`📝 topic:    ${body.topic}`)
+  console.log(`🎯 objective: ${body.objective} | tone: ${body.tone}`)
+  console.log(`👥 audience:  ${body.audience}`)
+  console.log(`🎨 template:  ${body.template} | font: ${body.font} | mode: ${body.mode}`)
+  console.log(`🎨 colors:    ${body.colors.join(" / ")}`)
+  console.log(`📊 nSlides:   ${body.nSlides}`)
+
   let claudeResult
   try {
     claudeResult = await generateContent({
@@ -160,24 +168,43 @@ export async function POST(req: Request) {
   }
 
   console.log(
-    `[teste-gerar] Claude OK ${claudeResult.metrics.ms.toFixed(0)}ms ` +
+    `\n[teste-gerar] ✅ Claude OK ${claudeResult.metrics.ms.toFixed(0)}ms ` +
       `(in=${claudeResult.metrics.inputTokens} out=${claudeResult.metrics.outputTokens} ` +
       `cache_read=${claudeResult.metrics.cacheReadInputTokens} ` +
-      `cache_write=${claudeResult.metrics.cacheCreationInputTokens})`,
+      `cache_write=${claudeResult.metrics.cacheCreationInputTokens} ` +
+      `cost=$${claudeResult.metrics.costUsd.toFixed(4)})`,
   )
+  console.log(`\n📰 project_title: "${claudeResult.data.project_title}"`)
+  console.log(`\n📋 SLIDES GERADOS PELA IA (${claudeResult.data.slides.length}):`)
+  claudeResult.data.slides.forEach((s, i) => {
+    console.log(`\n  --- Slide ${i + 1} (order_index=${s.order_index}) ---`)
+    console.log(`  📑 headline:        ${JSON.stringify(s.headline)}`)
+    if (s.subheadline) console.log(`  📝 subheadline:     ${JSON.stringify(s.subheadline)}`)
+    if (s.body_text) console.log(`  📄 body_text:       ${JSON.stringify(s.body_text)}`)
+    if (s.cta) console.log(`  🎯 cta:             ${JSON.stringify(s.cta)}`)
+    console.log(`  🎨 source_recom:    ${s.image_source_recommended}`)
+    console.log(`  🖼️  image_prompt:    ${JSON.stringify(s.image_prompt)}`)
+    if (s.unsplash_query) console.log(`  🔍 unsplash_query:  ${JSON.stringify(s.unsplash_query)}`)
+    console.log(`  🏷️  image_keywords:  ${JSON.stringify(s.image_keywords)}`)
+  })
+  console.log(`\n📋 ----- fim slides -----`)
 
   const slidesWithSource = claudeResult.data.slides.map((s) => ({
     slide: s,
     source: resolveSource(s, body.mode),
   }))
 
+  console.log(`\n🖼️  GERANDO ${slidesWithSource.length} IMAGENS em paralelo:`)
   const enriched: EnrichedSlide[] = await Promise.all(
     slidesWithSource.map(async ({ slide, source }) => {
       const image = await fetchImage(slide, source)
+      const fullPrompt = image.prompt || image.unsplashQuery || "—"
       console.log(
-        `[teste-gerar] slide ${slide.order_index} ${image.source ?? "FAIL"}: ` +
-          `${image.ms.toFixed(0)}ms ${image.error ? "ERR " + image.error : "OK"}`,
+        `\n  Slide ${slide.order_index + 1}: ${image.source ?? "FAIL"} (${image.ms.toFixed(0)}ms${image.costUsd > 0 ? ` $${image.costUsd.toFixed(4)}` : ""})` +
+          (image.error ? ` ❌ ${image.error}` : " ✅"),
       )
+      console.log(`    prompt/query: ${JSON.stringify(fullPrompt)}`)
+      if (image.url) console.log(`    url: ${image.url}`)
       return { ...slide, image }
     }),
   )
@@ -187,6 +214,11 @@ export async function POST(req: Request) {
     ? Math.max(...enriched.map((s) => s.image.ms))
     : 0
   const totalMs = performance.now() - overallStart
+  const totalCost = claudeResult.metrics.costUsd + totalImageCost
+
+  console.log(
+    `\n========== [teste-gerar] FIM (${(totalMs / 1000).toFixed(1)}s · $${totalCost.toFixed(4)}) ==========\n`,
+  )
 
   const payload: ResponsePayload = {
     project_title: claudeResult.data.project_title,
@@ -196,7 +228,7 @@ export async function POST(req: Request) {
       images: { totalCostUsd: totalImageCost, parallelMs: totalImageMs },
       total: {
         ms: totalMs,
-        costUsd: claudeResult.metrics.costUsd + totalImageCost,
+        costUsd: totalCost,
       },
     },
   }
