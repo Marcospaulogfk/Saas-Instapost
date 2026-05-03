@@ -7,6 +7,7 @@ import { CANVAS_CONFIG, EDITORIAL_SIZES, EDITORIAL_COLORS } from '../editorial.c
 import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedBody } from '../shared/HighlightedBody'
+import { defaultPositionForLayout, getTitleY } from '../utils/title-position'
 
 interface TextoFotoLayoutProps {
   slide: EditorialSlide
@@ -25,9 +26,13 @@ export function TextoFotoLayout({ slide, scale = 1 }: TextoFotoLayoutProps) {
     img.onload = () => setImage(img)
   }, [photoUrl])
 
-  const isLight = slide.background !== 'dark' && slide.background !== 'navy'
+  const isLight = slide.background !== 'dark'
   const bgColor =
-    slide.background === 'white' ? EDITORIAL_COLORS.bg.white : EDITORIAL_COLORS.bg.cream
+    slide.background === 'dark'
+      ? EDITORIAL_COLORS.bg.dark
+      : slide.background === 'white'
+        ? EDITORIAL_COLORS.bg.white
+        : EDITORIAL_COLORS.bg.cream
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
   const variant = slide.variant || 'text-only'
@@ -35,6 +40,15 @@ export function TextoFotoLayout({ slide, scale = 1 }: TextoFotoLayoutProps) {
 
   // Body text como string única (não array como title)
   const bodyText = slide.body || slide.title.join(' ')
+
+  // Y do texto principal baseado em titlePosition (apenas pra variant text-only)
+  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
+  const textOnlyY = getTitleY(
+    position,
+    Math.ceil(bodyText.length / 38),
+    EDITORIAL_SIZES.bodyLarge.fontSize,
+    EDITORIAL_SIZES.bodyLarge.lineHeight,
+  )
 
   return (
     <Stage
@@ -68,7 +82,7 @@ export function TextoFotoLayout({ slide, scale = 1 }: TextoFotoLayoutProps) {
           textColor={textColor}
         />
 
-        {/* Variant: text-only — texto grande dominando */}
+        {/* Variant: text-only — texto grande dominando, posição variável */}
         {variant === 'text-only' && (
           <HighlightedBody
             text={bodyText}
@@ -76,8 +90,8 @@ export function TextoFotoLayout({ slide, scale = 1 }: TextoFotoLayoutProps) {
             highlightColor={brandColor}
             defaultColor={textColor}
             x={padX}
-            y={250}
-            width={CANVAS_CONFIG.width - 200}
+            y={textOnlyY}
+            width={CANVAS_CONFIG.width - padX * 2}
             fontSize={EDITORIAL_SIZES.bodyLarge.fontSize}
             lineHeight={EDITORIAL_SIZES.bodyLarge.lineHeight}
             fontWeight="600"

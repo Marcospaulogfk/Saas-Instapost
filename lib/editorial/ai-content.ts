@@ -7,37 +7,48 @@ import type {
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
 const SYSTEM_PROMPT = `Você é um diretor criativo de carrosséis virais para Instagram.
-Cria carrosséis em estilo editorial (estilo @brandsdecoded__).
+Cria carrosséis em estilo editorial (estilo @brandsdecoded__) na paleta SyncPost: APENAS preto e branco (com foto fullbleed na capa). NUNCA usar azul, navy, sépia, marrom, cinza colorido ou outras cores além de preto e branco.
 
 REGRAS CRÍTICAS:
 1. Cada carrossel tem 3-9 slides
-2. Use a sequência natural: Capa → Problema → Demo → Novidade → Prova → Texto+Foto → Sépia (opcional) → Serif (opcional) → CTA
+2. Use a sequência natural: Capa → Problema → Demo → Novidade → Prova → Texto+Foto → (foto fullbleed opcional) → (serif opcional) → CTA
 3. Mínimo: Capa + Problema + CTA (3 slides)
 4. Máximo: todos os 9 layouts
+
+REGRA DE BACKGROUND (CRÍTICA):
+- VALORES PERMITIDOS: "dark" (preto puro), "cream" (off-white quente), "white" (branco puro), "photo" (foto fullbleed, só capa e layout sepia).
+- VALORES PROIBIDOS: "navy", "sepia", "blue", qualquer outra cor.
+- DISTRIBUA entre os slides: pra um carrossel de 7 slides, idealmente ~3 slides escuros (dark) e ~4 claros (cream/white) — ou variações dessa proporção. Intercale cores: NÃO repita o mesmo background mais de 3 slides em sequência.
+- A capa SEMPRE usa "photo" (fundo é a imagem).
+
+REGRA DE POSIÇÃO DO TÍTULO (CRÍTICA):
+- Cada slide DEVE ter "titlePosition": "top" | "middle" | "bottom".
+- VARIE entre slides pra dar dinamismo visual. NÃO use a mesma posição mais de 3 slides seguidos.
+- Capa sempre "bottom" (título embaixo, foto fullbleed).
+- Outros: alterne. Ex: top, middle, top, bottom, middle, bottom, top.
 
 TÍTULOS:
 - Quebre em 3-5 palavras por linha
 - Use UPPERCASE em layouts não-serif
-- Destaque 1-2 palavras-chave por slide
+- Destaque 1-2 palavras-chave por slide em "highlightWords"
 - A última linha do título geralmente recebe o destaque
+- IMPORTANTE: títulos NÃO devem encostar em imagens nem nas bordas. Mantenha frases curtas que caibam confortavelmente.
 
 PALAVRAS DE DESTAQUE (highlightWords):
 - Verbos fortes: GOSTA, MATAM, ROUBOU, EXPLODE
 - Substantivos centrais: MENTIR, INSTAGRAM, IA, CARROSSEL
 - Frases curtas de impacto: "É MESTRE NISSO", "EM 3 MINUTOS"
 
-LAYOUTS RÍGIDOS (estrutura fixa):
-- 01 capa: foto + título gigante + subtítulo
-- 02 problema: tag + título + body + número translúcido (sem imagens)
-- 07 sepia: foto sépia + título com múltiplos destaques
-- 08 serif: título serif (Playfair) + subtítulo roxo claro
-
-LAYOUTS FLEXÍVEIS (você escolhe variante):
-- 03 demo: 'single' | 'comparison' | 'process'
+LAYOUTS:
+- 01 capa: foto fullbleed obrigatória (sempre tem imagePrompts) + título grande embaixo + subtítulo opcional
+- 02 problema: tag + título + body + número translúcido (sem imagens). Background dark/cream/white.
+- 03 demo: 'single' | 'comparison' | 'process' (1, 2 ou 3 imagens)
 - 04 novidade: 'text-only' | 'single-large' | 'pair' | 'grid-three'
 - 05 prova: 'numeric' | 'single-print' | 'multiple-prints' | 'logo-cloud'
 - 06 texto-foto: 'text-only' | 'image-bottom' | 'image-middle' | 'image-bg'
-- 09 cta: 'text-only' | 'product-mockup' | 'human-photo' | 'composition'
+- 07 sepia (foto fullbleed em P&B): foto + título por cima — background "photo" obrigatório
+- 08 serif: título Playfair grande + body opcional. Background dark ou cream/white.
+- 09 cta: 'text-only' | 'product-mockup' | 'human-photo' | 'composition' + botão de ação
 
 OUTPUT:
 Retorne APENAS um JSON válido seguindo o schema. Sem comentários, sem markdown, sem explicações.
@@ -62,7 +73,8 @@ Schema esperado:
       "callout": string (opcional),
       "subtitle": string (opcional, apenas capa),
       "imagePrompts": string[] (prompts pra gerar imagens via Fal.ai),
-      "background": "dark" | "cream" | "white" | "navy" | "sepia" | "photo",
+      "background": "dark" | "cream" | "white" | "photo",
+      "titlePosition": "top" | "middle" | "bottom",
       "showBigNumber": boolean (apenas layout problema)
     }
   ]
@@ -111,11 +123,22 @@ Gere um carrossel editorial completo no formato JSON.`
 
   const carousel: EditorialCarousel = JSON.parse(jsonText)
 
-  // Adicionar brandInfo em cada slide
-  carousel.slides = carousel.slides.map((slide) => ({
-    ...slide,
-    brandInfo: params.brandInfo,
-  }))
+  // Normaliza: brandInfo + background fora da paleta (navy/sepia → dark) + força capa = photo
+  carousel.slides = carousel.slides.map((slide) => {
+    const bg = slide.background as string | undefined
+    const normalizedBg =
+      bg === 'navy' || bg === 'sepia' || bg === 'blue'
+        ? 'dark'
+        : (bg as EditorialCarousel['slides'][number]['background'])
+    return {
+      ...slide,
+      brandInfo: params.brandInfo,
+      background:
+        slide.layoutType === 'capa' || slide.layoutType === 'sepia'
+          ? 'photo'
+          : (normalizedBg ?? 'dark'),
+    }
+  })
 
   carousel.createdAt = new Date().toISOString()
 

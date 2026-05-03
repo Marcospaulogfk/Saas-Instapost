@@ -9,6 +9,7 @@ import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
 import { BodyText } from '../shared/BodyText'
+import { defaultPositionForLayout } from '../utils/title-position'
 
 interface DemoLayoutProps {
   slide: EditorialSlide
@@ -33,12 +34,28 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
+  // Sem azul/sépia — só preto/cream/white
   const isLight = slide.background === 'cream' || slide.background === 'white'
-  const bgColor = isLight ? EDITORIAL_COLORS.bg.cream : EDITORIAL_COLORS.bg.dark
+  const bgColor =
+    slide.background === 'white'
+      ? EDITORIAL_COLORS.bg.white
+      : slide.background === 'cream'
+        ? EDITORIAL_COLORS.bg.cream
+        : EDITORIAL_COLORS.bg.dark
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
   const variant = slide.variant || 'single'
   const padX = EDITORIAL_SIZES.footer.paddingX
+
+  // titlePosition: top -> título cima + imagens base; bottom -> imagens cima + título base
+  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
+  const titleAtTop = position === 'top' || position === 'middle'
+
+  const titleY = titleAtTop ? 200 : 880
+  const tagY = titleAtTop ? 150 : 830
+  const imagesY = titleAtTop ? 670 : 200
+
+  const imageHeight = 380
 
   return (
     <Stage
@@ -57,7 +74,7 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
         />
 
         {slide.tag && (
-          <Tag text={slide.tag} x={padX} y={150} color={textColor} opacity={0.5} />
+          <Tag text={slide.tag} x={padX} y={tagY} color={textColor} opacity={0.5} />
         )}
 
         <HighlightedTitle
@@ -66,68 +83,65 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
           highlightColor={brandColor}
           defaultColor={textColor}
           x={padX}
-          y={200}
+          y={titleY}
           fontSize={EDITORIAL_SIZES.titleLarge.fontSize}
           lineHeight={EDITORIAL_SIZES.titleLarge.lineHeight}
         />
 
-        {/* Variant: single */}
         {variant === 'single' && images[0] && (
           <KonvaImage
             image={images[0]}
             x={padX}
-            y={650}
-            width={CANVAS_CONFIG.width - 200}
-            height={400}
+            y={imagesY}
+            width={CANVAS_CONFIG.width - padX * 2}
+            height={imageHeight}
             cornerRadius={12}
           />
         )}
 
-        {/* Variant: comparison */}
         {variant === 'comparison' && images.length >= 2 && (
           <>
             <KonvaImage
               image={images[0]}
               x={padX}
-              y={650}
-              width={(CANVAS_CONFIG.width - 220) / 2}
-              height={400}
+              y={imagesY}
+              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
+              height={imageHeight}
               cornerRadius={12}
             />
             <KonvaImage
               image={images[1]}
-              x={padX + (CANVAS_CONFIG.width - 220) / 2 + 20}
-              y={650}
-              width={(CANVAS_CONFIG.width - 220) / 2}
-              height={400}
+              x={padX + (CANVAS_CONFIG.width - padX * 2 - 20) / 2 + 20}
+              y={imagesY}
+              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
+              height={imageHeight}
               cornerRadius={12}
             />
           </>
         )}
 
-        {/* Variant: process */}
         {variant === 'process' && images.length >= 3 && (
           <>
             {images.slice(0, 3).map((img, i) => (
               <KonvaImage
                 key={i}
                 image={img}
-                x={padX + i * ((CANVAS_CONFIG.width - 240) / 3 + 20)}
-                y={650}
-                width={(CANVAS_CONFIG.width - 240) / 3}
-                height={400}
+                x={padX + i * ((CANVAS_CONFIG.width - padX * 2 - 40) / 3 + 20)}
+                y={imagesY}
+                width={(CANVAS_CONFIG.width - padX * 2 - 40) / 3}
+                height={imageHeight}
                 cornerRadius={12}
               />
             ))}
           </>
         )}
 
-        {slide.body && (
+        {slide.body && titleAtTop && (
           <BodyText
             text={slide.body}
             x={padX}
             y={CANVAS_CONFIG.height - 220}
-            width={CANVAS_CONFIG.width - 200}
+            width={CANVAS_CONFIG.width - padX * 2}
             color={textColor}
             size="medium"
           />

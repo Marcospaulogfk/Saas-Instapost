@@ -48,6 +48,7 @@ const TEST_SLIDES: EditorialSlide[] = [
     subtitle: '→ E como evitar todos eles',
     images: ['https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1080'],
     background: 'photo',
+    titlePosition: 'bottom',
     brandInfo,
   },
   {
@@ -61,6 +62,7 @@ const TEST_SLIDES: EditorialSlide[] = [
     bodyBoldLead: 'A boa notícia:',
     showBigNumber: true,
     background: 'dark',
+    titlePosition: 'middle',
     brandInfo,
   },
   {
@@ -76,7 +78,8 @@ const TEST_SLIDES: EditorialSlide[] = [
     ],
     highlightWords: ['ROUBARAM', 'CÉREBRO', 'APRENDE.'],
     images: ['https://images.unsplash.com/photo-1488376986648-2512dfc6f736?w=1080'],
-    background: 'sepia',
+    background: 'photo',
+    titlePosition: 'bottom',
     brandInfo,
   },
   {
@@ -90,7 +93,8 @@ const TEST_SLIDES: EditorialSlide[] = [
     ],
     highlightWords: [],
     body: 'Essa rede consolida o que foi aprendido, conecta conceitos distantes e constrói memória.',
-    background: 'navy',
+    background: 'cream',
+    titlePosition: 'middle',
     brandInfo,
   },
 ]

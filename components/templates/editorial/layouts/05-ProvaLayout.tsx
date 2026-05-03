@@ -13,6 +13,7 @@ import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
+import { defaultPositionForLayout, getTitleY } from '../utils/title-position'
 
 interface ProvaLayoutProps {
   slide: EditorialSlide
@@ -37,11 +38,28 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
-  const bgColor = EDITORIAL_COLORS.bg.cream
-  const textColor = EDITORIAL_COLORS.text.dark
+  // Default cream, mas dark/white permitidos. Sem navy/sepia.
+  const isLight = slide.background !== 'dark'
+  const bgColor =
+    slide.background === 'dark'
+      ? EDITORIAL_COLORS.bg.dark
+      : slide.background === 'white'
+        ? EDITORIAL_COLORS.bg.white
+        : EDITORIAL_COLORS.bg.cream
+  const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
   const variant = slide.variant || 'numeric'
   const padX = EDITORIAL_SIZES.footer.paddingX
+
+  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
+  // Pra numeric (sem imagem): respeita position completa (top/middle/bottom).
+  // Pras outras (com imagem): top vs bottom inverte ordem visual.
+  const numericTitleY = getTitleY(
+    position,
+    slide.title.length,
+    EDITORIAL_SIZES.titleHero.fontSize,
+    EDITORIAL_SIZES.titleHero.lineHeight,
+  )
 
   return (
     <Stage
@@ -63,7 +81,7 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
           <Tag text={slide.tag} x={padX} y={150} color={textColor} opacity={0.6} />
         )}
 
-        {/* Variant: numeric — número GIGANTE em roxo */}
+        {/* Variant: numeric — número GIGANTE, posição variável */}
         {variant === 'numeric' && (
           <>
             <HighlightedTitle
@@ -72,7 +90,7 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
               highlightColor={brandColor}
               defaultColor={textColor}
               x={padX}
-              y={200}
+              y={numericTitleY}
               fontSize={EDITORIAL_SIZES.titleHero.fontSize}
               lineHeight={EDITORIAL_SIZES.titleHero.lineHeight}
             />
@@ -80,8 +98,8 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
               <Text
                 text={slide.body}
                 x={padX}
-                y={CANVAS_CONFIG.height - 280}
-                width={CANVAS_CONFIG.width - 200}
+                y={position === 'top' ? numericTitleY + 480 : CANVAS_CONFIG.height - 280}
+                width={CANVAS_CONFIG.width - padX * 2}
                 fontSize={EDITORIAL_SIZES.bodyMedium.fontSize}
                 fontFamily={EDITORIAL_FONTS.body.family}
                 fill={textColor}
@@ -173,8 +191,8 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
         <EditorialFooter
           pageNumber={slide.pageNumber}
           totalPages={slide.totalPages}
-          textColor="rgba(0,0,0,0.5)"
-          lineColor="rgba(0,0,0,0.2)"
+          textColor={isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)'}
+          lineColor={isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}
         />
       </Layer>
     </Stage>

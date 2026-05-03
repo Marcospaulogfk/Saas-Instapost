@@ -14,6 +14,7 @@ import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
 import { Callout } from '../shared/Callout'
+import { defaultPositionForLayout } from '../utils/title-position'
 
 interface CtaLayoutProps {
   slide: EditorialSlide
@@ -38,14 +39,28 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
-  const bgColor = EDITORIAL_COLORS.bg.cream
-  const textColor = EDITORIAL_COLORS.text.dark
+  const isLight = slide.background !== 'dark'
+  const bgColor =
+    slide.background === 'dark'
+      ? EDITORIAL_COLORS.bg.dark
+      : slide.background === 'white'
+        ? EDITORIAL_COLORS.bg.white
+        : EDITORIAL_COLORS.bg.cream
+  const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
   const variant = slide.variant || 'text-only'
   const padX = EDITORIAL_SIZES.footer.paddingX
 
   // Texto do botão: callout se existir, senão fallback
   const buttonText = slide.callout || 'COMECE AGORA →'
+
+  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
+  const titleAtTop = position === 'top' || position === 'middle'
+
+  const titleY = titleAtTop ? 200 : 880
+  const tagY = titleAtTop ? 150 : 830
+  const imagesY = titleAtTop ? 650 : 200
+  const buttonY = titleAtTop ? CANVAS_CONFIG.height - 220 : CANVAS_CONFIG.height - 220
 
   return (
     <Stage
@@ -64,7 +79,7 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
         />
 
         {slide.tag && (
-          <Tag text={slide.tag} x={padX} y={150} color={textColor} opacity={0.6} />
+          <Tag text={slide.tag} x={padX} y={tagY} color={textColor} opacity={0.6} />
         )}
 
         <HighlightedTitle
@@ -73,51 +88,48 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
           highlightColor={brandColor}
           defaultColor={textColor}
           x={padX}
-          y={200}
+          y={titleY}
           fontSize={EDITORIAL_SIZES.titleLarge.fontSize}
           lineHeight={EDITORIAL_SIZES.titleLarge.lineHeight}
         />
 
-        {/* Variant: product-mockup — 1 mockup do app */}
         {variant === 'product-mockup' && images[0] && (
           <KonvaImage
             image={images[0]}
             x={padX}
-            y={650}
-            width={CANVAS_CONFIG.width - 200}
+            y={imagesY}
+            width={CANVAS_CONFIG.width - padX * 2}
             height={350}
             cornerRadius={16}
           />
         )}
 
-        {/* Variant: human-photo — foto inspiracional */}
         {variant === 'human-photo' && images[0] && (
           <KonvaImage
             image={images[0]}
             x={padX}
-            y={620}
-            width={CANVAS_CONFIG.width - 200}
+            y={imagesY}
+            width={CANVAS_CONFIG.width - padX * 2}
             height={400}
             cornerRadius={12}
           />
         )}
 
-        {/* Variant: composition — 2 imagens compostas */}
         {variant === 'composition' && images.length >= 2 && (
           <>
             <KonvaImage
               image={images[0]}
               x={padX}
-              y={650}
-              width={(CANVAS_CONFIG.width - 220) / 2}
+              y={imagesY}
+              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
               height={350}
               cornerRadius={12}
             />
             <KonvaImage
               image={images[1]}
-              x={padX + (CANVAS_CONFIG.width - 220) / 2 + 20}
-              y={650}
-              width={(CANVAS_CONFIG.width - 220) / 2}
+              x={padX + (CANVAS_CONFIG.width - padX * 2 - 20) / 2 + 20}
+              y={imagesY}
+              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
               height={350}
               cornerRadius={12}
             />
@@ -125,12 +137,7 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
         )}
 
         {/* Botão CTA — sempre presente */}
-        <CtaButton
-          text={buttonText}
-          x={padX}
-          y={CANVAS_CONFIG.height - 220}
-          brandColor={brandColor}
-        />
+        <CtaButton text={buttonText} x={padX} y={buttonY} brandColor={brandColor} />
 
         {/* Subtitle/legenda abaixo do botão */}
         {slide.subtitle && (
@@ -160,8 +167,8 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
         <EditorialFooter
           pageNumber={slide.pageNumber}
           totalPages={slide.totalPages}
-          textColor="rgba(0,0,0,0.5)"
-          lineColor="rgba(0,0,0,0.2)"
+          textColor={isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)'}
+          lineColor={isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}
         />
       </Layer>
     </Stage>

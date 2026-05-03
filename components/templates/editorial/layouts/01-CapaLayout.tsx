@@ -31,7 +31,17 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
   }, [photoUrl])
 
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
-  const titleY = CANVAS_CONFIG.height - 380
+
+  // Título sempre na parte de baixo, com folga maior pro footer (não encostar)
+  // e margem maior nas laterais (paddingX 64 em vez de 48).
+  const padX = 64
+  const titleFontSize = EDITORIAL_SIZES.titleHero.fontSize
+  const titleLineHeight = EDITORIAL_SIZES.titleHero.lineHeight
+  const numLines = slide.title.length || 1
+  const titleHeight = numLines * titleFontSize * titleLineHeight
+  const FOOTER_TOP = CANVAS_CONFIG.height - 110
+  const SUBTITLE_GAP = 80
+  const titleY = FOOTER_TOP - titleHeight - SUBTITLE_GAP - 60
 
   return (
     <Stage
@@ -49,17 +59,15 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
             height={CANVAS_CONFIG.height}
           />
         )}
-        {/* Fallback */}
+        {/* Fallback: preto sólido (sem gradient roxo, fora da paleta) */}
         {!photoImage && (
           <Rect
             width={CANVAS_CONFIG.width}
             height={CANVAS_CONFIG.height}
-            fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-            fillLinearGradientEndPoint={{ x: CANVAS_CONFIG.width, y: CANVAS_CONFIG.height }}
-            fillLinearGradientColorStops={[0, '#2a1a4a', 0.5, '#1a1a2e', 1, '#0a0a0f']}
+            fill={EDITORIAL_COLORS.bg.dark}
           />
         )}
-        {/* Overlay gradient */}
+        {/* Overlay gradient bottom-up pra contraste do título */}
         <Rect
           width={CANVAS_CONFIG.width}
           height={CANVAS_CONFIG.height}
@@ -67,11 +75,13 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
           fillLinearGradientEndPoint={{ x: 0, y: CANVAS_CONFIG.height }}
           fillLinearGradientColorStops={[
             0,
-            'rgba(0,0,0,0.2)',
-            0.5,
-            'rgba(0,0,0,0.3)',
+            'rgba(0,0,0,0.25)',
+            0.45,
+            'rgba(0,0,0,0.35)',
+            0.7,
+            'rgba(0,0,0,0.7)',
             1,
-            'rgba(0,0,0,0.85)',
+            'rgba(0,0,0,0.92)',
           ]}
         />
 
@@ -86,20 +96,21 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
           highlightWords={slide.highlightWords}
           highlightColor={brandColor}
           defaultColor={EDITORIAL_COLORS.text.white}
-          x={EDITORIAL_SIZES.footer.paddingX}
+          x={padX}
           y={titleY}
-          fontSize={EDITORIAL_SIZES.titleHero.fontSize}
-          lineHeight={EDITORIAL_SIZES.titleHero.lineHeight}
+          fontSize={titleFontSize}
+          lineHeight={titleLineHeight}
         />
 
         {slide.subtitle && (
           <Text
             text={slide.subtitle}
-            x={EDITORIAL_SIZES.footer.paddingX}
-            y={CANVAS_CONFIG.height - 130}
+            x={padX}
+            y={FOOTER_TOP - 60}
+            width={CANVAS_CONFIG.width - padX * 2}
             fontSize={EDITORIAL_SIZES.subtitle.fontSize}
             fontFamily={EDITORIAL_FONTS.body.family}
-            fill="rgba(255,255,255,0.7)"
+            fill="rgba(255,255,255,0.78)"
           />
         )}
 

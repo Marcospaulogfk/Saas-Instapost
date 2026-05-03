@@ -48,10 +48,11 @@ export const EDITORIAL_COLORS = {
   bg: {
     dark: '#0A0A0F',
     darker: '#050507',
-    navy: '#0F0F1F',
     cream: '#F5F2EC',
     white: '#FFFFFF',
-    sepia: '#3A2818',
+    // navy/sepia mapeados pra preto puro pra carrosseis legados não quebrarem.
+    navy: '#0A0A0F',
+    sepia: '#0A0A0F',
   },
   brand: {
     primary: '#7C3AED',

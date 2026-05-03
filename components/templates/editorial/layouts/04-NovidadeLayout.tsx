@@ -9,6 +9,7 @@ import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
 import { Callout } from '../shared/Callout'
+import { defaultPositionForLayout } from '../utils/title-position'
 
 interface NovidadeLayoutProps {
   slide: EditorialSlide
@@ -33,19 +34,27 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
+  // Default cream, mas pode ser dark/white tb. Sem navy/sepia.
+  const isLight = slide.background !== 'dark'
   const bgColor =
-    slide.background === 'white' ? EDITORIAL_COLORS.bg.white : EDITORIAL_COLORS.bg.cream
-  const textColor = EDITORIAL_COLORS.text.dark
+    slide.background === 'dark'
+      ? EDITORIAL_COLORS.bg.dark
+      : slide.background === 'white'
+        ? EDITORIAL_COLORS.bg.white
+        : EDITORIAL_COLORS.bg.cream
+  const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
   const variant = slide.variant || 'text-only'
   const padX = EDITORIAL_SIZES.footer.paddingX
 
-  // Aspect ratio dos mockups: 4:5
-  const mockupAspect = 4 / 5
+  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
+  const titleAtTop = position === 'top' || position === 'middle'
 
-  // Posicionamento das imagens muda conforme variant
-  const imagesY = 700
+  const titleY = titleAtTop ? 200 : 920
+  const tagY = titleAtTop ? 150 : 870
+  const imagesY = titleAtTop ? 700 : 200
   const imagesAreaHeight = 380
+  const mockupAspect = 4 / 5
 
   return (
     <Stage
@@ -64,7 +73,7 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
         />
 
         {slide.tag && (
-          <Tag text={slide.tag} x={padX} y={150} color={textColor} opacity={0.6} />
+          <Tag text={slide.tag} x={padX} y={tagY} color={textColor} opacity={0.6} />
         )}
 
         <HighlightedTitle
@@ -73,7 +82,7 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
           highlightColor={brandColor}
           defaultColor={textColor}
           x={padX}
-          y={200}
+          y={titleY}
           fontSize={
             variant === 'text-only'
               ? EDITORIAL_SIZES.titleLarge.fontSize
@@ -82,23 +91,21 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
           lineHeight={EDITORIAL_SIZES.titleLarge.lineHeight}
         />
 
-        {/* Variant: single-large — 1 mockup centralizado, ocupa quase toda largura */}
         {variant === 'single-large' && images[0] && (
           <KonvaImage
             image={images[0]}
             x={padX}
             y={imagesY}
-            width={CANVAS_CONFIG.width - 200}
+            width={CANVAS_CONFIG.width - padX * 2}
             height={imagesAreaHeight}
             cornerRadius={16}
           />
         )}
 
-        {/* Variant: pair — 2 mockups lado a lado, proporção 4:5 */}
         {variant === 'pair' && images.length >= 2 && (
           <>
             {images.slice(0, 2).map((img, i) => {
-              const w = (CANVAS_CONFIG.width - 220) / 2
+              const w = (CANVAS_CONFIG.width - padX * 2 - 20) / 2
               const h = w / mockupAspect
               const cappedH = Math.min(h, imagesAreaHeight)
               return (
@@ -116,11 +123,10 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
           </>
         )}
 
-        {/* Variant: grid-three — 3 mockups */}
         {variant === 'grid-three' && images.length >= 3 && (
           <>
             {images.slice(0, 3).map((img, i) => {
-              const w = (CANVAS_CONFIG.width - 240) / 3
+              const w = (CANVAS_CONFIG.width - padX * 2 - 40) / 3
               const h = w / mockupAspect
               const cappedH = Math.min(h, imagesAreaHeight)
               return (
@@ -138,23 +144,22 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
           </>
         )}
 
-        {/* Callout opcional no rodapé */}
         {slide.callout && (
           <Callout
             text={slide.callout}
             x={padX}
             y={CANVAS_CONFIG.height - 180}
-            width={CANVAS_CONFIG.width - 200}
-            bgColor={EDITORIAL_COLORS.bg.dark}
-            textColor={EDITORIAL_COLORS.text.white}
+            width={CANVAS_CONFIG.width - padX * 2}
+            bgColor={isLight ? EDITORIAL_COLORS.bg.dark : EDITORIAL_COLORS.bg.white}
+            textColor={isLight ? EDITORIAL_COLORS.text.white : EDITORIAL_COLORS.text.dark}
           />
         )}
 
         <EditorialFooter
           pageNumber={slide.pageNumber}
           totalPages={slide.totalPages}
-          textColor="rgba(0,0,0,0.5)"
-          lineColor="rgba(0,0,0,0.2)"
+          textColor={isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)'}
+          lineColor={isLight ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)'}
         />
       </Layer>
     </Stage>

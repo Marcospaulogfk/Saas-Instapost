@@ -9,7 +9,17 @@ export type LayoutType =
   | 'serif'
   | 'cta'
 
-export type BackgroundType = 'dark' | 'cream' | 'white' | 'navy' | 'sepia' | 'photo'
+/**
+ * Backgrounds permitidos na marca SyncPost (apenas preto, branco e foto).
+ * Não usar navy/sepia/colored — fora da paleta.
+ */
+export type BackgroundType = 'dark' | 'cream' | 'white' | 'photo'
+
+/**
+ * Posicionamento vertical do título no canvas.
+ * Garante variedade visual entre slides.
+ */
+export type TitlePosition = 'top' | 'middle' | 'bottom'
 
 export interface BrandInfo {
   name: string
@@ -32,6 +42,8 @@ export interface EditorialSlide {
   images?: string[]
   imagePrompts?: string[]
   background?: BackgroundType
+  /** Posição vertical do título dentro do canvas. Default varia por layout. */
+  titlePosition?: TitlePosition
   showBigNumber?: boolean
   brandInfo: BrandInfo
 }

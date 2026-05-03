@@ -170,6 +170,28 @@ export function EditorPanel({ slide, onUpdate, onRegenerate }: EditorPanelProps)
 
         {activeTab === 'visual' && (
           <div className="space-y-4">
+            <div>
+              <FieldLabel>Posição do título</FieldLabel>
+              <div className="grid grid-cols-3 gap-2">
+                {(['top', 'middle', 'bottom'] as const).map((pos) => (
+                  <button
+                    key={pos}
+                    onClick={() => onUpdate({ titlePosition: pos })}
+                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                      (slide.titlePosition || 'middle') === pos
+                        ? 'border-purple-600 bg-purple-600/10 text-purple-300'
+                        : 'border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-border-medium hover:text-text-primary'
+                    }`}
+                  >
+                    {pos === 'top' ? 'Topo' : pos === 'middle' ? 'Meio' : 'Base'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-text-muted mt-2">
+                Varia entre slides pra dar dinamismo (não use a mesma 3+ vezes).
+              </p>
+            </div>
+
             {isFlexible && (
               <div>
                 <FieldLabel>Variante do layout</FieldLabel>
@@ -256,7 +278,7 @@ export function EditorPanel({ slide, onUpdate, onRegenerate }: EditorPanelProps)
             <div>
               <FieldLabel>Background</FieldLabel>
               <select
-                value={slide.background || 'cream'}
+                value={slide.background || 'dark'}
                 onChange={(e) =>
                   onUpdate({
                     background: e.target.value as EditorialSlide['background'],
@@ -264,13 +286,14 @@ export function EditorPanel({ slide, onUpdate, onRegenerate }: EditorPanelProps)
                 }
                 className="w-full p-3 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary text-sm focus:border-purple-600/50 focus:outline-none"
               >
-                <option value="dark">Escuro (preto)</option>
-                <option value="cream">Bege (claro)</option>
+                <option value="dark">Preto</option>
+                <option value="cream">Bege claro</option>
                 <option value="white">Branco</option>
-                <option value="navy">Navy (serif)</option>
-                <option value="sepia">Sépia</option>
                 <option value="photo">Foto fullscreen</option>
               </select>
+              <p className="text-[11px] text-text-muted mt-2">
+                Paleta SyncPost: apenas preto e branco. Distribua entre os slides.
+              </p>
             </div>
           </div>
         )}
