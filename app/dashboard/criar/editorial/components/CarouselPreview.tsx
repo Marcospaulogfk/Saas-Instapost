@@ -106,6 +106,21 @@ export function CarouselPreview({
           </h2>
           <p className="text-sm text-text-secondary">
             {carousel.slides.length} slides · Editorial
+            {carousel.createdAt && (
+              <>
+                {' '}
+                ·{' '}
+                <span className="text-text-muted">
+                  Criado{' '}
+                  {new Date(carousel.createdAt).toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">

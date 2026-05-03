@@ -4,12 +4,14 @@ import { useState } from 'react'
 import type { EditorialSlide } from '@/components/templates/editorial/editorial.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Type, Image as ImageIcon, Palette, RefreshCw, Plus, X } from 'lucide-react'
+import { Type, Image as ImageIcon, Palette, Plus, X } from 'lucide-react'
+import { ImageSlot } from './ImageSlot'
 
 interface EditorPanelProps {
   slide: EditorialSlide
   onUpdate: (updates: Partial<EditorialSlide>) => void
-  onRegenerate: () => Promise<void>
+  /** Mantido pra compat (não usado — agora cada imagem regenera individualmente). */
+  onRegenerate?: () => Promise<void>
 }
 
 const TABS = [
@@ -26,20 +28,43 @@ const VARIANT_OPTIONS: Record<string, string[]> = {
   cta: ['text-only', 'product-mockup', 'human-photo', 'composition'],
 }
 
-export function EditorPanel({ slide, onUpdate, onRegenerate }: EditorPanelProps) {
+export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<'text' | 'visual' | 'colors'>('text')
-  const [regenerating, setRegenerating] = useState(false)
-
   const isFlexible = !!VARIANT_OPTIONS[slide.layoutType]
 
-  async function handleRegenerate() {
-    setRegenerating(true)
-    try {
-      await onRegenerate()
-    } finally {
-      setRegenerating(false)
-    }
+  function updateImageAt(idx: number, url: string) {
+    const newImages = [...(slide.images || [])]
+    newImages[idx] = url
+    onUpdate({ images: newImages })
   }
+
+  function updatePromptAt(idx: number, prompt: string) {
+    const newPrompts = [...(slide.imagePrompts || [])]
+    newPrompts[idx] = prompt
+    onUpdate({ imagePrompts: newPrompts })
+  }
+
+  function removeImageAt(idx: number) {
+    const newImages = [...(slide.images || [])]
+    newImages.splice(idx, 1)
+    onUpdate({ images: newImages })
+  }
+
+  function addImageSlot() {
+    const newPrompts = [...(slide.imagePrompts || []), '']
+    onUpdate({ imagePrompts: newPrompts })
+  }
+
+  // Quantos slots: max(images.length, imagePrompts.length, default 1 quando layout aceita imagem)
+  const layoutAcceptsImages = ![
+    'problema',
+    'serif',
+  ].includes(slide.layoutType)
+  const slotCount = Math.max(
+    slide.images?.length || 0,
+    slide.imagePrompts?.length || 0,
+    layoutAcceptsImages ? 1 : 0,
+  )
 
   return (
     <div className="h-full flex flex-col">
@@ -213,38 +238,42 @@ export function EditorPanel({ slide, onUpdate, onRegenerate }: EditorPanelProps)
               </div>
             )}
 
-            {slide.imagePrompts && slide.imagePrompts.length > 0 && (
+            {layoutAcceptsImages && (
               <div>
-                <FieldLabel>Prompts das imagens</FieldLabel>
-                {slide.imagePrompts.map((prompt, idx) => (
-                  <textarea
-                    key={idx}
-                    value={prompt}
-                    onChange={(e) => {
-                      const newPrompts = [...(slide.imagePrompts || [])]
-                      newPrompts[idx] = e.target.value
-                      onUpdate({ imagePrompts: newPrompts })
-                    }}
-                    className="w-full min-h-[60px] p-2 rounded bg-background-secondary/60 border border-border-subtle text-text-primary text-xs resize-none mb-2 focus:border-purple-600/50 focus:outline-none"
-                  />
-                ))}
-                <Button
-                  variant="outline"
-                  onClick={handleRegenerate}
-                  disabled={regenerating}
-                  className="w-full mt-2 border-border-medium"
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 mr-2 ${regenerating ? 'animate-spin' : ''}`}
-                  />
-                  {regenerating ? 'Regenerando…' : 'Regenerar imagens'}
-                </Button>
+                <div className="flex items-center justify-between mb-2">
+                  <FieldLabel>Imagens</FieldLabel>
+                  <button
+                    type="button"
+                    onClick={addImageSlot}
+                    className="text-[11px] text-purple-300 hover:text-purple-200 flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Adicionar
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: slotCount }).map((_, idx) => (
+                    <ImageSlot
+                      key={idx}
+                      index={idx}
+                      imageUrl={slide.images?.[idx]}
+                      prompt={slide.imagePrompts?.[idx] || ''}
+                      onPromptChange={(p) => updatePromptAt(idx, p)}
+                      onImageChange={(url) => updateImageAt(idx, url)}
+                      onRemoveImage={() => removeImageAt(idx)}
+                    />
+                  ))}
+                </div>
+                <p className="text-[11px] text-text-muted mt-3">
+                  Cada imagem pode ser regenerada pela IA, enviada do seu computador
+                  ou colada via URL.
+                </p>
               </div>
             )}
 
-            {(!slide.imagePrompts || slide.imagePrompts.length === 0) && !isFlexible && (
+            {!layoutAcceptsImages && !isFlexible && (
               <p className="text-xs text-text-muted">
-                Esse layout não tem variantes nem imagens editáveis.
+                Esse layout não usa imagens.
               </p>
             )}
           </div>

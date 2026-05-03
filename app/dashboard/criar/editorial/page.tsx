@@ -127,25 +127,6 @@ function CriarEditorialInner() {
     setCarousel({ ...carousel, slides: newSlides })
   }
 
-  async function handleRegenerate() {
-    if (!carousel) return
-    const slide = carousel.slides[selectedSlideIdx]
-    if (!slide.imagePrompts?.length) return
-
-    try {
-      const res = await fetch('/api/editorial/regenerate-images', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slide }),
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || 'erro')
-      handleSlideUpdate({ images: data.images })
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <AnimatePresence mode="wait">
@@ -240,7 +221,6 @@ function CriarEditorialInner() {
                 <EditorPanel
                   slide={carousel.slides[selectedSlideIdx]}
                   onUpdate={handleSlideUpdate}
-                  onRegenerate={handleRegenerate}
                 />
               </div>
               <div className="p-4 border-t border-border-subtle">
