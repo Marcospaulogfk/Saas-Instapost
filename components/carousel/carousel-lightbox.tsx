@@ -18,6 +18,8 @@ interface CarouselLightboxProps {
   fontClass: string
   editorialStyle?: EditorialStyle
   handle?: string
+  lightBg?: string
+  darkBg?: string
   onClose: () => void
 }
 
@@ -29,6 +31,8 @@ export function CarouselLightbox({
   fontClass,
   editorialStyle,
   handle,
+  lightBg,
+  darkBg,
   onClose,
 }: CarouselLightboxProps) {
   const [index, setIndex] = useState(startIndex)
@@ -151,6 +155,8 @@ export function CarouselLightbox({
             brandColors={brandColors}
             editorialStyle={editorialStyle}
             handle={handle}
+            lightBg={lightBg}
+            darkBg={darkBg}
             fontClass={fontClass}
             showDevBadges={false}
           />

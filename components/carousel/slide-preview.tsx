@@ -64,6 +64,10 @@ interface SlidePreviewProps {
   handleAvatar?: string
   /** Brand label pros styles brandsdecoded. Default 'Content Machine'. */
   brandLabel?: string
+  /** Cor do bg "claro" no auto-legacy. Default cream. */
+  lightBg?: string
+  /** Cor do bg "escuro" no auto-legacy. Default preto. */
+  darkBg?: string
 }
 
 export function SlidePreview({
@@ -77,6 +81,8 @@ export function SlidePreview({
   handle = "@brand",
   handleAvatar,
   brandLabel = "Content Machine",
+  lightBg = "#FAF8F5",
+  darkBg = "#0A0A0A",
 }: SlidePreviewProps) {
   const accent = brandColors[0] || "#FBBF24"
   const dark = brandColors[1] || "#1A1A1A"
@@ -95,6 +101,8 @@ export function SlidePreview({
         handle={handle}
         handleAvatar={handleAvatar}
         brandLabel={brandLabel}
+        lightBg={lightBg}
+        darkBg={darkBg}
       />
     ) : template === "hybrid" ? (
       <HybridSlide
@@ -194,6 +202,8 @@ interface RouterProps {
   handle: string
   handleAvatar?: string
   brandLabel: string
+  lightBg: string
+  darkBg: string
 }
 
 function EditorialSlideRouter(props: RouterProps) {
@@ -351,6 +361,8 @@ function EditorialSlideRouter(props: RouterProps) {
       light={light}
       fontClass={fontClass}
       handle={handle}
+      lightBg={lightBg}
+      darkBg={darkBg}
     />
   )
 }
@@ -376,6 +388,8 @@ function LegacyEditorialSlide({
   light,
   fontClass,
   handle,
+  lightBg,
+  darkBg,
 }: {
   slide: PreviewSlide
   totalSlides: number
@@ -384,9 +398,19 @@ function LegacyEditorialSlide({
   light: string
   fontClass: string
   handle: string
+  lightBg: string
+  darkBg: string
 }) {
   const variant = pickLegacyVariant(slide.order_index, totalSlides)
   const categoryTag = slide.cta_badge || "Editorial"
+
+  // Alterna bg dark/light entre splits ímpares e pares pra dar variedade
+  // (sem isso ficavam todos no mesmo bg cream).
+  const isDarkSplit = slide.order_index % 2 === 0 // par = dark, ímpar = light
+  const splitBg = isDarkSplit ? darkBg : lightBg
+  const splitText = isDarkSplit ? "#FFFFFF" : dark
+  const splitTextMuted = isDarkSplit ? "rgba(255,255,255,0.85)" : dark
+  const splitTextOpacity = isDarkSplit ? 0.85 : 0.7
 
   if (variant === "cover") {
     return (
@@ -487,17 +511,18 @@ function LegacyEditorialSlide({
     )
   }
 
-  // image-top OU image-bottom
+  // image-top OU image-bottom — alterna bg dark/light por idx pra variedade
   const imageOnTop = variant === "image-top"
+  const pillVariant = isDarkSplit ? "dark" : "light"
 
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative grid grid-rows-[auto_minmax(0,1fr)_auto]"
-      style={{ backgroundColor: light, color: dark }}
+      style={{ backgroundColor: splitBg, color: splitText }}
     >
       <div className="px-4 pt-4 flex items-center justify-between z-10">
-        <Pill variant="light">{handle}</Pill>
-        <Pill variant="light">{categoryTag}</Pill>
+        <Pill variant={pillVariant}>{handle}</Pill>
+        <Pill variant={pillVariant}>{categoryTag}</Pill>
       </div>
 
       <div
@@ -505,12 +530,18 @@ function LegacyEditorialSlide({
           imageOnTop ? "justify-start" : "justify-end pb-1"
         }`}
       >
-        {imageOnTop && <LegacySlideImage slide={slide} dark={dark} light={light} />}
+        {imageOnTop && (
+          <LegacySlideImage
+            slide={slide}
+            placeholderBg={isDarkSplit ? "#FFFFFF" : dark}
+            placeholderText={isDarkSplit ? dark : light}
+          />
+        )}
 
         <div className="space-y-1.5 overflow-hidden">
           <h1
             className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
-            style={{ color: dark }}
+            style={{ color: splitText }}
           >
             <HighlightedText
               text={slide.title}
@@ -519,42 +550,48 @@ function LegacyEditorialSlide({
             />
           </h1>
           {slide.subtitle && (
-            <p className="text-xs" style={{ color: dark, opacity: 0.7 }}>
+            <p className="text-xs" style={{ color: splitTextMuted, opacity: splitTextOpacity }}>
               {slide.subtitle}
             </p>
           )}
           {slide.body && (
             <p
               className="text-[11px] leading-relaxed line-clamp-3"
-              style={{ color: dark, opacity: 0.75 }}
+              style={{ color: splitTextMuted, opacity: splitTextOpacity }}
             >
               {slide.body}
             </p>
           )}
         </div>
 
-        {!imageOnTop && <LegacySlideImage slide={slide} dark={dark} light={light} />}
+        {!imageOnTop && (
+          <LegacySlideImage
+            slide={slide}
+            placeholderBg={isDarkSplit ? "#FFFFFF" : dark}
+            placeholderText={isDarkSplit ? dark : light}
+          />
+        )}
       </div>
 
       <div className="px-4 pb-4 pt-2 flex items-center justify-between">
-        <Pill variant="light">{categoryTag}</Pill>
-        <PaginationDots total={totalSlides} active={slide.order_index} color={dark} />
-        <Pill variant="light">{`arrasta →`}</Pill>
+        <Pill variant={pillVariant}>{categoryTag}</Pill>
+        <PaginationDots total={totalSlides} active={slide.order_index} color={splitText} />
+        <Pill variant={pillVariant}>{`arrasta →`}</Pill>
       </div>
 
-      <Attribution attribution={slide.image.attribution} textColor={dark} />
+      <Attribution attribution={slide.image.attribution} textColor={splitText} />
     </div>
   )
 }
 
 function LegacySlideImage({
   slide,
-  dark,
-  light,
+  placeholderBg,
+  placeholderText,
 }: {
   slide: PreviewSlide
-  dark: string
-  light: string
+  placeholderBg: string
+  placeholderText: string
 }) {
   if (slide.image.url) {
     return (
@@ -567,7 +604,7 @@ function LegacySlideImage({
   return (
     <div
       className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
-      style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
+      style={{ height: "44%", backgroundColor: placeholderBg, color: placeholderText, opacity: 0.4 }}
     >
       {slide.image.error || "sem imagem"}
     </div>
@@ -654,6 +691,7 @@ function CinematicSlide({
   )
 }
 
+/** Stories 9:16 — formato vertical do Instagram Stories. */
 function HybridSlide({
   slide,
   totalSlides,
@@ -666,7 +704,7 @@ function HybridSlide({
   fontClass: string
 }) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-zinc-900">
+    <div className="aspect-[9/16] w-full rounded-xl overflow-hidden relative bg-black">
       {slide.image.url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -680,48 +718,68 @@ function HybridSlide({
         </div>
       )}
 
-      <div className="absolute top-0 inset-x-0 px-4 py-3 bg-gradient-to-b from-black/70 to-transparent z-10">
-        <div className="flex items-center justify-between text-white text-[10px] uppercase tracking-widest font-bold">
-          <span>
-            {slide.cta_badge ||
-              `EDIÇÃO ${String(slide.order_index + 1).padStart(2, "0")}`}
-          </span>
-          <span className="tabular-nums opacity-70">
-            {String(slide.order_index + 1).padStart(2, "0")}/
-            {String(totalSlides).padStart(2, "0")}
+      {/* Story progress bar (Instagram-style) */}
+      <div className="absolute top-2 left-2 right-2 flex gap-1 z-20">
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <span
+            key={i}
+            className="flex-1 h-0.5 rounded-full"
+            style={{
+              backgroundColor:
+                i < slide.order_index
+                  ? "rgba(255,255,255,0.85)"
+                  : i === slide.order_index
+                    ? "rgba(255,255,255,0.95)"
+                    : "rgba(255,255,255,0.3)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Top: handle + tag */}
+      <div className="absolute top-6 inset-x-0 px-4 z-10">
+        <div className="flex items-center justify-between text-white text-[11px] font-medium">
+          <span className="opacity-90">
+            {slide.cta_badge || `Story ${slide.order_index + 1}`}
           </span>
         </div>
       </div>
 
-      <div
-        className="absolute bottom-10 left-4 right-4 p-4 rounded-md z-10"
-        style={{ backgroundColor: accent }}
-      >
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/40" />
+
+      {/* Título centralizado vertical */}
+      <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-10">
         <h1
-          className={`text-2xl uppercase leading-[1.05] text-white tracking-tight ${fontClass}`}
+          className={`text-3xl uppercase leading-[0.95] text-white tracking-tight ${fontClass}`}
+          style={{ textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words}
-            color="#fff"
+            color={accent}
           />
         </h1>
         {slide.subtitle && (
-          <p className="text-[11px] text-white/95 mt-2 uppercase tracking-wider">
-            {slide.subtitle}
-          </p>
+          <p className="text-sm text-white/90 mt-3">{slide.subtitle}</p>
         )}
       </div>
 
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-        {Array.from({ length: totalSlides }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-1 w-1 rounded-full ${
-              i === slide.order_index ? "bg-white" : "bg-white/50"
-            }`}
-          />
-        ))}
+      {/* Bottom: body + CTA */}
+      {slide.body && (
+        <div className="absolute bottom-16 left-6 right-6 z-10">
+          <p className="text-xs text-white/85 leading-relaxed line-clamp-3">
+            {slide.body}
+          </p>
+        </div>
+      )}
+
+      {/* CTA "arrasta pra cima" do Stories */}
+      <div className="absolute bottom-5 inset-x-0 flex flex-col items-center gap-1 z-10 text-white/85">
+        <span className="text-base">↑</span>
+        <span className="text-[10px] uppercase tracking-wider font-medium">
+          arrasta pra cima
+        </span>
       </div>
 
       <Attribution attribution={slide.image.attribution} textColor="#fff" />

@@ -10,7 +10,7 @@ import {
   Archivo_Black,
   Space_Grotesk,
 } from "next/font/google"
-import { Loader2, Sparkles, Clock, DollarSign } from "lucide-react"
+import { Loader2, Sparkles, Clock, DollarSign, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -21,6 +21,7 @@ import {
   type EditorialStyle,
 } from "@/components/carousel/slide-preview"
 import { CarouselLightbox } from "@/components/carousel/carousel-lightbox"
+import { SlideEditorModal } from "./slide-editor-modal"
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 const bebas = Bebas_Neue({ subsets: ["latin"], weight: "400" })
@@ -56,9 +57,9 @@ const OBJECTIVES = [
 ] as const
 
 const TEMPLATES = [
-  { value: "editorial", label: "Editorial", description: "Magazine, premium" },
-  { value: "cinematic", label: "Cinematic", description: "Dramático, viral" },
-  { value: "hybrid", label: "Hybrid", description: "News, esporte" },
+  { value: "editorial", label: "Editorial", description: "Magazine, premium (4:5)" },
+  { value: "cinematic", label: "Cinematic", description: "Dramático, viral (4:5)" },
+  { value: "hybrid", label: "Stories", description: "Stories Instagram (9:16)" },
 ] as const
 
 const EDITORIAL_STYLES = [
@@ -136,6 +137,8 @@ export default function TestePage() {
   )
   const [editorialStyle, setEditorialStyle] = useState<EditorialStyleKey>("wesley")
   const [handle, setHandle] = useState<string>("@brand")
+  const [lightBg, setLightBg] = useState<string>("#FAF8F5")
+  const [darkBg, setDarkBg] = useState<string>("#0A0A0A")
   const [font, setFont] = useState<FontKey>(DEFAULTS.font)
   const [nSlides, setNSlides] = useState<5 | 7 | 10>(DEFAULTS.nSlides)
   const [mode, setMode] = useState<typeof DEFAULTS.mode>(DEFAULTS.mode)
@@ -145,6 +148,7 @@ export default function TestePage() {
   const [result, setResult] = useState<ApiResult | null>(null)
   const [loadingMessage, setLoadingMessage] = useState("")
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   async function onGenerate() {
     setError(null)
@@ -300,6 +304,39 @@ export default function TestePage() {
                   placeholder="@brand"
                 />
               </div>
+
+              {editorialStyle === "auto" && (
+                <div className="space-y-2">
+                  <Label>Cores de fundo dos splits (auto)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <input
+                        type="color"
+                        value={lightBg}
+                        onChange={(e) => setLightBg(e.target.value)}
+                        className="w-full h-10 rounded border border-border bg-transparent cursor-pointer"
+                      />
+                      <p className="text-[10px] font-mono text-center text-muted-foreground">
+                        claro · {lightBg.toUpperCase()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <input
+                        type="color"
+                        value={darkBg}
+                        onChange={(e) => setDarkBg(e.target.value)}
+                        className="w-full h-10 rounded border border-border bg-transparent cursor-pointer"
+                      />
+                      <p className="text-[10px] font-mono text-center text-muted-foreground">
+                        escuro · {darkBg.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Splits alternam entre claro e escuro pra dar variedade visual.
+                  </p>
+                </div>
+              )}
             </>
           )}
 
@@ -412,26 +449,41 @@ export default function TestePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {result.slides.map((slide) => (
-                  <div key={slide.order_index} className="space-y-2">
-                    <div
-                      className="cursor-zoom-in transition-transform hover:scale-[1.02]"
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest("a, button")) {
-                          return
-                        }
-                        setLightboxIndex(slide.order_index)
-                      }}
-                    >
-                      <SlidePreview
-                        slide={slide}
-                        totalSlides={result.slides.length}
-                        template={template}
-                        brandColors={colors}
-                        fontClass={fontEntry.className}
-                        editorialStyle={editorialStyle as EditorialStyle}
-                        handle={handle}
-                        showDevBadges
-                      />
+                  <div key={slide.order_index} className="space-y-2 group">
+                    <div className="relative">
+                      <div
+                        className="cursor-zoom-in transition-transform hover:scale-[1.02]"
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest("a, button")) {
+                            return
+                          }
+                          setLightboxIndex(slide.order_index)
+                        }}
+                      >
+                        <SlidePreview
+                          slide={slide}
+                          totalSlides={result.slides.length}
+                          template={template}
+                          brandColors={colors}
+                          fontClass={fontEntry.className}
+                          editorialStyle={editorialStyle as EditorialStyle}
+                          handle={handle}
+                          lightBg={lightBg}
+                          darkBg={darkBg}
+                          showDevBadges
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingIndex(slide.order_index)
+                        }}
+                        className="absolute top-2 right-2 z-30 px-2.5 py-1 rounded-md bg-white/95 text-black text-xs font-medium flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Editar
+                      </button>
                     </div>
                     <details className="text-[10px] text-muted-foreground bg-card rounded p-2 border border-border">
                       <summary className="cursor-pointer font-medium select-none">
@@ -478,6 +530,19 @@ export default function TestePage() {
         </main>
       </div>
 
+      {editingIndex !== null && result && (
+        <SlideEditorModal
+          slide={result.slides[editingIndex]}
+          totalSlides={result.slides.length}
+          onSave={(updated) => {
+            const newSlides = [...result.slides]
+            newSlides[editingIndex] = { ...newSlides[editingIndex], ...updated }
+            setResult({ ...result, slides: newSlides })
+          }}
+          onClose={() => setEditingIndex(null)}
+        />
+      )}
+
       {lightboxIndex !== null && result && (
         <CarouselLightbox
           slides={result.slides}
@@ -487,6 +552,8 @@ export default function TestePage() {
           fontClass={fontEntry.className}
           editorialStyle={editorialStyle as EditorialStyle}
           handle={handle}
+          lightBg={lightBg}
+          darkBg={darkBg}
           onClose={() => setLightboxIndex(null)}
         />
       )}
