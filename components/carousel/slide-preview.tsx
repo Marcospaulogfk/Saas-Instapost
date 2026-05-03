@@ -174,19 +174,25 @@ function Attribution({
 }
 
 /**
- * Decide a variante visual do slide editorial pra dar variedade.
- * - Capa (idx 0): cover fullbleed com texto sobre (foto = bg)
- * - Demais: alterna 3 padrões pra que slides nunca fiquem todos iguais.
- *   Padrão `image-top`: imagem em cima, texto separado embaixo
- *   Padrão `image-bg`:  foto fullbleed + texto sobre (com overlay)
- *   Padrão `image-bottom`: texto em cima, imagem embaixo
+ * Decide a variante visual:
+ * - Capa (idx 0): SEMPRE foto fullbleed (cover)
+ * - Quebra opcional no meio do carrossel: foto fullbleed (image-bg)
+ *   — apenas em carrosséis com 5+ slides, num índice no meio
+ * - Demais: layout SPLIT alternando imagem-em-cima ou imagem-embaixo
+ *   (texto e imagem em áreas separadas, fundo cream/light)
  */
 type EditorialVariant = "cover" | "image-top" | "image-bg" | "image-bottom"
 
-function pickVariant(orderIndex: number): EditorialVariant {
+function pickVariant(orderIndex: number, totalSlides: number): EditorialVariant {
   if (orderIndex === 0) return "cover"
-  const cycle = ["image-top", "image-bg", "image-bottom"] as const
-  return cycle[(orderIndex - 1) % cycle.length]
+
+  // 1 quebra fullbleed no meio (só pra 5+ slides)
+  const middleBreakIdx =
+    totalSlides >= 5 ? Math.floor(totalSlides / 2) : -1
+  if (orderIndex === middleBreakIdx) return "image-bg"
+
+  // Resto alterna split: ímpar = imagem em cima, par = imagem embaixo
+  return orderIndex % 2 === 1 ? "image-top" : "image-bottom"
 }
 
 /** Pill arredondado com bg preto translúcido (estilo refs @emp.wesleysilva). */
@@ -256,12 +262,12 @@ function EditorialSlide({
   light: string
   fontClass: string
 }) {
-  const variant = pickVariant(slide.order_index)
+  const variant = pickVariant(slide.order_index, totalSlides)
 
   // Debug: log variant escolhido pra cada slide. Visível no DevTools.
   if (typeof window !== "undefined") {
     console.log(
-      `[SlidePreview] slide ${slide.order_index + 1} → variant: ${variant}`,
+      `[SlidePreview] slide ${slide.order_index + 1}/${totalSlides} → variant: ${variant}`,
     )
   }
 
