@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva'
+import { Stage, Layer, Rect, Image as KonvaImage, Group } from 'react-konva'
 import type { EditorialSlide } from '../editorial.types'
 import { CANVAS_CONFIG, EDITORIAL_SIZES, EDITORIAL_COLORS } from '../editorial.config'
 import { EditorialHeader } from '../shared/EditorialHeader'
@@ -9,7 +9,6 @@ import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
 import { Callout } from '../shared/Callout'
-import { defaultPositionForLayout } from '../utils/title-position'
 
 interface NovidadeLayoutProps {
   slide: EditorialSlide
@@ -34,7 +33,6 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
-  // Default cream, mas pode ser dark/white tb. Sem navy/sepia.
   const isLight = slide.background !== 'dark'
   const bgColor =
     slide.background === 'dark'
@@ -44,8 +42,9 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
         : EDITORIAL_COLORS.bg.cream
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
+  const padX = EDITORIAL_SIZES.footer.paddingX
+
   const rawVariant = slide.variant || 'auto'
-  // variant 'auto' adapta pelo número de imagens; 0 = text-only, 1 = single-large, 2 = pair, 3+ = grid-three
   const variant: string =
     rawVariant === 'auto'
       ? images.length === 0
@@ -56,15 +55,23 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
             ? 'pair'
             : 'grid-three'
       : rawVariant
-  const padX = EDITORIAL_SIZES.footer.paddingX
 
-  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
-  const titleAtTop = position === 'top' || position === 'middle'
+  const titleFontSize =
+    variant === 'text-only'
+      ? EDITORIAL_SIZES.titleLarge.fontSize
+      : EDITORIAL_SIZES.titleMedium.fontSize
+  const titleLineHeight = EDITORIAL_SIZES.titleLarge.lineHeight
+  const tagY = 150
+  const titleY = 200
+  const titleHeight = slide.title.length * titleFontSize * titleLineHeight
 
-  const titleY = titleAtTop ? 200 : 920
-  const tagY = titleAtTop ? 150 : 870
-  const imagesY = titleAtTop ? 700 : 200
-  const imagesAreaHeight = 380
+  // Card container externo (bg branco arredondado) — visual da ref
+  const cardOuterY = titleY + titleHeight + 50
+  const cardOuterHeight = 460
+  const cardOuterPadX = padX
+  const cardOuterWidth = CANVAS_CONFIG.width - cardOuterPadX * 2
+  const innerPad = 24
+
   const mockupAspect = 4 / 5
 
   return (
@@ -94,67 +101,79 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
           defaultColor={textColor}
           x={padX}
           y={titleY}
-          fontSize={
-            variant === 'text-only'
-              ? EDITORIAL_SIZES.titleLarge.fontSize
-              : EDITORIAL_SIZES.titleMedium.fontSize
-          }
-          lineHeight={EDITORIAL_SIZES.titleLarge.lineHeight}
+          fontSize={titleFontSize}
+          lineHeight={titleLineHeight}
         />
 
-        {variant === 'single-large' && images[0] && (
-          <KonvaImage
-            image={images[0]}
-            x={padX}
-            y={imagesY}
-            width={CANVAS_CONFIG.width - padX * 2}
-            height={imagesAreaHeight}
-            cornerRadius={16}
-          />
+        {/* Container card branco com mockups — visual ref @brandsdecoded__ */}
+        {variant !== 'text-only' && images.length > 0 && (
+          <Group>
+            <Rect
+              x={cardOuterPadX}
+              y={cardOuterY}
+              width={cardOuterWidth}
+              height={cardOuterHeight}
+              fill={isLight ? '#FFFFFF' : '#1A1A22'}
+              cornerRadius={20}
+              shadowColor="rgba(0,0,0,0.08)"
+              shadowBlur={16}
+              shadowOffsetY={4}
+            />
+
+            {variant === 'single-large' && images[0] && (
+              <KonvaImage
+                image={images[0]}
+                x={cardOuterPadX + innerPad}
+                y={cardOuterY + innerPad}
+                width={cardOuterWidth - innerPad * 2}
+                height={cardOuterHeight - innerPad * 2}
+                cornerRadius={14}
+              />
+            )}
+
+            {variant === 'pair' && images.length >= 2 && (
+              <>
+                {images.slice(0, 2).map((img, i) => {
+                  const w = (cardOuterWidth - innerPad * 3) / 2
+                  const h = Math.min(w / mockupAspect, cardOuterHeight - innerPad * 2)
+                  return (
+                    <KonvaImage
+                      key={i}
+                      image={img}
+                      x={cardOuterPadX + innerPad + i * (w + innerPad)}
+                      y={cardOuterY + innerPad}
+                      width={w}
+                      height={h}
+                      cornerRadius={12}
+                    />
+                  )
+                })}
+              </>
+            )}
+
+            {variant === 'grid-three' && images.length >= 3 && (
+              <>
+                {images.slice(0, 3).map((img, i) => {
+                  const w = (cardOuterWidth - innerPad * 4) / 3
+                  const h = Math.min(w / mockupAspect, cardOuterHeight - innerPad * 2)
+                  return (
+                    <KonvaImage
+                      key={i}
+                      image={img}
+                      x={cardOuterPadX + innerPad + i * (w + innerPad)}
+                      y={cardOuterY + innerPad}
+                      width={w}
+                      height={h}
+                      cornerRadius={10}
+                    />
+                  )
+                })}
+              </>
+            )}
+          </Group>
         )}
 
-        {variant === 'pair' && images.length >= 2 && (
-          <>
-            {images.slice(0, 2).map((img, i) => {
-              const w = (CANVAS_CONFIG.width - padX * 2 - 20) / 2
-              const h = w / mockupAspect
-              const cappedH = Math.min(h, imagesAreaHeight)
-              return (
-                <KonvaImage
-                  key={i}
-                  image={img}
-                  x={padX + i * (w + 20)}
-                  y={imagesY}
-                  width={w}
-                  height={cappedH}
-                  cornerRadius={16}
-                />
-              )
-            })}
-          </>
-        )}
-
-        {variant === 'grid-three' && images.length >= 3 && (
-          <>
-            {images.slice(0, 3).map((img, i) => {
-              const w = (CANVAS_CONFIG.width - padX * 2 - 40) / 3
-              const h = w / mockupAspect
-              const cappedH = Math.min(h, imagesAreaHeight)
-              return (
-                <KonvaImage
-                  key={i}
-                  image={img}
-                  x={padX + i * (w + 20)}
-                  y={imagesY}
-                  width={w}
-                  height={cappedH}
-                  cornerRadius={12}
-                />
-              )
-            })}
-          </>
-        )}
-
+        {/* Callout preto retangular — estilo ref */}
         {slide.callout && (
           <Callout
             text={slide.callout}

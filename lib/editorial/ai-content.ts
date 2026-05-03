@@ -40,11 +40,16 @@ REGRA DE POSIÇÃO DO TÍTULO (CRÍTICA):
 - Outros: alterne. Ex: top, middle, top, bottom, middle, bottom, top.
 
 TÍTULOS:
+- Tipografia: Anton (sans bold condensed grosso) em uppercase para a maioria dos layouts; Playfair Display 900 (serif) para o layout 'serif'.
 - Quebre em 3-5 palavras por linha
 - Use UPPERCASE em layouts não-serif
-- Destaque 1-2 palavras-chave por slide em "highlightWords"
+- Destaque 1-2 palavras-chave por slide em "highlightWords" — elas vão renderizar na cor da marca (brandColor, default roxo). NÃO use laranja literal: o destaque é dinâmico.
 - A última linha do título geralmente recebe o destaque
 - IMPORTANTE: títulos NÃO devem encostar em imagens nem nas bordas. Mantenha frases curtas que caibam confortavelmente.
+
+HIGHLIGHTS NO BODY:
+- Você pode destacar palavras inline no body também (não só no título). Inclua essas palavras em "highlightWords".
+- Bold inline em frases tipo "**A boa notícia:**" use "bodyBoldLead": "A boa notícia:" (texto bold preto/branco no início do body, antes do texto normal).
 
 PALAVRAS DE DESTAQUE (highlightWords):
 - Verbos fortes: GOSTA, MATAM, ROUBOU, EXPLODE

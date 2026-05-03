@@ -1,15 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva'
+import { Stage, Layer, Rect, Image as KonvaImage, Group } from 'react-konva'
 import type { EditorialSlide } from '../editorial.types'
 import { CANVAS_CONFIG, EDITORIAL_SIZES, EDITORIAL_COLORS } from '../editorial.config'
 import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
-import { Tag } from '../shared/Tag'
-import { BodyText } from '../shared/BodyText'
-import { defaultPositionForLayout } from '../utils/title-position'
+import { HighlightedBody } from '../shared/HighlightedBody'
 
 interface DemoLayoutProps {
   slide: EditorialSlide
@@ -34,18 +32,18 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
     ).then(setImages)
   }, [slide.images])
 
-  // Sem azul/sépia — só preto/cream/white
   const isLight = slide.background === 'cream' || slide.background === 'white'
   const bgColor =
     slide.background === 'white'
       ? EDITORIAL_COLORS.bg.white
-      : slide.background === 'cream'
-        ? EDITORIAL_COLORS.bg.cream
-        : EDITORIAL_COLORS.bg.dark
+      : slide.background === 'dark'
+        ? EDITORIAL_COLORS.bg.dark
+        : EDITORIAL_COLORS.bg.cream
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
+  const padX = EDITORIAL_SIZES.footer.paddingX
+
   const rawVariant = slide.variant || 'auto'
-  // variant 'auto' decide pela quantidade real de imagens carregadas
   const variant: string =
     rawVariant === 'auto'
       ? images.length >= 3
@@ -54,17 +52,17 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
           ? 'comparison'
           : 'single'
       : rawVariant
-  const padX = EDITORIAL_SIZES.footer.paddingX
 
-  // titlePosition: top -> título cima + imagens base; bottom -> imagens cima + título base
-  const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)
-  const titleAtTop = position === 'top' || position === 'middle'
-
-  const titleY = titleAtTop ? 200 : 880
-  const tagY = titleAtTop ? 150 : 830
-  const imagesY = titleAtTop ? 670 : 200
-
-  const imageHeight = 380
+  // Layout vertical: título grande topo, mockup card branco no centro, body grande embaixo.
+  // Inspirado nas refs @brandsdecoded__ (slide "PASSO A PASSO").
+  const titleY = 130
+  const titleFontSize = EDITORIAL_SIZES.titleMedium.fontSize
+  const titleLineHeight = EDITORIAL_SIZES.titleMedium.lineHeight
+  const titleHeight = slide.title.length * titleFontSize * titleLineHeight
+  const cardY = titleY + titleHeight + 60
+  const cardHeight = 540
+  const cardPadX = padX + 8
+  const cardWidth = CANVAS_CONFIG.width - cardPadX * 2
 
   return (
     <Stage
@@ -82,10 +80,6 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
           textColor={textColor}
         />
 
-        {slide.tag && (
-          <Tag text={slide.tag} x={padX} y={tagY} color={textColor} opacity={0.5} />
-        )}
-
         <HighlightedTitle
           lines={slide.title}
           highlightWords={slide.highlightWords}
@@ -93,66 +87,86 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
           defaultColor={textColor}
           x={padX}
           y={titleY}
-          fontSize={EDITORIAL_SIZES.titleLarge.fontSize}
-          lineHeight={EDITORIAL_SIZES.titleLarge.lineHeight}
+          fontSize={titleFontSize}
+          lineHeight={titleLineHeight}
         />
 
-        {variant === 'single' && images[0] && (
-          <KonvaImage
-            image={images[0]}
-            x={padX}
-            y={imagesY}
-            width={CANVAS_CONFIG.width - padX * 2}
-            height={imageHeight}
-            cornerRadius={12}
+        {/* Card branco com mockup(s) — sombra leve */}
+        <Group>
+          <Rect
+            x={cardPadX}
+            y={cardY}
+            width={cardWidth}
+            height={cardHeight}
+            fill={isLight ? '#FFFFFF' : '#1A1A22'}
+            cornerRadius={20}
+            shadowColor="rgba(0,0,0,0.08)"
+            shadowBlur={20}
+            shadowOffsetY={4}
           />
-        )}
 
-        {variant === 'comparison' && images.length >= 2 && (
-          <>
+          {variant === 'single' && images[0] && (
             <KonvaImage
               image={images[0]}
-              x={padX}
-              y={imagesY}
-              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
-              height={imageHeight}
+              x={cardPadX + 24}
+              y={cardY + 24}
+              width={cardWidth - 48}
+              height={cardHeight - 48}
               cornerRadius={12}
             />
-            <KonvaImage
-              image={images[1]}
-              x={padX + (CANVAS_CONFIG.width - padX * 2 - 20) / 2 + 20}
-              y={imagesY}
-              width={(CANVAS_CONFIG.width - padX * 2 - 20) / 2}
-              height={imageHeight}
-              cornerRadius={12}
-            />
-          </>
-        )}
+          )}
 
-        {variant === 'process' && images.length >= 3 && (
-          <>
-            {images.slice(0, 3).map((img, i) => (
+          {variant === 'comparison' && images.length >= 2 && (
+            <>
               <KonvaImage
-                key={i}
-                image={img}
-                x={padX + i * ((CANVAS_CONFIG.width - padX * 2 - 40) / 3 + 20)}
-                y={imagesY}
-                width={(CANVAS_CONFIG.width - padX * 2 - 40) / 3}
-                height={imageHeight}
+                image={images[0]}
+                x={cardPadX + 24}
+                y={cardY + 24}
+                width={(cardWidth - 72) / 2}
+                height={cardHeight - 48}
                 cornerRadius={12}
               />
-            ))}
-          </>
-        )}
+              <KonvaImage
+                image={images[1]}
+                x={cardPadX + 24 + (cardWidth - 72) / 2 + 24}
+                y={cardY + 24}
+                width={(cardWidth - 72) / 2}
+                height={cardHeight - 48}
+                cornerRadius={12}
+              />
+            </>
+          )}
 
-        {slide.body && titleAtTop && (
-          <BodyText
+          {variant === 'process' && images.length >= 3 && (
+            <>
+              {images.slice(0, 3).map((img, i) => (
+                <KonvaImage
+                  key={i}
+                  image={img}
+                  x={cardPadX + 24 + i * ((cardWidth - 96) / 3 + 24)}
+                  y={cardY + 24}
+                  width={(cardWidth - 96) / 3}
+                  height={cardHeight - 48}
+                  cornerRadius={10}
+                />
+              ))}
+            </>
+          )}
+        </Group>
+
+        {/* Body grande (38px) embaixo do card — bold preto para destaques */}
+        {slide.body && (
+          <HighlightedBody
             text={slide.body}
+            highlightWords={slide.highlightWords}
+            highlightColor={textColor}
+            defaultColor={textColor}
             x={padX}
-            y={CANVAS_CONFIG.height - 220}
+            y={cardY + cardHeight + 50}
             width={CANVAS_CONFIG.width - padX * 2}
-            color={textColor}
-            size="medium"
+            fontSize={EDITORIAL_SIZES.bodyLarge.fontSize}
+            lineHeight={EDITORIAL_SIZES.bodyLarge.lineHeight}
+            fontWeight="500"
           />
         )}
 

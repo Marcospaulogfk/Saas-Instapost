@@ -95,7 +95,7 @@ export function SepiaLayout({ slide, scale = 1 }: SepiaLayoutProps) {
         <EditorialHeader
           brandName={slide.brandInfo.name}
           handle={slide.brandInfo.handle}
-          showDate={true}
+          mode="standard"
           textColor={EDITORIAL_COLORS.text.white}
         />
 

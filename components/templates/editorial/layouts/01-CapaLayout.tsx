@@ -12,6 +12,7 @@ import {
 import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
+import { HandleBadge } from '../shared/HandleBadge'
 
 interface CapaLayoutProps {
   slide: EditorialSlide
@@ -32,16 +33,15 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
 
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
 
-  // Título sempre na parte de baixo, com folga maior pro footer (não encostar)
-  // e margem maior nas laterais (paddingX 64 em vez de 48).
+  // Espaçamento generoso pra título não encostar nas bordas (ref @brandsdecoded__)
   const padX = 64
   const titleFontSize = EDITORIAL_SIZES.titleHero.fontSize
   const titleLineHeight = EDITORIAL_SIZES.titleHero.lineHeight
   const numLines = slide.title.length || 1
   const titleHeight = numLines * titleFontSize * titleLineHeight
   const FOOTER_TOP = CANVAS_CONFIG.height - 110
-  const SUBTITLE_GAP = 80
-  const titleY = FOOTER_TOP - titleHeight - SUBTITLE_GAP - 60
+  const SUBTITLE_HEIGHT = 60
+  const titleY = FOOTER_TOP - titleHeight - SUBTITLE_HEIGHT - 60
 
   return (
     <Stage
@@ -51,7 +51,6 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
       scaleY={scale}
     >
       <Layer>
-        {/* Background photo */}
         {photoImage && (
           <KonvaImage
             image={photoImage}
@@ -59,7 +58,6 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
             height={CANVAS_CONFIG.height}
           />
         )}
-        {/* Fallback: preto sólido (sem gradient roxo, fora da paleta) */}
         {!photoImage && (
           <Rect
             width={CANVAS_CONFIG.width}
@@ -67,7 +65,7 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
             fill={EDITORIAL_COLORS.bg.dark}
           />
         )}
-        {/* Overlay gradient bottom-up pra contraste do título */}
+        {/* Overlay reforçado bottom-up pra contraste do título */}
         <Rect
           width={CANVAS_CONFIG.width}
           height={CANVAS_CONFIG.height}
@@ -85,10 +83,20 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
           ]}
         />
 
+        {/* Header modo capa: BRAND left + 2026 ® right (sem handle no header) */}
         <EditorialHeader
           brandName={slide.brandInfo.name}
           handle={slide.brandInfo.handle}
           textColor={EDITORIAL_COLORS.text.white}
+          mode="capa"
+        />
+
+        {/* Badge com @handle centralizado, acima do título */}
+        <HandleBadge
+          handle={slide.brandInfo.handle}
+          badgeColor={brandColor}
+          textColor={EDITORIAL_COLORS.text.white}
+          y={titleY - 80}
         />
 
         <HighlightedTitle

@@ -208,10 +208,20 @@ interface InstagramPrintCardProps {
   text?: string
 }
 
-/** Card branco simulando UI do Instagram (avatar + handle + barras de loading). */
-function InstagramPrintCard({ x, y, width, image, handle = '@user', text }: InstagramPrintCardProps) {
-  const padding = 20
-  const avatarRadius = 24
+/**
+ * Card branco simulando PERFIL do Instagram (avatar circular + handle + bio + botões).
+ * Inspirado nas refs @brandsdecoded__ slide "POR QUE FUNCIONA".
+ */
+function InstagramPrintCard({
+  x,
+  y,
+  width,
+  image,
+  handle = '@user',
+  text,
+}: InstagramPrintCardProps) {
+  const padding = 28
+  const avatarRadius = 60
   const cardHeight = 380
 
   return (
@@ -220,70 +230,137 @@ function InstagramPrintCard({ x, y, width, image, handle = '@user', text }: Inst
         width={width}
         height={cardHeight}
         fill="white"
-        cornerRadius={16}
-        shadowColor="rgba(0,0,0,0.1)"
-        shadowBlur={12}
+        cornerRadius={20}
+        shadowColor="rgba(0,0,0,0.08)"
+        shadowBlur={16}
         shadowOffsetY={4}
       />
 
-      {/* Header: avatar + handle */}
-      <Group x={padding} y={padding + avatarRadius}>
-        <Circle x={avatarRadius} y={0} radius={avatarRadius} fill={EDITORIAL_COLORS.brand.light} />
+      {/* Avatar circular grande (foto ou cor sólida) */}
+      <Group x={padding} y={padding}>
+        <Circle
+          x={avatarRadius}
+          y={avatarRadius}
+          radius={avatarRadius}
+          fill={EDITORIAL_COLORS.brand.primary}
+        />
+        {image && (
+          <KonvaImage
+            image={image}
+            x={0}
+            y={0}
+            width={avatarRadius * 2}
+            height={avatarRadius * 2}
+            cornerRadius={avatarRadius}
+          />
+        )}
+      </Group>
+
+      {/* Handle + verificado + dados */}
+      <Group x={padding + avatarRadius * 2 + 24} y={padding + 8}>
         <Text
-          text={handle}
-          x={avatarRadius * 2 + 12}
-          y={-10}
-          fontSize={20}
+          text={handle.replace(/^@/, '')}
+          x={0}
+          y={0}
+          fontSize={22}
+          fontFamily={EDITORIAL_FONTS.bodyBold.family}
+          fontStyle="700"
+          fill={EDITORIAL_COLORS.text.dark}
+        />
+        <Circle x={handle.length * 9 + 12} y={11} radius={8} fill="#3B82F6" />
+        <Text
+          text="✓"
+          x={handle.length * 9 + 5}
+          y={3}
+          fontSize={12}
+          fontFamily={EDITORIAL_FONTS.bodyBold.family}
+          fill="#FFFFFF"
+        />
+
+        {/* Stats */}
+        <Group y={36}>
+          <Text
+            text="1.327"
+            x={0}
+            y={0}
+            fontSize={14}
+            fontFamily={EDITORIAL_FONTS.bodyBold.family}
+            fontStyle="600"
+            fill={EDITORIAL_COLORS.text.dark}
+          />
+          <Text
+            text="posts"
+            x={42}
+            y={0}
+            fontSize={13}
+            fontFamily={EDITORIAL_FONTS.body.family}
+            fill="#6B7280"
+          />
+          <Text
+            text="280 mil"
+            x={92}
+            y={0}
+            fontSize={14}
+            fontFamily={EDITORIAL_FONTS.bodyBold.family}
+            fontStyle="600"
+            fill={EDITORIAL_COLORS.text.dark}
+          />
+          <Text
+            text="seguidores"
+            x={156}
+            y={0}
+            fontSize={13}
+            fontFamily={EDITORIAL_FONTS.body.family}
+            fill="#6B7280"
+          />
+        </Group>
+      </Group>
+
+      {/* Bio */}
+      <Text
+        text={text || 'Decodificando o futuro do marketing com AI'}
+        x={padding}
+        y={padding + avatarRadius * 2 + 24}
+        width={width - padding * 2}
+        fontSize={15}
+        fontFamily={EDITORIAL_FONTS.body.family}
+        fill={EDITORIAL_COLORS.text.dark}
+        lineHeight={1.4}
+      />
+
+      {/* Botões "Editar perfil" / "Ver Itens Arquivados" */}
+      <Group x={padding} y={cardHeight - 70}>
+        <Rect width={(width - padding * 2 - 12) / 2} height={42} fill="#F3F4F6" cornerRadius={8} />
+        <Text
+          text="Editar perfil"
+          x={0}
+          y={13}
+          width={(width - padding * 2 - 12) / 2}
+          fontSize={14}
           fontFamily={EDITORIAL_FONTS.bodyBold.family}
           fontStyle="600"
           fill={EDITORIAL_COLORS.text.dark}
+          align="center"
         />
-      </Group>
-
-      {/* Imagem ou placeholder */}
-      {image && (
-        <KonvaImage
-          image={image}
-          x={padding}
-          y={padding + avatarRadius * 2 + 30}
-          width={width - padding * 2}
-          height={180}
+        <Rect
+          x={(width - padding * 2 - 12) / 2 + 12}
+          y={0}
+          width={(width - padding * 2 - 12) / 2}
+          height={42}
+          fill="#F3F4F6"
           cornerRadius={8}
         />
-      )}
-
-      {/* Texto/barras de "loading" */}
-      <Group x={padding} y={padding + avatarRadius * 2 + 230}>
-        {text ? (
-          <Text
-            text={text}
-            x={0}
-            y={0}
-            width={width - padding * 2}
-            fontSize={16}
-            fontFamily={EDITORIAL_FONTS.body.family}
-            fill={EDITORIAL_COLORS.text.dark}
-            lineHeight={1.4}
-          />
-        ) : (
-          <>
-            <Rect width={width - padding * 2} height={10} fill="rgba(0,0,0,0.1)" cornerRadius={5} />
-            <Rect
-              y={20}
-              width={(width - padding * 2) * 0.8}
-              height={10}
-              fill="rgba(0,0,0,0.1)"
-              cornerRadius={5}
-            />
-            <Rect
-              y={40}
-              width={(width - padding * 2) * 0.5}
-              height={10}
-              fill="rgba(0,0,0,0.08)"
-              cornerRadius={5}
-            />
-          </>
-        )}
+        <Text
+          text="Ver Itens Arquivados"
+          x={(width - padding * 2 - 12) / 2 + 12}
+          y={13}
+          width={(width - padding * 2 - 12) / 2}
+          fontSize={14}
+          fontFamily={EDITORIAL_FONTS.bodyBold.family}
+          fontStyle="600"
+          fill={EDITORIAL_COLORS.text.dark}
+          align="center"
+        />
       </Group>
     </Group>
   )

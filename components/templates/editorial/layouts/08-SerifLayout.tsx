@@ -58,7 +58,7 @@ export function SerifLayout({ slide, scale = 1 }: SerifLayoutProps) {
           brandName={slide.brandInfo.name}
           handle={slide.brandInfo.handle}
           textColor={textColor}
-          poweredBy={true}
+          mode="standard"
         />
 
         <Text

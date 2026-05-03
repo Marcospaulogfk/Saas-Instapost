@@ -8,12 +8,14 @@ export const CANVAS_CONFIG = {
 
 export const EDITORIAL_FONTS = {
   display: {
-    family: 'var(--font-bebas), "Bebas Neue", "Anton", "Arial Black", sans-serif',
+    // Anton — sans bold condensed grosso (style das refs do briefing). Fallback Bebas + Impact.
+    family:
+      'var(--font-anton), "Anton", var(--font-bebas), "Bebas Neue", "Impact", "Arial Black", sans-serif',
     weight: 700,
   },
   serif: {
     family: 'var(--font-playfair), "Playfair Display", Georgia, serif',
-    weight: 700,
+    weight: 900,
   },
   body: {
     family: 'var(--font-space-grotesk), "Space Grotesk", Inter, sans-serif',

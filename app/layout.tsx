@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Space_Grotesk, JetBrains_Mono, Bebas_Neue, Playfair_Display } from 'next/font/google'
+import { Space_Grotesk, JetBrains_Mono, Bebas_Neue, Playfair_Display, Anton } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -23,9 +23,16 @@ const bebasNeue = Bebas_Neue({
 })
 
 const playfair = Playfair_Display({
-  weight: ['400', '700'],
+  weight: ['400', '700', '900'],
   subsets: ['latin'],
   variable: '--font-playfair',
+  display: 'swap',
+})
+
+const anton = Anton({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-anton',
   display: 'swap',
 })
 
@@ -50,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`dark ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable}`}
+      className={`dark ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
     >
       <body className="font-sans antialiased bg-background text-foreground">
         {children}
