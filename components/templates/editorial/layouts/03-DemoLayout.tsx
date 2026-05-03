@@ -44,7 +44,16 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
         : EDITORIAL_COLORS.bg.dark
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
-  const variant = slide.variant || 'single'
+  const rawVariant = slide.variant || 'auto'
+  // variant 'auto' decide pela quantidade real de imagens carregadas
+  const variant: string =
+    rawVariant === 'auto'
+      ? images.length >= 3
+        ? 'process'
+        : images.length === 2
+          ? 'comparison'
+          : 'single'
+      : rawVariant
   const padX = EDITORIAL_SIZES.footer.paddingX
 
   // titlePosition: top -> título cima + imagens base; bottom -> imagens cima + título base

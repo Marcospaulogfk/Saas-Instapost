@@ -48,7 +48,16 @@ export function CtaLayout({ slide, scale = 1 }: CtaLayoutProps) {
         : EDITORIAL_COLORS.bg.cream
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
-  const variant = slide.variant || 'text-only'
+  const rawVariant = slide.variant || 'auto'
+  // variant 'auto': 0 imagens = text-only, 1 = product-mockup, 2 = composition
+  const variant: string =
+    rawVariant === 'auto'
+      ? images.length === 0
+        ? 'text-only'
+        : images.length === 1
+          ? 'product-mockup'
+          : 'composition'
+      : rawVariant
   const padX = EDITORIAL_SIZES.footer.paddingX
 
   // Texto do botão: callout se existir, senão fallback

@@ -44,7 +44,18 @@ export function NovidadeLayout({ slide, scale = 1 }: NovidadeLayoutProps) {
         : EDITORIAL_COLORS.bg.cream
   const textColor = isLight ? EDITORIAL_COLORS.text.dark : EDITORIAL_COLORS.text.white
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
-  const variant = slide.variant || 'text-only'
+  const rawVariant = slide.variant || 'auto'
+  // variant 'auto' adapta pelo número de imagens; 0 = text-only, 1 = single-large, 2 = pair, 3+ = grid-three
+  const variant: string =
+    rawVariant === 'auto'
+      ? images.length === 0
+        ? 'text-only'
+        : images.length === 1
+          ? 'single-large'
+          : images.length === 2
+            ? 'pair'
+            : 'grid-three'
+      : rawVariant
   const padX = EDITORIAL_SIZES.footer.paddingX
 
   const position = slide.titlePosition || defaultPositionForLayout(slide.layoutType)

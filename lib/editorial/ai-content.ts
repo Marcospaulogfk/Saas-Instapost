@@ -21,6 +21,18 @@ REGRA DE BACKGROUND (CRÍTICA):
 - DISTRIBUA entre os slides: pra um carrossel de 7 slides, idealmente ~3 slides escuros (dark) e ~4 claros (cream/white) — ou variações dessa proporção. Intercale cores: NÃO repita o mesmo background mais de 3 slides em sequência.
 - A capa SEMPRE usa "photo" (fundo é a imagem).
 
+REGRA DE QUANTIDADE DE IMAGENS (CRÍTICA):
+A quantidade de imagens em cada slide é determinada pela COPY do slide, NÃO pelo nome do variant.
+- 1 sujeito/entidade mencionado → 1 imagem (ex: "BYD lançou..." → 1 foto da BYD/carro)
+- 2 sujeitos/entidades distintos → 2 imagens (ex: "Will Smith vs Leonardo DiCaprio" → 2 fotos, uma de cada)
+- 3 ou mais → até 3 imagens (process/grid)
+- Slides text-only (sem sujeito visual) → 0 imagens
+Para layouts com imagem (demo, novidade, cta), use variant "auto" e mande N "imagePrompts" — o layout adapta visual pelo número:
+  - 1 prompt → imagem grande única
+  - 2 prompts → par lado a lado
+  - 3 prompts → grid de três
+Exemplo: slide falando "Pelé e Maradona mudaram o futebol" → imagePrompts: ["close de Pelé sorrindo, fotografia editorial preto e branco", "Maradona em campo, fotografia preto e branco, alta granulação"].
+
 REGRA DE POSIÇÃO DO TÍTULO (CRÍTICA):
 - Cada slide DEVE ter "titlePosition": "top" | "middle" | "bottom".
 - VARIE entre slides pra dar dinamismo visual. NÃO use a mesma posição mais de 3 slides seguidos.
@@ -42,13 +54,13 @@ PALAVRAS DE DESTAQUE (highlightWords):
 LAYOUTS:
 - 01 capa: foto fullbleed obrigatória (sempre tem imagePrompts) + título grande embaixo + subtítulo opcional
 - 02 problema: tag + título + body + número translúcido (sem imagens). Background dark/cream/white.
-- 03 demo: 'single' | 'comparison' | 'process' (1, 2 ou 3 imagens)
-- 04 novidade: 'text-only' | 'single-large' | 'pair' | 'grid-three'
-- 05 prova: 'numeric' | 'single-print' | 'multiple-prints' | 'logo-cloud'
+- 03 demo: variant 'auto' (preferido — adapta a 1, 2 ou 3 imagens pela copy) | 'single' | 'comparison' | 'process'
+- 04 novidade: variant 'auto' (preferido) | 'text-only' (sem imagens) | 'single-large' | 'pair' | 'grid-three'
+- 05 prova: 'numeric' (sem imagens) | 'single-print' | 'multiple-prints' | 'logo-cloud'
 - 06 texto-foto: 'text-only' | 'image-bottom' | 'image-middle' | 'image-bg'
 - 07 sepia (foto fullbleed em P&B): foto + título por cima — background "photo" obrigatório
 - 08 serif: título Playfair grande + body opcional. Background dark ou cream/white.
-- 09 cta: 'text-only' | 'product-mockup' | 'human-photo' | 'composition' + botão de ação
+- 09 cta: variant 'auto' (preferido) | 'text-only' (sem imagens) | 'product-mockup' | 'human-photo' | 'composition' + botão de ação
 
 OUTPUT:
 Retorne APENAS um JSON válido seguindo o schema. Sem comentários, sem markdown, sem explicações.

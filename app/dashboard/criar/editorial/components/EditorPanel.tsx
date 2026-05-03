@@ -21,11 +21,11 @@ const TABS = [
 ]
 
 const VARIANT_OPTIONS: Record<string, string[]> = {
-  demo: ['single', 'comparison', 'process'],
-  novidade: ['text-only', 'single-large', 'pair', 'grid-three'],
+  demo: ['auto', 'single', 'comparison', 'process'],
+  novidade: ['auto', 'text-only', 'single-large', 'pair', 'grid-three'],
   prova: ['numeric', 'single-print', 'multiple-prints', 'logo-cloud'],
   'texto-foto': ['text-only', 'image-bottom', 'image-middle', 'image-bg'],
-  cta: ['text-only', 'product-mockup', 'human-photo', 'composition'],
+  cta: ['auto', 'text-only', 'product-mockup', 'human-photo', 'composition'],
 }
 
 export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
