@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronUp,
   Plus,
+  FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -46,6 +47,7 @@ interface DashboardSidebarProps {
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Criar", href: "/dashboard/criar", icon: Sparkles, badge: "Novo" },
+  { name: "Editorial", href: "/dashboard/editorial", icon: FileText },
   { name: "Projetos", href: "/dashboard/projetos", icon: Folder },
   { name: "Marcas", href: "/dashboard/marcas", icon: Building2 },
   { name: "Templates", href: "/dashboard/templates", icon: Layers },
