@@ -85,6 +85,36 @@ export function SlidePreview({
   )
 }
 
+function SlideImage({
+  slide,
+  dark,
+  light,
+}: {
+  slide: PreviewSlide
+  dark: string
+  light: string
+}) {
+  if (slide.image.url) {
+    return (
+      <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
+        <img
+          src={slide.image.url}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
+    )
+  }
+  return (
+    <div
+      className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
+      style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
+    >
+      {slide.image.error || "sem imagem"}
+    </div>
+  )
+}
+
 function HighlightedText({
   text,
   words,
@@ -307,28 +337,21 @@ function EditorialSlide({
         </span>
       </div>
 
-      {/* Conteúdo principal: texto e imagem em ordem invertida conforme variant */}
-      <div className={`px-5 ${imageOnTop ? "flex flex-col" : "flex flex-col-reverse"} gap-4 min-h-0`}>
+      {/*
+        Conteúdo principal: texto + imagem juntos (gap pequeno), ancorados pro
+        topo no image-top ou pro rodapé no image-bottom. Sem `flex-1` no texto
+        — o bloco encolhe ao tamanho natural e fica colado num lado.
+      */}
+      <div
+        className={`px-5 flex flex-col gap-3 min-h-0 ${
+          imageOnTop ? "justify-start" : "justify-end pb-1"
+        }`}
+      >
         {/* Imagem */}
-        {slide.image.url ? (
-          <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
-            <img
-              src={slide.image.url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div
-            className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
-            style={{ height: "44%", backgroundColor: dark, color: light, opacity: 0.4 }}
-          >
-            {slide.image.error || "sem imagem"}
-          </div>
-        )}
+        {imageOnTop && <SlideImage slide={slide} dark={dark} light={light} />}
 
         {/* Texto */}
-        <div className="space-y-2 min-h-0 flex-1 overflow-hidden">
+        <div className="space-y-1.5 overflow-hidden">
           <h1
             className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
             style={{ color: dark }}
@@ -346,13 +369,15 @@ function EditorialSlide({
           )}
           {slide.body && (
             <p
-              className="text-[11px] leading-relaxed line-clamp-4"
+              className="text-[11px] leading-relaxed line-clamp-3"
               style={{ color: dark, opacity: 0.75 }}
             >
               {slide.body}
             </p>
           )}
         </div>
+
+        {!imageOnTop && <SlideImage slide={slide} dark={dark} light={light} />}
       </div>
 
       {/* Footer com paginação dots */}
