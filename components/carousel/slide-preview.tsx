@@ -218,6 +218,8 @@ function EditorialSlideRouter(props: RouterProps) {
     handle,
     handleAvatar,
     brandLabel,
+    lightBg,
+    darkBg,
   } = props
 
   const isCover = slide.order_index === 0
