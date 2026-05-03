@@ -59,6 +59,19 @@ export default function RootLayout({
       lang="pt-BR"
       className={`dark ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
     >
+      <head>
+        {/*
+          Google Fonts via <link> com nomes literais — Konva renderiza no <canvas>
+          e não resolve CSS variables (next/font gera nomes internos tipo
+          __Anton_abc). Sem essa duplicação, o canvas cai pro fallback.
+        */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        />
+      </head>
       <body className="font-sans antialiased bg-background text-foreground">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

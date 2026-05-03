@@ -6,30 +6,44 @@ export const CANVAS_CONFIG = {
   footerHeight: 80,
 }
 
+// IMPORTANTE: Konva renderiza no <canvas> e NÃO resolve CSS variables.
+// Os nomes aqui são literais — next/font carrega as @font-face com esses nomes
+// e o Konva consegue achar via document.fonts.
 export const EDITORIAL_FONTS = {
   display: {
-    // Anton — sans bold condensed grosso (style das refs do briefing). Fallback Bebas + Impact.
-    family:
-      'var(--font-anton), "Anton", var(--font-bebas), "Bebas Neue", "Impact", "Arial Black", sans-serif',
+    // Anton — sans bold condensed grosso (style das refs @brandsdecoded__).
+    family: '"Anton", "Bebas Neue", Impact, "Arial Black", sans-serif',
     weight: 700,
   },
   serif: {
-    family: 'var(--font-playfair), "Playfair Display", Georgia, serif',
+    family: '"Playfair Display", Georgia, "Times New Roman", serif',
     weight: 900,
   },
   body: {
-    family: 'var(--font-space-grotesk), "Space Grotesk", Inter, sans-serif',
+    family: '"Space Grotesk", Inter, system-ui, sans-serif',
     weight: 400,
   },
   bodyBold: {
-    family: 'var(--font-space-grotesk), "Space Grotesk", Inter, sans-serif',
+    family: '"Space Grotesk", Inter, system-ui, sans-serif',
     weight: 600,
   },
   tag: {
-    family: 'var(--font-space-grotesk), "Space Grotesk", sans-serif',
+    family: '"Space Grotesk", Inter, system-ui, sans-serif',
     weight: 500,
   },
 }
+
+/**
+ * Famílias usadas pra preload de fontes via document.fonts.load().
+ * Garantimos que carregam antes do Konva renderizar.
+ */
+export const EDITORIAL_FONT_LOAD_SPECS = [
+  '700 130px "Anton"',
+  '900 64px "Playfair Display"',
+  '400 30px "Space Grotesk"',
+  '600 30px "Space Grotesk"',
+  '500 14px "Space Grotesk"',
+] as const
 
 export const EDITORIAL_SIZES = {
   header: { fontSize: 14, paddingTop: 32, paddingX: 48 },

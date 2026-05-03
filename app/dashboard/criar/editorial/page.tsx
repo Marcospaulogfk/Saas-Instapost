@@ -13,6 +13,7 @@ import { CarouselPreview } from './components/CarouselPreview'
 import { EditorPanel } from './components/EditorPanel'
 import { ExportMenu } from './components/ExportMenu'
 import { loadCarouselAction } from '@/app/actions/editorial'
+import { normalizeEditorialCarousel } from '@/components/templates/editorial/utils/normalize-carousel'
 
 type Step = 'form' | 'loading-saved' | 'generating' | 'editing'
 
@@ -44,7 +45,8 @@ function CriarEditorialInner() {
       const result = await loadCarouselAction(carouselId)
       if (cancelled) return
       if (result.ok) {
-        setCarousel(result.carousel)
+        // Normaliza pra paleta atual: navy/sepia legacy -> dark, capa força photo
+        setCarousel(normalizeEditorialCarousel(result.carousel))
         setStep('editing')
       } else {
         setErrorMsg(result.error)
@@ -90,7 +92,7 @@ function CriarEditorialInner() {
     es.addEventListener('complete', (event) => {
       try {
         const data = JSON.parse((event as MessageEvent).data)
-        setCarousel(data.carousel)
+        setCarousel(normalizeEditorialCarousel(data.carousel))
         setSelectedSlideIdx(0)
         setSavedId(null)
         setStep('editing')

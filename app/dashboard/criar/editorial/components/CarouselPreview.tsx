@@ -2,13 +2,14 @@
 
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type {
   EditorialCarousel,
   EditorialSlide,
 } from '@/components/templates/editorial/editorial.types'
 import { Button } from '@/components/ui/button'
+import { useEditorialFontsReady } from '@/components/templates/editorial/utils/use-editorial-fonts'
 
 type LayoutComponent = ComponentType<{ slide: EditorialSlide; scale?: number }>
 
@@ -89,6 +90,7 @@ export function CarouselPreview({
   selectedIdx,
   onSelectSlide,
 }: CarouselPreviewProps) {
+  const fontsReady = useEditorialFontsReady()
   const handlePrev = () => {
     if (selectedIdx > 0) onSelectSlide(selectedIdx - 1)
   }
@@ -146,21 +148,28 @@ export function CarouselPreview({
         </div>
       </div>
 
-      {/* Slide visível em scale 0.5 */}
+      {/* Slide visível em scale 0.5 — aguarda fonts carregarem */}
       <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
-        <motion.div
-          key={selectedIdx}
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.25 }}
-        >
-          {(() => {
-            const slide = carousel.slides[selectedIdx]
-            const Layout = layoutComponents[slide.layoutType]
-            if (!Layout) return null
-            return <Layout slide={slide} scale={0.5} />
-          })()}
-        </motion.div>
+        {!fontsReady ? (
+          <div className="flex flex-col items-center gap-3 text-text-muted">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <p className="text-sm">Carregando fontes editoriais…</p>
+          </div>
+        ) : (
+          <motion.div
+            key={selectedIdx}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.25 }}
+          >
+            {(() => {
+              const slide = carousel.slides[selectedIdx]
+              const Layout = layoutComponents[slide.layoutType]
+              if (!Layout) return null
+              return <Layout slide={slide} scale={0.5} />
+            })()}
+          </motion.div>
+        )}
       </div>
 
       {/* Thumbnails */}
