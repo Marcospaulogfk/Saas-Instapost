@@ -2,14 +2,15 @@
 
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
-import type { ComponentType } from 'react'
+import { ChevronLeft, ChevronRight, Loader2, FileText } from 'lucide-react'
+import { useState, type ComponentType } from 'react'
 import type {
   EditorialCarousel,
   EditorialSlide,
 } from '@/components/templates/editorial/editorial.types'
 import { Button } from '@/components/ui/button'
 import { useEditorialFontsReady } from '@/components/templates/editorial/utils/use-editorial-fonts'
+import { PromptsModal } from './PromptsModal'
 
 type LayoutComponent = ComponentType<{ slide: EditorialSlide; scale?: number }>
 
@@ -91,6 +92,7 @@ export function CarouselPreview({
   onSelectSlide,
 }: CarouselPreviewProps) {
   const fontsReady = useEditorialFontsReady()
+  const [showPrompts, setShowPrompts] = useState(false)
   const handlePrev = () => {
     if (selectedIdx > 0) onSelectSlide(selectedIdx - 1)
   }
@@ -126,6 +128,15 @@ export function CarouselPreview({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPrompts(true)}
+            className="text-text-secondary hover:text-text-primary"
+          >
+            <FileText className="w-4 h-4 mr-1.5" />
+            Prompts
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -196,6 +207,10 @@ export function CarouselPreview({
           })}
         </div>
       </div>
+
+      {showPrompts && (
+        <PromptsModal carousel={carousel} onClose={() => setShowPrompts(false)} />
+      )}
 
       {/* Slides em fullsize hidden — usados pelo exporter pra capturar PNG/JPG */}
       <div

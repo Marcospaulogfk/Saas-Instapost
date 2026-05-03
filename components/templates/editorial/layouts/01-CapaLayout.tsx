@@ -91,12 +91,13 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
           mode="capa"
         />
 
-        {/* Badge com @handle centralizado, acima do título */}
+        {/* Pill @handle alinhado com o título (mesmo padX) — visual mais limpo */}
         <HandleBadge
           handle={slide.brandInfo.handle}
-          badgeColor={brandColor}
+          accentColor={brandColor}
           textColor={EDITORIAL_COLORS.text.white}
-          y={titleY - 80}
+          x={padX}
+          y={titleY - 70}
         />
 
         <HighlightedTitle

@@ -70,6 +70,33 @@ Sequência típica:
 - Slide final: cta
 
 ================================================
+📰 BODY — CONTEÚDO INFORMATIVO OBRIGATÓRIO
+================================================
+
+CADA slide (exceto capa) PRECISA de body com info contextual real.
+Não basta repetir o título com palavras diferentes.
+
+REGRA: o body explica, complementa, justifica ou aprofunda o título.
+- Mínimo: 1 frase com informação útil (não só CTA vazio)
+- Máximo: 3 parágrafos
+- Pode usar **bold inline** pra destacar palavras-chave em tom (não substitui highlightWords do título)
+- Pode usar \\n\\n pra separar parágrafos
+
+EXEMPLOS BONS:
+✅ "Não é o conteúdo. É a forma. 95% dos carrosséis falham por falta de estrutura visual.\\n\\n**A boa notícia:** dá pra corrigir isso com um ajuste no template."
+✅ "A neurociência mostrou que esse intervalo entre tarefas é onde o cérebro consolida memória. Sem ele, aprendizado não dura."
+
+EXEMPLOS RUINS (não fazer):
+❌ Body vazio em slide informativo
+❌ "Saiba mais." (sem conteúdo)
+❌ Body que só repete o título
+
+EXCEÇÕES (body opcional):
+- capa (já tem subtitle)
+- cta variant 'text-only' (callout do botão é o foco)
+- serif puramente conceitual
+
+================================================
 ✍️ TÍTULOS — REGRAS DE QUEBRA
 ================================================
 
@@ -143,13 +170,28 @@ QUANTIDADE POR LAYOUT (limite máximo):
 - serif: 0 ou 1
 - cta: 0, 1 ou 2
 
-EXEMPLO CORRETO (tema "Era Uma Vez em Hollywood"):
-✅ "Vintage 1969 Los Angeles street at golden hour, classic cars, neon cinema marquee lights, warm orange and red tones, cinematic atmosphere, retro film aesthetic, no people"
+REGRA ESPECÍFICA — SUJEITOS REAIS NO TEMA:
+Quando a copy do slide cita uma pessoa real (ator, atleta, CEO, marca específica), você NÃO PODE usar o nome no prompt. Use estas técnicas:
+1. Descrição física detalhada (idade, etnia, traços, expressão, vestimenta) que a pessoa SEM cita-la
+2. Para uma marca: descreva PRODUTOS/AMBIENTE característicos da marca (sem logo, sem texto)
+3. Para um ato/profissão: descreva a CENA/ATIVIDADE típica
+
+EXEMPLOS — sujeito específico mas SEM violar copyright:
+Tema do slide: "Will Smith e Leonardo DiCaprio mudaram Hollywood"
+✅ Imagem 1: "Athletic Black man in his 50s with short hair and confident smile, dramatic film noir lighting, vintage Hollywood studio backdrop, cinematic editorial portrait, premium professional photography, no text, no logos"
+✅ Imagem 2: "Charismatic White man in his 40s with intense gaze, golden hour Los Angeles streetscape, retro 1960s aesthetic, dramatic lighting, cinematic film still aesthetic, no text"
+
+Tema: "BYD lançou o novo carro"
+✅ "Modern electric SUV from a Chinese automaker, futuristic streamlined design, polished obsidian black finish, photographed on a sleek studio set with dramatic side lighting, premium automotive editorial photography, ultra-clean composition, no text, no logos"
+
+Tema: "Era Uma Vez em Hollywood":
+✅ "Vintage 1969 Los Angeles street at golden hour, classic cars, neon cinema marquee lights, warm orange and red tones, cinematic atmosphere, retro film aesthetic, no people, no text"
 
 EXEMPLOS ERRADOS:
 ❌ "Brad Pitt and Leonardo DiCaprio in Hollywood"  (copyright)
-❌ "Hollywood sign"  (genérico demais)
+❌ "Hollywood sign"  (genérico demais, sem clima)
 ❌ "Image with text saying ONCE UPON A TIME"  (Flux erra texto)
+❌ Imagem genérica que não tem nada a ver com o sujeito específico
 
 ================================================
 🔄 VARIANTES — APENAS PARA LAYOUTS FLEXÍVEIS
