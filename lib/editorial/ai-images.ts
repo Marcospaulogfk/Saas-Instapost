@@ -36,30 +36,52 @@ const ASPECT_TO_SIZE: Record<NonNullable<GenerateImageParams['aspectRatio']>, st
   '9:16': 'portrait_16_9',
 }
 
+const MAX_RETRIES = 3
+
 export async function generateEditorialImage(params: GenerateImageParams): Promise<string> {
   ensureConfigured()
 
   const style = params.style || 'cinematic'
   const enhancedPrompt = `${params.prompt}, ${STYLE_PROMPTS[style]}, high quality, 4k`
 
-  const result = await fal.subscribe('fal-ai/flux-pro/v1.1', {
-    input: {
-      prompt: enhancedPrompt,
-      image_size: ASPECT_TO_SIZE[params.aspectRatio || '4:5'],
-      num_inference_steps: 28,
-      guidance_scale: 3.5,
-      num_images: 1,
-      enable_safety_checker: true,
-    },
-    logs: false,
-  })
+  let lastError: unknown
 
-  const data = result.data as { images?: Array<{ url: string }> } | undefined
-  if (!data?.images?.[0]?.url) {
-    throw new Error('Fal.ai não retornou imagem válida')
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(
+        `  🎨 Fal tentativa ${attempt}/${MAX_RETRIES}: ${params.prompt.slice(0, 60)}…`,
+      )
+      const result = await fal.subscribe('fal-ai/flux-pro/v1.1', {
+        input: {
+          prompt: enhancedPrompt,
+          image_size: ASPECT_TO_SIZE[params.aspectRatio || '4:5'],
+          num_inference_steps: 28,
+          guidance_scale: 3.5,
+          num_images: 1,
+          enable_safety_checker: true,
+        },
+        logs: false,
+      })
+      const data = result.data as { images?: Array<{ url: string }> } | undefined
+      if (!data?.images?.[0]?.url) {
+        throw new Error('Fal.ai não retornou imagem válida')
+      }
+      console.log(`  ✅ Imagem OK (tentativa ${attempt})`)
+      return data.images[0].url
+    } catch (err) {
+      lastError = err
+      const message = err instanceof Error ? err.message : 'erro'
+      console.warn(`  ⚠️  Falha tentativa ${attempt}: ${message}`)
+      if (attempt < MAX_RETRIES) {
+        const delay = 1000 * attempt // 1s, 2s
+        console.log(`  ⏳ Aguardando ${delay}ms antes de retry…`)
+        await new Promise((r) => setTimeout(r, delay))
+      }
+    }
   }
 
-  return data.images[0].url
+  const final = lastError instanceof Error ? lastError.message : 'erro desconhecido'
+  throw new Error(`Fal.ai falhou após ${MAX_RETRIES} tentativas: ${final}`)
 }
 
 export async function generateImagesForSlide(slide: EditorialSlide): Promise<string[]> {
