@@ -1,0 +1,195 @@
+# TEMPLATE: fitness-promocional-retrato
+# Categoria: fitness/academia
+# Referência: 01/00/post_1_1.jpg (Power Academy — "30% DE DESCONTO")
+# Estilo: promocional vendedor, retrato fitness, oferta destacada
+
+template_id: fitness-promocional-retrato
+categoria: fitness
+estilo: promocional-vendedor
+descricao: |
+  Layout pra promoções/ofertas com foto de pessoa fitness em destaque
+  no lado direito. Texto promocional alinhado à esquerda com hierarquia:
+  intro pequena → oferta gigante (% desconto) → CTA explicativo.
+  Fundo de cor sólida da marca com elemento gráfico decorativo (curva/blob).
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_decoration
+    primary_color: "{{brand.primary}}"  # verde lime no original (#C9F031)
+    decoration:
+      type: organic_blob
+      position: { right: -100, top: 100 }
+      width: 600
+      height: 400
+      color: "rgba(0,0,0,0.12)"
+      blur: 0
+      shape: curved_organic
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  position: { top: 56, left: 60 }
+  type: brand_lockup
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "{{brand.dark}}"
+
+# ============================================================
+# FOTO DA PESSOA (LADO DIREITO)
+# ============================================================
+foto_pessoa:
+  position: { right: 0, top: 200, bottom: 200 }
+  width: 580
+  type: photo_cutout  # PNG transparente preferível (sem fundo)
+  placeholder: "pessoa_fitness_torso.png"
+  crop_focus: torso_centered
+  treatment:
+    contrast: +10
+    saturation: +5
+
+# ============================================================
+# TÍTULO PROMOCIONAL (LADO ESQUERDO)
+# ============================================================
+titulo_promocional:
+  position: { top: 240, left: 60 }
+  width: 460
+  alignment: left
+  
+  conteudo:
+    - tipo: introducao
+      texto: "Mês da\nTransformação:"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 22
+      line_height: 1.2
+      color: "{{brand.dark}}"
+      margin_bottom: 8
+    
+    - tipo: oferta_principal
+      texto: "30% DE\nDESCONTO\nEM TODOS\nOS PLANOS!"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 64
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "{{brand.dark}}"
+      text_transform: uppercase
+      
+      palavras_destaque:
+        - palavra: "30%"
+          tipo: highlight_underline
+          underline_color: "{{brand.dark}}"
+
+# ============================================================
+# DESCRIÇÃO + CTA
+# ============================================================
+descricao_cta:
+  position: { bottom: 200, left: 60 }
+  width: 460
+  
+  conteudo:
+    - tipo: descricao
+      texto: "Aproveite o mês da transformação para começar sua jornada fitness com um super desconto."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 14
+      line_height: 1.5
+      color: "{{brand.dark}}"
+      max_width: 360
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "{{brand.dark}}"
+  opacity: 0.7
+  
+  esquerda:
+    - tipo: telefone
+      texto: "{{brand.phone}}"
+      font_weight: 600
+  
+  centro:
+    - tipo: website
+      texto: "{{brand.website}}"
+  
+  direita:
+    - tipo: endereco
+      texto: "{{brand.address}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - introducao (2 linhas, frase de contexto)
+    - oferta_principal (3-4 linhas, valor da oferta destacado)
+    - descricao (15-25 palavras explicativas)
+  
+  cores:
+    - brand.primary    # cor de fundo
+    - brand.dark       # cor do texto
+    - brand.accent     # opcional, pra destaques
+  
+  imagens:
+    - logo
+    - foto_pessoa (PNG sem fundo preferível)
+  
+  marca:
+    - nome
+    - telefone
+    - website
+    - endereço
+
+fixo:
+  - layout dividido (foto direita + texto esquerda)
+  - hierarquia: intro → oferta gigante → descrição
+  - elemento decorativo (blob orgânico) atrás da foto
+  - tipografia condensada uppercase no destaque
+  - paleta de 2 cores (fundo + texto)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é fitness, beauty, varejo, serviços
+    - copy é promocional (% desconto, oferta limitada)
+    - tem foto de pessoa disponível (preferível PNG sem fundo)
+    - tom é vendedor e direto
+    - oferta tem número grande pra destacar
+  
+  nao_use_quando:
+    - tema é educacional/informativo
+    - sem foto de pessoa disponível
+    - oferta é sutil (não tem número forte)
+
+# ============================================================
+# VARIAÇÕES POSSÍVEIS
+# ============================================================
+variantes:
+  - foto-direita (default)
+  - foto-esquerda (espelhado)
+  - foto-bottom (foto embaixo, texto em cima)
+  - sem-foto-pessoa (só ilustração + texto, blob maior)

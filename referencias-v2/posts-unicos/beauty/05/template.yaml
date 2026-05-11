@@ -1,0 +1,169 @@
+# TEMPLATE: beauty-frase-conceitual-centered
+# Categoria: beauty/estetica
+# Referência: beauty/04/post_6.jpg (Realestética — "Beleza é equilibrio!")
+# Estilo: editorial conceitual, frase forte centralizada, foto secundária
+
+template_id: beauty-frase-conceitual-centered
+categoria: beauty
+estilo: editorial-conceitual
+descricao: |
+  Layout pra frases conceituais/manifesto da marca. Foto de rosto/pose
+  serve mais como contexto que como protagonista (foto centralizada com
+  espaço de respiro). Tipografia centralizada na metade superior com
+  palavra-chave grande serif italic + tagline pequena. Sem CTA, vibe
+  manifesto/posicionamento.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_with_padding
+    placeholder: "rosto_pose_artistica.jpg"
+    background_color: "{{brand.surface}}"  # cream/off-white se foto não cobrir tudo
+    crop: cover
+    crop_focus: face_or_pose
+
+# ============================================================
+# HEADER — HANDLE
+# ============================================================
+header:
+  type: pill_handle
+  position: { top: 60, left: 60 }
+  
+  pill:
+    background: "rgba(0,0,0,0.4)"
+    backdrop_filter: blur(12px)
+    border_radius: 999
+    padding: { x: 18, y: 10 }
+    texto: "{{brand.handle}}"
+    font_size: 13
+    color: "#FFFFFF"
+
+# ============================================================
+# TÍTULO CONCEITUAL (PARTE SUPERIOR CENTRAL)
+# ============================================================
+titulo_conceitual:
+  position: { top: 140, center_x }
+  width: 720
+  alignment: center
+  
+  conteudo:
+    - tipo: chamada_principal
+      texto: "Beleza é\nequilíbrio!"
+      font_family: "Playfair Display"
+      font_weight: 500
+      font_style: italic
+      font_size: 80
+      line_height: 0.95
+      letter_spacing: -0.02em
+      color: "#FFFFFF"
+    
+    - tipo: tagline_descricao
+      texto: "confiança é consequência."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 16
+      color: "rgba(255,255,255,0.95)"
+      margin_top: 16
+      font_style: italic
+      letter_spacing: 0.02em
+
+# ============================================================
+# RODAPÉ — ASSINATURAS LATERAIS
+# ============================================================
+rodape:
+  position: { bottom: 60 }
+  layout: split
+  
+  esquerda:
+    position: { left: 60 }
+    type: text_vertical
+    elementos:
+      - texto: "{{brand.tagline}}"  # "MADE IN REAL ESTÉTICA"
+        font_family: "Inter"
+        font_weight: 500
+        font_size: 9
+        letter_spacing: 0.3em
+        color: "rgba(255,255,255,0.7)"
+        text_transform: uppercase
+        rotation: 270deg  # vertical
+  
+  direita:
+    position: { right: 60 }
+    layout: horizontal
+    gap: 8
+    elementos:
+      - icone: instagram
+        cor: "rgba(255,255,255,0.7)"
+        size: 12
+      - texto: "{{brand.handle}}"
+        font_family: "Inter"
+        font_weight: 500
+        font_size: 11
+        color: "rgba(255,255,255,0.7)"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada_principal (2 linhas serif italic, 3-5 palavras)
+    - tagline_descricao (1 frase complementar curta italic)
+  
+  cores:
+    - brand.surface   # cor de fallback (se foto não cobrir tudo)
+    # NOTA: texto principal sempre branco
+  
+  imagens:
+    - foto pose/rosto artística (serve como atmosfera, não destaque)
+  
+  fonte:
+    - serif: Playfair Display | Cormorant | Bodoni
+
+fixo:
+  - foto fullbleed (mais como atmosfera que como foco)
+  - tipografia centralizada na metade superior
+  - chamada serif italic grande
+  - tagline italic pequena complementar
+  - rodapé com info lateral (handle direito + tagline esquerda vertical)
+  - sem CTA explícito (manifesto puro)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é beleza/wellness/lifestyle
+    - copy é frase conceitual/manifesto
+    - tom é filosófico/posicionamento de marca
+    - tem foto atmosférica disponível
+    - sem necessidade de CTA
+  
+  nao_use_quando:
+    - copy é promocional/comercial
+    - precisa de informação técnica
+    - tema é processo/passo-a-passo
+    - tom é direto/vendedor
+
+# ============================================================
+# VARIAÇÕES POSSÍVEIS
+# ============================================================
+variantes:
+  - centered (default): texto centralizado horizontal e vertical
+  - top-aligned: texto na parte superior
+  - bottom-aligned: texto na parte inferior
+  - asymmetric: texto desalinhado pra criar tensão visual
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - Foto serve mais como ambiente que como elemento principal
+  - Manifesto/conceito da marca ganha protagonismo
+  - Tipografia italic em ambos níveis (chamada + tagline)
+  - Rodapé com tagline lateral vertical é assinatura editorial
+  - Funciona melhor com fotos atmosféricas (não retratos diretos)

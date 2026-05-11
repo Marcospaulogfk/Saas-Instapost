@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -11,8 +12,16 @@ import {
   Layers,
   Settings,
   ChevronUp,
+  ChevronsUpDown,
   Plus,
   FileText,
+  Check,
+  Loader2,
+  Pencil,
+  Lightbulb,
+  Calendar,
+  Users,
+  Trophy,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,9 +34,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { signOut } from "@/app/actions/auth"
+import { setActiveBrand } from "@/app/actions/brands"
 import { getBrandGradient } from "@/lib/brand-colors"
 
-interface ActiveBrand {
+interface BrandItem {
   id: string
   name: string
 }
@@ -41,17 +51,22 @@ interface DashboardSidebarProps {
   subscriptionStatus: string
   planCreditsMonthly: number
   creditsUsedThisMonth: number
-  activeBrand: ActiveBrand | null
+  activeBrand: BrandItem | null
+  brands: BrandItem[]
 }
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Criar", href: "/dashboard/criar", icon: Sparkles, badge: "Novo" },
-  { name: "Editorial", href: "/dashboard/editorial", icon: FileText },
-  { name: "Projetos", href: "/dashboard/projetos", icon: Folder },
+  { name: "Inspirações", href: "/dashboard/inspiracoes", icon: Lightbulb },
+  { name: "Biblioteca", href: "/dashboard/projetos", icon: Folder },
+  { name: "Calendário", href: "/dashboard/calendario", icon: Calendar },
+  { name: "Comunidade", href: "/dashboard/comunidade", icon: Users },
+  { name: "Jornada", href: "/dashboard/jornada", icon: Trophy },
   { name: "Marcas", href: "/dashboard/marcas", icon: Building2 },
   { name: "Templates", href: "/dashboard/templates", icon: Layers },
-  { name: "Configuracoes", href: "/dashboard/configuracoes", icon: Settings },
+  { name: "Posts únicos", href: "/dashboard/posts-unicos", icon: FileText },
+  { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
 
 export function DashboardSidebar({
@@ -64,14 +79,29 @@ export function DashboardSidebar({
   planCreditsMonthly,
   creditsUsedThisMonth,
   activeBrand,
+  brands,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [isSwitching, startSwitching] = useTransition()
+  const [switchingId, setSwitchingId] = useState<string | null>(null)
 
   async function handleSignOut() {
     await signOut()
     router.push("/")
     router.refresh()
+  }
+
+  function handleSwitchBrand(brandId: string) {
+    if (!brandId || brandId === activeBrand?.id) return
+    setSwitchingId(brandId)
+    startSwitching(async () => {
+      const result = await setActiveBrand(brandId)
+      if (result.ok) {
+        router.refresh()
+      }
+      setSwitchingId(null)
+    })
   }
 
   const isTrial = subscriptionStatus === "trial"
@@ -92,26 +122,92 @@ export function DashboardSidebar({
         </Link>
       </div>
 
-      {/* Active brand */}
+      {/* Active brand switcher */}
       <div className="px-4 mt-4 mb-3">
         {activeBrand ? (
-          <Link
-            href={`/dashboard/marcas/${activeBrand.id}`}
-            className="rounded-lg border border-border-subtle bg-background-tertiary/40 p-3 flex items-center gap-3 hover:border-purple-600/30 hover:bg-background-tertiary/70 transition-all"
-          >
-            <div
-              className={`w-9 h-9 rounded-lg ${getBrandGradient(activeBrand.id)} flex items-center justify-center flex-shrink-0`}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="w-full rounded-lg border border-border-subtle bg-background-tertiary/40 p-3 flex items-center gap-3 hover:border-purple-600/30 hover:bg-background-tertiary/70 transition-all text-left"
+                aria-label="Trocar marca"
+              >
+                <div
+                  className={`w-9 h-9 rounded-lg ${getBrandGradient(activeBrand.id)} flex items-center justify-center flex-shrink-0`}
+                >
+                  <span className="text-sm font-bold text-white">
+                    {activeBrand.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-text-muted">Marca</p>
+                  <p className="text-sm font-medium text-text-primary truncate">
+                    {activeBrand.name}
+                  </p>
+                </div>
+                {isSwitching ? (
+                  <Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+                ) : (
+                  <ChevronsUpDown className="w-4 h-4 text-text-muted" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-56 bg-background-tertiary border-border-medium"
             >
-              <span className="text-sm font-bold text-white">
-                {activeBrand.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-text-muted">Marca</p>
-              <p className="text-sm font-medium text-text-primary truncate">{activeBrand.name}</p>
-            </div>
-            <ChevronUp className="w-4 h-4 text-text-muted" />
-          </Link>
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-text-muted">
+                Trocar marca
+              </div>
+              {brands.map((b) => {
+                const isActive = b.id === activeBrand.id
+                const isLoading = switchingId === b.id
+                return (
+                  <DropdownMenuItem
+                    key={b.id}
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      handleSwitchBrand(b.id)
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div
+                      className={`w-6 h-6 rounded ${getBrandGradient(b.id)} flex items-center justify-center flex-shrink-0`}
+                    >
+                      <span className="text-[10px] font-bold text-white">
+                        {b.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="flex-1 truncate">{b.name}</span>
+                    {isLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isActive ? (
+                      <Check className="w-3.5 h-3.5 text-lime" />
+                    ) : null}
+                  </DropdownMenuItem>
+                )
+              })}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href={`/dashboard/marcas/${activeBrand.id}`} className="cursor-pointer">
+                  <Pencil className="w-3.5 h-3.5 mr-2" />
+                  Editar marca atual
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/marcas" className="cursor-pointer">
+                  <Building2 className="w-3.5 h-3.5 mr-2" />
+                  Ver todas as marcas
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/onboarding" className="cursor-pointer">
+                  <Plus className="w-3.5 h-3.5 mr-2" />
+                  Adicionar nova marca
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <Link
             href="/onboarding"

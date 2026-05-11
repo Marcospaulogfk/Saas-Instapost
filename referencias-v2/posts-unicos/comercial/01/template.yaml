@@ -1,0 +1,226 @@
+# TEMPLATE: comercial-split-color-product
+# Categoria: comercial/produto
+# Referência: comercial/01/post_1_3.jpg (iPhone — "O desempenho que acompanha seu ritmo")
+# Estilo: comercial/produto, split entre cor sólida e foto, mockup de produto
+
+template_id: comercial-split-color-product
+categoria: comercial
+estilo: vendedor-impactante
+descricao: |
+  Layout dividido entre uma área de cor sólida vibrante (esquerda/topo)
+  e uma foto contextual de pessoa usando o produto. Mockup do produto
+  flutuando sobreposto no encontro das duas áreas. Título grande na
+  área inferior com palavra de destaque em cor accent. CTA opcional.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  
+  # Layout dividido em 2 áreas
+  layout:
+    type: split_vertical_with_overlap
+    
+    area_top:
+      height: 60%
+      type: photo
+      placeholder: "pessoa_usando_produto.jpg"
+      crop: cover
+      crop_focus: subject_with_product
+      treatment:
+        contrast: +5
+        saturation: +10
+    
+    area_bottom:
+      height: 40%
+      type: solid_color
+      background: "{{brand.primary}}"  # laranja vibrante no original (#FF5722)
+
+# ============================================================
+# HEADER — HANDLE + ICONE TOP-RIGHT
+# ============================================================
+header:
+  position: { top: 60 }
+  layout: split
+  
+  esquerda:
+    position: { left: 60 }
+    pill:
+      background: "rgba(0,0,0,0.4)"
+      backdrop_filter: blur(12px)
+      border_radius: 999
+      padding: { x: 18, y: 10 }
+      texto: "{{brand.handle}}"  # "@suaempresa"
+      font_size: 13
+      color: "#FFFFFF"
+  
+  direita:
+    position: { right: 60 }
+    icone:
+      tipo: arrow_diagonal  # seta indicando "saiba mais"
+      cor: "#FFFFFF"
+      size: 24
+
+# ============================================================
+# MOCKUP DO PRODUTO (SOBREPOSIÇÃO)
+# ============================================================
+mockup_produto:
+  position: { center_y: split_overlap, right: 60 }
+  # Posicionado na linha de divisão entre foto e cor sólida
+  
+  width: 320
+  height: auto
+  
+  conteudo:
+    type: product_mockup
+    placeholder: "produto_principal.png"  # PNG transparente preferível
+    rotation: -8deg  # leve rotação dá movimento
+    shadow:
+      type: drop_shadow
+      offset: { x: 0, y: 20 }
+      blur: 40
+      color: "rgba(0,0,0,0.4)"
+
+# ============================================================
+# TÍTULO PRINCIPAL (NA ÁREA DE COR SÓLIDA)
+# ============================================================
+titulo_principal:
+  position: { bottom: 240, left: 60 }
+  width: 720
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada
+      texto: "O DESEMPENHO\nQUE ACOMPANHA\nSEU RITMO."
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 56
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+      
+      palavras_destaque:
+        - palavra: "DESEMPENHO"
+          cor: "{{brand.accent}}"  # branco ou amarelo no original
+        - palavra: "RITMO."
+          cor: "{{brand.accent}}"
+
+# ============================================================
+# SUBTÍTULO + CTA
+# ============================================================
+subtitulo:
+  position: { bottom: 140, left: 60 }
+  font_family: "Inter"
+  font_weight: 500
+  font_size: 14
+  color: "rgba(255,255,255,0.85)"
+  texto: "{{product.tagline}}"
+  # Ex: "iPhone 16 feito pra quem exige mais, todos os dias."
+  
+  text_transform: uppercase
+  letter_spacing: 0.1em
+
+# ============================================================
+# FOOTER — INFO DA MARCA
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  
+  esquerda:
+    type: logo_with_text
+    elementos:
+      - logo: "{{brand.logo_white}}"
+      - texto: "{{brand.name}}"
+        font_size: 14
+        color: "rgba(255,255,255,0.9)"
+  
+  centro:
+    type: cta_pill
+    background: "rgba(255,255,255,0.15)"
+    backdrop_filter: blur(8px)
+    border_radius: 999
+    padding: { x: 16, y: 8 }
+    texto: "Saiba mais"
+    icone: "→"
+    font_size: 12
+    color: "#FFFFFF"
+  
+  direita:
+    type: store_icons
+    elementos:
+      - apple_store_icon
+      - google_play_icon
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada (3 linhas, uppercase)
+    - subtitulo (1 linha, uppercase, 6-10 palavras)
+    - cta_button
+  
+  cores:
+    - brand.primary    # cor da metade inferior (atualmente laranja)
+    - brand.accent     # cor das palavras destacadas
+  
+  imagens:
+    - foto_pessoa (com produto, parte superior)
+    - mockup_produto (PNG transparente, sobreposto)
+    - logo
+  
+  produto:
+    - nome
+    - tagline
+    - imagem_principal
+
+fixo:
+  - layout split (foto top + cor sólida bottom)
+  - mockup do produto sobreposto na linha de divisão
+  - mockup com leve rotação e sombra
+  - título grande uppercase na área de cor
+  - palavras destacadas em accent
+  - logo + CTA no rodapé
+  - paleta dominada por 1 cor primária forte
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente vende produto físico (eletrônicos, moda, beauty, alimentação)
+    - tem mockup ou foto do produto disponível
+    - copy é vendedora/promocional
+    - tom precisa ser impactante e moderno
+    - cliente quer destacar marca + produto juntos
+  
+  nao_use_quando:
+    - cliente é serviço (não tem produto físico)
+    - tema é educacional/informativo
+    - sem imagem do produto disponível
+    - tom precisa ser sutil/elegante
+
+# ============================================================
+# VARIAÇÕES POSSÍVEIS
+# ============================================================
+variantes:
+  - split-horizontal (default): foto top + cor bottom
+  - split-vertical: cor esquerda + foto direita
+  - cor-dominante: 80% cor + 20% foto
+  - foto-dominante: 80% foto + 20% cor
+  - sem-mockup: só foto + cor (quando produto não é destacável)
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - Mockup PNG transparente é essencial pra efeito de "flutuação"
+  - Sombra do mockup deve ser forte pra dar profundidade
+  - Cor sólida deve ser uma da marca (não inventar)
+  - Foto da pessoa deve mostrar o produto sendo usado naturalmente
+  - Se mockup não tiver, pode ser substituído por elemento gráfico

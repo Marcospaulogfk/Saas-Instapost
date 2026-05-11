@@ -1,0 +1,189 @@
+# TEMPLATE: comercial-numero-grande-retrato
+# Categoria: comercial/produto
+# Referência: comercial/03/post_3_1 (1).jpg (SafeGuard — "VIGILÂNCIA 24H")
+# Estilo: número/horário gigante destacado, retrato direita, cor forte
+
+template_id: comercial-numero-grande-retrato
+categoria: comercial
+estilo: numero-destaque
+descricao: |
+  Layout pra destacar um número específico (24h, 100%, 7 dias, etc).
+  Fundo de cor forte da marca. Número/palavra-chave gigante ocupa centro
+  do canvas. Retrato profissional na lateral direita (com camisa polo
+  da marca). CTA pill no canto. Header com website. Logo no rodapé.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_color
+    primary_color: "{{brand.primary}}"  # roxo no original
+
+# ============================================================
+# HEADER — WEBSITE
+# ============================================================
+header:
+  position: { top: 60, center_x }
+  font_family: "Inter"
+  font_weight: 500
+  font_size: 13
+  letter_spacing: 0.15em
+  color: "rgba(255,255,255,0.95)"
+  texto: "{{brand.website}}"
+  alignment: center
+
+# ============================================================
+# TÍTULO MENOR (LABEL DO NÚMERO)
+# ============================================================
+titulo_pequeno:
+  position: { top: 200, left: 60 }
+  width: 480
+  
+  conteudo:
+    - tipo: label
+      texto: "VIGILÂNCIA"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 64
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+
+# ============================================================
+# NÚMERO/PALAVRA-CHAVE GIGANTE
+# ============================================================
+numero_principal:
+  position: { left: 60, top: 320 }
+  
+  conteudo:
+    - tipo: numero_grande
+      texto: "24H"  # ou "100%", "7", "365"
+      font_family: "Anton"
+      font_weight: 900
+      font_size: 240
+      line_height: 0.9
+      letter_spacing: -0.05em
+      color: "#FFFFFF"
+      text_transform: uppercase
+
+# ============================================================
+# RETRATO LATERAL (DIREITA)
+# ============================================================
+retrato:
+  position: { right: -40, bottom: 180 }
+  width: 480
+  height: 720
+  type: photo_cutout
+  placeholder: "profissional_polo_marca.png"  # PNG sem fundo
+  crop_focus: torso_face
+
+# ============================================================
+# DESCRIÇÃO + CTA PILL
+# ============================================================
+descricao_cta:
+  position: { left: 60, bottom: 240 }
+  
+  conteudo:
+    - tipo: descricao
+      texto: "Segurança sem\ninterrupções, 24/7"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 14
+      line_height: 1.5
+      color: "rgba(255,255,255,0.9)"
+      margin_bottom: 16
+    
+    - tipo: cta_pill
+      texto: "Fale conosco"
+      background: "{{brand.surface}}"  # branco
+      color: "{{brand.dark}}"
+      border_radius: 999
+      padding: { x: 24, y: 12 }
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 13
+
+# ============================================================
+# FOOTER — LOGO + HANDLE
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60 }
+  layout: horizontal
+  gap: 12
+  alignment: left
+  
+  elementos:
+    - logo: "{{brand.logo_white}}"
+      height: 32
+    - texto: "{{brand.name}}"
+      font_size: 16
+      font_weight: 700
+      color: "#FFFFFF"
+    - texto: "{{brand.tagline}}"
+      font_size: 9
+      letter_spacing: 0.2em
+      color: "rgba(255,255,255,0.7)"
+      text_transform: uppercase
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - titulo_pequeno (1 palavra uppercase, contexto do número)
+    - numero_principal (1-3 caracteres GRANDES: 24H, 100%, 365, etc)
+    - descricao (1-2 linhas explicativas)
+    - cta_button (chamada de ação curta)
+  
+  cores:
+    - brand.primary    # cor de fundo (roxo no original)
+    - brand.surface    # cor do CTA (branco)
+    - brand.dark       # cor do texto do CTA
+  
+  imagens:
+    - retrato profissional (com uniforme/polo da marca, PNG sem fundo)
+    - logo (versão branca)
+  
+  marca:
+    - website
+    - nome
+    - tagline
+
+fixo:
+  - fundo de cor primária forte
+  - número/palavra-chave gigante (até 240px)
+  - retrato lateral (3/4 visível)
+  - hierarquia: label pequeno → número gigante → descrição → CTA
+  - CTA em pill branco contrastante
+  - paleta primária + branco
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - quer destacar UM número específico (24h, 100%, X anos, Y%)
+    - cliente tem profissional pra fotografar com uniforme
+    - copy é direta e simples
+    - tom é vendedor/promocional
+    - cliente é serviço com horário/garantia/tempo definido
+  
+  nao_use_quando:
+    - sem número/palavra forte pra destacar
+    - sem foto de profissional disponível
+    - copy precisa de mais explicação
+    - tom precisa ser elegante/sutil
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - O número deve ser MUITO grande (240px+) pra criar impacto
+  - Retrato com uniforme/polo da marca cria credibilidade
+  - PNG sem fundo é essencial pra retrato sair limpo
+  - CTA branco em fundo colorido cria contraste forte

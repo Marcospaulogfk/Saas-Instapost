@@ -1,0 +1,202 @@
+# TEMPLATE: comercial-produto-isolado-clean
+# Categoria: comercial/produto
+# Referência: comercial/00/post_1_1.jpg (iPhone — "QUEM TEM, NÃO VOLTA ATRÁS")
+# Estilo: produto isolado, fundo claro/branco, tipografia top + produto bottom
+
+template_id: comercial-produto-isolado-clean
+categoria: comercial
+estilo: produto-clean-premium
+descricao: |
+  Layout pra apresentar UM produto com destaque máximo. Fundo claro
+  (branco/cinza muito claro). Tipografia agressiva no topo com palavra
+  destacada em cor accent. Mockup do produto centralizado/levemente
+  inclinado ocupa parte inferior. Selo lateral pequeno + ícones de
+  apps/serviços no rodapé.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_subtle_gradient
+    primary_color: "{{brand.surface}}"  # branco/cinza muito claro (#F5F5F5)
+    gradient:
+      type: radial_subtle
+      center: { x: 50%, y: 50% }
+      stops:
+        - { position: 0%, color: "#FFFFFF" }
+        - { position: 100%, color: "{{brand.surface}}" }
+
+# ============================================================
+# HEADER — HANDLE + ICONE
+# ============================================================
+header:
+  position: { top: 60 }
+  layout: split
+  
+  esquerda:
+    position: { left: 60 }
+    pill:
+      background: "rgba(0,0,0,0.05)"
+      border: "1px solid rgba(0,0,0,0.1)"
+      border_radius: 999
+      padding: { x: 18, y: 10 }
+      texto: "{{brand.handle}}"
+      font_size: 13
+      color: "{{brand.dark}}"
+  
+  direita:
+    position: { right: 60 }
+    icone:
+      tipo: arrow_diagonal
+      cor: "{{brand.dark}}"
+      size: 24
+
+# ============================================================
+# TÍTULO PRINCIPAL (TOPO)
+# ============================================================
+titulo_principal:
+  position: { top: 200, left: 60 }
+  width: 720
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada
+      texto: "QUEM TEM,\nNÃO VOLTA\nATRÁS."
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 64
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "{{brand.dark}}"
+      text_transform: uppercase
+      
+      palavras_destaque:
+        - palavra: "NÃO"
+          cor: "{{brand.accent}}"  # vermelho/laranja/cor de marca
+        - palavra: "VOLTA"
+          cor: "{{brand.accent}}"
+
+# ============================================================
+# DESCRIÇÃO PEQUENA
+# ============================================================
+descricao:
+  position: { top: 480, left: 60 }
+  font_family: "Inter"
+  font_weight: 500
+  font_size: 13
+  letter_spacing: 0.1em
+  color: "{{brand.text_secondary}}"
+  text_transform: uppercase
+  texto: "Porque é experiência pra mais alto."
+
+# ============================================================
+# MOCKUP DO PRODUTO (PARTE INFERIOR)
+# ============================================================
+mockup_produto:
+  position: { center_x, bottom: 240 }
+  width: 800
+  height: auto
+  type: product_mockup
+  placeholder: "produto_principal.png"  # PNG transparente
+  rotation: -3deg  # leve inclinação
+  shadow:
+    type: drop_shadow
+    offset: { x: 0, y: 32 }
+    blur: 60
+    color: "rgba(0,0,0,0.15)"
+
+# ============================================================
+# SELO LATERAL (BADGE)
+# ============================================================
+selo_lateral:
+  position: { right: 80, center_y: 720 }
+  width: 64
+  height: 64
+  type: circular_badge
+  background: "{{brand.accent}}"
+  border_radius: 50%
+  
+  conteudo:
+    - tipo: icone
+      simbolo: "★"  # estrela ou ícone customizado
+      cor: "{{brand.dark}}"
+      tamanho: 24
+    - tipo: texto_micro
+      texto: "TOP"
+      font_size: 8
+      font_weight: 700
+      color: "{{brand.dark}}"
+      letter_spacing: 0.1em
+
+# ============================================================
+# FOOTER — ÍCONES DE APPS/PARCEIROS
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  
+  esquerda:
+    type: brand_lockup
+    elementos:
+      - logo: "{{brand.logo_url}}"
+        height: 24
+      - texto: "{{brand.name}}"
+        font_size: 12
+        color: "{{brand.dark}}"
+  
+  direita:
+    type: app_icons
+    layout: horizontal
+    gap: 8
+    icones:
+      - apple_store
+      - google_play
+      - whatsapp
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada (3 linhas, uppercase, com palavras destacadas)
+    - descricao (1 frase uppercase)
+    - selo_texto (1-3 letras, ex: TOP, NEW, HOT)
+  
+  cores:
+    - brand.surface       # cor de fundo
+    - brand.dark          # cor do texto principal
+    - brand.accent        # cor das palavras destacadas + selo
+    - brand.text_secondary # cor da descrição
+  
+  imagens:
+    - mockup_produto (PNG transparente do produto)
+    - logo
+
+fixo:
+  - fundo claro
+  - hierarquia: header → título uppercase → descrição → produto → selo + apps
+  - mockup centralizado com leve rotação
+  - sombra forte sob mockup pra profundidade
+  - selo circular como elemento de destaque
+  - paleta com 1 cor accent forte
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente vende produto físico (eletrônicos, moda, beauty)
+    - quer destacar UM produto específico
+    - tem mockup PNG sem fundo disponível
+    - tom é premium/sofisticado
+    - copy é direta/manifesto
+  
+  nao_use_quando:
+    - cliente vende serviço (não produto)
+    - sem PNG do produto
+    - múltiplos produtos pra mostrar
+    - tom precisa ser casual/jovem

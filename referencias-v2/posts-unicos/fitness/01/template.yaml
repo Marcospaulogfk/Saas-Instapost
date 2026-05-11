@@ -1,0 +1,215 @@
+# TEMPLATE: fitness-resultados-grid
+# Categoria: fitness/academia
+# Referência: 01/02/post_3_1.jpg (Power Academy — "Veja os Resultados")
+# Estilo: motivacional/agressivo, comparação visual, prova social
+
+template_id: fitness-resultados-grid
+categoria: fitness
+estilo: motivacional-agressivo
+descricao: |
+  Layout pra demonstrar resultados/transformações. Combina foto-card único OU
+  grid de 3 fotos antes/depois. Tipografia condensada uppercase, fundo cor
+  vibrante (verde lime no original — substituível pela marca).
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_pattern
+    primary_color: "{{brand.primary}}"  # verde lime no original (#C9F031)
+    pattern_overlay:
+      type: diagonal_lines
+      opacity: 0.05
+      angle: 45deg
+      color: "{{brand.dark}}"  # preto
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  type: brand_lockup
+  position: { top: 56, left: 60 }
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"  # "Power Academy"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "{{brand.dark}}"
+
+# ============================================================
+# CORPO PRINCIPAL — TÍTULO
+# ============================================================
+titulo:
+  position: { top: 180, left: 60, right: 60 }
+  font_family: "Anton"  # ou Bebas Neue, Druk Wide
+  font_weight: 800
+  text_transform: uppercase
+  font_size: 72
+  line_height: 0.95
+  letter_spacing: -0.01em
+  color: "{{brand.dark}}"
+  
+  linhas:
+    - texto: "VEJA OS"
+      cor: "{{brand.dark}}"
+    - texto: "RESULTADOS"
+      cor: "{{brand.dark}}"
+      palavras_destaque:
+        - palavra: "RESULTADOS"
+          tipo: outline_text  # texto vazado com contorno
+          stroke_color: "{{brand.dark}}"
+          fill_color: transparent
+    - texto: "VISÍVEIS EM 30 DIAS"
+      cor: "{{brand.dark}}"
+
+# ============================================================
+# SUBTÍTULO
+# ============================================================
+subtitulo:
+  position: { top: 440, left: 60, right: 60 }
+  font_family: "Inter"
+  font_weight: 400
+  font_size: 22
+  line_height: 1.4
+  color: "{{brand.dark}}"
+  max_width: 820
+  texto: "Siga nosso programa de 30 dias e veja como é possível mudar seu corpo e atingir seus objetivos rapidamente."
+
+# ============================================================
+# GRID DE IMAGENS (CARD CENTRAL)
+# ============================================================
+grid_imagens:
+  position: { top: 580, left: 60, right: 60 }
+  width: 960
+  height: 480
+  background: "{{brand.dark}}"  # preto
+  border_radius: 24
+  padding: 20
+  
+  layout:
+    type: grid
+    columns: 3
+    gap: 12
+    
+  slots:
+    - id: foto_1
+      placeholder: "antes_corpo_masculino.jpg"
+      crop: cover
+      border_radius: 16
+      
+    - id: foto_2
+      placeholder: "antes_corpo_feminino.jpg"
+      crop: cover
+      border_radius: 16
+      
+    - id: foto_3
+      placeholder: "depois_corpo_masculino.jpg"
+      crop: cover
+      border_radius: 16
+
+# ============================================================
+# CTA BOTÃO
+# ============================================================
+cta:
+  position: { bottom: 140, left: 60, right: 60 }
+  type: button_dark
+  background: "{{brand.dark}}"  # preto
+  text_color: "#FFFFFF"
+  border_radius: 999
+  padding: { x: 32, y: 18 }
+  
+  conteudo:
+    - tipo: texto
+      texto: "Inicie seu programa hoje:"
+      font_size: 14
+      font_weight: 400
+      color: "rgba(255,255,255,0.7)"
+    - tipo: texto
+      texto: "inscreva-se e veja a transformação"
+      font_size: 18
+      font_weight: 600
+      color: "#FFFFFF"
+    - tipo: arrow
+      icon: "→"
+      position: right
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "{{brand.dark}}"
+  opacity: 0.7
+  
+  esquerda:
+    - linha: "{{brand.phone}}"
+    - linha: "{{brand.website}}"
+  
+  direita:
+    - linha: "{{brand.address}}"
+    - linha: "{{brand.city}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - titulo (3 linhas)
+    - subtitulo
+    - cta_principal
+    - cta_secundario
+  
+  cores:
+    - brand.primary    # cor de fundo (atualmente verde lime)
+    - brand.dark       # cor do texto e do card (atualmente preto)
+    - brand.accent     # opcional, pra destaques
+  
+  imagens:
+    - logo
+    - foto_1, foto_2, foto_3 (grid de 3)
+  
+  marca:
+    - nome
+    - telefone
+    - website
+    - endereço
+    - cidade
+
+fixo:
+  - posicionamento dos elementos
+  - hierarquia visual (título grande > subtítulo > grid > CTA)
+  - estrutura do grid 3 colunas
+  - estilo de tipografia (uppercase condensada no título)
+  - presença de header com logo + nome
+  - presença de footer com infos de contato
+  - CTA em botão preto rounded-full
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - tema é "transformação" ou "resultados"
+    - cliente é academia, personal trainer, nutricionista
+    - copy menciona números (30 dias, X kg, Y%)
+    - pede prova social com fotos comparativas
+    - cliente tem material visual de antes/depois
+  
+  nao_use_quando:
+    - cliente não tem fotos de antes/depois disponíveis
+    - tema é educacional/informativo
+    - tom precisa ser sutil/elegante

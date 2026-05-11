@@ -1,0 +1,162 @@
+# TEMPLATE: juridico-pergunta-provocativa
+# Categoria: juridico/advocacia
+# Referência: 06/02/post_9.jpg (Eriosvaldo Diniz — "O BANCO PODE CANCELAR SEU CPF?")
+# Estilo: pergunta provocativa, retrato sério, palavra com risco
+
+template_id: juridico-pergunta-provocativa
+categoria: juridico
+estilo: provocativo-questionamento
+descricao: |
+  Layout pra perguntas provocativas/questionamentos de senso comum.
+  Retrato profissional sério ocupa todo canvas com gradiente escuro
+  pra legibilidade. Logo da marca centralizado no peito do profissional.
+  Pergunta uppercase grande na parte inferior com UMA palavra riscada
+  (efeito de "desmistificação"). Termina com "?" pra criar curiosidade.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_fullbleed
+    placeholder: "retrato_profissional_serio.jpg"
+    crop: cover
+    crop_focus: face_torso_centered
+    treatment:
+      desaturation: -20  # mais sóbrio
+      contrast: +10
+    overlay:
+      type: gradient_radial
+      stops:
+        - { position: 0%, color: "rgba(0,0,0,0)" }
+        - { position: 50%, color: "rgba(0,0,0,0.2)" }
+        - { position: 100%, color: "rgba(0,0,0,0.7)" }
+
+# ============================================================
+# LOGO CENTRALIZADO
+# ============================================================
+logo_central:
+  position: { center_x, center_y: 720 }  # no peito/torso da pessoa
+  
+  layout:
+    - tipo: monograma
+      texto: "{{brand.monogram}}"
+      font_family: "Playfair Display"
+      font_weight: 700
+      font_size: 36
+      color: "{{brand.accent}}"
+    - tipo: nome_completo
+      texto: "{{brand.full_name}}"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 11
+      letter_spacing: 0.15em
+      color: "#FFFFFF"
+    - tipo: profissao
+      texto: "{{brand.profession}}"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 8
+      letter_spacing: 0.3em
+      color: "rgba(255,255,255,0.7)"
+
+# ============================================================
+# PERGUNTA PROVOCATIVA (PARTE INFERIOR)
+# ============================================================
+pergunta_principal:
+  position: { bottom: 180, left: 60, right: 60 }
+  alignment: center
+  
+  conteudo:
+    - tipo: linha_1
+      texto: "O BANCO PODE"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 56
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+    
+    - tipo: linha_2_com_riscado
+      texto: "CANCELAR SEU CPF?"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 56
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+      
+      palavras_destaque:
+        - palavra: "CANCELAR"
+          tipo: strikethrough  # risco em cima
+          stroke_color: "{{brand.accent}}"  # dourado/champagne
+          stroke_width: 4
+          stroke_style: diagonal_or_horizontal
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - linha_1 (parte 1 da pergunta, 3-4 palavras)
+    - linha_2 (parte 2 da pergunta com palavra riscada, termina em "?")
+    - palavra_riscada (palavra que será riscada)
+  
+  cores:
+    - brand.accent   # cor do monograma + risco (dourado no original)
+    # NOTA: texto principal sempre branco
+  
+  imagens:
+    - retrato profissional sério (frontal, foco no rosto/torso)
+  
+  marca:
+    - monograma
+    - nome_completo
+    - profissao
+
+fixo:
+  - retrato fullbleed escurecido
+  - logo centralizado no torso
+  - pergunta uppercase em 2 linhas
+  - 1 palavra com risco (efeito de quebra de mito)
+  - termina com "?" sempre
+  - alinhamento central
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - copy é pergunta provocativa
+    - tema é "mito vs verdade" / "o que dizem vs realidade"
+    - precisa quebrar uma crença comum
+    - cliente é especialista/autoridade
+    - tom é direto e desafiador
+  
+  nao_use_quando:
+    - copy é afirmativa (não é pergunta)
+    - tema é institucional/promocional
+    - sem retrato profissional
+
+# ============================================================
+# VARIAÇÕES DO RISCADO
+# ============================================================
+variantes_riscado:
+  - linha_horizontal: risco reto na palavra (default)
+  - linha_diagonal: risco diagonal (mais agressivo)
+  - circulo_em_volta: círculo cercando a palavra
+  - destaque_outline: palavra com outline ao invés de risco
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - O risco deve ser na cor accent (não branco) pra criar contraste
+  - A palavra riscada geralmente é o verbo "errado" da pergunta
+  - Pergunta sempre termina com "?"
+  - Retrato deve ter expressão séria/contemplativa (não sorrindo)

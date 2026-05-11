@@ -1,0 +1,179 @@
+# TEMPLATE: financas-cta-com-seta-grande
+# Categoria: financas/contabilidade
+# Referência: 05/02/post_7.jpg (Avante Capital — "Formalize seu negócio")
+# Estilo: corporativo CTA-driven, foto contextual, seta grande de destaque
+
+template_id: financas-cta-com-seta-grande
+categoria: financas
+estilo: corporativo-cta-direto
+descricao: |
+  Layout corporativo focado em conversão. Foto contextual de ambiente
+  corporativo (escritório, equipe trabalhando) ocupa metade superior.
+  Card de cor sólida com texto + CTA destacado e seta circular grande
+  como elemento visual forte. Header com tags duplas (marca + serviço).
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  
+  layout:
+    type: split_horizontal
+    
+    area_top:
+      height: 50%
+      type: photo
+      placeholder: "ambiente_corporativo_equipe.jpg"
+      crop: cover
+      treatment:
+        saturation: -5
+        contrast: +5
+    
+    area_bottom:
+      height: 50%
+      type: solid_color
+      background: "{{brand.primary}}"  # verde escuro
+
+# ============================================================
+# HEADER — TAGS DUPLAS
+# ============================================================
+header:
+  position: { top: 60 }
+  layout: split
+  font_family: "Inter"
+  font_size: 11
+  letter_spacing: 0.1em
+  font_weight: 500
+  
+  esquerda:
+    position: { left: 60 }
+    texto: "/{{brand.name}}"
+    color: "#FFFFFF"
+    text_transform: lowercase
+  
+  direita:
+    position: { right: 60 }
+    texto: "{{brand.service}}"
+    color: "#FFFFFF"
+    text_transform: lowercase
+
+# ============================================================
+# CARD INFERIOR
+# ============================================================
+card_principal:
+  position: { bottom: 0, left: 0, right: 0 }
+  height: 50%
+  background: "{{brand.primary}}"
+  padding: 60
+  
+  conteudo:
+    - tipo: titulo_principal
+      texto: "Formalize seu negócio\ncom segurança!"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 36
+      line_height: 1.2
+      color: "#FFFFFF"
+      max_width: 540
+      margin_bottom: 24
+    
+    - tipo: descricao
+      texto: "A {{brand.name}} cuida de toda a burocracia para você focar no crescimento da sua empresa."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 16
+      line_height: 1.5
+      color: "rgba(255,255,255,0.85)"
+      max_width: 540
+      margin_bottom: 32
+      
+      palavras_destaque:
+        - palavra: "{{brand.name}}"
+          font_weight: 700
+          color: "#FFFFFF"
+    
+    - tipo: cta_button
+      texto: "Saiba mais"
+      background: "{{brand.dark}}"
+      color: "{{brand.accent}}"  # amarelo/dourado
+      border_radius: 999
+      padding: { x: 32, y: 16 }
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 16
+
+# ============================================================
+# SETA CIRCULAR DE DESTAQUE
+# ============================================================
+seta_destaque:
+  position: { top: 50%, right: 80 }  # na linha de divisão entre foto e card
+  type: circular_arrow_button
+  background: "{{brand.accent}}"  # amarelo/dourado
+  border_radius: 50%
+  width: 96
+  height: 96
+  shadow:
+    offset: { x: 0, y: 8 }
+    blur: 24
+    color: "rgba(0,0,0,0.2)"
+  
+  conteudo:
+    - tipo: icone_seta
+      simbolo: "↓"  # ou seta diagonal
+      cor: "{{brand.dark}}"
+      tamanho: 40
+
+# ============================================================
+# LOGO (RODAPÉ)
+# ============================================================
+logo:
+  position: { bottom: 60, right: 60 }
+  source: "{{brand.logo_white_url}}"
+  height: 56
+  width: auto
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - tag_marca
+    - tag_servico
+    - titulo_principal (2 linhas curtas, exortação)
+    - descricao (15-25 palavras, foca no benefício)
+    - cta_button (verbo de ação, 1-3 palavras)
+  
+  cores:
+    - brand.primary    # cor de fundo do card
+    - brand.dark       # cor do botão CTA
+    - brand.accent     # cor da seta + texto do botão
+  
+  imagens:
+    - foto ambiente corporativo (equipe, escritório)
+    - logo (versão branca)
+
+fixo:
+  - layout split (foto top + card bottom)
+  - seta circular sobreposta na divisão (elemento visual forte)
+  - hierarquia: tag → título → descrição → CTA
+  - paleta de 3 cores
+  - logo no canto inferior direito
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é serviço corporativo/B2B
+    - copy é focada em conversão (CTA forte)
+    - tem foto de ambiente corporativo disponível
+    - tom é direto e profissional
+    - precisa destacar uma ação específica
+  
+  nao_use_quando:
+    - copy é educacional pura (sem CTA)
+    - tema é institucional sem ação
+    - cliente é mais casual/jovem

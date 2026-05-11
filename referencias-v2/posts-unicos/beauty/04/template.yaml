@@ -1,0 +1,200 @@
+# TEMPLATE: beauty-produto-com-elemento
+# Categoria: beauty/estetica
+# Referência: beauty/03/post_4.jpg (Realestética — "Colágeno")
+# Estilo: editorial limpo, retrato + elemento de produto/objeto sobreposto
+
+template_id: beauty-produto-com-elemento
+categoria: beauty
+estilo: editorial-clean-produto
+descricao: |
+  Layout pra produtos/procedimentos com elemento físico (frasco, pipeta,
+  objeto). Foto de rosto/pessoa em close-up ocupa todo canvas. Elemento
+  do produto (PNG transparente) aparece sobreposto na lateral superior.
+  Tipografia com palavra-chave grande serif + tagline italic. Vibe clean
+  e sofisticada (Vogue/Elle).
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_fullbleed
+    placeholder: "rosto_close_natural.jpg"
+    crop: cover
+    crop_focus: face_centered
+    treatment:
+      brightness: +5
+      saturation: -5  # tons mais neutros
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  position: { top: 60 }
+  layout: split
+  
+  esquerda:
+    position: { left: 60 }
+    pill:
+      background: "rgba(0,0,0,0.4)"
+      backdrop_filter: blur(12px)
+      border_radius: 999
+      padding: { x: 18, y: 10 }
+      texto: "{{brand.handle}}"
+      font_size: 13
+      color: "#FFFFFF"
+  
+  direita:
+    position: { right: 60 }
+    type: text_lines
+    alignment: right
+    elementos:
+      - texto: "Um hábito simples,"
+        font_family: "Inter"
+        font_weight: 400
+        font_size: 13
+        color: "rgba(255,255,255,0.95)"
+        font_style: italic
+      - texto: "um resultado incrível."
+        font_family: "Inter"
+        font_weight: 600
+        font_size: 13
+        color: "rgba(255,255,255,0.95)"
+
+# ============================================================
+# TÍTULO PRINCIPAL (CENTRO)
+# ============================================================
+titulo_principal:
+  position: { top: 240, center_x }
+  alignment: center
+  
+  conteudo:
+    - tipo: palavra_chave
+      texto: "Colágeno"
+      font_family: "Playfair Display"
+      font_weight: 600
+      font_size: 96
+      line_height: 1.0
+      letter_spacing: -0.02em
+      color: "#FFFFFF"
+      font_style: italic_subtle  # leve italic
+      
+      # Pode ter underline decorativo
+      underline:
+        type: organic_swoosh  # linha curva orgânica embaixo
+        color: "{{brand.accent}}"  # rose gold
+        offset: 16
+
+# ============================================================
+# ELEMENTO DE PRODUTO (PNG SOBREPOSTO)
+# ============================================================
+elemento_produto:
+  position: { top: 200, right: 80 }
+  type: product_element
+  placeholder: "frasco_pipeta.png"  # PNG transparente
+  width: 240
+  height: auto
+  rotation: -5deg  # leve inclinação
+  shadow:
+    type: drop_shadow
+    offset: { x: 0, y: 16 }
+    blur: 32
+    color: "rgba(0,0,0,0.3)"
+
+# ============================================================
+# RODAPÉ — ASSINATURA
+# ============================================================
+rodape:
+  position: { bottom: 60, center_x }
+  layout: horizontal_center
+  gap: 16
+  
+  elementos:
+    - tipo: logo_marca
+      source: "{{brand.logo_url}}"
+      height: 24
+    
+    - tipo: divisor
+      type: line_vertical
+      color: "rgba(255,255,255,0.3)"
+      width: 1
+      height: 16
+    
+    - tipo: assinatura
+      texto: "{{brand.tagline}}"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 9
+      letter_spacing: 0.3em
+      color: "rgba(255,255,255,0.8)"
+      transform: uppercase
+    
+    - tipo: divisor
+      type: line_vertical
+      color: "rgba(255,255,255,0.3)"
+      width: 1
+      height: 16
+    
+    - tipo: handle
+      icone: instagram
+      texto: "{{brand.handle}}"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 11
+      color: "rgba(255,255,255,0.8)"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - tagline_intro (frase italic curta no header direito)
+    - tagline_destaque (frase forte completando a tagline)
+    - palavra_chave (1 palavra serif grande no centro)
+  
+  cores:
+    - brand.accent   # cor do underline do título
+    # NOTA: texto principal sempre branco, fundo é foto
+  
+  imagens:
+    - foto close-up de rosto natural
+    - elemento do produto (PNG transparente: frasco, pipeta, objeto)
+    - logo
+
+fixo:
+  - foto fullbleed close-up de rosto
+  - palavra-chave grande serif italic no centro
+  - elemento de produto PNG sobreposto na lateral
+  - underline decorativo orgânico
+  - tagline em 2 linhas no header direito
+  - paleta restrita: branco + accent + foto natural
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é beauty/estética/cosméticos/derma
+    - tem produto/elemento físico pra mostrar
+    - copy é sobre 1 conceito-chave (palavra forte)
+    - tom é elegante e clean
+    - tem foto de rosto natural disponível
+  
+  nao_use_quando:
+    - sem produto/elemento PNG disponível
+    - copy precisa de mais texto
+    - tema é serviço sem objeto físico
+    - tom precisa ser comercial/promocional
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - Elemento do produto deve ser PNG transparente (essencial)
+  - Sombra no elemento dá profundidade
+  - Underline orgânico (não reto) no título cria assinatura visual
+  - Foto deve ter expressão natural, neutra (não sorrindo forçado)
+  - Iluminação suave/natural na foto funciona melhor

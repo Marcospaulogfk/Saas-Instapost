@@ -1,0 +1,186 @@
+# TEMPLATE: juridico-retrato-card-cta
+# Categoria: juridico/advocacia
+# Referência: 06/01/post_3 (2).jpg (Eriosvaldo Diniz — "Funcionário público")
+# Estilo: autoridade profissional, retrato de corpo inteiro, card lateral
+
+template_id: juridico-retrato-card-cta
+categoria: juridico
+estilo: profissional-info-direta
+descricao: |
+  Retrato profissional de corpo inteiro/3-4 ocupa a metade direita do
+  canvas. Lado esquerdo tem fundo neutro (cinza claro) com logo no topo,
+  título destacado, subtítulo explicativo e CTA pill. Layout mais informativo
+  que o retrato-titulo-bottom (que tem texto sobre a foto).
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  
+  layout:
+    type: split_vertical
+    
+    area_esquerda:
+      width: 50%
+      type: solid_color
+      background: "{{brand.surface}}"  # cinza muito claro (#F0F0F0)
+    
+    area_direita:
+      width: 50%
+      type: photo_cutout  # PNG sem fundo preferível
+      placeholder: "retrato_profissional_corpo.png"
+      crop: cover
+      crop_focus: full_body_centered
+
+# ============================================================
+# LOGO DA MARCA (LADO ESQUERDO TOPO)
+# ============================================================
+logo:
+  position: { top: 80, left: 60 }
+  source: "{{brand.logo_url}}"
+  
+  layout:
+    - tipo: monograma
+      texto: "{{brand.monogram}}"
+      font_family: "Playfair Display"
+      font_weight: 700
+      font_size: 32
+      color: "{{brand.accent}}"
+    - tipo: nome_completo
+      texto: "{{brand.full_name}}"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 12
+      letter_spacing: 0.15em
+      color: "{{brand.dark}}"
+      margin_top: 4
+    - tipo: profissao
+      texto: "{{brand.profession}}"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 9
+      letter_spacing: 0.3em
+      color: "{{brand.dark}}"
+      opacity: 0.7
+      margin_top: 2
+
+# ============================================================
+# TÍTULO PRINCIPAL
+# ============================================================
+titulo_principal:
+  position: { top: 320, left: 60 }
+  width: 460
+  
+  conteudo:
+    - tipo: chamada_principal
+      texto: "Funcionário\npúblico"
+      font_family: "Playfair Display"
+      font_weight: 600
+      font_size: 56
+      line_height: 1.0
+      letter_spacing: -0.01em
+      color: "{{brand.dark}}"
+    
+    - tipo: descricao
+      texto: "Conheça os benefícios do processo de superendividamento."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 16
+      line_height: 1.5
+      color: "{{brand.text_secondary}}"
+      margin_top: 16
+      max_width: 360
+
+# ============================================================
+# CTA PILL
+# ============================================================
+cta_pill:
+  position: { bottom: 220, left: 60 }
+  type: pill_with_arrow
+  background: "{{brand.dark}}"
+  border_radius: 999
+  padding: { x: 32, y: 14 }
+  width: auto
+  
+  conteudo:
+    - tipo: texto
+      texto: "Veja mais na legenda"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 14
+      color: "#FFFFFF"
+    - tipo: separator
+      width: 1
+      height: 16
+      color: "rgba(255,255,255,0.3)"
+      margin: { x: 12 }
+    - tipo: icone
+      simbolo: "↓"
+      cor: "#FFFFFF"
+      tamanho: 16
+
+# ============================================================
+# RODAPÉ — INFORMAÇÕES DE CONTATO (OPCIONAL)
+# ============================================================
+rodape:
+  position: { bottom: 60, left: 60 }
+  font_family: "Inter"
+  font_size: 10
+  letter_spacing: 0.1em
+  color: "{{brand.dark}}"
+  opacity: 0.6
+  
+  linhas:
+    - "{{brand.phone}}"
+    - "{{brand.website}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada_principal (1-2 palavras serif elegante)
+    - descricao (1 frase explicativa, 10-15 palavras)
+    - cta_button (chamada de ação)
+  
+  cores:
+    - brand.surface       # cor de fundo (cinza claro)
+    - brand.dark          # cor do texto + CTA
+    - brand.accent        # cor do monograma do logo
+    - brand.text_secondary # cor da descrição
+  
+  imagens:
+    - retrato profissional (preferível PNG sem fundo)
+    - logo (estrutura monograma + nome + profissão)
+  
+  marca:
+    - monograma
+    - nome_completo
+    - profissao
+    - telefone
+    - website
+
+fixo:
+  - layout split (50% texto + 50% retrato)
+  - logo estruturado no topo esquerdo
+  - hierarquia: logo → título serif → descrição → CTA
+  - CTA em pill preto
+  - paleta sóbria (cinza + preto + accent)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é profissional (advogado, médico, consultor)
+    - copy é informativa/educativa específica
+    - tema é nichado (público específico)
+    - tem retrato profissional de corpo (não só rosto)
+  
+  nao_use_quando:
+    - tema é amplo/genérico
+    - sem retrato disponível
+    - copy precisa de mais espaço

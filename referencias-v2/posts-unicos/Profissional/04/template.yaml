@@ -1,0 +1,158 @@
+# TEMPLATE: juridico-frase-educativa-moldura
+# Categoria: juridico/advocacia
+# Referência: 06/03/post_7 (1).jpg (Eriosvaldo Diniz — "A consciência é o primeiro passo...")
+# Estilo: educativo reflexivo, frase longa, palavra-chave moldurada
+
+template_id: juridico-frase-educativa-moldura
+categoria: juridico
+estilo: educativo-reflexivo
+descricao: |
+  Layout educativo com frase reflexiva. Retrato profissional ocupa todo
+  canvas (preferível PNG sem fundo + fundo gradient escuro). Frase em
+  serif italic ocupa metade esquerda do canvas, terminando com palavra-chave
+  moldurada (com border ao redor). Logo monogramado centralizado abaixo
+  da foto.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_photo_overlay
+    primary_color: "{{brand.dark}}"  # cinza escuro/preto (#2A2A2A)
+    decoration:
+      type: photo_overlay
+      placeholder: "retrato_profissional.png"  # PNG sem fundo
+      position: { right: 0, bottom: 0 }
+      width: 60%
+      height: 100%
+      crop_focus: profile_or_full_body
+
+# ============================================================
+# FRASE EDUCATIVA (LADO ESQUERDO)
+# ============================================================
+frase_principal:
+  position: { center_y: 540, left: 60 }
+  width: 540
+  alignment: left
+  
+  conteudo:
+    - tipo: frase_completa
+      texto: "A consciência é o primeiro passo para evitar o {{palavra_chave}}"
+      font_family: "Playfair Display"
+      font_weight: 400
+      font_style: italic
+      font_size: 36
+      line_height: 1.3
+      color: "#FFFFFF"
+      max_width: 480
+      
+      # Palavra "consciência" pode ter destaque sutil (sublinhado ou cor)
+      palavras_destaque:
+        - palavra: "consciência"
+          tipo: underline_subtle
+          underline_color: "{{brand.accent}}"
+          underline_offset: 4
+          underline_thickness: 1
+        
+        - palavra: "{{palavra_chave}}"  # "superendividamento"
+          tipo: framed
+          frame_border: "1px solid {{brand.accent}}"
+          frame_padding: { x: 8, y: 4 }
+          frame_inline: true  # moldura acompanha o texto na linha
+
+# ============================================================
+# LOGO MONOGRAMADO (CENTRO INFERIOR)
+# ============================================================
+logo:
+  position: { bottom: 280, left: 60 }
+  
+  layout:
+    - tipo: monograma
+      texto: "{{brand.monogram}}"
+      font_family: "Playfair Display"
+      font_weight: 700
+      font_size: 32
+      color: "{{brand.accent}}"
+    - tipo: nome_completo
+      texto: "{{brand.full_name}}"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 11
+      letter_spacing: 0.15em
+      color: "#FFFFFF"
+    - tipo: profissao
+      texto: "{{brand.profession}}"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 9
+      letter_spacing: 0.3em
+      color: "rgba(255,255,255,0.7)"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - frase_completa (1 frase reflexiva, 12-20 palavras)
+    - palavra_destaque (1 palavra com sublinhado)
+    - palavra_chave_moldurada (1 palavra final dentro de moldura)
+  
+  cores:
+    - brand.dark      # cor de fundo
+    - brand.accent    # cor do monograma + sublinhados + moldura
+    # NOTA: texto principal sempre branco
+  
+  imagens:
+    - retrato profissional (PNG sem fundo preferível)
+  
+  marca:
+    - monograma
+    - nome_completo
+    - profissao
+
+fixo:
+  - fundo escuro sólido com retrato sobreposto
+  - frase em serif italic
+  - palavra-chave final dentro de moldura
+  - logo abaixo da frase (não no topo)
+  - tom reflexivo/educativo
+  - paleta sóbria (escuro + accent + branco)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - copy é frase educativa/reflexiva
+    - tem 1 palavra-chave forte (geralmente conceito jurídico/técnico)
+    - tom é mentor/conselheiro
+    - cliente é profissional especialista
+    - tem retrato disponível (PNG sem fundo ideal)
+  
+  nao_use_quando:
+    - copy é promocional/comercial
+    - sem palavra-chave clara pra moldurar
+    - tema é genérico (sem termo técnico)
+    - tom é vendedor
+
+# ============================================================
+# VARIAÇÕES DE MOLDURA
+# ============================================================
+variantes_moldura:
+  - retangular_outline: borda fina retangular (default)
+  - colchetes: [ palavra ] estilo colchetes
+  - underline_duplo: 2 linhas embaixo
+  - sem_moldura_so_cor: palavra colorida sem borda
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - A frase deve ser pensada pra terminar bem na palavra moldurada
+  - A moldura cria efeito de "definição" da palavra técnica
+  - Retrato com expressão pensativa funciona melhor
+  - Se o retrato não for PNG sem fundo, usar gradient escuro forte

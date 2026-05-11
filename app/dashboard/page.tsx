@@ -4,6 +4,7 @@ import { RecentProjects } from "@/components/dashboard/recent-projects"
 import { BrandsSection } from "@/components/dashboard/brands-section"
 import { PopularTemplates } from "@/components/dashboard/popular-templates"
 import { ActivityChart } from "@/components/dashboard/activity-chart"
+import { ProximasDatasCard } from "@/components/dashboard/proximas-datas-card"
 import {
   getProfile,
   listBrands,
@@ -41,9 +42,13 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      <QuickActionCard />
-
-      <PopularTemplates />
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div className="space-y-6">
+          <QuickActionCard />
+          <PopularTemplates />
+        </div>
+        <ProximasDatasCard />
+      </div>
 
       <ActivityChart projectsCount={counts.projectsCount} creditsUsedThisMonth={creditsUsed} />
 

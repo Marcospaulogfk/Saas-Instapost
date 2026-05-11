@@ -15,6 +15,8 @@ import {
   Palette,
   Megaphone,
   Sparkles as SparklesIcon,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,9 +35,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { getBrandGradient, getProjectGradient } from "@/lib/brand-colors"
 import { formatRelativeDate } from "@/lib/format-date"
-import { updateBrand } from "@/app/actions/brands"
+import { updateBrand, deleteBrand } from "@/app/actions/brands"
 
 interface Brand {
   id: string
@@ -72,6 +85,9 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isDeleting, startDeleting] = useTransition()
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [confirmText, setConfirmText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [savedAt, setSavedAt] = useState<number | null>(null)
 
@@ -151,6 +167,22 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
       brand_colors: d.brand_colors.filter((_, i) => i !== index),
     }))
   }
+
+  function handleDelete() {
+    setDeleteError(null)
+    startDeleting(async () => {
+      const result = await deleteBrand(brand.id)
+      if (!result.ok) {
+        setDeleteError(result.error)
+        return
+      }
+      router.push("/dashboard/marcas")
+      router.refresh()
+    })
+  }
+
+  const canConfirmDelete =
+    confirmText.trim().toLowerCase() === brand.name.trim().toLowerCase()
 
   const hasIdentity =
     !!brand.tone_of_voice ||
@@ -239,14 +271,30 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                className="border-border-medium"
-                onClick={() => setEditing(true)}
-              >
-                <Pencil className="w-4 h-4 mr-2" />
-                Editar marca
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  className="border-border-medium"
+                  onClick={() => setEditing(true)}
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Editar marca
+                </Button>
+                <DeleteBrandDialog
+                  brandName={brand.name}
+                  projectCount={projects.length}
+                  confirmText={confirmText}
+                  setConfirmText={setConfirmText}
+                  canConfirm={canConfirmDelete}
+                  isDeleting={isDeleting}
+                  error={deleteError}
+                  onConfirm={handleDelete}
+                  onClose={() => {
+                    setConfirmText("")
+                    setDeleteError(null)
+                  }}
+                />
+              </>
             )}
           </div>
         </div>
@@ -536,5 +584,112 @@ function FieldCard({ icon: Icon, title, children }: FieldCardProps) {
       </div>
       {children}
     </section>
+  )
+}
+
+interface DeleteBrandDialogProps {
+  brandName: string
+  projectCount: number
+  confirmText: string
+  setConfirmText: (v: string) => void
+  canConfirm: boolean
+  isDeleting: boolean
+  error: string | null
+  onConfirm: () => void
+  onClose: () => void
+}
+
+function DeleteBrandDialog({
+  brandName,
+  projectCount,
+  confirmText,
+  setConfirmText,
+  canConfirm,
+  isDeleting,
+  error,
+  onConfirm,
+  onClose,
+}: DeleteBrandDialogProps) {
+  return (
+    <AlertDialog
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          className="border-danger/40 text-danger hover:bg-danger/10 hover:text-danger"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Excluir
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="bg-background-tertiary border-border-medium">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-danger" />
+            Excluir marca {brandName}?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <span className="block">
+              Esta ação é permanente e não pode ser desfeita.
+            </span>
+            {projectCount > 0 && (
+              <span className="block text-danger">
+                Atenção: {projectCount}{" "}
+                {projectCount === 1 ? "carrossel será removido" : "carrosseis serão removidos"} junto com a marca.
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-text-secondary">
+            Pra confirmar, digite o nome da marca:{" "}
+            <span className="font-mono text-text-primary">{brandName}</span>
+          </Label>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={brandName}
+            disabled={isDeleting}
+            className="bg-background-secondary/60 border-border-subtle"
+          />
+        </div>
+
+        {error && (
+          <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
+            {error}
+          </div>
+        )}
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting} className="border-border-medium">
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault()
+              if (canConfirm && !isDeleting) onConfirm()
+            }}
+            disabled={!canConfirm || isDeleting}
+            className="bg-danger text-white hover:bg-danger/90 disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Excluindo...
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir definitivamente
+              </>
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

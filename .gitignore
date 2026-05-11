@@ -14,3 +14,10 @@ next.user-config.*
 node_modules
 .next/
 .DS_Store
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Local tooling state
+.claude/settings.local.json
+supabase/.temp/

@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import {
+  clearActiveBrandCookie,
+  getActiveBrandIdFromCookie,
+  writeActiveBrandCookie,
+} from "@/lib/active-brand"
 
 export interface BrandInput {
   name: string
@@ -127,6 +132,70 @@ export async function updateBrand(
 
   revalidatePath(`/dashboard/marcas/${brandId}`)
   revalidatePath("/dashboard/marcas")
+  revalidatePath("/dashboard")
+  return { ok: true }
+}
+
+export type DeleteBrandResult =
+  | { ok: true; deletedProjects: number }
+  | { ok: false; error: string }
+
+export async function deleteBrand(brandId: string): Promise<DeleteBrandResult> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Voce precisa estar logado." }
+
+  const { count: projectCount } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .eq("brand_id", brandId)
+
+  const { error } = await supabase
+    .from("brands")
+    .delete()
+    .eq("id", brandId)
+    .eq("user_id", user.id)
+
+  if (error) return { ok: false, error: error.message }
+
+  const activeId = await getActiveBrandIdFromCookie()
+  if (activeId === brandId) {
+    await clearActiveBrandCookie()
+  }
+
+  revalidatePath("/dashboard/marcas")
+  revalidatePath("/dashboard/projetos")
+  revalidatePath("/dashboard")
+  return { ok: true, deletedProjects: projectCount ?? 0 }
+}
+
+export type SetActiveBrandResult =
+  | { ok: true }
+  | { ok: false; error: string }
+
+export async function setActiveBrand(
+  brandId: string,
+): Promise<SetActiveBrandResult> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Voce precisa estar logado." }
+
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id")
+    .eq("id", brandId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (error || !data) {
+    return { ok: false, error: "Marca nao encontrada." }
+  }
+
+  await writeActiveBrandCookie(brandId)
   revalidatePath("/dashboard")
   return { ok: true }
 }

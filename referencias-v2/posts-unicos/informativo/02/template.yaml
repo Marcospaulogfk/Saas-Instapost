@@ -1,0 +1,192 @@
+# TEMPLATE: informativo-case-storytelling
+# Categoria: informativo
+# Referência: comunicação/00/post_1_2.jpg (Power Academy — "TRANSFORMAÇÃO REAL: História de João")
+# Estilo: case real, storytelling, fundo cor com texto fantasma
+
+template_id: informativo-case-storytelling
+categoria: informativo
+estilo: case-storytelling
+descricao: |
+  Layout pra apresentar case real/história de cliente. Fundo de cor
+  vibrante da marca com texto fantasma vertical. Card escuro central
+  com título "TRANSFORMAÇÃO REAL:" + nome da pessoa, seguido de
+  descrição/depoimento do case. Header com logo. Footer com info da marca.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_ghost_text_pattern
+    primary_color: "{{brand.primary}}"  # verde lime no original
+    
+    pattern:
+      type: vertical_text_repeat
+      texto: "{{ghost_word}}"  # ex: "REAL", "SUCESSO", "TRANSFORMAÇÃO"
+      font_family: "Anton"
+      font_weight: 900
+      font_size: 280
+      color: "rgba(0,0,0,0.08)"
+      rotation: 90deg
+      position: { left: -40 }
+      repeat_vertical: true
+
+# ============================================================
+# HEADER — LOGO + NOME
+# ============================================================
+header:
+  position: { top: 56, left: 60 }
+  type: brand_lockup
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "{{brand.dark}}"
+
+# ============================================================
+# CARD CENTRAL ESCURO
+# ============================================================
+card_central:
+  position: { center_x, center_y: 540 }
+  width: 720
+  height: 480
+  background: "{{brand.dark}}"  # preto
+  border_radius: 24
+  padding: 48
+  
+  conteudo:
+    - tipo: titulo_destaque
+      texto: "TRANSFORMAÇÃO REAL:"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 36
+      line_height: 1
+      letter_spacing: 0.02em
+      color: "{{brand.primary}}"  # verde lime (cor da marca em fundo escuro)
+      text_transform: uppercase
+    
+    - tipo: subtitulo_nome
+      texto: "Conheça a História de João"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 22
+      color: "#FFFFFF"
+      margin_top: 8
+      
+      palavras_destaque:
+        - palavra: "João"  # nome da pessoa
+          font_weight: 700
+    
+    - tipo: divisor
+      type: line
+      color: "rgba(255,255,255,0.2)"
+      width: 60
+      height: 2
+      margin_top: 24
+      margin_bottom: 24
+    
+    - tipo: descricao
+      texto: "João perdeu 10kg em 3 meses, e você também pode alcançar seus objetivos. Inspire-se com sua jornada."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 14
+      line_height: 1.5
+      color: "rgba(255,255,255,0.85)"
+      max_width: 560
+
+# ============================================================
+# ÍCONE/SELO PEQUENO (CANTO INFERIOR ESQUERDO DO CARD)
+# ============================================================
+icone_selo:
+  position: { bottom: 280, left: 60 }
+  type: small_icon
+  background: "{{brand.dark}}"
+  border: "2px solid {{brand.primary}}"
+  border_radius: 50%
+  width: 48
+  height: 48
+  
+  conteudo:
+    - tipo: icone
+      simbolo: "★"
+      cor: "{{brand.primary}}"
+      tamanho: 24
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "{{brand.dark}}"
+  opacity: 0.7
+  
+  esquerda:
+    - linha: "{{brand.phone}}"
+    - linha: "{{brand.website}}"
+  direita:
+    - linha: "{{brand.address}}"
+    - linha: "{{brand.city}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - ghost_word (palavra grande de fundo vertical)
+    - titulo_destaque (título do case, uppercase)
+    - subtitulo_nome (nome da pessoa do case)
+    - descricao (resumo do case, 20-30 palavras)
+  
+  cores:
+    - brand.primary    # cor de fundo (verde no original)
+    - brand.dark       # cor do card central
+    # NOTA: card sempre escuro, fundo sempre cor da marca
+  
+  imagens:
+    - logo da marca
+
+fixo:
+  - fundo de cor primária com texto fantasma vertical
+  - card escuro central com bordas arredondadas
+  - hierarquia: título destaque → subtítulo (nome) → divisor → descrição
+  - selo circular pequeno como elemento decorativo
+  - footer com informações de contato
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - copy é case/depoimento/história real de cliente
+    - cliente é serviço (academia, consultoria, curso)
+    - tem nome real da pessoa pra mencionar
+    - tom é inspirador/motivacional
+    - sem foto da pessoa disponível (texto puro)
+  
+  nao_use_quando:
+    - copy é genérica (não tem case real)
+    - tem foto da pessoa do case (use template diferente)
+    - tema é promocional/desconto
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - O card escuro contrasta forte com o fundo colorido
+  - A cor primária aparece no título do card (efeito de "carimbo")
+  - Texto fantasma vertical na lateral cria padrão visual
+  - Estrutura ideal pra carrosséis de cases (este seria o slide 1)

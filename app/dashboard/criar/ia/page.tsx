@@ -57,6 +57,11 @@ export default async function CriarIaPage() {
           name: b.name,
           default_template: b.default_template,
           default_font: b.default_font,
+          brand_colors: b.brand_colors,
+          tone_of_voice: b.tone_of_voice,
+          target_audience: b.target_audience,
+          visual_style: b.visual_style,
+          main_objective: b.main_objective,
         }))}
       />
     </div>

@@ -19,6 +19,11 @@ interface BrandSummary {
   name: string
   default_template: string | null
   default_font: string | null
+  brand_colors: string[]
+  tone_of_voice: string | null
+  target_audience: string | null
+  visual_style: string | null
+  main_objective: string | null
 }
 
 interface WizardProps {
@@ -129,47 +134,47 @@ export function Wizard({ brands }: WizardProps) {
     }
   }
 
-  async function onGenerate() {
+  function onGenerate() {
+    if (!activeBrand) {
+      setError("Selecione uma marca antes de gerar.")
+      return
+    }
     setError(null)
     setLoading(true)
-    setLoadingMessage("Escrevendo copy com Claude...")
+    setLoadingMessage("Preparando editor...")
 
-    const interval = setInterval(() => {
-      setLoadingMessage((prev) => {
-        if (prev.includes("Claude")) return "Gerando imagens..."
-        if (prev.includes("imagens")) return "Salvando no banco..."
-        return "Quase lá..."
-      })
-    }, 7000)
+    const fallbackColors = ["#7C3AED", "#1A1A1A", "#FAF8F5"]
+    const colors =
+      activeBrand.brand_colors && activeBrand.brand_colors.length > 0
+        ? activeBrand.brand_colors.slice(0, 3)
+        : fallbackColors
+
+    const payload = {
+      brandId: activeBrand.id,
+      brandName: activeBrand.name,
+      topic,
+      objective,
+      tone: activeBrand.tone_of_voice ?? "",
+      audience: activeBrand.target_audience ?? "",
+      visualStyle: activeBrand.visual_style ?? "",
+      colors,
+      template,
+      font: fontFamily,
+      nSlides,
+      mode,
+      autoRun: true,
+      ts: Date.now(),
+    }
 
     try {
-      const res = await fetch("/api/projects/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          brand_id: brandId,
-          topic,
-          objective,
-          template,
-          font_family: fontFamily,
-          n_slides: nSlides,
-          mode,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? "erro desconhecido")
-        return
-      }
-      router.push(`/dashboard/projetos/${data.project_id}`)
-      router.refresh()
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "erro de rede"
-      setError(message)
-    } finally {
-      clearInterval(interval)
+      sessionStorage.setItem("syncpost_pending_generation", JSON.stringify(payload))
+    } catch {
+      setError("Não consegui salvar o estado pra abrir o editor. Tente novamente.")
       setLoading(false)
+      return
     }
+
+    router.push("/teste")
   }
 
   const canSubmit = !!brandId && topic.trim().length >= 10 && !loading

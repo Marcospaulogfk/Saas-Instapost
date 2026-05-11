@@ -1,0 +1,166 @@
+# TEMPLATE: juridico-retrato-titulo-bottom
+# Categoria: juridico/advocacia
+# Referência: 06/00/post_2 (2).jpg (Eriosvaldo Diniz — "Superendividados")
+# Estilo: autoridade, retrato profissional, tipografia de impacto
+
+template_id: juridico-retrato-titulo-bottom
+categoria: juridico
+estilo: autoridade-corporativo
+descricao: |
+  Retrato profissional do advogado/profissional ocupa todo canvas. Logo da
+  marca no canto superior direito. Título principal sobre faixa inferior
+  com gradient escuro pra legibilidade. Texto introdutório em itálico curto
+  + chamada principal em uppercase grande.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_fullbleed
+    placeholder: "retrato_profissional.jpg"
+    crop: cover
+    crop_focus: face_centered  # IA deve centralizar no rosto
+    overlay:
+      type: gradient_bottom
+      stops:
+        - { position: 0%, color: "rgba(0,0,0,0)" }
+        - { position: 50%, color: "rgba(0,0,0,0.2)" }
+        - { position: 100%, color: "rgba(0,0,0,0.85)" }
+
+# ============================================================
+# LOGO DA MARCA (CANTO SUPERIOR DIREITO)
+# ============================================================
+logo:
+  position: { top: 60, right: 60 }
+  source: "{{brand.logo_url}}"
+  height: 56
+  width: auto
+  alignment: right
+  
+  layout:
+    - tipo: monograma
+      texto: "{{brand.monogram}}"  # "ED" no original
+      font_family: "Playfair Display"
+      font_weight: 700
+      font_size: 28
+      color: "{{brand.accent}}"  # dourado/champagne
+      
+    - tipo: nome_completo
+      texto: "{{brand.full_name}}"  # "ERIOSVALDO DINIZ"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 11
+      letter_spacing: 0.15em
+      color: "#FFFFFF"
+      
+    - tipo: profissao
+      texto: "{{brand.profession}}"  # "ADVOGADO"
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 9
+      letter_spacing: 0.3em
+      color: "rgba(255,255,255,0.7)"
+
+# ============================================================
+# TÍTULO PRINCIPAL (BOTTOM)
+# ============================================================
+titulo_principal:
+  position: { bottom: 140, left: 60, right: 60 }
+  alignment: center
+  
+  conteudo:
+    - tipo: introducao
+      texto: "O que eu aprendi"
+      font_family: "Playfair Display"
+      font_style: italic
+      font_weight: 400
+      font_size: 22
+      color: "#FFFFFF"
+      
+    - tipo: introducao_2
+      texto: "depois de atender vários"
+      font_family: "Playfair Display"
+      font_style: italic
+      font_weight: 400
+      font_size: 22
+      color: "#FFFFFF"
+      margin_top: 4
+    
+    - tipo: divisor
+      type: line
+      color: "{{brand.accent}}"  # dourado
+      width: 80
+      height: 2
+      margin_top: 12
+      margin_bottom: 12
+      alignment: center
+    
+    - tipo: chamada_principal
+      texto: "SUPER\nENDIVIDADOS"
+      font_family: "Anton"  # condensada uppercase
+      font_weight: 800
+      font_size: 64
+      line_height: 0.92
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+      alignment: center
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - introducao (frase em itálico, 4-7 palavras)
+    - chamada_principal (1-2 palavras grandes uppercase)
+  
+  cores:
+    - brand.accent   # cor do logo monograma + divisor (dourado no original)
+    # NOTA: texto principal sempre branco, fundo é retrato escurecido
+  
+  imagens:
+    - retrato profissional (vertical, foco no rosto/torso)
+  
+  marca:
+    - monograma (2 letras)
+    - nome_completo (uppercase)
+    - profissao (uppercase, espaçada)
+
+fixo:
+  - retrato fullbleed
+  - logo no canto superior direito (estrutura: monograma + nome + profissão)
+  - gradient escuro forte na parte inferior (legibilidade)
+  - dois níveis de hierarquia: introdução (serif italic) + chamada (sans condensada)
+  - divisor dourado entre os dois níveis
+  - alinhamento central no título inferior
+  - paleta restrita: branco + accent + foto
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é advogado, médico, consultor, expert pessoal
+    - tema é educativo/autoridade
+    - cliente quer aparecer com cara/figura central
+    - copy é tipo "o que eu aprendi", "depois de X anos", "minha experiência"
+    - tom é sério, autoridade, mentor
+  
+  nao_use_quando:
+    - cliente não quer aparecer pessoalmente
+    - tema é promocional/comercial
+    - tom precisa ser leve/casual
+    - sem retrato profissional disponível
+
+# ============================================================
+# VARIAÇÕES POSSÍVEIS
+# ============================================================
+variantes:
+  - centered: título centralizado (default, esta versão)
+  - left-aligned: título alinhado à esquerda (mais agressivo)
+  - with-question: chamada termina em "?" (estilo "O BANCO PODE CANCELAR SEU CPF?")
+  - with-strikethrough: palavra com risco em cima ("CANCELAR" cortado)

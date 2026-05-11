@@ -1,0 +1,251 @@
+# TEMPLATE: beauty-instagram-ui-mockup
+# Categoria: beauty/estetica
+# Referência: beauty/01/post_2.jpg (Realestética — "Glúteo Sculpt mais curvas")
+# Estilo: mockup Instagram, elementos UI sobrepostos, vibe app
+
+template_id: beauty-instagram-ui-mockup
+categoria: beauty
+estilo: instagram-ui-modern
+descricao: |
+  Layout que simula a interface do Instagram com elementos UI sobrepostos
+  (story navigation tabs, buttons). Foto sensual/estética em close-up
+  ocupa fundo. Pill com handle no topo. Tipografia em 3 partes alinhada
+  à esquerda (script italic + chamada destacada). Barra inferior com
+  abas (POST, STORY, LIVE) e botão de câmera.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_fullbleed
+    placeholder: "corpo_close_estetico.jpg"  # ex: glúteo, abdome, perfil
+    crop: cover
+    treatment:
+      contrast: +10
+      saturation: +5
+    overlay:
+      type: gradient_subtle
+      stops:
+        - { position: 0%, color: "rgba(0,0,0,0)" }
+        - { position: 100%, color: "rgba(0,0,0,0.3)" }
+
+# ============================================================
+# HEADER — HANDLE PILL
+# ============================================================
+header:
+  type: pill_handle
+  position: { top: 60, left: 60 }
+  
+  pill:
+    background: "rgba(0,0,0,0.5)"
+    backdrop_filter: blur(12px)
+    border: "1px solid rgba(255,255,255,0.15)"
+    border_radius: 999
+    padding: { x: 18, y: 10 }
+    
+    conteudo:
+      texto: "{{brand.handle}}"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 13
+      color: "#FFFFFF"
+
+# ============================================================
+# TAG SUPERIOR DIREITO
+# ============================================================
+tag_made_in:
+  position: { top: 60, right: 60 }
+  font_family: "Inter"
+  font_weight: 500
+  font_size: 9
+  letter_spacing: 0.3em
+  color: "rgba(255,255,255,0.7)"
+  text_transform: uppercase
+  texto: "{{brand.tagline}}"  # "MADE IN REAL ESTÉTICA"
+
+# ============================================================
+# TÍTULO EDITORIAL (CENTRO ESQUERDA)
+# ============================================================
+titulo_editorial:
+  position: { center_y: 540, left: 60 }
+  width: 480
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada_principal
+      texto: "Glúteo"
+      font_family: "Playfair Display"
+      font_weight: 500
+      font_style: italic
+      font_size: 72
+      line_height: 1.0
+      color: "#FFFFFF"
+    
+    - tipo: chamada_continuacao
+      texto: "Sculpt"
+      font_family: "Playfair Display"
+      font_weight: 600
+      font_size: 72
+      line_height: 1.0
+      color: "#FFFFFF"
+      margin_top: -8  # leve sobreposição
+    
+    - tipo: divisor
+      type: ornament
+      symbol: "✦"  # estrela ornamental
+      cor: "{{brand.accent}}"
+      tamanho: 12
+      margin_top: 16
+      margin_bottom: 16
+      alinhamento: left
+    
+    - tipo: tagline
+      texto: "mais\ncurvas"
+      font_family: "Playfair Display"
+      font_weight: 400
+      font_style: italic
+      font_size: 56
+      line_height: 1.0
+      color: "#FFFFFF"
+
+# ============================================================
+# UI INSTAGRAM — CONTROLES
+# ============================================================
+ui_controles:
+  position: { right: 60, center_y: 540 }
+  
+  conteudo:
+    - tipo: aa_size
+      texto: "Aa"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 24
+      color: "#FFFFFF"
+      margin_bottom: 16
+    
+    - tipo: dots_menu
+      simbolo: "⋮⋮"  # 6 dots verticais
+      cor: "#FFFFFF"
+      opacity: 0.7
+
+# ============================================================
+# BOTÃO CIRCULAR DE CAPTURA
+# ============================================================
+botao_captura:
+  position: { center_x, bottom: 220 }
+  type: circular_button
+  background: "rgba(255,255,255,0.2)"
+  backdrop_filter: blur(8px)
+  border: "3px solid rgba(255,255,255,0.9)"
+  border_radius: 50%
+  width: 72
+  height: 72
+  
+  conteudo:
+    - tipo: circulo_interno
+      background: "#FFFFFF"
+      width: 56
+      height: 56
+      border_radius: 50%
+
+# ============================================================
+# BARRA DE ABAS (FOOTER)
+# ============================================================
+abas_footer:
+  position: { bottom: 100, center_x }
+  width: 600
+  layout: horizontal
+  gap: 32
+  alignment: center
+  
+  abas:
+    - texto: "POST"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 11
+      letter_spacing: 0.2em
+      color: "rgba(255,255,255,0.5)"
+    
+    - texto: "STORY"
+      font_family: "Inter"
+      font_weight: 700  # mais forte = ativa
+      font_size: 11
+      letter_spacing: 0.2em
+      color: "#FFFFFF"
+      underline:
+        color: "#FFFFFF"
+        width: 100%
+        offset: 8
+    
+    - texto: "LIVE"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 11
+      letter_spacing: 0.2em
+      color: "rgba(255,255,255,0.5)"
+
+# ============================================================
+# ÍCONE DE CÂMERA (CANTO)
+# ============================================================
+icone_camera:
+  position: { bottom: 80, right: 100 }
+  simbolo: "📷"  # ou ícone customizado de câmera
+  cor: "#FFFFFF"
+  tamanho: 24
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada_principal (1 palavra italic)
+    - chamada_continuacao (1 palavra normal)
+    - tagline (frase pequena italic)
+    - tagline_made_in (uppercase pequena)
+  
+  cores:
+    - brand.accent   # cor do ornamento (✦)
+    # NOTA: texto principal sempre branco, fundo é foto
+  
+  imagens:
+    - foto close-up do corpo (área de procedimento)
+    - logo (opcional)
+  
+  fonte:
+    - serif: Playfair Display | Cormorant
+
+fixo:
+  - foto fullbleed close-up
+  - elementos UI Instagram (POST/STORY/LIVE + botão circular)
+  - tipografia em camadas (italic + regular + italic)
+  - ornamento decorativo (✦ ou similar)
+  - paleta restrita: branco + accent + foto
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é beleza/estética/spa
+    - quer vibe app/Instagram nativa
+    - tem foto close-up sensual/estética
+    - copy permite chamada em 3 partes (palavra + palavra + tagline)
+    - tom é jovem/moderno
+  
+  nao_use_quando:
+    - cliente é mais tradicional/clássico
+    - sem foto adequada
+    - tom precisa ser sério/médico
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - Os elementos UI imitam o Instagram pra criar familiaridade visual
+  - A aba "STORY" sempre marcada como ativa (ou customizável)
+  - Botão circular branco no centro inferior é referência ao botão de capturar
+  - Não usar logos ou marcas registradas do Instagram (apenas inspirado)

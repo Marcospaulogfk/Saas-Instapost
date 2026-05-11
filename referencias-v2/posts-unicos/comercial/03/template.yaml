@@ -1,0 +1,193 @@
+# TEMPLATE: comercial-equipe-card-lateral
+# Categoria: comercial/produto
+# Referência: comercial/02/post_1_2 (1).jpg (SafeGuard — "SOLUÇÕES COMPLETAS EM SEGURANÇA")
+# Estilo: equipe de pessoas, fundo cor marca, card lateral branco
+
+template_id: comercial-equipe-card-lateral
+categoria: comercial
+estilo: equipe-credibilidade
+descricao: |
+  Layout pra serviços que dependem de equipe/profissionais. Fundo de cor
+  da marca com texto fantasma gigante (palavra-chave do serviço). 3-4
+  pessoas em pose corporativa na metade direita. Card branco/claro lateral
+  esquerda com texto vendedor. Header com website. Logo + handle no rodapé.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_ghost_text
+    primary_color: "{{brand.primary}}"  # roxo no original
+    
+    ghost_text:
+      texto: "{{ghost_word}}"  # palavra grande de fundo (ex: "CFTV")
+      font_family: "Anton"
+      font_weight: 900
+      font_size: 320
+      color: "rgba(255,255,255,0.05)"
+      text_transform: uppercase
+      position: { center_x, top: 200 }
+
+# ============================================================
+# HEADER — WEBSITE
+# ============================================================
+header:
+  position: { top: 60, center_x }
+  font_family: "Inter"
+  font_weight: 500
+  font_size: 13
+  letter_spacing: 0.15em
+  color: "rgba(255,255,255,0.95)"
+  texto: "{{brand.website}}"  # "SeuSite.com.br"
+  alignment: center
+
+# ============================================================
+# COMPOSIÇÃO DE PESSOAS (LADO DIREITO/CENTRO)
+# ============================================================
+composicao_pessoas:
+  position: { center_x, top: 200 }
+  width: 720
+  height: 600
+  type: people_composition
+  placeholder: "equipe_3_pessoas.png"  # PNG sem fundo preferível
+  crop: cover
+  layout:
+    type: triangle  # 3 pessoas em formação triangular
+    # ou linear: lado a lado
+
+# ============================================================
+# CARD VENDEDOR (LADO ESQUERDO)
+# ============================================================
+card_vendedor:
+  position: { left: 60, bottom: 180 }
+  width: 480
+  background: "{{brand.surface}}"  # branco/cream
+  border_radius: 16
+  padding: 32
+  
+  conteudo:
+    - tipo: titulo_card
+      texto: "Conte com a nossa\nexperiência para escolher\no melhor sistema de CFTV\ne portão para o seu imóvel."
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 14
+      line_height: 1.5
+      color: "{{brand.dark}}"
+      max_width: 380
+    
+    - tipo: cta_button
+      texto: "Leia a legenda"
+      background: "{{brand.dark}}"
+      color: "{{brand.accent}}"  # amarelo/dourado ou cor de destaque
+      border_radius: 999
+      padding: { x: 24, y: 12 }
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 13
+      margin_top: 16
+      icone: "→"
+
+# ============================================================
+# TÍTULO PRINCIPAL (CANTO INFERIOR ESQUERDO)
+# ============================================================
+titulo_principal:
+  position: { left: 60, bottom: 380 }
+  width: 480
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada
+      texto: "SOLUÇÕES\nCOMPLETAS EM\nSEGURANÇA!"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 52
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "#FFFFFF"
+      text_transform: uppercase
+
+# ============================================================
+# FOOTER — LOGO + HANDLE
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  
+  esquerda:
+    type: logo_with_text
+    elementos:
+      - logo: "{{brand.logo_white}}"
+        height: 32
+      - texto: "{{brand.name}}"
+        font_size: 16
+        font_weight: 700
+        color: "#FFFFFF"
+      - texto: "{{brand.tagline}}"
+        font_size: 9
+        letter_spacing: 0.2em
+        color: "rgba(255,255,255,0.7)"
+        text_transform: uppercase
+  
+  direita:
+    type: handle
+    elementos:
+      - icone: "@"
+        cor: "#FFFFFF"
+      - texto: "{{brand.handle}}"
+        font_size: 14
+        color: "#FFFFFF"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - ghost_word (palavra grande de fundo, 1 palavra-chave do serviço)
+    - chamada_principal (3 linhas uppercase)
+    - texto_card_vendedor (3-4 linhas explicativas)
+    - cta_button (chamada de ação)
+  
+  cores:
+    - brand.primary    # cor de fundo
+    - brand.surface    # cor do card (branco/cream)
+    - brand.dark       # cor do texto do card + CTA bg
+    - brand.accent     # cor do texto do CTA
+  
+  imagens:
+    - composição de pessoas (PNG sem fundo, 3-4 profissionais)
+    - logo (versão branca)
+  
+  marca:
+    - website
+    - nome
+    - tagline
+    - handle
+
+fixo:
+  - fundo de cor sólida com palavra fantasma
+  - composição de pessoas no centro/direita
+  - card branco lateral esquerda com texto vendedor
+  - título uppercase atrás do card
+  - logo + tagline + handle no rodapé
+  - paleta forte (cor primária + branco + accent)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é serviço B2B/profissional
+    - tema depende de equipe/credibilidade humana
+    - tem fotos de profissionais disponíveis
+    - tom é institucional/serviço completo
+    - precisa transmitir solidez/equipe
+  
+  nao_use_quando:
+    - serviço solo/individual (1 pessoa)
+    - tema é produto físico
+    - sem fotos de equipe disponíveis
+    - tom precisa ser jovem/casual

@@ -1,0 +1,223 @@
+# TEMPLATE: informativo-vagas-requisitos
+# Categoria: informativo
+# Referência: comunicação/01/post_2_3.jpg (Power Academy — "VAGAS ABERTAS")
+# Estilo: anúncio de vaga, lista de requisitos, retrato profissional
+
+template_id: informativo-vagas-requisitos
+categoria: informativo
+estilo: anuncio-vaga-lista
+descricao: |
+  Layout específico pra anúncios de vagas/oportunidades. Lado esquerdo
+  com chamada uppercase + cargo em pill destacado + lista de requisitos
+  com checkmarks. Lado direito com retrato profissional (ou pessoa do cargo).
+  Footer com email/contato pra envio de currículo.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_pattern
+    primary_color: "{{brand.dark}}"  # preto
+    pattern:
+      type: subtle_dots_or_lines
+      opacity: 0.05
+      color: "{{brand.primary}}"
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  position: { top: 56, left: 60 }
+  type: brand_lockup
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "#FFFFFF"
+
+# ============================================================
+# RETRATO LATERAL (DIREITA)
+# ============================================================
+retrato:
+  position: { right: 0, top: 200, bottom: 200 }
+  width: 480
+  type: photo_cutout
+  placeholder: "profissional_da_vaga.png"  # PNG sem fundo
+  crop_focus: full_torso
+
+# ============================================================
+# CHAMADA PRINCIPAL (LADO ESQUERDO)
+# ============================================================
+chamada_principal:
+  position: { top: 200, left: 60 }
+  width: 460
+  
+  conteudo:
+    - tipo: chamada_uppercase
+      texto: "VAGAS\nABERTAS"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 80
+      line_height: 0.92
+      letter_spacing: -0.01em
+      color: "{{brand.primary}}"  # verde lime
+      text_transform: uppercase
+
+# ============================================================
+# CARGO EM PILL DESTACADO
+# ============================================================
+cargo_pill:
+  position: { top: 380, left: 60 }
+  type: pill_with_icon
+  background: "{{brand.surface_dark}}"  # preto mais claro / cinza escuro
+  border: "1px solid rgba(255,255,255,0.1)"
+  border_radius: 999
+  padding: { x: 20, y: 12 }
+  
+  conteudo:
+    - tipo: icone
+      simbolo: "👤"  # ou ícone de profissão
+      cor: "{{brand.primary}}"
+      tamanho: 18
+    - tipo: texto
+      texto: "Instrutor de Muay Thai"  # cargo
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 14
+      color: "#FFFFFF"
+
+# ============================================================
+# LISTA DE REQUISITOS
+# ============================================================
+requisitos:
+  position: { top: 480, left: 60 }
+  width: 460
+  
+  titulo:
+    texto: "REQUISITOS:"
+    font_family: "Inter"
+    font_weight: 700
+    font_size: 14
+    letter_spacing: 0.1em
+    color: "{{brand.primary}}"  # verde lime
+    text_transform: uppercase
+    margin_bottom: 16
+  
+  itens:
+    - texto: "Certificado em muay thai"
+    - texto: "Experiência comprovada na área"
+    - texto: "Boa comunicação"
+    - texto: "Certificado em muay thai"
+  
+  estilo_item:
+    layout: horizontal
+    gap: 12
+    margin_bottom: 12
+    icone:
+      simbolo: "✓"
+      cor: "{{brand.primary}}"
+      tamanho: 14
+    texto:
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 14
+      color: "rgba(255,255,255,0.9)"
+
+# ============================================================
+# CTA — ENVIO DE CURRÍCULO
+# ============================================================
+cta_envio:
+  position: { bottom: 180, left: 60 }
+  width: 460
+  
+  conteudo:
+    - tipo: label
+      texto: "Envie seu currículo:"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 13
+      color: "rgba(255,255,255,0.7)"
+      margin_bottom: 4
+    - tipo: email
+      texto: "{{brand.email}}"  # "powermaster@gmail.com"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 16
+      color: "{{brand.primary}}"
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "rgba(255,255,255,0.6)"
+  
+  esquerda:
+    - linha: "{{brand.phone}}"
+  centro:
+    - linha: "{{brand.website}}"
+  direita:
+    - linha: "{{brand.address}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada (2 linhas uppercase, ex: "VAGAS\nABERTAS")
+    - cargo_pill (nome do cargo/posição)
+    - requisitos_lista (3-5 itens com checkmark)
+    - email_envio (email pra receber currículos)
+  
+  cores:
+    - brand.dark       # cor de fundo
+    - brand.primary    # cor de destaque (chamada + checkmarks)
+    # NOTA: texto principal sempre branco
+  
+  imagens:
+    - retrato profissional (PNG sem fundo, da pessoa/cargo)
+    - logo
+  
+  marca:
+    - email
+    - telefone
+    - website
+    - endereço
+
+fixo:
+  - fundo escuro
+  - retrato lateral direita
+  - hierarquia: header → chamada → cargo pill → requisitos → CTA email
+  - lista com checkmarks verdes
+  - email destacado em cor primary
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente está contratando (vaga aberta)
+    - copy lista requisitos específicos
+    - tem foto de pessoa do cargo (ou referência visual)
+    - precisa email/contato pra envio
+    - tom é direto e profissional
+  
+  nao_use_quando:
+    - tema não é vaga/contratação
+    - sem requisitos pra listar
+    - sem foto de profissional disponível

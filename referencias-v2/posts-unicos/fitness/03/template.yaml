@@ -1,0 +1,191 @@
+# TEMPLATE: fitness-desafio-com-selo
+# Categoria: fitness/academia
+# Referência: 01/01/post_2_1.jpg (Power Academy — "DESAFIO DE 21 DIAS")
+# Estilo: motivacional desafio, retrato com selo de garantia, tipografia agressiva
+
+template_id: fitness-desafio-com-selo
+categoria: fitness
+estilo: desafio-motivacional
+descricao: |
+  Layout pra desafios/programas com prazo definido. Foto de pessoa fitness
+  ocupa toda a metade direita. Lado esquerdo tem fundo de cor sólida com
+  texto agressivo uppercase. Inclui selo circular de garantia/destaque
+  no canto inferior esquerdo. Header com logo e nome da marca.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  
+  layout:
+    type: split_vertical
+    
+    area_esquerda:
+      width: 60%
+      type: solid_color
+      background: "{{brand.primary}}"  # verde lime escuro no original
+      decoration:
+        type: outline_text_fade
+        texto: "{{ghost_word}}"  # "DESAFIO" ou similar
+        font_size: 200
+        color: "rgba(0,0,0,0.08)"
+        position: { left: -40, top: 40 }
+        rotation: -90deg  # texto vertical
+    
+    area_direita:
+      width: 40%
+      type: photo
+      placeholder: "pessoa_fitness_focada.jpg"
+      crop: cover
+      crop_focus: face_torso
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  position: { top: 56, left: 60 }
+  type: brand_lockup
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "{{brand.dark}}"
+
+# ============================================================
+# TÍTULO PRINCIPAL
+# ============================================================
+titulo_principal:
+  position: { top: 320, left: 60 }
+  width: 600
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada
+      texto: "DESAFIO DE 21 DIAS:\nEMAGREÇA E GANHE\nPRÊMIOS!"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 60
+      line_height: 0.95
+      letter_spacing: -0.01em
+      color: "{{brand.dark}}"
+      text_transform: uppercase
+      
+      palavras_destaque:
+        - palavra: "PRÊMIOS!"
+          tipo: outline
+          stroke_color: "{{brand.dark}}"
+          fill_color: transparent
+
+# ============================================================
+# DESCRIÇÃO
+# ============================================================
+descricao:
+  position: { top: 580, left: 60 }
+  width: 480
+  font_family: "Inter"
+  font_weight: 400
+  font_size: 16
+  line_height: 1.5
+  color: "{{brand.dark}}"
+  texto: "Participe do nosso desafio e concorra a prêmios incríveis enquanto melhora sua saúde e condicionamento físico."
+
+# ============================================================
+# SELO CIRCULAR DE DESTAQUE
+# ============================================================
+selo_circular:
+  position: { bottom: 220, left: 60 }
+  width: 120
+  height: 120
+  type: circular_badge
+  background: "{{brand.dark}}"
+  border: "3px solid {{brand.primary}}"
+  border_radius: 50%
+  
+  conteudo:
+    - tipo: icone
+      simbolo: "✓"  # ou ícone de fitness
+      cor: "{{brand.primary}}"
+      tamanho: 48
+      alinhamento: center
+    - tipo: texto_pequeno
+      texto: "GARANTIA"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 9
+      letter_spacing: 0.2em
+      color: "{{brand.primary}}"
+      alinhamento: center
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "{{brand.dark}}"
+  opacity: 0.7
+  
+  esquerda:
+    - linha: "{{brand.phone}}"
+    - linha: "{{brand.website}}"
+  direita:
+    - linha: "{{brand.address}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada (3 linhas, oferta com prazo)
+    - descricao (15-25 palavras)
+    - selo_texto (1 palavra, GARANTIA/PRÊMIO/EXCLUSIVO)
+    - ghost_word (palavra atrás do texto)
+  
+  cores:
+    - brand.primary    # cor de fundo
+    - brand.dark       # cor do texto
+  
+  imagens:
+    - logo
+    - foto_pessoa (lado direito, retrato fitness focado)
+  
+  marca:
+    - nome
+    - telefone
+    - website
+    - endereço
+
+fixo:
+  - layout split (60% texto + 40% foto)
+  - texto fantasma vertical no fundo
+  - hierarquia: header → título → descrição → selo
+  - selo circular como elemento de credibilidade
+  - paleta de 2 cores
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é fitness, cursos, programas com prazo
+    - copy menciona desafio/programa/transformação com tempo definido
+    - tem foto de pessoa disponível
+    - precisa de elemento de garantia/credibilidade
+  
+  nao_use_quando:
+    - oferta não tem prazo
+    - tema é educacional puro
+    - sem foto de pessoa

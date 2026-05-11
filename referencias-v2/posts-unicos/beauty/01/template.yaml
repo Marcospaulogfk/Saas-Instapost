@@ -1,0 +1,195 @@
+# TEMPLATE: beauty-closeup-serif-editorial
+# Categoria: beauty/estetica
+# Referência: beauty/02/post_3.jpg (Realestética — "A boca perfeita existe...")
+# Estilo: editorial revista de beleza, serif elegante, close-up
+
+template_id: beauty-closeup-serif-editorial
+categoria: beauty
+estilo: editorial-elegante
+descricao: |
+  Inspirado em capas de revista (Vogue, Elle). Foto close-up de detalhe
+  do corpo (boca, olhos, pele) ocupa 100% do canvas. Tipografia serif
+  elegante alinhada à esquerda na metade vertical. Handle da marca em
+  pill discreto no topo. Texto em 2 níveis: chamada serif italic +
+  body Inter regular.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: photo_fullbleed
+    placeholder: "closeup_detalhe_corpo.jpg"  # boca, olhos, pele
+    crop: cover
+    crop_focus: detail_centered
+    treatment:
+      saturation: +5  # leve saturação extra
+      contrast: +10
+    overlay:
+      type: none  # sem overlay, foto domina
+
+# ============================================================
+# HEADER — HANDLE
+# ============================================================
+header:
+  type: pill_handle
+  position: { top: 60, left: 60 }
+  
+  pill:
+    background: "rgba(0,0,0,0.4)"
+    backdrop_filter: blur(12px)
+    border: "1px solid rgba(255,255,255,0.15)"
+    border_radius: 999
+    padding: { x: 18, y: 10 }
+    
+    conteudo:
+      texto: "{{brand.handle}}"  # "@realestetica"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 13
+      color: "#FFFFFF"
+
+# ============================================================
+# TÍTULO EDITORIAL (METADE VERTICAL ESQUERDA)
+# ============================================================
+titulo_editorial:
+  position: { center_y: 540, left: 60 }  # vertical centralizado
+  width: 480
+  alignment: left
+  
+  conteudo:
+    - tipo: chamada_principal
+      texto: "A boca\nperfeita\nexiste..."
+      font_family: "Playfair Display"
+      font_weight: 500
+      font_size: 64
+      font_style: regular  # primeira linha regular
+      line_height: 1.0
+      letter_spacing: -0.02em
+      color: "#FFFFFF"
+      
+      # OBS: cada linha pode ter peso/estilo diferente
+      linhas_estilizadas:
+        - linha: "A boca"
+          font_style: regular
+        - linha: "perfeita"
+          font_style: italic  # itálico no meio cria contraste
+          font_weight: 400
+        - linha: "existe..."
+          font_style: regular
+    
+    - tipo: divisor
+      type: line
+      color: "{{brand.accent}}"  # rose gold ou dourado
+      width: 60
+      height: 1
+      margin_top: 24
+      margin_bottom: 16
+    
+    - tipo: body
+      texto: "E eu posso te provar com esse resultado que tivemos por aqui."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 16
+      line_height: 1.5
+      color: "rgba(255,255,255,0.95)"
+      max_width: 360
+      
+      palavras_destaque:
+        - palavra: "resultado"
+          font_weight: 600
+          font_style: italic
+
+# ============================================================
+# RODAPÉ — ASSINATURA
+# ============================================================
+rodape:
+  position: { bottom: 60, left: 60 }
+  layout: horizontal
+  gap: 16
+  
+  elementos:
+    - tipo: marca_pequena
+      texto: "{{brand.tagline}}"  # "MADE IN REAL ESTÉTICA"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 9
+      letter_spacing: 0.3em
+      color: "rgba(255,255,255,0.7)"
+      transform: uppercase
+    
+    - tipo: handle_secundario
+      icone: instagram
+      texto: "{{brand.handle}}"
+      font_family: "Inter"
+      font_weight: 500
+      font_size: 11
+      color: "rgba(255,255,255,0.7)"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - chamada_principal (3 linhas curtas, palavra do meio em italic)
+    - body (1-2 frases curtas)
+    - tagline (lema da marca, uppercase)
+  
+  cores:
+    - brand.accent   # cor do divisor (rose gold/dourado/coral)
+    # NOTA: texto principal sempre branco, fundo é foto
+  
+  imagens:
+    - close-up de detalhe (boca, olhos, pele, mãos, cílios)
+  
+  fonte:
+    - serif: Playfair Display | Cormorant | Lora | Bodoni
+    - sans: Inter | Roboto | Plus Jakarta
+
+fixo:
+  - foto fullbleed close-up
+  - tipografia serif em destaque
+  - estrutura 3 linhas com peso/estilo variado (regular + italic + regular)
+  - divisor sutil entre título e body
+  - texto sempre alinhado à esquerda
+  - paleta restrita: branco + accent sutil + foto
+  - sem CTA explícito (vibe editorial, não vendedora)
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente é estética, beleza, dermatologia, cosméticos
+    - tema é resultado/transformação estética
+    - tom precisa ser sofisticado e desejável
+    - tem foto close-up de qualidade alta
+    - copy permite chamada em 3 linhas curtas
+  
+  nao_use_quando:
+    - precisa de CTA forte/comercial
+    - tema é educacional/informativo
+    - cliente é mais popular/casual
+    - copy é longa (não cabe no formato)
+
+# ============================================================
+# VARIAÇÕES POSSÍVEIS
+# ============================================================
+variantes:
+  - center-vertical (default): texto vertical centralizado à esquerda
+  - bottom-left: texto ancorado no canto inferior esquerdo
+  - top-right: texto no canto superior direito (mais incomum, criativo)
+  - centered: texto centralizado horizontal e vertical (mais clean)
+
+# ============================================================
+# OBSERVAÇÕES TÉCNICAS
+# ============================================================
+notas:
+  - O efeito visual depende de foto MUITO boa (composição, iluminação, foco)
+  - Foto deve ter área de "respiro" no lado oposto ao texto
+  - Tipografia serif deve ser cuidadosamente escolhida (Playfair é versátil)
+  - Itálico no meio da chamada é o "truque editorial" que cria sofisticação
+  - Não exagerar em accent: divisor sutil basta

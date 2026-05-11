@@ -24,6 +24,11 @@ export type BrandSummary = {
   brand_colors: string[]
   default_template: string | null
   default_font: string | null
+  tone_of_voice: string | null
+  target_audience: string | null
+  visual_style: string | null
+  main_objective: string | null
+  instagram_handle: string | null
   created_at: string
   project_count: number
 }
@@ -102,7 +107,7 @@ export const listBrands = cache(async (): Promise<BrandSummary[]> => {
   const { data, error } = await supabase
     .from("brands")
     .select(
-      "id, name, description, logo_url, brand_colors, default_template, default_font, created_at, projects(count)",
+      "id, name, description, logo_url, brand_colors, default_template, default_font, tone_of_voice, target_audience, visual_style, main_objective, instagram_handle, created_at, projects(count)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -115,6 +120,11 @@ export const listBrands = cache(async (): Promise<BrandSummary[]> => {
     brand_colors: normalizeColors(b.brand_colors),
     default_template: b.default_template ?? null,
     default_font: b.default_font ?? null,
+    tone_of_voice: b.tone_of_voice ?? null,
+    target_audience: b.target_audience ?? null,
+    visual_style: b.visual_style ?? null,
+    main_objective: b.main_objective ?? null,
+    instagram_handle: b.instagram_handle ?? null,
     created_at: b.created_at,
     project_count: b.projects?.[0]?.count ?? 0,
   }))

@@ -1,0 +1,220 @@
+# TEMPLATE: fitness-institucional-fotos-espaco
+# Categoria: fitness/academia
+# Referência: 01/03/post_3_3.jpg (Power Academy — "VEM SER POWER ACADEMY")
+# Estilo: institucional, convite, mostra do espaço
+
+template_id: fitness-institucional-fotos-espaco
+categoria: fitness
+estilo: institucional-convite
+descricao: |
+  Layout institucional pra apresentar o espaço/marca/serviço. Lado esquerdo
+  com convite uppercase grande, lado direito com 2 fotos do espaço empilhadas.
+  Inclui CTA com pílula destacada na parte inferior. Header com logo + nome.
+
+# ============================================================
+# CANVAS
+# ============================================================
+canvas:
+  width: 1080
+  height: 1350
+  aspect_ratio: "4:5"
+  background:
+    type: solid_with_pattern
+    primary_color: "{{brand.primary}}"  # verde lime no original
+    pattern_overlay:
+      type: subtle_lines
+      opacity: 0.05
+      color: "{{brand.dark}}"
+
+# ============================================================
+# HEADER
+# ============================================================
+header:
+  position: { top: 56, left: 60 }
+  type: brand_lockup
+  layout: horizontal
+  gap: 12
+  elements:
+    - type: logo
+      source: "{{brand.logo_url}}"
+      width: 32
+      height: 32
+    - type: text
+      content: "{{brand.name}}"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 18
+      color: "{{brand.dark}}"
+
+# ============================================================
+# CONVITE PRINCIPAL (LADO ESQUERDO)
+# ============================================================
+convite:
+  position: { top: 200, left: 60 }
+  width: 460
+  alignment: left
+  
+  conteudo:
+    - tipo: introducao
+      texto: "VEM SER"
+      font_family: "Anton"
+      font_weight: 700
+      font_size: 32
+      line_height: 1
+      color: "{{brand.dark}}"
+      text_transform: uppercase
+      letter_spacing: 0.02em
+      margin_bottom: 4
+    
+    - tipo: nome_marca_destaque
+      texto: "{{brand.name}}"  # "POWER\nACADEMY"
+      font_family: "Anton"
+      font_weight: 800
+      font_size: 80
+      line_height: 0.92
+      letter_spacing: -0.01em
+      color: "{{brand.dark}}"
+      text_transform: uppercase
+    
+    - tipo: descricao
+      texto: "Na nossa academia, você encontra os melhores equipamentos, e os melhores professores para te ajudar a chegar no seu objetivo."
+      font_family: "Inter"
+      font_weight: 400
+      font_size: 14
+      line_height: 1.5
+      color: "{{brand.dark}}"
+      max_width: 380
+      margin_top: 24
+
+# ============================================================
+# GRID DE FOTOS (LADO DIREITO)
+# ============================================================
+fotos_espaco:
+  position: { top: 200, right: 60 }
+  width: 440
+  height: 600
+  layout:
+    type: vertical_stack
+    gap: 16
+  
+  slots:
+    - id: foto_1
+      placeholder: "espaco_academia_1.jpg"
+      width: 100%
+      height: 280
+      border_radius: 16
+      crop: cover
+    
+    - id: foto_2
+      placeholder: "espaco_academia_2.jpg"
+      width: 100%
+      height: 280
+      border_radius: 16
+      crop: cover
+
+# ============================================================
+# CTA DESTACADO (PARTE INFERIOR)
+# ============================================================
+cta_pill:
+  position: { bottom: 200, left: 60 }
+  width: 540
+  type: pill_with_text
+  background: "{{brand.dark}}"
+  border_radius: 999
+  padding: { x: 32, y: 18 }
+  
+  conteudo:
+    - tipo: icone
+      simbolo: "📅"  # ou ícone de calendário
+      cor: "{{brand.primary}}"
+      tamanho: 24
+    - tipo: texto_principal
+      texto: "Venha experimentar uma aula"
+      font_family: "Inter"
+      font_weight: 600
+      font_size: 16
+      color: "#FFFFFF"
+    - tipo: texto_destaque
+      texto: "em grupo!"
+      font_family: "Inter"
+      font_weight: 700
+      font_size: 16
+      color: "{{brand.primary}}"
+
+cta_secundario:
+  position: { bottom: 140, left: 60 }
+  texto: "Agende agora"
+  font_family: "Inter"
+  font_weight: 700
+  font_size: 18
+  color: "{{brand.dark}}"
+  
+  complemento:
+    texto: "{{brand.phone}}"
+    font_weight: 400
+    font_size: 16
+
+# ============================================================
+# FOOTER
+# ============================================================
+footer:
+  position: { bottom: 60, left: 60, right: 60 }
+  layout: horizontal_split
+  font_family: "Inter"
+  font_size: 11
+  color: "{{brand.dark}}"
+  opacity: 0.7
+  
+  esquerda:
+    - linha: "{{brand.phone}}"
+    - linha: "{{brand.website}}"
+  direita:
+    - linha: "{{brand.address}}"
+    - linha: "{{brand.city}}"
+
+# ============================================================
+# CUSTOMIZAÇÃO POR CLIENTE
+# ============================================================
+customizavel:
+  texto:
+    - introducao (verbo de convite, 1-2 palavras)
+    - nome_marca_destaque (nome da marca em destaque)
+    - descricao (2-3 frases sobre o espaço/serviço)
+    - cta_principal (chamada da ação)
+    - cta_secundario (verbo + telefone)
+  
+  cores:
+    - brand.primary    # cor de fundo
+    - brand.dark       # cor do texto
+  
+  imagens:
+    - logo
+    - foto_1, foto_2 (2 fotos do espaço/produto)
+  
+  marca:
+    - nome (em destaque)
+    - telefone
+    - website
+    - endereço
+
+fixo:
+  - layout dividido (texto esquerda + fotos direita)
+  - 2 fotos verticalmente empilhadas
+  - hierarquia: convite curto → nome marca grande → descrição
+  - CTA em pill destacado preto
+  - CTA secundário com telefone
+
+# ============================================================
+# QUANDO USAR ESTE TEMPLATE
+# ============================================================
+ia_decide:
+  use_quando:
+    - cliente quer apresentação institucional
+    - tem fotos do espaço/produto disponíveis
+    - copy é convite/apresentação
+    - cliente é academia, restaurante, salão, espaço físico
+  
+  nao_use_quando:
+    - cliente é serviço digital (sem espaço físico)
+    - sem fotos disponíveis
+    - copy é promocional/desconto
