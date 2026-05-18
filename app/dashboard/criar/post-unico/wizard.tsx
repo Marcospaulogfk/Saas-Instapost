@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -134,7 +134,7 @@ export function Wizard({ brands }: WizardProps) {
               }}
               className={`flex items-center justify-center gap-2 h-9 rounded-md text-xs font-medium transition-colors ${
                 mode === "template"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-brand-600 text-[#0e0e0e]"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -149,7 +149,7 @@ export function Wizard({ brands }: WizardProps) {
               }}
               className={`flex items-center justify-center gap-2 h-9 rounded-md text-xs font-medium transition-colors ${
                 mode === "free"
-                  ? "bg-lime text-zinc-950"
+                  ? "bg-lime text-white"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -198,7 +198,7 @@ export function Wizard({ brands }: WizardProps) {
                 ? "Ex: Vagas abertas pra instrutor de muay thai, com 3 anos de experiência..."
                 : "Ex: queremos anunciar que abrimos uma nova unidade na Vila Madalena, com vibe sofisticada e foco em tratamentos premium..."
             }
-            className="bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm resize-none"
+            className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 focus:shadow-glow-sm resize-none"
           />
           <p className="text-[11px] text-text-muted">
             {mode === "template"
@@ -242,7 +242,7 @@ export function Wizard({ brands }: WizardProps) {
             type="button"
             onClick={handleGenerateFree}
             disabled={!canSubmitFree}
-            className="w-full h-12 bg-lime text-zinc-950 hover:bg-lime/90"
+            className="w-full h-12 bg-lime text-white hover:bg-lime/90"
           >
             {submitting ? (
               <>

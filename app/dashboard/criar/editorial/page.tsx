@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -180,7 +180,7 @@ function CriarEditorialInner() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-purple shadow-glow-lg flex items-center justify-center"
+                className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-brand shadow-glow-lg flex items-center justify-center"
               >
                 <Sparkles className="w-8 h-8 text-white" />
               </motion.div>
@@ -190,7 +190,7 @@ function CriarEditorialInner() {
               <p className="text-text-secondary mb-6">{progress.step}</p>
               <div className="w-full h-2 bg-background-secondary rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-lime shadow-[0_0_8px_rgba(209,254,23,0.5)]"
+                  className="h-full bg-lime shadow-[0_0_8px_rgba(124,92,255,0.5)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress.current}%` }}
                   transition={{ duration: 0.3 }}

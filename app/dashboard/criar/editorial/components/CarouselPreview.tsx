@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
@@ -195,7 +195,7 @@ export function CarouselPreview({
                 onClick={() => onSelectSlide(idx)}
                 className={`flex-shrink-0 transition-all rounded ${
                   idx === selectedIdx
-                    ? 'ring-2 ring-purple-600 ring-offset-2 ring-offset-background-tertiary'
+                    ? 'ring-2 ring-brand-600 ring-offset-2 ring-offset-background-tertiary'
                     : 'opacity-50 hover:opacity-100'
                 }`}
                 style={{ width: 108, height: 135 }}

@@ -1,13 +1,13 @@
-import { Users, Heart, MessageCircle, Eye, Lock } from "lucide-react"
+﻿import { Users, Heart, MessageCircle, Eye, Lock } from "lucide-react"
 
 // Posts mockados — quando tivermos o feature real, vem do banco
 const MOCK_POSTS = [
-  { autor: "Juliana G.", titulo: "Não Existe Loja Invisível", likes: 234, comentarios: 12, gradient: "from-purple-500 to-pink-500" },
+  { autor: "Juliana G.", titulo: "Não Existe Loja Invisível", likes: 234, comentarios: 12, gradient: "from-brand-500 to-pink-500" },
   { autor: "Prontozapy", titulo: "Você é Vendedor 24/7?", likes: 189, comentarios: 8, gradient: "from-blue-500 to-cyan-500" },
   { autor: "Francieli", titulo: "5 Erros do Insta", likes: 412, comentarios: 24, gradient: "from-orange-500 to-red-500" },
   { autor: "Prime Inv.", titulo: "Antes de Investir, Leia", likes: 156, comentarios: 6, gradient: "from-emerald-500 to-teal-500" },
   { autor: "Hellen Mac.", titulo: "Estética Real", likes: 298, comentarios: 18, gradient: "from-pink-500 to-rose-500" },
-  { autor: "Marcos P.", titulo: "Site é Investimento", likes: 167, comentarios: 9, gradient: "from-violet-500 to-purple-500" },
+  { autor: "Marcos P.", titulo: "Site é Investimento", likes: 167, comentarios: 9, gradient: "from-violet-500 to-brand-500" },
   { autor: "Studio Fit", titulo: "Você não Treina pra Estar em Forma", likes: 521, comentarios: 32, gradient: "from-lime-500 to-green-500" },
   { autor: "Olha Aqui", titulo: "Carrossel que Salva o Algoritmo", likes: 378, comentarios: 21, gradient: "from-amber-500 to-orange-500" },
 ]
@@ -17,8 +17,8 @@ export default function ComunidadePage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
-            <Users className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
+            <Users className="w-5 h-5 text-brand-400" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Comunidade</h1>
           <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-lime/10 border border-lime/30 text-lime uppercase tracking-wider">
@@ -32,11 +32,11 @@ export default function ComunidadePage() {
       </div>
 
       {/* Banner em breve */}
-      <div className="rounded-xl bg-gradient-to-br from-purple-600/10 via-purple-600/5 to-transparent border border-purple-600/30 p-8 mb-8 relative overflow-hidden">
+      <div className="rounded-xl bg-gradient-to-br from-brand-600/10 via-brand-600/5 to-transparent border border-brand-600/30 p-8 mb-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-purple/5 pointer-events-none" />
         <div className="relative flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center flex-shrink-0">
-            <Lock className="w-6 h-6 text-purple-400" />
+          <div className="w-12 h-12 rounded-xl bg-brand-600/20 flex items-center justify-center flex-shrink-0">
+            <Lock className="w-6 h-6 text-brand-400" />
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-bold text-text-primary mb-1">

@@ -1,24 +1,25 @@
-// Paleta SyncPost — só roxo + neutros, sem rosa/fuchsia/indigo.
+﻿// Paleta SyncPost — base escura (zinc) com acento roxo brand-700/800/900 nos extremos.
+// Texto branco sobre estes gradientes mantém legibilidade.
 const BRAND_GRADIENTS = [
-  "bg-gradient-to-br from-purple-500 to-violet-700",
-  "bg-gradient-to-br from-violet-500 to-purple-800",
-  "bg-gradient-to-br from-purple-600 to-violet-900",
-  "bg-gradient-to-br from-violet-600 to-purple-900",
-  "bg-gradient-to-br from-purple-400 to-purple-800",
-  "bg-gradient-to-br from-violet-400 to-violet-800",
-  "bg-gradient-to-br from-purple-700 to-zinc-900",
-  "bg-gradient-to-br from-violet-700 to-zinc-950",
+  "bg-gradient-to-br from-brand-800 to-zinc-950",
+  "bg-gradient-to-br from-brand-900 to-zinc-900",
+  "bg-gradient-to-br from-brand-700 to-brand-950",
+  "bg-gradient-to-br from-zinc-800 to-brand-900",
+  "bg-gradient-to-br from-brand-800 to-black",
+  "bg-gradient-to-br from-brand-900 to-zinc-950",
+  "bg-gradient-to-br from-zinc-900 to-brand-950",
+  "bg-gradient-to-br from-brand-700 to-zinc-900",
 ] as const
 
 const PROJECT_GRADIENTS = [
-  "bg-gradient-to-br from-purple-600 to-violet-900",
-  "bg-gradient-to-br from-violet-600 to-purple-950",
-  "bg-gradient-to-br from-purple-700 to-violet-950",
-  "bg-gradient-to-br from-violet-700 to-purple-950",
-  "bg-gradient-to-br from-purple-500 to-zinc-900",
-  "bg-gradient-to-br from-violet-500 to-zinc-950",
-  "bg-gradient-to-br from-purple-800 to-black",
-  "bg-gradient-to-br from-violet-800 to-zinc-950",
+  "bg-gradient-to-br from-brand-800 to-zinc-950",
+  "bg-gradient-to-br from-brand-900 to-zinc-900",
+  "bg-gradient-to-br from-brand-700 to-brand-950",
+  "bg-gradient-to-br from-zinc-800 to-brand-900",
+  "bg-gradient-to-br from-brand-900 to-black",
+  "bg-gradient-to-br from-zinc-900 to-brand-950",
+  "bg-gradient-to-br from-brand-800 to-zinc-950",
+  "bg-gradient-to-br from-brand-700 to-zinc-950",
 ] as const
 
 function hashId(id: string): number {

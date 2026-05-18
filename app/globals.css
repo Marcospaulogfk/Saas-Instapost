@@ -4,98 +4,142 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* === Backgrounds Dark === */
-  --background: #0A0A0F;
-  --background-secondary: #13131A;
-  --background-tertiary: #1C1C26;
-  --background-quaternary: #252531;
+  /* === Brand (roxo SyncPost — idêntico em ambos os modos) === */
+  --brand-50:  #F5F2FF;
+  --brand-100: #ECE4FF;
+  --brand-200: #D5C2FF;
+  --brand-300: #B8A4EA;
+  --brand-400: #9D85FF;
+  --brand-500: #8B6FFF;
+  --brand-600: #7C5CFF; /* principal */
+  --brand-700: #6B4CE8;
+  --brand-800: #5B3FE0;
+  --brand-900: #3A2A6A; /* sombra */
+  --brand-950: #1F1238;
 
-  /* === Roxos Sync === */
-  --purple-50: #F5F3FF;
-  --purple-100: #EDE9FE;
-  --purple-200: #DDD6FE;
-  --purple-300: #C4B5FD;
-  --purple-400: #A78BFA;
-  --purple-500: #8B5CF6;
-  --purple-600: #7C3AED;
-  --purple-700: #6D28D9;
-  --purple-800: #5B21B6;
-  --purple-900: #4C1D95;
-  --purple-950: #2E1065;
+  /* Acento (alias do brand principal — nome legado "lime" mantido por compat) */
+  --lime: #7C5CFF;
+  --lime-dim: rgba(124, 92, 255, 0.65);
 
-  /* === Textos === */
-  --text-primary: #FFFFFF;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --text-subtle: #52525B;
-
-  /* === Funcionais === */
+  /* === Funcionais (idênticas em ambos modos) === */
   --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
   --info: #3B82F6;
 
-  /* === Acento neon (uso estratégico) === */
-  --lime: #D1FE17;
-  --lime-dim: rgba(209, 254, 23, 0.65);
+  /* ============================================================
+     MODO CLARO (default — sem .dark no <html>)
+     Sidebar #FFFFFF · Background #EEEEEE
+     ============================================================ */
+  --background: #EEEEEE;
+  --background-secondary: #FFFFFF;
+  --background-tertiary: #F5F5F5;
+  --background-quaternary: #E5E5E5;
 
-  /* === Template Editorial (canvas Konva — namespace isolado) === */
-  --editorial-bg-dark: #0A0A0F;
-  --editorial-bg-darker: #050507;
-  --editorial-bg-navy: #0F0F1F;
-  --editorial-bg-cream: #F5F2EC;
-  --editorial-bg-white: #FFFFFF;
-  --editorial-bg-sepia: #3A2818;
-  --editorial-purple: #7C3AED;
-  --editorial-purple-light: #A78BFA;
-  --editorial-purple-pale: #DDD6FE;
-  --editorial-text-white: #FFFFFF;
-  --editorial-text-dark: #0A0A0F;
-  --editorial-text-gray-light: #C4C4C4;
-  --editorial-text-gray-dark: #4A4A4A;
+  --text-primary: #0e0e0e;
+  --text-secondary: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --text-subtle: #999999;
 
-  /* === Borders === */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-medium: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(124, 58, 237, 0.4);
-  --border-glow: rgba(124, 58, 237, 0.6);
+  --border-subtle: rgba(14, 14, 14, 0.08);
+  --border-medium: rgba(14, 14, 14, 0.16);
+  --border-strong: rgba(124, 92, 255, 0.35);
+  --border-glow: rgba(124, 92, 255, 0.6);
 
-  /* shadcn compat — mapeado pra paleta Sync */
+  /* Glass / gradient backgrounds (variáveis pra trocar por modo) */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-strong-bg: rgba(255, 255, 255, 0.85);
+  --card-gradient-from: rgba(255, 255, 255, 0.95);
+  --card-gradient-to: rgba(245, 245, 245, 0.85);
+  --card-gradient-hover-from: rgba(255, 255, 255, 1);
+  --card-gradient-hover-to: rgba(245, 245, 245, 0.95);
+
+  /* shadcn compat */
   --foreground: var(--text-primary);
   --card: var(--background-secondary);
   --card-foreground: var(--text-primary);
-  --popover: var(--background-tertiary);
+  --popover: var(--background-secondary);
   --popover-foreground: var(--text-primary);
-  --primary: var(--purple-600);
+  --primary: var(--brand-600);
   --primary-foreground: #FFFFFF;
   --secondary: var(--background-tertiary);
   --secondary-foreground: var(--text-primary);
   --muted: var(--background-tertiary);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--purple-600);
-  --accent-foreground: #FFFFFF;
+  --muted-foreground: var(--text-muted);
+  --accent: var(--brand-600);
+  --accent-foreground: #0e0e0e;
   --destructive: var(--danger);
   --destructive-foreground: #FFFFFF;
   --border: var(--border-subtle);
   --input: var(--border-medium);
-  --ring: var(--purple-600);
+  --ring: var(--brand-600);
 
-  --chart-1: var(--purple-500);
+  --chart-1: var(--brand-600);
   --chart-2: var(--success);
   --chart-3: var(--warning);
-  --chart-4: #EC4899;
+  --chart-4: var(--brand-300);
   --chart-5: var(--info);
   --radius: 0.75rem;
 
-  --sidebar: var(--background-secondary);
+  /* Sidebar (mode-specific) */
+  --sidebar: #FFFFFF;
   --sidebar-foreground: var(--text-primary);
-  --sidebar-primary: var(--purple-600);
+  --sidebar-primary: var(--brand-600);
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: var(--background-tertiary);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border-subtle);
-  --sidebar-ring: var(--purple-600);
+  --sidebar-ring: var(--brand-600);
   --surface: var(--background-secondary);
+
+  /* === Template Editorial (canvas Konva — namespace isolado, dark-only) === */
+  --editorial-bg-dark: #0e0e0e;
+  --editorial-bg-darker: #050505;
+  --editorial-bg-navy: #161616;
+  --editorial-bg-cream: #F5F2EC;
+  --editorial-bg-white: #FFFFFF;
+  --editorial-bg-sepia: #3A2818;
+  --editorial-purple: #D1FE17;
+  --editorial-purple-light: #E9FE7D;
+  --editorial-purple-pale: #F9FFD4;
+  --editorial-text-white: #FFFFFF;
+  --editorial-text-dark: #0e0e0e;
+  --editorial-text-gray-light: #C4C4C4;
+  --editorial-text-gray-dark: #4A4A4A;
+}
+
+/* ============================================================
+   MODO ESCURO (.dark no <html>)
+   Sidebar #000000 · Background #0e0e0e
+   ============================================================ */
+.dark {
+  --background: #0e0e0e;
+  --background-secondary: #161616;
+  --background-tertiary: #1f1f1f;
+  --background-quaternary: #262626;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #EEEEEE;
+  --text-muted: #A0AAAB;
+  --text-subtle: #586667;
+
+  --border-subtle: rgba(255, 255, 255, 0.03);
+  --border-medium: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(124, 92, 255, 0.4);
+  --border-glow: rgba(124, 92, 255, 0.6);
+
+  --glass-bg: rgba(20, 20, 30, 0.6);
+  --glass-strong-bg: rgba(24, 24, 36, 0.8);
+  --card-gradient-from: rgba(32, 28, 56, 0.55);
+  --card-gradient-to: rgba(18, 16, 32, 0.5);
+  --card-gradient-hover-from: rgba(48, 36, 88, 0.65);
+  --card-gradient-hover-to: rgba(24, 20, 44, 0.6);
+
+  --sidebar: #000000;
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-accent: var(--background-tertiary);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border-subtle);
 }
 
 @theme inline {
@@ -147,17 +191,17 @@
   --color-background-tertiary: var(--background-tertiary);
   --color-background-quaternary: var(--background-quaternary);
 
-  --color-purple-50: var(--purple-50);
-  --color-purple-100: var(--purple-100);
-  --color-purple-200: var(--purple-200);
-  --color-purple-300: var(--purple-300);
-  --color-purple-400: var(--purple-400);
-  --color-purple-500: var(--purple-500);
-  --color-purple-600: var(--purple-600);
-  --color-purple-700: var(--purple-700);
-  --color-purple-800: var(--purple-800);
-  --color-purple-900: var(--purple-900);
-  --color-purple-950: var(--purple-950);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -175,7 +219,6 @@
   --color-border-medium: var(--border-medium);
   --color-border-strong: var(--border-strong);
   --color-border-glow: var(--border-glow);
-  --color-cyan: var(--purple-500);
 
   /* font-size escala briefing */
   --text-hero: 64px;
@@ -214,12 +257,12 @@
   --text-tiny--font-weight: 500;
 
   /* shadows com glow roxo */
-  --shadow-glow-sm: 0 0 20px rgba(124, 58, 237, 0.15);
-  --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.25);
-  --shadow-glow-lg: 0 0 80px rgba(124, 58, 237, 0.3);
-  --shadow-glow-xl: 0 0 120px rgba(124, 58, 237, 0.4);
+  --shadow-glow-sm: 0 0 20px rgba(124, 92, 255, 0.15);
+  --shadow-glow: 0 0 40px rgba(124, 92, 255, 0.25);
+  --shadow-glow-lg: 0 0 80px rgba(124, 92, 255, 0.3);
+  --shadow-glow-xl: 0 0 120px rgba(124, 92, 255, 0.4);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 32px rgba(124, 58, 237, 0.15), 0 0 0 1px rgba(124, 58, 237, 0.2);
+  --shadow-card-hover: 0 8px 32px rgba(124, 92, 255, 0.15), 0 0 0 1px rgba(124, 92, 255, 0.2);
 
   /* animations */
   --animate-shimmer: shimmer 2s linear infinite;
@@ -297,47 +340,47 @@
   background: var(--background-secondary);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(109, 40, 217, 0.4);
+  background: rgba(124, 92, 255, 0.35);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 58, 237, 0.6);
+  background: rgba(124, 92, 255, 0.6);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(124, 58, 237, 0.3);
-  color: #FFFFFF;
+  background: rgba(124, 92, 255, 0.3);
+  color: var(--text-primary);
 }
 
 /* Focus visible */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.5), 0 0 0 4px var(--background);
+  box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.5), 0 0 0 4px var(--background);
 }
 
 @layer utilities {
-  /* Glassmorphism */
+  /* Glassmorphism (mode-aware via vars) */
   .glass {
-    background: rgba(19, 19, 26, 0.6);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
   }
   .glass-strong {
-    background: rgba(19, 19, 26, 0.8);
+    background: var(--glass-strong-bg);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border-medium);
   }
 
   /* Gradient text */
   .gradient-text {
-    background: linear-gradient(90deg, var(--purple-400), var(--purple-500), var(--purple-600));
+    background: linear-gradient(90deg, var(--brand-500), var(--brand-600), var(--brand-700));
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
   }
   .gradient-text-shine {
-    background: linear-gradient(90deg, var(--purple-400), #FFFFFF, var(--purple-400));
+    background: linear-gradient(90deg, var(--brand-600), var(--text-primary), var(--brand-600));
     background-size: 200% auto;
     background-clip: text;
     -webkit-background-clip: text;
@@ -348,53 +391,53 @@
   /* Aurora background */
   .aurora {
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 58, 237, 0.3), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(167, 139, 250, 0.15), transparent),
-      radial-gradient(ellipse 60% 40% at 0% 50%, rgba(124, 58, 237, 0.1), transparent);
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 255, 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(124, 92, 255, 0.12), transparent),
+      radial-gradient(ellipse 60% 40% at 0% 50%, rgba(58, 42, 106, 0.5), transparent);
   }
 
   /* Grid background */
   .grid-bg {
     background-image:
-      linear-gradient(rgba(124, 58, 237, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 58, 237, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(124, 92, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124, 92, 255, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
   .grid-bg-fade {
     background-image:
-      linear-gradient(rgba(124, 58, 237, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 58, 237, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(124, 92, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124, 92, 255, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
     -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
             mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
   }
 
   /* Glow effects */
-  .glow-sm { box-shadow: 0 0 20px rgba(124, 58, 237, 0.15); }
-  .glow-purple { box-shadow: 0 0 40px rgba(124, 58, 237, 0.3); }
-  .glow-lg { box-shadow: 0 0 80px rgba(124, 58, 237, 0.3); }
+  .glow-sm { box-shadow: 0 0 20px rgba(124, 92, 255, 0.15); }
+  .glow-brand { box-shadow: 0 0 40px rgba(124, 92, 255, 0.3); }
+  .glow-lg { box-shadow: 0 0 80px rgba(124, 92, 255, 0.3); }
 
   /* Gradients utility */
-  .bg-gradient-purple {
-    background-image: linear-gradient(135deg, var(--purple-600) 0%, var(--purple-400) 100%);
+  .bg-gradient-brand {
+    background-image: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-400) 100%);
   }
-  .bg-gradient-purple-vertical {
-    background-image: linear-gradient(180deg, var(--purple-600) 0%, var(--purple-900) 100%);
+  .bg-gradient-brand-vertical {
+    background-image: linear-gradient(180deg, var(--brand-600) 0%, var(--brand-900) 100%);
   }
   .bg-gradient-card {
-    background-image: linear-gradient(180deg, rgba(28, 28, 38, 0.8) 0%, rgba(19, 19, 26, 0.6) 100%);
+    background-image: linear-gradient(180deg, var(--card-gradient-from) 0%, var(--card-gradient-to) 100%);
   }
   .bg-gradient-card-hover {
-    background-image: linear-gradient(180deg, rgba(28, 28, 38, 0.95) 0%, rgba(19, 19, 26, 0.85) 100%);
+    background-image: linear-gradient(180deg, var(--card-gradient-hover-from) 0%, var(--card-gradient-hover-to) 100%);
   }
   .bg-gradient-shine {
     background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
   }
   .bg-gradient-aura {
-    background-image: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+    background-image: radial-gradient(circle, rgba(124, 92, 255, 0.15) 0%, transparent 70%);
   }
   .bg-gradient-aura-strong {
-    background-image: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 60%);
+    background-image: radial-gradient(circle, rgba(124, 92, 255, 0.3) 0%, transparent 60%);
   }
 
   /* Shadows shortcut */
@@ -406,10 +449,10 @@
   .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
 
   /* Lime accent helpers */
-  .glow-lime { box-shadow: 0 0 20px rgba(209, 254, 23, 0.35); }
+  .glow-lime { box-shadow: 0 0 20px rgba(124, 92, 255, 0.35); }
   .text-lime-glow {
     color: var(--lime);
-    text-shadow: 0 0 12px rgba(209, 254, 23, 0.5);
+    text-shadow: 0 0 12px rgba(124, 92, 255, 0.5);
   }
 
   /* No scrollbar */

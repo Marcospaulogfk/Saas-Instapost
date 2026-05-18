@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import type { EditorialSlide } from '@/components/templates/editorial/editorial.types'
@@ -87,7 +87,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? 'text-purple-300 border-b-2 border-purple-600'
+                ? 'text-brand-300 border-b-2 border-brand-600'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -166,7 +166,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
               <textarea
                 value={slide.body || ''}
                 onChange={(e) => onUpdate({ body: e.target.value })}
-                className="w-full min-h-[100px] p-3 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary text-sm resize-none focus:border-purple-600/50 focus:outline-none"
+                className="w-full min-h-[100px] p-3 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary text-sm resize-none focus:border-brand-600/50 focus:outline-none"
                 placeholder="Texto secundário do slide"
               />
             </div>
@@ -204,7 +204,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                     onClick={() => onUpdate({ titlePosition: pos })}
                     className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                       (slide.titlePosition || 'middle') === pos
-                        ? 'border-purple-600 bg-purple-600/10 text-purple-300'
+                        ? 'border-brand-600 bg-brand-600/10 text-brand-300'
                         : 'border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-border-medium hover:text-text-primary'
                     }`}
                   >
@@ -227,7 +227,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                       onClick={() => onUpdate({ variant })}
                       className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                         slide.variant === variant
-                          ? 'border-purple-600 bg-purple-600/10 text-purple-300'
+                          ? 'border-brand-600 bg-brand-600/10 text-brand-300'
                           : 'border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-border-medium hover:text-text-primary'
                       }`}
                     >
@@ -245,7 +245,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                   <button
                     type="button"
                     onClick={addImageSlot}
-                    className="text-[11px] text-purple-300 hover:text-purple-200 flex items-center gap-1"
+                    className="text-[11px] text-brand-300 hover:text-brand-200 flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" />
                     Adicionar
@@ -313,7 +313,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                     background: e.target.value as EditorialSlide['background'],
                   })
                 }
-                className="w-full p-3 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary text-sm focus:border-purple-600/50 focus:outline-none"
+                className="w-full p-3 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary text-sm focus:border-brand-600/50 focus:outline-none"
               >
                 <option value="dark">Preto</option>
                 <option value="cream">Bege claro</option>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Plus, MoreVertical, GripVertical, ChevronDown } from "lucide-react"
@@ -22,9 +22,9 @@ interface SlidesPanelProps {
 
 const slides = [
   { id: 1, color: "bg-gradient-to-br from-orange-600 to-red-700" },
-  { id: 2, color: "bg-gradient-to-br from-blue-600 to-purple-700" },
+  { id: 2, color: "bg-gradient-to-br from-blue-600 to-brand-700" },
   { id: 3, color: "bg-gradient-to-br from-green-600 to-teal-700" },
-  { id: 4, color: "bg-gradient-to-br from-purple-600 to-pink-700" },
+  { id: 4, color: "bg-gradient-to-br from-brand-600 to-pink-700" },
   { id: 5, color: "bg-gradient-to-br from-cyan-600 to-blue-700" },
   { id: 6, color: "bg-gradient-to-br from-yellow-600 to-orange-700" },
   { id: 7, color: "bg-gradient-to-br from-slate-600 to-slate-800" },
@@ -33,7 +33,7 @@ const slides = [
 const templates = [
   { id: 1, name: "Wesley Style", color: "bg-gradient-to-br from-cyan-600 to-blue-700" },
   { id: 2, name: "Minimalista", color: "bg-gradient-to-br from-gray-800 to-black" },
-  { id: 3, name: "Vibrante", color: "bg-gradient-to-br from-pink-600 to-purple-700" },
+  { id: 3, name: "Vibrante", color: "bg-gradient-to-br from-pink-600 to-brand-700" },
   { id: 4, name: "Business", color: "bg-gradient-to-br from-slate-600 to-slate-800" },
   { id: 5, name: "Neon", color: "bg-gradient-to-br from-green-500 to-cyan-600" },
 ]

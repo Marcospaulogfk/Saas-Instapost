@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { Plus, Sparkles, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { listBrands } from "@/lib/data/queries"
@@ -13,7 +13,7 @@ export default async function CriarPostUnicoPage() {
     return (
       <div className="relative p-6 md:p-8 max-w-2xl mx-auto">
         <div className="rounded-xl border border-dashed border-border-medium bg-gradient-card backdrop-blur-xl p-12 text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-purple shadow-glow flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-brand shadow-glow flex items-center justify-center">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <div>

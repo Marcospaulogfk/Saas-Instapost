@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import { useState } from "react"
@@ -37,7 +37,7 @@ const BRAND_PRESETS: Record<string, PostBrand> = {
     name: "SYNCPOST",
     monogram: "SP",
     profession: "PRODUTO",
-    brand_colors: ["#0A0A0A", "#7C3AED", "#D1FE17"],
+    brand_colors: ["#0A0A0A", "#7C5CFF", "#B8A4EA"],
     logo_url: null,
     phone: null,
     website: "syncpost.com.br",
@@ -141,7 +141,7 @@ export default function PreviewPostsUnicosPage() {
               onClick={() => setShowReference((v) => !v)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 showReference
-                  ? "bg-lime text-zinc-950"
+                  ? "bg-lime text-white"
                   : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
               }`}
             >
@@ -153,7 +153,7 @@ export default function PreviewPostsUnicosPage() {
                 onClick={() => setBrandKey(k as keyof typeof BRAND_PRESETS)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   brandKey === k
-                    ? "bg-purple-600 text-white"
+                    ? "bg-brand-600 text-[#0e0e0e]"
                     : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
                 }`}
               >

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import {
@@ -73,16 +73,16 @@ export default function JornadaPage() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
-          <Trophy className="w-5 h-5 text-purple-400" />
+        <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
+          <Trophy className="w-5 h-5 text-brand-400" />
         </div>
         <h1 className="text-2xl font-bold text-text-primary">Minha Jornada</h1>
       </div>
 
       {/* Card de Nível */}
-      <div className="rounded-2xl bg-gradient-to-br from-purple-600/20 via-purple-600/5 to-transparent border border-purple-600/30 p-6 sm:p-8 mb-6 relative overflow-hidden">
+      <div className="rounded-2xl bg-gradient-to-br from-brand-600/20 via-brand-600/5 to-transparent border border-brand-600/30 p-6 sm:p-8 mb-6 relative overflow-hidden">
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-          <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-purple-400/20" />
+          <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-brand-400/20" />
         </div>
         <p className="text-[11px] uppercase tracking-wider text-text-muted font-bold mb-1">
           NÍVEL {nivel.id}
@@ -92,7 +92,7 @@ export default function JornadaPage() {
         </h2>
         {proxima ? (
           <p className="text-sm text-text-secondary mb-4">
-            Você está a <span className="font-bold text-purple-400">{xpFaltando} XP</span> de
+            Você está a <span className="font-bold text-brand-400">{xpFaltando} XP</span> de
             alcançar o próximo nível ({proxima.nome}).
           </p>
         ) : (
@@ -106,7 +106,7 @@ export default function JornadaPage() {
         </div>
         <div className="w-full h-2 bg-background-tertiary rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-700"
+            className="h-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-700"
             style={{ width: `${percentual}%` }}
           />
         </div>
@@ -120,7 +120,7 @@ export default function JornadaPage() {
         <StatCard icon={Flame} valor={state.diasOfensiva} label="Dias de Ofensiva" iconColor="text-orange-400" />
         <StatCard icon={Calendar} valor={state.postsCriados} label="Posts Criados" iconColor="text-blue-400" />
         <StatCard icon={CheckCircle2} valor={state.missoesCompletas.length} label="Missões Concluídas" iconColor="text-emerald-400" />
-        <StatCard icon={Crown} valor={`#${ranking.global}`} label="Ranking Global" iconColor="text-purple-400" sublabel="Ver Top 100" />
+        <StatCard icon={Crown} valor={`#${ranking.global}`} label="Ranking Global" iconColor="text-brand-400" sublabel="Ver Top 100" />
         <StatCard icon={Award} valor={`#${ranking.mes}`} label="Ranking do Mês" iconColor="text-pink-400" sublabel="22 dias restantes" />
       </div>
 
@@ -131,7 +131,7 @@ export default function JornadaPage() {
           onClick={() => setTab("missoes")}
           className={`flex items-center gap-2 px-4 h-9 rounded-md text-xs font-medium transition-colors ${
             tab === "missoes"
-              ? "bg-purple-600 text-white"
+              ? "bg-brand-600 text-[#0e0e0e]"
               : "text-text-secondary hover:text-text-primary"
           }`}
         >
@@ -143,7 +143,7 @@ export default function JornadaPage() {
           onClick={() => setTab("conquistas")}
           className={`flex items-center gap-2 px-4 h-9 rounded-md text-xs font-medium transition-colors ${
             tab === "conquistas"
-              ? "bg-purple-600 text-white"
+              ? "bg-brand-600 text-[#0e0e0e]"
               : "text-text-secondary hover:text-text-primary"
           }`}
         >
@@ -170,7 +170,7 @@ export default function JornadaPage() {
           />
           <MissoesGroup
             titulo="Missões Mensais"
-            icon={<Trophy className="w-4 h-4 text-purple-400" />}
+            icon={<Trophy className="w-4 h-4 text-brand-400" />}
             missoes={missoesMensais}
             progress={progressoMissao}
             onComplete={completaMissao}
@@ -215,7 +215,7 @@ function StatCard({
       </p>
       <p className="text-[11px] text-text-secondary leading-tight">{label}</p>
       {sublabel && (
-        <p className="text-[10px] text-purple-400 mt-0.5">{sublabel}</p>
+        <p className="text-[10px] text-brand-400 mt-0.5">{sublabel}</p>
       )}
     </div>
   )
@@ -278,7 +278,7 @@ function MissoesGroup({
                   </div>
                   <div className="w-full h-1 bg-background-tertiary rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-purple-500 transition-all duration-500"
+                      className="h-full bg-brand-500 transition-all duration-500"
                       style={{ width: `${p.percentual}%` }}
                     />
                   </div>
@@ -286,14 +286,14 @@ function MissoesGroup({
                     <button
                       type="button"
                       onClick={() => onComplete(m.id, m.xp)}
-                      className="w-full mt-2 text-[11px] font-medium bg-lime text-zinc-950 py-1.5 rounded hover:brightness-110 transition-all"
+                      className="w-full mt-2 text-[11px] font-medium bg-lime text-white py-1.5 rounded hover:brightness-110 transition-all"
                     >
                       Resgatar +{m.xp} XP
                     </button>
                   ) : (
                     <Link
                       href="/dashboard/criar"
-                      className="block text-right text-[10px] text-purple-400 hover:text-purple-300 mt-1.5"
+                      className="block text-right text-[10px] text-brand-400 hover:text-brand-300 mt-1.5"
                     >
                       Ir <ArrowRight className="w-3 h-3 inline" />
                     </Link>

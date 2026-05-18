@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
@@ -131,7 +131,7 @@ export default function TestEditorialAIPage() {
           <button
             onClick={handleGenerate}
             disabled={loading || topic.trim().length < 5}
-            className="bg-purple-600 text-white px-6 py-3 rounded font-medium disabled:opacity-50 hover:bg-purple-700 transition-colors"
+            className="bg-brand-600 text-[#0e0e0e] px-6 py-3 rounded font-medium disabled:opacity-50 hover:bg-brand-700 transition-colors"
           >
             {loading ? 'Gerando…' : 'Gerar Carrossel'}
           </button>

@@ -1,0 +1,367 @@
+.onb-root {
+  /* === Roxo SyncPost (escopo onboarding) === */
+  --onb-primary: #7c5cff;
+  --onb-primary-hover: #6b4ce8;
+  --onb-primary-light: #b8a4ea;
+  --onb-primary-dim: rgba(124, 92, 255, 0.15);
+  --onb-primary-border: rgba(124, 92, 255, 0.3);
+  --onb-primary-glow: rgba(124, 92, 255, 0.12);
+
+  /* Gradient do banner */
+  --onb-gradient-banner: linear-gradient(
+    135deg,
+    #2a1a4f 0%,
+    #1f1238 50%,
+    #14081f 100%
+  );
+
+  /* Fundos */
+  --onb-bg-primary: #0a0a0a;
+  --onb-bg-surface: #0f0f0f;
+  --onb-bg-card: #141414;
+  --onb-bg-elevated: #181818;
+
+  /* Borders */
+  --onb-border-subtle: #1f1f1f;
+  --onb-border-default: #2a2a2a;
+  --onb-border-strong: #3a3a3a;
+
+  /* Texto */
+  --onb-text-primary: #ffffff;
+  --onb-text-secondary: #a8a8a8;
+  --onb-text-tertiary: #6a6a6a;
+  --onb-text-quaternary: #4a4a4a;
+
+  /* Estados */
+  --onb-success: #4ade80;
+  --onb-success-dim: rgba(74, 222, 128, 0.08);
+  --onb-success-border: rgba(74, 222, 128, 0.3);
+  --onb-error: #ef4444;
+
+  background: var(--onb-bg-primary);
+  color: var(--onb-text-primary);
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+
+  /* === Overrides shadcn (qualquer componente herdado roda em roxo+dark) === */
+  --background: var(--onb-bg-primary);
+  --foreground: var(--onb-text-primary);
+  --card: var(--onb-bg-card);
+  --card-foreground: var(--onb-text-primary);
+  --popover: var(--onb-bg-card);
+  --popover-foreground: var(--onb-text-primary);
+  --primary: var(--onb-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--onb-bg-elevated);
+  --secondary-foreground: var(--onb-text-primary);
+  --muted: var(--onb-bg-card);
+  --muted-foreground: var(--onb-text-secondary);
+  --accent: var(--onb-primary-dim);
+  --accent-foreground: var(--onb-primary-light);
+  --destructive: var(--onb-error);
+  --destructive-foreground: #ffffff;
+  --border: var(--onb-border-default);
+  --input: var(--onb-border-default);
+  --ring: var(--onb-primary);
+}
+
+/* Ambient gradient sutil de fundo */
+.onb-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 50% 0%,
+      rgba(124, 92, 255, 0.08),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 80% 100%,
+      rgba(91, 63, 224, 0.06),
+      transparent 60%
+    );
+}
+
+/* Grade sutil no fundo */
+.onb-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(
+      rgba(124, 92, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(124, 92, 255, 0.025) 1px,
+      transparent 1px
+    );
+  background-size: 40px 40px;
+  mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 30%,
+    black,
+    transparent 75%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 30%,
+    black,
+    transparent 75%
+  );
+  opacity: 0.4;
+}
+
+.onb-card-selectable {
+  background: linear-gradient(
+    180deg,
+    rgba(28, 24, 48, 0.5) 0%,
+    rgba(14, 14, 22, 0.4) 100%
+  );
+  border: 0.5px solid var(--onb-border-default);
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+}
+
+.onb-card-selectable:hover {
+  border-color: var(--onb-primary-border);
+  background: linear-gradient(
+    180deg,
+    rgba(48, 36, 88, 0.55) 0%,
+    rgba(22, 18, 40, 0.5) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(124, 92, 255, 0.12);
+}
+
+.onb-card-selectable[data-selected="true"] {
+  border-color: var(--onb-primary);
+  background: linear-gradient(
+    180deg,
+    rgba(72, 52, 144, 0.4) 0%,
+    rgba(28, 20, 60, 0.5) 100%
+  );
+  box-shadow:
+    0 4px 24px rgba(124, 92, 255, 0.2),
+    0 0 0 1px rgba(124, 92, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.onb-input {
+  width: 100%;
+  background: var(--onb-bg-card);
+  border: 0.5px solid var(--onb-border-default);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--onb-text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  font-family: inherit;
+  transition: border 160ms ease, box-shadow 160ms ease;
+  outline: none;
+}
+
+.onb-input::placeholder {
+  color: var(--onb-text-quaternary);
+}
+
+.onb-input:hover {
+  border-color: var(--onb-border-strong);
+}
+
+.onb-input:focus {
+  border-color: var(--onb-primary);
+  box-shadow:
+    0 0 0 3px var(--onb-primary-glow),
+    0 0 20px rgba(124, 92, 255, 0.12);
+}
+
+.onb-input[aria-invalid="true"] {
+  border-color: var(--onb-error);
+}
+
+.onb-textarea {
+  width: 100%;
+  background: var(--onb-bg-card);
+  border: 0.5px solid var(--onb-border-default);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--onb-text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 96px;
+  outline: none;
+  transition: border 160ms ease, box-shadow 160ms ease;
+}
+
+.onb-textarea::placeholder {
+  color: var(--onb-text-quaternary);
+}
+
+.onb-textarea:focus {
+  border-color: var(--onb-primary);
+  box-shadow:
+    0 0 0 3px var(--onb-primary-glow),
+    0 0 20px rgba(124, 92, 255, 0.12);
+}
+
+.onb-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--onb-text-primary);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.onb-helper {
+  font-size: 12px;
+  color: var(--onb-text-tertiary);
+  margin-top: 4px;
+}
+
+.onb-btn-primary {
+  background: linear-gradient(
+    180deg,
+    #8a6cff 0%,
+    var(--onb-primary) 50%,
+    #6b4ce8 100%
+  );
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.18) inset,
+    0 4px 14px rgba(124, 92, 255, 0.35);
+}
+
+.onb-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(
+    180deg,
+    #9a7eff 0%,
+    #8364ff 50%,
+    #7050ff 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.18) inset,
+    0 6px 22px rgba(124, 92, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.onb-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.2) inset,
+    0 2px 8px rgba(124, 92, 255, 0.3);
+}
+
+.onb-btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+  background: var(--onb-bg-elevated);
+  color: var(--onb-text-tertiary);
+}
+
+.onb-btn-ghost {
+  background: transparent;
+  color: var(--onb-text-secondary);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 160ms ease;
+}
+
+.onb-btn-ghost:hover {
+  color: var(--onb-text-primary);
+}
+
+.onb-btn-outline {
+  background: transparent;
+  color: var(--onb-text-primary);
+  border: 0.5px solid var(--onb-border-default);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border 160ms ease, background 160ms ease;
+}
+
+.onb-btn-outline:hover {
+  border-color: var(--onb-border-strong);
+  background: var(--onb-bg-card);
+}
+
+.onb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--onb-bg-card);
+  border: 0.5px solid var(--onb-border-default);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--onb-text-secondary);
+}
+
+.onb-icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(184, 164, 234, 0.18) 0%,
+    rgba(124, 92, 255, 0.12) 40%,
+    rgba(91, 63, 224, 0.04) 100%
+  );
+  border: 0.5px solid var(--onb-primary-border);
+  border-radius: 999px;
+  color: var(--onb-primary-light);
+  box-shadow:
+    0 0 32px rgba(124, 92, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.onb-label-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--onb-text-tertiary);
+  background: var(--onb-bg-card);
+  border-radius: 4px;
+  padding: 2px 6px;
+}

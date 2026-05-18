@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import {
@@ -39,7 +39,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
         {projects.length > 0 && (
           <Link
             href="/dashboard/projetos"
-            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            className="text-sm text-brand-400 hover:text-brand-300 transition-colors"
           >
             Ver todos &rarr;
           </Link>
@@ -64,7 +64,7 @@ export function RecentProjects({ projects }: RecentProjectsProps) {
             <Link
               key={project.id}
               href={`/dashboard/projetos/${project.id}`}
-              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all hover:scale-[1.02]"
+              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-brand-600/50 hover:shadow-glow-sm transition-all hover:scale-[1.02]"
             >
               <div
                 className={`absolute inset-0 ${getProjectGradient(project.id)}`}

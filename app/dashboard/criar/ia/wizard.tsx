@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -212,7 +212,7 @@ export function Wizard({ brands }: WizardProps) {
           onChange={(e) => setTopic(e.target.value)}
           rows={3}
           placeholder="Sobre o que vai ser o carrossel? (mín 10 caracteres)"
-          className="bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm resize-none"
+          className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 focus:shadow-glow-sm resize-none"
         />
       </div>
 
@@ -228,7 +228,7 @@ export function Wizard({ brands }: WizardProps) {
         <div className="flex items-baseline justify-between">
           <Label className="text-sm text-text-secondary">Template visual</Label>
           <span className="text-xs text-text-muted">
-            Selecionado: <span className="text-purple-300 font-medium">{TEMPLATES.find((t) => t.value === template)?.label}</span>
+            Selecionado: <span className="text-brand-300 font-medium">{TEMPLATES.find((t) => t.value === template)?.label}</span>
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -272,8 +272,8 @@ export function Wizard({ brands }: WizardProps) {
               onClick={() => setNSlides(n as 5 | 7 | 10)}
               className={`h-11 rounded-lg border text-sm font-medium transition-all ${
                 n === nSlides
-                  ? "border-purple-600 bg-purple-600/10 text-purple-300 shadow-glow-sm"
-                  : "border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-purple-600/40 hover:text-text-primary"
+                  ? "border-brand-600 bg-brand-600/10 text-brand-300 shadow-glow-sm"
+                  : "border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-brand-600/40 hover:text-text-primary"
               }`}
             >
               {n}
@@ -336,8 +336,8 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
       onClick={onSelect}
       className={`group relative text-left rounded-xl border overflow-hidden transition-all ${
         selected
-          ? "border-purple-600 shadow-glow ring-2 ring-purple-600/30"
-          : "border-border-subtle hover:border-purple-600/40 hover:shadow-glow-sm"
+          ? "border-brand-600 shadow-glow ring-2 ring-brand-600/30"
+          : "border-border-subtle hover:border-brand-600/40 hover:shadow-glow-sm"
       }`}
     >
       {/* Preview area */}
@@ -347,8 +347,8 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
         {template.value === "hybrid" && <HybridPreview />}
 
         {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(209,254,23,0.6)]">
-            <Check className="w-3.5 h-3.5 text-zinc-950" strokeWidth={3} />
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(124,92,255,0.6)]">
+            <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
           </div>
         )}
       </div>
@@ -359,7 +359,7 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
           <p className="text-sm font-display font-semibold text-text-primary">
             {template.label}
           </p>
-          <span className="text-[10px] uppercase tracking-wider text-purple-300 bg-purple-600/15 border border-purple-600/30 rounded px-1.5 py-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-brand-300 bg-brand-600/15 border border-brand-600/30 rounded px-1.5 py-0.5">
             {template.tag}
           </span>
         </div>
@@ -372,9 +372,9 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
 /** Preview do template Editorial — magazine, tipografia em destaque, layout limpo */
 function EditorialPreview() {
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-purple-950/60 to-black p-4 flex flex-col justify-between">
+    <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-brand-950/60 to-black p-4 flex flex-col justify-between">
       <div>
-        <div className="text-[7px] tracking-[0.2em] text-purple-300 uppercase mb-2 font-mono">
+        <div className="text-[7px] tracking-[0.2em] text-brand-300 uppercase mb-2 font-mono">
           ISSUE #07 — DESIGN
         </div>
         <div className="space-y-1.5">
@@ -389,7 +389,7 @@ function EditorialPreview() {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <div className="h-1 w-8 bg-purple-400 rounded-full" />
+        <div className="h-1 w-8 bg-brand-400 rounded-full" />
         <div className="text-[7px] tracking-wider text-white/40">01/07</div>
       </div>
     </div>
@@ -401,7 +401,7 @@ function CinematicPreview() {
   return (
     <div className="absolute inset-0">
       {/* "Foto" simulada com gradient + textura */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-700 via-violet-900 to-zinc-950" />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-violet-900 to-zinc-950" />
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -415,11 +415,11 @@ function CinematicPreview() {
       <div className="absolute bottom-3 left-3 right-3">
         <div className="h-3 w-4/5 bg-white rounded-sm mb-1" />
         <div className="h-3 w-2/3 bg-white rounded-sm mb-2" />
-        <div className="h-1 w-1/2 bg-purple-300 rounded-full" />
+        <div className="h-1 w-1/2 bg-brand-300 rounded-full" />
       </div>
       {/* Indicador top */}
       <div className="absolute top-3 left-3 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(209,254,23,0.7)]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(124,92,255,0.7)]" />
         <span className="text-[7px] uppercase tracking-wider text-white/80 font-mono">LIVE</span>
       </div>
     </div>
@@ -431,7 +431,7 @@ function HybridPreview() {
   return (
     <div className="absolute inset-0 bg-zinc-950 grid grid-rows-[1fr_1.2fr]">
       {/* Top: bloco visual */}
-      <div className="relative bg-gradient-to-br from-purple-600 to-purple-900 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-brand-600 to-brand-900 overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -457,7 +457,7 @@ function HybridPreview() {
           <div className="h-1.5 w-3/5 bg-white/60 rounded-sm" />
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-1 h-1 rounded-full bg-purple-400" />
+          <div className="w-1 h-1 rounded-full bg-brand-400" />
           <div className="text-[7px] tracking-wider text-white/40">SYNCPOST · ESPORTE</div>
         </div>
       </div>
@@ -487,11 +487,11 @@ function CardChoiceGroup<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`text-left p-3.5 rounded-lg border transition-all ${
               opt.value === value
-                ? "border-purple-600 bg-purple-600/10 shadow-glow-sm"
-                : "border-border-subtle bg-background-secondary/40 hover:border-purple-600/40"
+                ? "border-brand-600 bg-brand-600/10 shadow-glow-sm"
+                : "border-border-subtle bg-background-secondary/40 hover:border-brand-600/40"
             }`}
           >
-            <p className={`text-sm font-medium ${opt.value === value ? "text-purple-200" : "text-text-primary"}`}>
+            <p className={`text-sm font-medium ${opt.value === value ? "text-brand-200" : "text-text-primary"}`}>
               {opt.label}
             </p>
             <p className="text-[11px] text-text-muted mt-0.5">{opt.description}</p>

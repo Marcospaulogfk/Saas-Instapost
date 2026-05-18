@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
@@ -54,7 +54,7 @@ export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Ex: 5 erros que iniciantes cometem ao criar carrosséis no Instagram. Foco em design e copywriting."
-            className="w-full min-h-[120px] p-4 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary placeholder:text-text-muted focus:border-purple-600/50 focus:shadow-glow-sm focus:outline-none resize-none"
+            className="w-full min-h-[120px] p-4 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary placeholder:text-text-muted focus:border-brand-600/50 focus:shadow-glow-sm focus:outline-none resize-none"
             maxLength={500}
             disabled={disabled}
           />
@@ -99,7 +99,7 @@ export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
                 disabled={disabled}
                 className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                   tone === opt.id
-                    ? 'border-purple-600 bg-purple-600/10 text-purple-300'
+                    ? 'border-brand-600 bg-brand-600/10 text-brand-300'
                     : 'border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-border-medium hover:text-text-primary'
                 }`}
               >

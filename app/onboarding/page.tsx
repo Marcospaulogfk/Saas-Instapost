@@ -2,189 +2,294 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
-import { OnboardingProgress } from "@/components/onboarding/progress"
-import { WelcomeStep } from "@/components/onboarding/welcome-step"
-import { UrlInputStep } from "@/components/onboarding/url-input-step"
-import { AnalysisStep } from "@/components/onboarding/analysis-step"
-import {
-  ReviewStep,
-  type ReviewFormData,
-} from "@/components/onboarding/review-step"
-import { SuccessStep } from "@/components/onboarding/success-step"
-import { createBrand } from "@/app/actions/brands"
+import { motion } from "framer-motion"
+import { Globe, Instagram, Pencil, Sparkles, ArrowRight, Loader2 } from "lucide-react"
+import { OnboardingHeader } from "@/components/onboarding-v2/header"
+import { useOnboardingState } from "@/lib/onboarding/store"
 
-export type OnboardingStep =
-  | "welcome"
-  | "url"
-  | "analysis"
-  | "review"
-  | "success"
-
-interface BrandAnalysis {
-  name: string
-  description: string
-  target_audience: string
-  tone_of_voice: string
-  visual_style: string
-  main_objective: "sell" | "inform" | "engage" | "community"
-  brand_colors: string[]
-  instagram_handle: string
-}
-
-interface AnalyzeApiResponse {
-  website_url: string
-  og_image: string | null
-  analysis: BrandAnalysis
-}
-
-export default function OnboardingPage() {
+export default function OnboardingEntryPage() {
   const router = useRouter()
-  const [step, setStep] = useState<OnboardingStep>("welcome")
-  const [inputMethod, setInputMethod] = useState<"url" | "manual" | null>(null)
-  const [websiteUrl, setWebsiteUrl] = useState("")
-  const [analysis, setAnalysis] = useState<BrandAnalysis | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [savedBrand, setSavedBrand] = useState<{
-    id: string
-    name: string
-    colors: string[]
-    tones: string
-  } | null>(null)
+  const { state, update } = useOnboardingState()
+  const [websiteOpen, setWebsiteOpen] = useState(false)
+  const [websiteUrl, setWebsiteUrl] = useState(state.sourceUrl ?? "")
+  const [instagramHandle, setInstagramHandle] = useState(
+    state.instagramHandle ?? "",
+  )
+  const [instagramOpen, setInstagramOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  const getStepIndex = () => {
-    if (step === "url") return 0
-    if (step === "analysis") return 1
-    if (step === "review") return 2
-    if (step === "success") return 3
-    return 0
+  const handleWebsite = async () => {
+    const url = websiteUrl.trim()
+    if (!url) return
+    setSubmitting(true)
+    update({ entryMethod: "website", sourceUrl: url, instagramHandle: null })
+    router.push("/onboarding/analyze")
   }
 
-  const handleSelectMethod = (method: "url" | "manual") => {
-    setError(null)
-    setInputMethod(method)
-    if (method === "url") {
-      setStep("url")
-    } else {
-      setAnalysis(null)
-      setStep("review")
-    }
-  }
-
-  const handleUrlSubmit = async (url: string) => {
-    setError(null)
-    setStep("analysis")
-    try {
-      const res = await fetch("/api/onboarding/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? "erro desconhecido")
-        setStep("url")
-        return
-      }
-      const payload = data as AnalyzeApiResponse
-      setWebsiteUrl(payload.website_url)
-      setAnalysis(payload.analysis)
-      setStep("review")
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "erro de rede"
-      setError(msg)
-      setStep("url")
-    }
-  }
-
-  const handleReviewSubmit = async (form: ReviewFormData) => {
-    setError(null)
-    const result = await createBrand({
-      name: form.name,
-      description: form.description,
-      website_url: websiteUrl || undefined,
-      instagram_handle: form.instagram_handle || undefined,
-      target_audience: form.target_audience,
-      tone_of_voice: form.tone_of_voice,
-      visual_style: form.visual_style,
-      main_objective: form.main_objective,
-      brand_colors: form.brand_colors,
+  const handleInstagram = () => {
+    const handle = instagramHandle.trim().replace(/^@/, "")
+    if (!handle) return
+    setSubmitting(true)
+    update({
+      entryMethod: "instagram",
+      instagramHandle: handle,
+      sourceUrl: null,
     })
-    if (!result.ok) {
-      setError(result.error)
-      return
-    }
-    setSavedBrand({
-      id: result.brandId,
-      name: form.name,
-      colors: form.brand_colors,
-      tones: form.tone_of_voice,
-    })
-    setStep("success")
-    router.refresh()
+    router.push("/onboarding/analyze")
   }
 
-  const handleBack = () => {
-    setError(null)
-    if (step === "url") setStep("welcome")
-    else if (step === "review" && inputMethod === "url") setStep("url")
-    else if (step === "review" && inputMethod === "manual") setStep("welcome")
+  const handleManual = () => {
+    update({ entryMethod: "manual", sourceUrl: null, instagramHandle: null })
+    router.push("/onboarding/objetivo")
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div
-        className="fixed inset-0 opacity-5"
-        style={{
-          backgroundImage: `radial-gradient(circle, #333 1px, transparent 1px)`,
-          backgroundSize: "30px 30px",
-        }}
-      />
+    <>
+      <OnboardingHeader showStep={false} />
 
-      <div className="relative w-full max-w-[720px]">
-        {step !== "welcome" && step !== "success" && (
-          <OnboardingProgress currentStep={getStepIndex()} />
-        )}
-
-        {error && (step === "url" || step === "review") && (
-          <div className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
-            {error}
+      <main className="flex-1">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="mx-auto w-full max-w-[560px] px-8 py-16"
+        >
+          <div className="mb-10 flex flex-col items-center text-center">
+            <div
+              className="onb-icon-circle mb-5"
+              style={{ width: 56, height: 56 }}
+            >
+              <Sparkles size={24} strokeWidth={2} />
+            </div>
+            <h1
+              style={{
+                fontSize: 26,
+                fontWeight: 600,
+                letterSpacing: "-0.025em",
+                color: "var(--onb-text-primary)",
+                marginBottom: 6,
+              }}
+            >
+              Vamos agilizar!
+            </h1>
+            <p
+              style={{
+                fontSize: 14,
+                color: "var(--onb-text-secondary)",
+              }}
+            >
+              Podemos preencher quase tudo automaticamente usando IA
+            </p>
           </div>
-        )}
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="bg-card border border-border rounded-2xl p-12"
-          >
-            {step === "welcome" && (
-              <WelcomeStep onSelectMethod={handleSelectMethod} />
-            )}
-            {step === "url" && (
-              <UrlInputStep onBack={handleBack} onSubmit={handleUrlSubmit} />
-            )}
-            {step === "analysis" && <AnalysisStep />}
-            {step === "review" && (
-              <ReviewStep
-                initial={analysis}
-                onBack={handleBack}
-                onSubmit={handleReviewSubmit}
+          <div className="flex flex-col gap-3">
+            {/* Opção 1: Website */}
+            <div className="onb-card-selectable" data-selected={websiteOpen}>
+              <button
+                type="button"
+                onClick={() => {
+                  setWebsiteOpen((v) => !v)
+                  setInstagramOpen(false)
+                }}
+                className="flex w-full items-center gap-4 text-left"
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background: "var(--onb-bg-elevated)",
+                    border: "0.5px solid var(--onb-border-default)",
+                  }}
+                >
+                  <Globe size={20} style={{ color: "var(--onb-primary-light)" }} />
+                </div>
+                <div className="flex-1">
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--onb-text-primary)",
+                    }}
+                  >
+                    Tenho um Website
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--onb-text-secondary)",
+                      marginTop: 2,
+                    }}
+                  >
+                    Cole a URL e a IA analisa cores, tom de voz e mais
+                  </div>
+                </div>
+              </button>
+              {websiteOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-4 flex flex-col gap-3 overflow-hidden"
+                >
+                  <input
+                    type="url"
+                    className="onb-input"
+                    placeholder="https://suamarca.com.br"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="onb-btn-primary self-end"
+                    disabled={!websiteUrl.trim() || submitting}
+                    onClick={handleWebsite}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Analisando...
+                      </>
+                    ) : (
+                      <>
+                        Analisar
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Opção 2: Instagram */}
+            <div className="onb-card-selectable" data-selected={instagramOpen}>
+              <button
+                type="button"
+                onClick={() => {
+                  setInstagramOpen((v) => !v)
+                  setWebsiteOpen(false)
+                }}
+                className="flex w-full items-center gap-4 text-left"
+              >
+                <div
+                  className="flex items-center justify-center rounded-xl"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    background:
+                      "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)",
+                  }}
+                >
+                  <Instagram size={20} color="white" />
+                </div>
+                <div className="flex-1">
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--onb-text-primary)",
+                    }}
+                  >
+                    Tenho Instagram
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--onb-text-secondary)",
+                      marginTop: 2,
+                    }}
+                  >
+                    Conecte sua conta Business para importar dados
+                  </div>
+                </div>
+              </button>
+              {instagramOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-4 flex flex-col gap-3 overflow-hidden"
+                >
+                  <input
+                    type="text"
+                    className="onb-input"
+                    placeholder="@suamarca"
+                    value={instagramHandle}
+                    onChange={(e) => setInstagramHandle(e.target.value)}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="onb-btn-primary self-end"
+                    disabled={!instagramHandle.trim() || submitting}
+                    onClick={handleInstagram}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Analisando...
+                      </>
+                    ) : (
+                      <>
+                        Analisar
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Divisor */}
+            <div className="my-4 flex items-center gap-3">
+              <div
+                className="h-px flex-1"
+                style={{ background: "var(--onb-border-subtle)" }}
               />
-            )}
-            {step === "success" && savedBrand && (
-              <SuccessStep
-                brandName={savedBrand.name}
-                brandColors={savedBrand.colors}
-                tones={savedBrand.tones}
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "var(--onb-text-tertiary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                ou
+              </span>
+              <div
+                className="h-px flex-1"
+                style={{ background: "var(--onb-border-subtle)" }}
               />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </div>
+            </div>
+
+            {/* Opção 3: Manual */}
+            <button
+              type="button"
+              onClick={handleManual}
+              className="flex items-center justify-center gap-2 rounded-xl px-5 py-4 transition-colors"
+              style={{
+                background: "transparent",
+                border: "1px dashed var(--onb-border-default)",
+                color: "var(--onb-text-secondary)",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--onb-primary)"
+                e.currentTarget.style.color = "var(--onb-text-primary)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--onb-border-default)"
+                e.currentTarget.style.color = "var(--onb-text-secondary)"
+              }}
+            >
+              <Pencil size={14} />
+              Preencher manualmente
+            </button>
+          </div>
+        </motion.div>
+      </main>
+    </>
   )
 }

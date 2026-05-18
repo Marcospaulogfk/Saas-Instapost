@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { Plus } from "lucide-react"
@@ -24,7 +24,7 @@ export function BrandsSection({ brands }: BrandsSectionProps) {
           asChild
           variant="outline"
           size="sm"
-          className="border-border-medium hover:border-purple-600/50 hover:bg-purple-600/5"
+          className="border-border-medium hover:border-brand-600/50 hover:bg-brand-600/5"
         >
           <Link href="/onboarding">
             <Plus className="w-4 h-4 mr-2" />
@@ -51,7 +51,7 @@ export function BrandsSection({ brands }: BrandsSectionProps) {
             <Link
               key={brand.id}
               href={`/dashboard/marcas/${brand.id}`}
-              className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl hover:border-purple-600/50 hover:shadow-glow-sm transition-all hover:-translate-y-1 overflow-hidden"
+              className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl hover:border-brand-600/50 hover:shadow-glow-sm transition-all hover:-translate-y-1 overflow-hidden"
             >
               <div
                 className={`h-20 ${getBrandGradient(brand.id)} flex items-center justify-center`}
@@ -72,7 +72,7 @@ export function BrandsSection({ brands }: BrandsSectionProps) {
 
           <Link
             href="/onboarding"
-            className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-dashed border-border-medium hover:border-purple-600/50 transition-colors flex flex-col items-center justify-center gap-2 text-text-muted hover:text-purple-300"
+            className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-dashed border-border-medium hover:border-brand-600/50 transition-colors flex flex-col items-center justify-center gap-2 text-text-muted hover:text-brand-300"
           >
             <Plus className="w-8 h-8" />
             <span className="text-sm font-medium">Nova marca</span>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 export default function ConfiguracoesPage() {
   return (
     <div className="relative p-8 space-y-6 max-w-4xl">
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-600/10 rounded-full blur-[120px] -z-10 pointer-events-none" />
       <div>
         <h1 className="text-h1 font-display font-bold text-text-primary">Configurações</h1>
         <p className="text-text-secondary mt-1">
@@ -95,7 +95,7 @@ export default function ConfiguracoesPage() {
           <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Plano atual</h3>
-              <Badge variant="secondary" className="bg-purple-600/20 text-purple-300 border-purple-600/30">Pro</Badge>
+              <Badge variant="secondary" className="bg-brand-600/20 text-brand-300 border-brand-600/30">Pro</Badge>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -34,7 +34,7 @@ type Formato = {
   format: "post" | "story"
   slides: number | null
   icon: typeof Sparkles
-  gradient: string
+  image: string
 }
 
 const FORMATOS: Formato[] = [
@@ -46,7 +46,7 @@ const FORMATOS: Formato[] = [
     format: "post",
     slides: 1,
     icon: Square,
-    gradient: "from-purple-500 to-pink-500",
+    image: "/format-post-portrait.png",
   },
   {
     id: "carrossel-portrait",
@@ -56,7 +56,7 @@ const FORMATOS: Formato[] = [
     format: "post",
     slides: 7,
     icon: GalleryHorizontal,
-    gradient: "from-blue-500 to-cyan-500",
+    image: "/format-carrossel-portrait.png",
   },
   {
     id: "stories-unico",
@@ -66,7 +66,7 @@ const FORMATOS: Formato[] = [
     format: "story",
     slides: 1,
     icon: Smartphone,
-    gradient: "from-orange-500 to-red-500",
+    image: "/format-stories-unico.png",
   },
   {
     id: "stories-carrossel",
@@ -76,7 +76,7 @@ const FORMATOS: Formato[] = [
     format: "story",
     slides: 5,
     icon: Smartphone,
-    gradient: "from-emerald-500 to-teal-500",
+    image: "/format-stories-carrossel.png",
   },
 ]
 
@@ -219,7 +219,7 @@ export default function CriarWizardPage() {
               disabled={s >= step}
               className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-colors ${
                 step === s
-                  ? "text-purple-400"
+                  ? "text-brand-400"
                   : step > s
                     ? "text-text-secondary hover:text-text-primary cursor-pointer"
                     : "text-text-muted"
@@ -228,7 +228,7 @@ export default function CriarWizardPage() {
               <span
                 className={`w-2 h-2 rounded-full ${
                   step === s
-                    ? "bg-purple-500 ring-4 ring-purple-500/30"
+                    ? "bg-brand-500 ring-4 ring-brand-500/30"
                     : step > s
                       ? "bg-emerald-500"
                       : "bg-text-muted"
@@ -314,30 +314,58 @@ function Step1({
               key={f.id}
               type="button"
               onClick={() => onSelect(f)}
-              className={`relative aspect-[4/5] rounded-2xl overflow-hidden text-white p-4 flex flex-col justify-between transition-all bg-gradient-to-br ${f.gradient} ${
+              className={`group relative aspect-[4/5] rounded-2xl overflow-hidden text-white p-4 flex flex-col justify-between transition-all ${
                 selected
-                  ? "ring-4 ring-purple-400 scale-[1.02]"
-                  : "ring-1 ring-white/10 hover:ring-white/30 hover:scale-[1.01]"
+                  ? "ring-2 ring-brand-400 scale-[1.02] shadow-[0_8px_32px_rgba(124,92,255,0.35)]"
+                  : "ring-1 ring-white/[0.06] hover:ring-brand-500/40 hover:scale-[1.01]"
               }`}
+              style={{
+                backgroundImage: `url(${f.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundColor: "#0A0A0F",
+              }}
             >
+              {/* Overlay gradient pra contraste do texto */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(10,10,15,0.35) 0%, rgba(10,10,15,0.15) 40%, rgba(10,10,15,0.85) 100%)",
+                }}
+              />
               {selected && (
-                <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white flex items-center justify-center">
-                  <Check className="w-4 h-4 text-purple-600" />
+                <div
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center z-10"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, #8a6cff 0%, #7C5CFF 60%, #6b4ce8 100%)",
+                    boxShadow: "0 4px 14px rgba(124,92,255,0.5)",
+                  }}
+                >
+                  <Check className="w-4 h-4 text-white" strokeWidth={3} />
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/10" />
-              <div className="relative">
-                <f.icon className="w-6 h-6 sm:w-7 sm:h-7 drop-shadow" />
+              <div className="relative z-10">
+                <div
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg backdrop-blur-md"
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    border: "0.5px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  <f.icon className="w-4 h-4" strokeWidth={2} />
+                </div>
               </div>
-              <div className="relative">
-                <p className="text-sm sm:text-base font-bold drop-shadow leading-tight">
+              <div className="relative z-10">
+                <p className="text-sm sm:text-base font-bold leading-tight">
                   {f.label}
                 </p>
-                <p className="text-[10px] sm:text-xs opacity-90 mt-0.5">
+                <p className="text-[10px] sm:text-xs opacity-80 mt-0.5">
                   {f.size}
                 </p>
                 {f.slides && f.slides > 1 && (
-                  <p className="text-[10px] opacity-80 mt-0.5">
+                  <p className="text-[10px] opacity-70 mt-0.5">
                     {f.slides} slides
                   </p>
                 )}
@@ -419,17 +447,17 @@ function Step2({
                 onClick={() => onObjetivo(o.id)}
                 className={`text-left p-4 rounded-xl border-2 transition-all ${
                   sel
-                    ? "border-purple-500 bg-purple-500/10"
+                    ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
                 <div className="flex items-start gap-2.5">
                   <div
                     className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      sel ? "bg-purple-500/20" : "bg-background-tertiary"
+                      sel ? "bg-brand-500/20" : "bg-background-tertiary"
                     }`}
                   >
-                    <o.icon className={`w-4 h-4 ${sel ? "text-purple-300" : "text-text-secondary"}`} />
+                    <o.icon className={`w-4 h-4 ${sel ? "text-brand-300" : "text-text-secondary"}`} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-text-primary">
@@ -468,7 +496,7 @@ function Step2({
                 onClick={() => onAbordagem(a.id)}
                 className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
                   sel
-                    ? "border-purple-500 bg-purple-500/10"
+                    ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
@@ -518,12 +546,12 @@ function Step2({
                 onClick={() => onComoCriar(c.id)}
                 className={`text-left p-4 rounded-xl border-2 transition-all ${
                   sel
-                    ? "border-purple-500 bg-purple-500/10"
+                    ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
                 <c.icon
-                  className={`w-5 h-5 mb-2 ${sel ? "text-purple-300" : "text-text-secondary"}`}
+                  className={`w-5 h-5 mb-2 ${sel ? "text-brand-300" : "text-text-secondary"}`}
                 />
                 <p className="text-sm font-semibold text-text-primary mb-1">
                   {c.label}
@@ -636,9 +664,9 @@ function Step3({
 
       {/* Prompt refinado */}
       {promptRefinado && (
-        <div className="mb-4 rounded-xl border border-purple-600/30 bg-purple-600/5 p-4">
+        <div className="mb-4 rounded-xl border border-brand-600/30 bg-brand-600/5 p-4">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+            <p className="text-xs font-bold uppercase tracking-wider text-brand-300 flex items-center gap-1.5">
               <Sparkles className="w-3 h-3" />
               Prompt expandido pela IA
             </p>
@@ -646,7 +674,7 @@ function Step3({
               type="button"
               onClick={onRefinar}
               disabled={refinando}
-              className="text-[10px] text-purple-400 hover:text-purple-300 flex items-center gap-1 disabled:opacity-50"
+              className="text-[10px] text-brand-400 hover:text-brand-300 flex items-center gap-1 disabled:opacity-50"
             >
               {refinando ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
               Refinar de novo
@@ -674,7 +702,7 @@ function Step3({
           type="button"
           onClick={onRefinar}
           disabled={refinando}
-          className="w-full mb-4 py-3 rounded-xl border-2 border-dashed border-purple-500/40 hover:border-purple-500/70 hover:bg-purple-500/5 text-purple-300 text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+          className="w-full mb-4 py-3 rounded-xl border-2 border-dashed border-brand-500/40 hover:border-brand-500/70 hover:bg-brand-500/5 text-brand-300 text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
         >
           {refinando ? (
             <>
@@ -698,7 +726,7 @@ function Step3({
         <Button
           onClick={onGerar}
           disabled={!canFinish || submitting}
-          className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 min-w-[160px]"
+          className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 min-w-[160px]"
         >
           {submitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />

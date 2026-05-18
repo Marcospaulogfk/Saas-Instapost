@@ -1,0 +1,8 @@
+/* =============================================================================
+   Dashboard — força tema dark (independente do toggle global).
+   A paleta roxa já vem dos tokens globais (--brand-* em globals.css).
+   ============================================================================= */
+
+.dashboard-root {
+  color-scheme: dark;
+}

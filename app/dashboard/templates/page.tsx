@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Search } from "lucide-react"
@@ -8,14 +8,14 @@ import { Badge } from "@/components/ui/badge"
 const categories = ["Todos", "Educacional", "Vendas", "Storytelling", "Listas", "Tutorial"]
 
 const templates = [
-  { id: 1, name: "Wesley Style", category: "Educacional", usageCount: 234, color: "bg-gradient-to-br from-purple-500 via-violet-700 to-zinc-950" },
+  { id: 1, name: "Wesley Style", category: "Educacional", usageCount: 234, color: "bg-gradient-to-br from-brand-500 via-violet-700 to-zinc-950" },
   { id: 2, name: "Minimalista Preto", category: "Storytelling", usageCount: 189, color: "bg-gradient-to-br from-zinc-800 via-zinc-900 to-black" },
-  { id: 3, name: "Cinematic", category: "Vendas", usageCount: 156, color: "bg-gradient-to-br from-violet-700 via-purple-900 to-black" },
+  { id: 3, name: "Cinematic", category: "Vendas", usageCount: 156, color: "bg-gradient-to-br from-violet-700 via-brand-900 to-black" },
   { id: 4, name: "Business Pro", category: "Educacional", usageCount: 142, color: "bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950" },
-  { id: 5, name: "Lista Top 10", category: "Listas", usageCount: 128, color: "bg-gradient-to-br from-purple-700 via-zinc-900 to-black" },
-  { id: 6, name: "Tutorial Passo-a-passo", category: "Tutorial", usageCount: 117, color: "bg-gradient-to-br from-violet-600 via-purple-800 to-zinc-950" },
-  { id: 7, name: "Story Cards", category: "Storytelling", usageCount: 94, color: "bg-gradient-to-br from-purple-800 via-violet-950 to-black" },
-  { id: 8, name: "Oferta Bold", category: "Vendas", usageCount: 81, color: "bg-gradient-to-br from-violet-500 via-purple-700 to-zinc-950" },
+  { id: 5, name: "Lista Top 10", category: "Listas", usageCount: 128, color: "bg-gradient-to-br from-brand-700 via-zinc-900 to-black" },
+  { id: 6, name: "Tutorial Passo-a-passo", category: "Tutorial", usageCount: 117, color: "bg-gradient-to-br from-violet-600 via-brand-800 to-zinc-950" },
+  { id: 7, name: "Story Cards", category: "Storytelling", usageCount: 94, color: "bg-gradient-to-br from-brand-800 via-violet-950 to-black" },
+  { id: 8, name: "Oferta Bold", category: "Vendas", usageCount: 81, color: "bg-gradient-to-br from-violet-500 via-brand-700 to-zinc-950" },
 ]
 
 export default function TemplatesPage() {

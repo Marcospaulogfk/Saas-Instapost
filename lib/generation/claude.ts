@@ -228,6 +228,16 @@ export interface BrandAnalysis {
   instagram_handle: string
 }
 
+export interface LogoAnalysis {
+  is_logo: boolean
+  colors: {
+    primary: string
+    secondary: string
+    accent: string
+  }
+  description: string
+}
+
 export interface ClaudeMetrics {
   ms: number
   inputTokens: number
@@ -420,6 +430,80 @@ Devolva o JSON com a identidade analisada.`
 
   const raw = extractText(response.content)
   const data = parseJson<BrandAnalysis>(raw)
+
+  return {
+    data,
+    metrics: {
+      ms,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      cacheCreationInputTokens:
+        response.usage.cache_creation_input_tokens ?? 0,
+      cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+      costUsd: computeCost(response.usage),
+    },
+  }
+}
+
+// =============================================================================
+// analyzeLogoColors — multimodal extraction of brand colors from logo image
+// =============================================================================
+
+const LOGO_COLOR_SYSTEM_PROMPT = `Você analisa imagens de logos e devolve a paleta da marca.
+Retorne EXCLUSIVAMENTE um JSON válido (sem markdown, sem comentários, sem texto antes ou depois) com:
+{
+  "is_logo": boolean,                // true se a imagem realmente parece uma logo de marca
+  "colors": {
+    "primary": "#RRGGBB",             // cor predominante na logo
+    "secondary": "#RRGGBB",           // segunda cor mais relevante (ou um neutro complementar se monocromática)
+    "accent": "#RRGGBB"               // cor de destaque (ou repetir a primária se não houver)
+  },
+  "description": "string"             // 1 frase curta descrevendo a logo visualmente
+}
+Cores em hex sempre com # e 6 dígitos em caixa alta (ex: "#7C5CFF"). Se a logo for monocromática ou tem só preto/branco, ainda assim devolva 3 cores coerentes.`
+
+export async function analyzeLogoColors(
+  logo: { data: string; mediaType: string },
+): Promise<{ data: LogoAnalysis; metrics: ClaudeMetrics }> {
+  const client = getClient()
+
+  const start = performance.now()
+  const response = await client.messages.create({
+    model: "claude-opus-4-7",
+    max_tokens: 512,
+    system: LOGO_COLOR_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: logo.mediaType as
+                | "image/png"
+                | "image/jpeg"
+                | "image/webp"
+                | "image/gif",
+              data: logo.data,
+            },
+          },
+          {
+            type: "text",
+            text: "Analise esta logo e devolva o JSON da paleta da marca.",
+          },
+        ],
+      },
+    ],
+  } as Anthropic.Messages.MessageCreateParamsNonStreaming)
+  const ms = performance.now() - start
+
+  if (response.stop_reason === "refusal") {
+    throw new Error("Claude recusou analisar a logo")
+  }
+
+  const raw = extractText(response.content)
+  const data = parseJson<LogoAnalysis>(raw)
 
   return {
     data,

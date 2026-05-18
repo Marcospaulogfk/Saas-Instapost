@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import {
@@ -44,7 +44,7 @@ const DIAS_SEMANA = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"]
 
 const STATUS_FILTERS: Array<{ id: "todos" | PautaStatus; label: string; color: string }> = [
   { id: "todos", label: "Todos", color: "bg-text-secondary" },
-  { id: "ideia", label: "Ideias IA", color: "bg-purple-500" },
+  { id: "ideia", label: "Ideias IA", color: "bg-brand-500" },
   { id: "em_criacao", label: "Em criação", color: "bg-blue-500" },
   { id: "pronto", label: "Prontos", color: "bg-emerald-500" },
   { id: "agendado", label: "Agendados", color: "bg-orange-500" },
@@ -129,8 +129,8 @@ export default function CalendarioPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
-              <CalendarIcon className="w-5 h-5 text-purple-400" />
+            <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
+              <CalendarIcon className="w-5 h-5 text-brand-400" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">Calendário Editorial</h1>
           </div>
@@ -179,7 +179,7 @@ export default function CalendarioPage() {
               onClick={() => setFilterStatus(f.id)}
               className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${
                 filterStatus === f.id
-                  ? "bg-purple-600 border-purple-600 text-white"
+                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -194,7 +194,7 @@ export default function CalendarioPage() {
       <button
         type="button"
         onClick={() => setIaModalOpen(true)}
-        className="w-full mb-4 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white p-4 flex items-center gap-3 transition-all text-left shadow-lg shadow-purple-900/20"
+        className="w-full mb-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white p-4 flex items-center gap-3 transition-all text-left shadow-lg shadow-brand-900/20"
       >
         <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-5 h-5" />
@@ -240,7 +240,7 @@ export default function CalendarioPage() {
                       <span
                         className={`text-[11px] font-semibold tabular-nums w-5 h-5 flex items-center justify-center rounded-full ${
                           isToday
-                            ? "bg-purple-600 text-white"
+                            ? "bg-brand-600 text-[#0e0e0e]"
                             : isOtherMonth
                               ? "text-text-muted"
                               : "text-text-primary"
@@ -460,7 +460,7 @@ function NovaPautaForm({
               onClick={() => setFormato(f)}
               className={`text-xs h-9 rounded border capitalize ${
                 formato === f
-                  ? "bg-purple-600 border-purple-600 text-white"
+                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -505,7 +505,7 @@ function RecomendarIAForm({
               onClick={() => setQtd(q)}
               className={`text-xs h-9 rounded border ${
                 qtd === q
-                  ? "bg-purple-600 border-purple-600 text-white"
+                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >

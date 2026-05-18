@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Pautas — agendamento de posts no calendário editorial.
  * Client-side via localStorage por enquanto. Migrar pra banco depois.
  */
@@ -63,7 +63,7 @@ export function deletePauta(id: string): void {
 export function statusColor(s: PautaStatus): string {
   switch (s) {
     case "ideia":
-      return "bg-purple-500"
+      return "bg-brand-500"
     case "em_criacao":
       return "bg-blue-500"
     case "pronto":

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useRef, useState } from 'react'
 import { RefreshCw, Upload, Link as LinkIcon, X, Loader2 } from 'lucide-react'
@@ -130,7 +130,7 @@ export function ImageSlot({
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             placeholder="Prompt da imagem (ex: cinematic photo of...)"
-            className="w-full min-h-[56px] p-2 rounded bg-background-secondary/80 border border-border-subtle text-text-primary text-xs resize-none focus:border-purple-600/50 focus:outline-none"
+            className="w-full min-h-[56px] p-2 rounded bg-background-secondary/80 border border-border-subtle text-text-primary text-xs resize-none focus:border-brand-600/50 focus:outline-none"
           />
         </div>
       </div>

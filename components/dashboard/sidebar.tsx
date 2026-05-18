@@ -22,8 +22,8 @@ import {
   Calendar,
   Users,
   Trophy,
+  Zap,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -32,7 +32,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { signOut } from "@/app/actions/auth"
 import { setActiveBrand } from "@/app/actions/brands"
 import { getBrandGradient } from "@/lib/brand-colors"
@@ -111,25 +110,48 @@ export function DashboardSidebar({
   const progress = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
 
   return (
-    <aside className="hidden md:flex w-60 flex-col bg-background-secondary/80 backdrop-blur-xl border-r border-border-subtle">
-      {/* Logo */}
-      <div className="p-6 border-b border-border-subtle">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-gradient-purple flex items-center justify-center shadow-glow-sm">
-            <Sparkles className="w-5 h-5 text-white" />
+    <aside
+      className="hidden md:flex w-64 flex-col"
+      style={{
+        background: "var(--sidebar)",
+      }}
+    >
+      {/* Brand block — logo + seletor de marca em um cartão só */}
+      <div className="px-4 pt-6 pb-2">
+        <Link href="/dashboard" className="flex items-center gap-2.5 mb-5 px-2">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg, #8a6cff 0%, #7C5CFF 50%, #5b3fe0 100%)",
+              boxShadow:
+                "0 4px 14px rgba(124,92,255,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
+            }}
+          >
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <span className="font-display font-bold text-xl text-text-primary">SyncPost</span>
+          <span
+            className="font-display font-bold text-base tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
+            SyncPost
+          </span>
         </Link>
-      </div>
 
-      {/* Active brand switcher */}
-      <div className="px-4 mt-4 mb-3">
         {activeBrand ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="w-full rounded-lg border border-border-subtle bg-background-tertiary/40 p-3 flex items-center gap-3 hover:border-purple-600/30 hover:bg-background-tertiary/70 transition-all text-left"
+                className="w-full rounded-xl p-2.5 flex items-center gap-3 text-left transition-all"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(124,92,255,0.06)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
+                }
                 aria-label="Trocar marca"
               >
                 <div
@@ -140,23 +162,37 @@ export function DashboardSidebar({
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-text-muted">Marca</p>
-                  <p className="text-sm font-medium text-text-primary truncate">
+                  <p
+                    className="text-[10px] uppercase tracking-[0.12em] font-medium"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Marca ativa
+                  </p>
+                  <p
+                    className="text-[13px] font-medium truncate"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {activeBrand.name}
                   </p>
                 </div>
                 {isSwitching ? (
-                  <Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+                  <Loader2
+                    className="w-4 h-4 animate-spin"
+                    style={{ color: "var(--text-muted)" }}
+                  />
                 ) : (
-                  <ChevronsUpDown className="w-4 h-4 text-text-muted" />
+                  <ChevronsUpDown
+                    className="w-3.5 h-3.5"
+                    style={{ color: "var(--text-muted)" }}
+                  />
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              className="w-56 bg-background-tertiary border-border-medium"
-            >
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wider text-text-muted">
+            <DropdownMenuContent align="start" className="w-60 border-0">
+              <div
+                className="px-2 py-1.5 text-[10px] uppercase tracking-[0.12em] font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
                 Trocar marca
               </div>
               {brands.map((b) => {
@@ -178,18 +214,21 @@ export function DashboardSidebar({
                         {b.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="flex-1 truncate">{b.name}</span>
+                    <span className="flex-1 truncate text-[13px]">{b.name}</span>
                     {isLoading ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : isActive ? (
-                      <Check className="w-3.5 h-3.5 text-lime" />
+                      <Check className="w-3.5 h-3.5 text-brand-400" />
                     ) : null}
                   </DropdownMenuItem>
                 )
               })}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/marcas/${activeBrand.id}`} className="cursor-pointer">
+                <Link
+                  href={`/dashboard/marcas/${activeBrand.id}`}
+                  className="cursor-pointer"
+                >
                   <Pencil className="w-3.5 h-3.5 mr-2" />
                   Editar marca atual
                 </Link>
@@ -211,9 +250,24 @@ export function DashboardSidebar({
         ) : (
           <Link
             href="/onboarding"
-            className="rounded-lg border border-dashed border-border-medium p-3 flex items-center gap-3 text-text-secondary hover:text-purple-400 hover:border-purple-600/50 transition-colors"
+            className="rounded-xl p-3 flex items-center gap-3 transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(124,92,255,0.08)"
+              e.currentTarget.style.color = "var(--text-primary)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.02)"
+              e.currentTarget.style.color = "var(--text-secondary)"
+            }}
           >
-            <div className="w-9 h-9 rounded-lg bg-background-tertiary flex items-center justify-center flex-shrink-0">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(124,92,255,0.1)" }}
+            >
               <Plus className="w-4 h-4" />
             </div>
             <p className="text-sm font-medium">Criar primeira marca</p>
@@ -221,46 +275,74 @@ export function DashboardSidebar({
         )}
       </div>
 
-      {/* CTA Criar */}
-      <div className="px-4 mb-4">
-        <Button asChild size="lg" className="w-full group">
-          <Link href="/dashboard/criar">
-            <Plus className="w-4 h-4 mr-2 transition-transform group-hover:rotate-90" />
-            Criar carrossel
-          </Link>
-        </Button>
+      {/* CTA Criar carrossel */}
+      <div className="px-4 mt-3 mb-3">
+        <Link
+          href="/dashboard/criar"
+          className="group flex items-center justify-center gap-2 w-full h-10 rounded-lg text-sm font-semibold transition-all"
+          style={{
+            background:
+              "linear-gradient(180deg, #8a6cff 0%, #7C5CFF 50%, #6b4ce8 100%)",
+            color: "#ffffff",
+            boxShadow:
+              "0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 4px 14px rgba(124,92,255,0.4)",
+          }}
+        >
+          <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+          Criar carrossel
+        </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 pt-3 space-y-0.5 overflow-y-auto no-scrollbar">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group ${
-                isActive
-                  ? "text-purple-400 bg-purple-600/10"
-                  : "text-text-secondary hover:bg-background-tertiary hover:text-text-primary"
-              }`}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative group"
+              style={{
+                color: isActive
+                  ? "var(--text-primary)"
+                  : "var(--text-muted)",
+                background: isActive
+                  ? "rgba(124,92,255,0.1)"
+                  : "transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = "var(--text-primary)"
+                  e.currentTarget.style.background = "rgba(255,255,255,0.03)"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = "var(--text-muted)"
+                  e.currentTarget.style.background = "transparent"
+                }
+              }}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeNavIndicator"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-purple rounded-r-full"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                  style={{ background: "var(--brand-600)" }}
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              <item.icon className="w-4 h-4" />
+              <item.icon className="w-4 h-4" strokeWidth={isActive ? 2.2 : 1.8} />
               <span className="flex-1">{item.name}</span>
               {item.badge && (
-                <Badge
-                  variant="secondary"
-                  className="bg-lime text-zinc-950 border-0 text-[10px] tracking-wide font-semibold shadow-[0_0_10px_rgba(209,254,23,0.4)]"
+                <span
+                  className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                  style={{
+                    background: "rgba(124,92,255,0.15)",
+                    color: "var(--brand-300)",
+                  }}
                 >
                   {item.badge}
-                </Badge>
+                </span>
               )}
             </Link>
           )
@@ -268,28 +350,66 @@ export function DashboardSidebar({
       </nav>
 
       {/* Credits widget */}
-      <div className="p-4">
-        <div className="rounded-lg bg-gradient-card border border-border-subtle p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <p className="text-xs text-text-secondary">
-              {isTrial ? "Créditos grátis" : "Créditos"}
-            </p>
-            <p className="text-xs text-text-primary tabular-nums">
-              <span className="text-lime font-semibold">{remaining}</span>
-              <span className="text-text-muted">/{limit}</span>
+      <div className="px-4 pt-4 pb-3">
+        <div
+          className="rounded-xl p-3.5"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(72,52,144,0.18) 0%, rgba(28,20,60,0.25) 100%)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <Zap
+                className="w-3 h-3"
+                style={{ color: "var(--brand-300)" }}
+              />
+              <p
+                className="text-[10px] uppercase tracking-[0.14em] font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {isTrial ? "Créditos grátis" : "Créditos"}
+              </p>
+            </div>
+            <p
+              className="text-[11px] tabular-nums"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <span
+                className="font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {remaining}
+              </span>
+              <span style={{ color: "var(--text-muted)" }}>/{limit}</span>
             </p>
           </div>
-          <div className="w-full h-1.5 bg-background-tertiary rounded-full overflow-hidden mb-3">
+          <div
+            className="w-full h-1 rounded-full overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.04)" }}
+          >
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.max(2, 100 - progress)}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="h-full bg-lime shadow-[0_0_8px_rgba(209,254,23,0.6)]"
+              className="h-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, var(--brand-400), var(--brand-600))",
+                boxShadow: "0 0 8px rgba(124,92,255,0.5)",
+              }}
             />
           </div>
           <Link
             href="/pricing"
-            className="text-xs text-lime hover:brightness-110 transition-all"
+            className="block mt-2.5 text-[11px] font-medium transition-colors"
+            style={{ color: "var(--brand-300)" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "var(--brand-200)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--brand-300)")
+            }
           >
             {isTrial ? "Fazer upgrade →" : "Gerenciar plano →"}
           </Link>
@@ -297,24 +417,54 @@ export function DashboardSidebar({
       </div>
 
       {/* User */}
-      <div className="p-4 border-t border-border-subtle">
+      <div className="px-3 pb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-background-tertiary transition-colors">
-              <Avatar className="h-8 w-8 border border-border-medium">
-                {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
-                <AvatarFallback className="bg-purple-600/20 text-purple-300">
+            <button
+              className="flex items-center gap-3 w-full p-2 rounded-lg transition-colors"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              <Avatar className="h-8 w-8">
+                {userAvatarUrl && (
+                  <AvatarImage src={userAvatarUrl} alt={userName} />
+                )}
+                <AvatarFallback
+                  style={{
+                    background: "rgba(124,92,255,0.18)",
+                    color: "var(--brand-300)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                >
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-medium text-text-primary truncate">{userName}</p>
-                <p className="text-xs text-text-muted truncate">{userEmail}</p>
+                <p
+                  className="text-[13px] font-medium truncate"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {userName}
+                </p>
+                <p
+                  className="text-[11px] truncate"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {userEmail}
+                </p>
               </div>
-              <ChevronUp className="w-4 h-4 text-text-muted" />
+              <ChevronUp
+                className="w-3.5 h-3.5"
+                style={{ color: "var(--text-muted)" }}
+              />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-background-tertiary border-border-medium">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem asChild>
               <Link href="/dashboard/configuracoes">Minha conta</Link>
             </DropdownMenuItem>

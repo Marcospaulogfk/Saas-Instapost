@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Datas comemorativas brasileiras úteis pra criação de conteúdo.
  * Lista hardcoded — pode virar tabela no banco depois.
  *
@@ -104,7 +104,7 @@ export function categoriaColorClass(cat: DataComemorativa["categoria"]): string 
     case "ecommerce":
       return "text-lime"
     case "diversidade":
-      return "text-purple-400"
+      return "text-brand-400"
     case "saude":
       return "text-pink-400"
     case "profissional":

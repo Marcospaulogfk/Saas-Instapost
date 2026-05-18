@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { Calendar } from "lucide-react"
 import { getProximasDatas, categoriaColorClass } from "@/lib/datas-comemorativas"
 
@@ -23,7 +23,7 @@ export function ProximasDatasCard() {
   return (
     <div className="rounded-xl bg-gradient-card border border-border-subtle p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Calendar className="w-4 h-4 text-purple-400" />
+        <Calendar className="w-4 h-4 text-brand-400" />
         <h3 className="text-sm font-semibold text-text-primary">Próximas Datas</h3>
       </div>
       <p className="text-[11px] text-text-muted mb-4">Não perca nenhuma</p>
@@ -64,7 +64,7 @@ export function ProximasDatasCard() {
 
       <Link
         href="/dashboard/calendario"
-        className="block text-[11px] text-purple-400 hover:text-purple-300 font-medium mt-4 pt-3 border-t border-border-subtle"
+        className="block text-[11px] text-brand-400 hover:text-brand-300 font-medium mt-4 pt-3 border-t border-border-subtle"
       >
         Ver calendário completo →
       </Link>

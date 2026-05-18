@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect } from 'react'
 import { X, FileText } from 'lucide-react'
@@ -33,7 +33,7 @@ export function PromptsModal({ carousel, onClose }: PromptsModalProps) {
       >
         <div className="flex items-center justify-between p-5 border-b border-border-subtle">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-400" />
+            <FileText className="w-5 h-5 text-brand-400" />
             <h2 className="text-lg font-display font-semibold text-text-primary">
               Prompts de imagem
             </h2>
@@ -102,7 +102,7 @@ export function PromptsModal({ carousel, onClose }: PromptsModalProps) {
                                 href={slide.images[pidx]}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-purple-400 hover:text-purple-300"
+                                className="text-brand-400 hover:text-brand-300"
                               >
                                 {slide.images[pidx]}
                               </a>

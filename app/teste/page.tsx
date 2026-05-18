@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import {
@@ -1018,7 +1018,7 @@ export default function TestePage() {
             onClick={() => setPageMode("carrossel")}
             className={`flex items-center gap-1.5 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3 rounded-md text-[11px] sm:text-xs font-medium transition-colors ${
               pageMode === "carrossel"
-                ? "bg-purple-600 text-white"
+                ? "bg-brand-600 text-[#0e0e0e]"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -1030,7 +1030,7 @@ export default function TestePage() {
             onClick={() => setPageMode("post-unico")}
             className={`flex items-center gap-1.5 sm:gap-2 h-7 sm:h-8 px-2 sm:px-3 rounded-md text-[11px] sm:text-xs font-medium transition-colors ${
               pageMode === "post-unico"
-                ? "bg-lime text-zinc-950"
+                ? "bg-lime text-white"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -1366,8 +1366,8 @@ export default function TestePage() {
                 onClick={() => setSinglePostFormat("post")}
                 className={`h-9 rounded-md border text-xs font-medium ${
                   singlePostFormat === "post"
-                    ? "border-purple-500 bg-purple-500/10 text-purple-300"
-                    : "border-border text-muted-foreground hover:border-purple-500/40"
+                    ? "border-brand-500 bg-brand-500/10 text-brand-300"
+                    : "border-border text-muted-foreground hover:border-brand-500/40"
                 }`}
               >
                 Post 4:5
@@ -1377,8 +1377,8 @@ export default function TestePage() {
                 onClick={() => setSinglePostFormat("story")}
                 className={`h-9 rounded-md border text-xs font-medium ${
                   singlePostFormat === "story"
-                    ? "border-purple-500 bg-purple-500/10 text-purple-300"
-                    : "border-border text-muted-foreground hover:border-purple-500/40"
+                    ? "border-brand-500 bg-brand-500/10 text-brand-300"
+                    : "border-border text-muted-foreground hover:border-brand-500/40"
                 }`}
               >
                 Story 9:16
@@ -1395,7 +1395,7 @@ export default function TestePage() {
             type="button"
             onClick={() => void runSinglePostGeneration()}
             disabled={singlePostLoading || singlePostBriefing.trim().length < 10}
-            className="w-full h-11 bg-lime text-zinc-950 hover:bg-lime/90"
+            className="w-full h-11 bg-lime text-white hover:bg-lime/90"
           >
             {singlePostLoading ? (
               <>
@@ -1445,7 +1445,7 @@ export default function TestePage() {
                   <button
                     type="button"
                     onClick={() => setSinglePostUsedIds([])}
-                    className="text-[10px] text-purple-400 hover:text-purple-300"
+                    className="text-[10px] text-brand-400 hover:text-brand-300"
                   >
                     limpar histórico
                   </button>
@@ -1642,7 +1642,7 @@ export default function TestePage() {
             )}
             {(singlePostSkeletonPicked || singlePostTemplateId) && (
               <div className="mt-2 rounded-md bg-card border border-border px-3 py-2">
-                <p className="text-[11px] font-mono text-purple-400 leading-tight">
+                <p className="text-[11px] font-mono text-brand-400 leading-tight">
                   {singlePostTemplateId ?? singlePostSkeletonPicked}
                 </p>
                 <p className="text-[10px] text-text-muted mt-0.5">
@@ -1661,14 +1661,14 @@ export default function TestePage() {
             className={`${mobilePanel === "editor" ? "block" : "hidden lg:block"} lg:border-l border-border p-4 sm:p-5 pb-20 lg:pb-5 space-y-3 overflow-y-auto bg-background-secondary/20`}
           >
             <div className="flex items-center gap-1.5 pb-2 border-b border-border">
-              <Pencil className="w-3.5 h-3.5 text-purple-400" />
+              <Pencil className="w-3.5 h-3.5 text-brand-400" />
               <p className="text-[11px] uppercase tracking-wider text-text-secondary font-bold">
                 Editor
               </p>
             </div>
 
             {singlePostSpec && (
-              <p className="text-[10px] text-purple-300 bg-purple-950/30 border border-purple-900/40 rounded px-2 py-1.5">
+              <p className="text-[10px] text-brand-300 bg-brand-950/30 border border-brand-900/40 rounded px-2 py-1.5">
                 <span className="font-semibold">Dica:</span> clique e arraste qualquer
                 bloco no preview pra reposicionar. Os contornos tracejados marcam o que
                 pode ser arrastado.
@@ -1705,7 +1705,7 @@ export default function TestePage() {
                     onClick={() => setBgPhotoTab("unsplash")}
                     className={`text-[10px] h-6 rounded transition-colors ${
                       bgPhotoTab === "unsplash"
-                        ? "bg-purple-600 text-white"
+                        ? "bg-brand-600 text-[#0e0e0e]"
                         : "text-text-muted hover:text-text-primary"
                     }`}
                   >
@@ -1716,7 +1716,7 @@ export default function TestePage() {
                     onClick={() => setBgPhotoTab("ai")}
                     className={`text-[10px] h-6 rounded transition-colors ${
                       bgPhotoTab === "ai"
-                        ? "bg-purple-600 text-white"
+                        ? "bg-brand-600 text-[#0e0e0e]"
                         : "text-text-muted hover:text-text-primary"
                     }`}
                   >
@@ -1727,7 +1727,7 @@ export default function TestePage() {
                     onClick={() => setBgPhotoTab("upload")}
                     className={`text-[10px] h-6 rounded transition-colors ${
                       bgPhotoTab === "upload"
-                        ? "bg-purple-600 text-white"
+                        ? "bg-brand-600 text-[#0e0e0e]"
                         : "text-text-muted hover:text-text-primary"
                     }`}
                   >
@@ -1775,7 +1775,7 @@ export default function TestePage() {
                             type="button"
                             onClick={() => handleSpecBgPhotoChange(p.fullUrl)}
                             title={`Foto de ${p.photographerName}`}
-                            className="relative aspect-[3/4] rounded overflow-hidden border border-border-subtle hover:border-purple-500 transition-colors"
+                            className="relative aspect-[3/4] rounded overflow-hidden border border-border-subtle hover:border-brand-500 transition-colors"
                           >
                             <img
                               src={p.thumbUrl}
@@ -1847,7 +1847,7 @@ export default function TestePage() {
                       type="button"
                       onClick={() => bgUploadInputRef.current?.click()}
                       disabled={bgUploadLoading}
-                      className="w-full h-20 rounded-md border-2 border-dashed border-border hover:border-purple-500 hover:bg-purple-950/10 transition-colors flex flex-col items-center justify-center gap-1 text-text-muted hover:text-purple-300"
+                      className="w-full h-20 rounded-md border-2 border-dashed border-border hover:border-brand-500 hover:bg-brand-950/10 transition-colors flex flex-col items-center justify-center gap-1 text-text-muted hover:text-brand-300"
                     >
                       {bgUploadLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1883,7 +1883,7 @@ export default function TestePage() {
                       type="button"
                       onClick={handleDetachAllGroups}
                       title="Quebra todos os grupos pra mover cada item individualmente"
-                      className="text-[9px] text-purple-400 hover:text-purple-300 px-1.5 py-0.5 rounded border border-purple-700 hover:border-purple-500"
+                      className="text-[9px] text-brand-400 hover:text-brand-300 px-1.5 py-0.5 rounded border border-brand-700 hover:border-brand-500"
                     >
                       ✂ Soltar tudo
                     </button>
@@ -1934,7 +1934,7 @@ export default function TestePage() {
                                 type="button"
                                 onClick={() => handleDetachBlock(entry.path)}
                                 title="Soltar do grupo pra mover individualmente"
-                                className="text-[9px] text-purple-400 hover:text-purple-300 px-1.5 py-0.5 rounded border border-purple-700 hover:border-purple-500"
+                                className="text-[9px] text-brand-400 hover:text-brand-300 px-1.5 py-0.5 rounded border border-brand-700 hover:border-brand-500"
                               >
                                 ✂ Soltar
                               </button>
@@ -1970,7 +1970,7 @@ export default function TestePage() {
                                 font_size_scale: parseFloat(e.target.value),
                               })
                             }
-                            className="flex-1 h-1 accent-purple-500"
+                            className="flex-1 h-1 accent-brand-500"
                           />
                           <span className="text-[9px] text-text-muted w-8 text-right tabular-nums">
                             {scale.toFixed(2)}x
@@ -1981,7 +1981,7 @@ export default function TestePage() {
                               onClick={() =>
                                 handleSpecBlockPatch(entry.path, { font_size_scale: 1 })
                               }
-                              className="text-[9px] text-purple-400 hover:text-purple-300"
+                              className="text-[9px] text-brand-400 hover:text-brand-300"
                             >
                               reset
                             </button>
@@ -2002,7 +2002,7 @@ export default function TestePage() {
                                   }
                                   className={`flex-1 h-6 text-[10px] rounded border ${
                                     align === a
-                                      ? "border-purple-500 bg-purple-500/20 text-purple-200"
+                                      ? "border-brand-500 bg-brand-500/20 text-brand-200"
                                       : "border-border text-text-muted hover:text-text-primary"
                                   }`}
                                 >
@@ -2158,7 +2158,7 @@ export default function TestePage() {
             onClick={() => setMobilePanel("form")}
             className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
               mobilePanel === "form"
-                ? "text-purple-400"
+                ? "text-brand-400"
                 : "text-text-muted hover:text-text-primary"
             }`}
           >
@@ -2170,7 +2170,7 @@ export default function TestePage() {
             onClick={() => setMobilePanel("preview")}
             className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
               mobilePanel === "preview"
-                ? "text-purple-400"
+                ? "text-brand-400"
                 : "text-text-muted hover:text-text-primary"
             }`}
           >
@@ -2185,7 +2185,7 @@ export default function TestePage() {
             }
             className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
               mobilePanel === "editor"
-                ? "text-purple-400"
+                ? "text-brand-400"
                 : "text-text-muted hover:text-text-primary"
             }`}
             title={

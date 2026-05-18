@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { Plus, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { listSinglePosts } from "@/lib/single-posts/queries"
@@ -32,8 +32,8 @@ export default async function PostsUnicosPage() {
 
       {posts.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border-medium bg-gradient-card backdrop-blur-xl p-12 text-center space-y-4">
-          <div className="rounded-full bg-purple-500/10 w-16 h-16 mx-auto flex items-center justify-center">
-            <FileText className="w-8 h-8 text-purple-400" />
+          <div className="rounded-full bg-brand-500/10 w-16 h-16 mx-auto flex items-center justify-center">
+            <FileText className="w-8 h-8 text-brand-400" />
           </div>
           <div>
             <h2 className="font-semibold text-lg">Comece pelo primeiro</h2>
@@ -56,7 +56,7 @@ export default async function PostsUnicosPage() {
             return (
               <div
                 key={p.id}
-                className="rounded-xl border border-border-subtle bg-card hover:border-purple-500/40 transition-all overflow-hidden flex flex-col"
+                className="rounded-xl border border-border-subtle bg-card hover:border-brand-500/40 transition-all overflow-hidden flex flex-col"
               >
                 <Link
                   href={`/dashboard/posts-unicos/${p.id}`}
@@ -77,7 +77,7 @@ export default async function PostsUnicosPage() {
                 <div className="p-3 space-y-1">
                   <Link
                     href={`/dashboard/posts-unicos/${p.id}`}
-                    className="font-semibold text-sm text-text-primary truncate block hover:text-purple-400"
+                    className="font-semibold text-sm text-text-primary truncate block hover:text-brand-400"
                   >
                     {p.title}
                   </Link>

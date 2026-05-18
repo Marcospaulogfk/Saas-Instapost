@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useRef, useState, MouseEvent } from "react"
 import { motion } from "framer-motion"
@@ -46,9 +46,9 @@ export function StatsGrid({
       delta: projectsCount > 0 ? "+12% vs mês anterior" : "Crie o primeiro",
       deltaUp: projectsCount > 0,
       icon: Sparkles,
-      sparkColor: "#A78BFA",
+      sparkColor: "#B8A4EA",
       sparkSeed: 7 + projectsCount,
-      accent: "purple" as const,
+      accent: "brand" as const,
     },
     {
       label: "Imagens este mês",
@@ -58,7 +58,7 @@ export function StatsGrid({
       icon: ImageIcon,
       sparkColor: "#8B5CF6",
       sparkSeed: 13 + creditsUsedThisMonth,
-      accent: "purple" as const,
+      accent: "brand" as const,
     },
     {
       label: "Marcas ativas",
@@ -66,9 +66,9 @@ export function StatsGrid({
       delta: brandsCount === 0 ? "Cadastre uma" : brandsCount === 1 ? "marca" : "marcas",
       deltaUp: null,
       icon: Building2,
-      sparkColor: "#A78BFA",
+      sparkColor: "#B8A4EA",
       sparkSeed: 23 + brandsCount,
-      accent: "purple" as const,
+      accent: "brand" as const,
     },
     {
       label: "Plano atual",
@@ -76,9 +76,9 @@ export function StatsGrid({
       delta: isActivePlan ? "Ativo" : "Faça upgrade",
       deltaUp: isActivePlan,
       icon: Crown,
-      sparkColor: isActivePlan ? "#D1FE17" : "#A78BFA",
+      sparkColor: isActivePlan ? "#7C5CFF" : "#B8A4EA",
       sparkSeed: 41,
-      accent: (isActivePlan ? "lime" : "purple") as "lime" | "purple",
+      accent: (isActivePlan ? "lime" : "brand") as "lime" | "brand",
     },
   ]
 
@@ -100,7 +100,7 @@ interface StatCardProps {
     icon: typeof Sparkles
     sparkColor: string
     sparkSeed: number
-    accent: "purple" | "lime"
+    accent: "brand" | "lime"
   }
   index: number
 }
@@ -127,12 +127,12 @@ function StatCard({ stat, index }: StatCardProps) {
 
   const isLime = stat.accent === "lime"
   const iconBg = isLime
-    ? "bg-[rgba(209,254,23,0.12)] border-[rgba(209,254,23,0.4)]"
-    : "bg-purple-500/10 border-purple-500/30"
-  const iconColor = isLime ? "text-lime" : "text-purple-300"
-  const hoverBorder = isLime ? "hover:border-[rgba(209,254,23,0.4)]" : "hover:border-purple-600/50"
+    ? "bg-[rgba(124,92,255,0.12)] border-[rgba(124,92,255,0.4)]"
+    : "bg-brand-500/10 border-brand-500/30"
+  const iconColor = isLime ? "text-lime" : "text-brand-300"
+  const hoverBorder = isLime ? "hover:border-[rgba(124,92,255,0.4)]" : "hover:border-brand-600/50"
   const hoverShadow = isLime ? "hover:glow-lime" : "hover:shadow-glow-sm"
-  const spotlightColor = isLime ? "rgba(209,254,23,0.18)" : "rgba(167,139,250,0.18)"
+  const spotlightColor = isLime ? "rgba(124,92,255,0.18)" : "rgba(184,164,234,0.18)"
 
   return (
     <motion.div

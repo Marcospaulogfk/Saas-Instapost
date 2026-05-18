@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
@@ -60,8 +60,8 @@ export default function InspiracoesPage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
-            <Lightbulb className="w-5 h-5 text-purple-400" />
+          <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
+            <Lightbulb className="w-5 h-5 text-brand-400" />
           </div>
           <h1 className="text-2xl font-bold text-text-primary">Inspirações</h1>
         </div>
@@ -80,7 +80,7 @@ export default function InspiracoesPage() {
             onClick={() => setCatFilter(c.id)}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
               catFilter === c.id
-                ? "bg-purple-600 border-purple-600 text-white"
+                ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
                 : "border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-medium"
             }`}
           >
@@ -95,7 +95,7 @@ export default function InspiracoesPage() {
             onClick={() => setFormatoFilter(f.id)}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
               formatoFilter === f.id
-                ? "bg-lime border-lime text-zinc-950"
+                ? "bg-lime border-lime text-white"
                 : "border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-medium"
             }`}
           >
@@ -111,7 +111,7 @@ export default function InspiracoesPage() {
             key={insp.id}
             type="button"
             onClick={() => useInspiracao(insp)}
-            className="group text-left rounded-xl bg-gradient-card border border-border-subtle hover:border-purple-600/40 transition-all p-5 space-y-3 hover:scale-[1.01]"
+            className="group text-left rounded-xl bg-gradient-card border border-border-subtle hover:border-brand-600/40 transition-all p-5 space-y-3 hover:scale-[1.01]"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-wrap gap-1.5">
@@ -139,7 +139,7 @@ export default function InspiracoesPage() {
               <span className="text-[11px] text-text-muted capitalize">
                 {insp.categoria}
               </span>
-              <span className="text-[11px] text-purple-400 group-hover:text-purple-300 flex items-center gap-1 font-medium">
+              <span className="text-[11px] text-brand-400 group-hover:text-brand-300 flex items-center gap-1 font-medium">
                 Usar essa ideia
                 <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
               </span>

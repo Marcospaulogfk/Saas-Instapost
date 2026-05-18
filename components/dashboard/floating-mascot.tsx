@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { Sparkles, X, MessageCircle, Lightbulb } from "lucide-react"
@@ -102,7 +102,7 @@ export function FloatingMascot() {
               <Link
                 href={currentTip.cta.href}
                 onClick={() => setOpen(false)}
-                className="block text-[11px] text-purple-400 hover:text-purple-300 font-medium"
+                className="block text-[11px] text-brand-400 hover:text-brand-300 font-medium"
               >
                 {currentTip.cta.label} →
               </Link>
@@ -129,7 +129,7 @@ export function FloatingMascot() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Abrir dicas do assistente"
-        className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 shadow-lg shadow-purple-900/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+        className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 shadow-lg shadow-brand-900/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
       >
         <MessageCircle className="w-5 h-5 text-white" />
         {hasNew && !open && (

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Check } from "lucide-react"
 import { POST_TEMPLATES, CATEGORY_LABELS, templatesByCategory } from "@/lib/single-posts/catalog"
@@ -49,8 +49,8 @@ export function TemplatePicker({
                     onClick={() => onSelect(tpl.id)}
                     className={`group relative text-left rounded-xl border-2 overflow-hidden transition-all ${
                       selected
-                        ? "border-purple-500 shadow-glow ring-2 ring-purple-500/30"
-                        : "border-border-subtle hover:border-purple-500/40"
+                        ? "border-brand-500 shadow-glow ring-2 ring-brand-500/30"
+                        : "border-border-subtle hover:border-brand-500/40"
                     }`}
                   >
                     <PostPreview
@@ -59,8 +59,8 @@ export function TemplatePicker({
                       content={DEMO_CONTENT[tpl.id] ?? {}}
                     />
                     {selected && (
-                      <span className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(209,254,23,0.6)]">
-                        <Check className="w-3.5 h-3.5 text-zinc-950" strokeWidth={3} />
+                      <span className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(124,92,255,0.6)]">
+                        <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                       </span>
                     )}
                     <div className="p-3 bg-background-secondary/80 backdrop-blur-xl border-t border-border-subtle">

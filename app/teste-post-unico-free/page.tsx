@@ -192,7 +192,7 @@ export default function TestePostUnicoFreePage() {
               type="button"
               onClick={handleManualRun}
               disabled={generating || briefing.trim().length < 10}
-              className="w-full bg-lime text-zinc-950 hover:bg-lime/90"
+              className="w-full bg-lime text-white hover:bg-lime/90"
             >
               {generating ? (
                 <>

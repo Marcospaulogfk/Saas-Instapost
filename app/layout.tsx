@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Space_Grotesk, JetBrains_Mono, Bebas_Neue, Playfair_Display, Anton } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0A0A0F',
+  themeColor: '#0e0e0e',
   width: 'device-width',
   initialScale: 1,
 }
@@ -57,7 +58,8 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`dark ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
+      suppressHydrationWarning
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
     >
       <head>
         {/*
@@ -73,7 +75,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

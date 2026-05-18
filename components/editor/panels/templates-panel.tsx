@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Search } from "lucide-react"
@@ -12,7 +12,7 @@ const filters = ["Todos", "Wesley Style", "Minimalista", "Vibrante", "Business",
 const templates = [
   { id: 1, name: "Wesley Classic", color: "bg-gradient-to-br from-cyan-600 to-blue-700" },
   { id: 2, name: "Dark Minimal", color: "bg-gradient-to-br from-gray-800 to-black" },
-  { id: 3, name: "Neon Pop", color: "bg-gradient-to-br from-pink-600 to-purple-700" },
+  { id: 3, name: "Neon Pop", color: "bg-gradient-to-br from-pink-600 to-brand-700" },
   { id: 4, name: "Corporate", color: "bg-gradient-to-br from-slate-600 to-slate-800" },
   { id: 5, name: "Fire", color: "bg-gradient-to-br from-orange-600 to-red-700" },
   { id: 6, name: "Ocean", color: "bg-gradient-to-br from-teal-600 to-cyan-700" },

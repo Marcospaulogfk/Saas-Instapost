@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -65,25 +65,25 @@ export default function CadastroPage() {
 
   if (submittedEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden p-4">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.25),transparent_70%)] pointer-events-none" />
+      <div className="dark min-h-screen flex items-center justify-center bg-[#0A0A0F] relative overflow-hidden p-4">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,92,255,0.25),transparent_70%)] pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 max-w-md w-full text-center bg-background-secondary/80 backdrop-blur-xl border border-border-subtle rounded-2xl p-10"
+          className="relative z-10 max-w-md w-full text-center bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-10"
         >
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-purple shadow-glow flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[#7C5CFF] to-[#5B3FE0] shadow-[0_0_40px_rgba(124,92,255,0.35)]">
             <Mail className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-h2 font-display font-bold gradient-text mb-3">
+          <h1 className="text-3xl font-display font-bold text-white mb-3">
             Verifique seu email
           </h1>
-          <p className="text-text-secondary mb-6">
+          <p className="text-white/60 mb-6">
             Enviamos um link de confirmação para{" "}
-            <span className="text-text-primary font-medium">{submittedEmail}</span>
+            <span className="text-white font-medium">{submittedEmail}</span>
             . Clique no link para ativar sua conta.
           </p>
-          <Button asChild variant="outline" className="w-full border-border-medium">
+          <Button asChild variant="outline" className="w-full border-white/10 text-white hover:bg-white/5">
             <Link href="/login">Voltar para o login</Link>
           </Button>
         </motion.div>
@@ -92,19 +92,22 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+    <div className="dark min-h-screen grid lg:grid-cols-2 bg-black">
       {/* Esquerda */}
-      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,58,237,0.45),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(76,29,149,0.4),transparent_60%),linear-gradient(135deg,#0A0A0F_0%,#1C1227_50%,#0A0A0F_100%)] pointer-events-none" />
+      <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-black">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,92,255,0.45),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(80,40,160,0.4),transparent_60%),linear-gradient(135deg,#000000_0%,#1C1227_50%,#000000_100%)] pointer-events-none" />
         <div className="absolute inset-0 grid-bg-fade opacity-25 pointer-events-none" />
 
-        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-purple-600/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+        <div className="absolute top-1/4 right-1/4 w-72 h-72 bg-[#7C5CFF]/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
         <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-violet-700/25 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
-        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-purple-900/40 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-violet-900/40 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+        {/* Sobreposição preta — escurece o fundo */}
+        <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
           <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-purple shadow-glow flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7C5CFF] to-[#5B3FE0] shadow-[0_0_40px_rgba(124,92,255,0.35)]">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <span className="font-display font-bold text-2xl text-white">SyncPost</span>
@@ -119,7 +122,7 @@ export default function CadastroPage() {
         >
           <h2 className="text-5xl font-display font-bold leading-tight text-white">
             Comece grátis.{" "}
-            <span className="block bg-gradient-to-r from-purple-200 via-purple-400 to-purple-200 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-violet-200 via-[#B8A4EA] to-violet-200 bg-clip-text text-transparent">
               Sem cartão.
             </span>
           </h2>
@@ -141,8 +144,8 @@ export default function CadastroPage() {
                 transition={{ delay: 0.3 + i * 0.1 }}
                 className="flex items-center gap-3 text-white/80"
               >
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-400/30 flex items-center justify-center backdrop-blur-sm">
-                  <item.icon className="w-4 h-4 text-purple-300" />
+                <div className="w-8 h-8 rounded-lg bg-[#7C5CFF]/15 border border-[#7C5CFF]/30 flex items-center justify-center backdrop-blur-sm">
+                  <item.icon className="w-4 h-4 text-[#B8A4EA]" />
                 </div>
                 <span className="text-sm">{item.label}</span>
               </motion.div>
@@ -157,8 +160,14 @@ export default function CadastroPage() {
           className="relative z-10 flex items-center gap-4 text-white/60 text-sm"
         >
           <div className="flex -space-x-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="w-7 h-7 rounded-full border-2 border-background bg-gradient-to-br from-purple-400 to-purple-800" />
+            {[1, 2, 3, 4].map((i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={`/creator-${i}.png`}
+                alt=""
+                className="w-7 h-7 rounded-full border-2 border-[#0A0A0F] object-cover"
+              />
             ))}
           </div>
           <span>+1.200 criadores já usam o SyncPost</span>
@@ -166,9 +175,9 @@ export default function CadastroPage() {
       </div>
 
       {/* Direita: form */}
-      <div className="relative flex items-center justify-center p-6 lg:p-10 bg-background">
+      <div className="relative flex items-center justify-center p-6 lg:p-10 bg-black">
         <div className="lg:hidden absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.35),transparent_60%),linear-gradient(180deg,#0A0A0F_0%,#1C1227_60%,#0A0A0F_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,255,0.35),transparent_60%),linear-gradient(180deg,#000000_0%,#1C1227_60%,#000000_100%)]" />
           <div className="absolute inset-0 grid-bg-fade opacity-20" />
         </div>
 
@@ -180,7 +189,7 @@ export default function CadastroPage() {
         >
           <div className="lg:hidden text-center mb-8">
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-gradient-purple shadow-glow-sm flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#7C5CFF] to-[#5B3FE0] shadow-[0_0_20px_rgba(124,92,255,0.25)]">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <span className="font-display font-bold text-xl text-white">SyncPost</span>
@@ -188,10 +197,10 @@ export default function CadastroPage() {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl lg:text-4xl font-display font-bold text-text-primary mb-2">
+            <h1 className="text-3xl lg:text-4xl font-display font-bold text-white mb-2">
               Crie sua conta
             </h1>
-            <p className="text-text-secondary">
+            <p className="text-white/60">
               Comece com 2 imagens grátis. Sem cartão de crédito.
             </p>
           </div>
@@ -199,7 +208,7 @@ export default function CadastroPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 mb-5 border-border-medium hover:border-purple-600/50 hover:bg-purple-600/5 bg-background-secondary/40 backdrop-blur-sm"
+            className="w-full h-12 mb-5 border-white/10 text-white hover:border-[#7C5CFF]/50 hover:bg-[#7C5CFF]/5 bg-white/[0.03] backdrop-blur-sm"
             onClick={onGoogle}
             disabled={isPending}
           >
@@ -208,16 +217,16 @@ export default function CadastroPage() {
           </Button>
 
           <div className="flex items-center gap-3 mb-5">
-            <div className="h-px flex-1 bg-border-subtle" />
-            <span className="text-xs text-text-muted">ou com email</span>
-            <div className="h-px flex-1 bg-border-subtle" />
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-xs text-white/40">ou com email</span>
+            <div className="h-px flex-1 bg-white/10" />
           </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
             <div>
-              <label htmlFor="email" className="text-sm text-text-secondary mb-1.5 block">Email</label>
+              <label htmlFor="email" className="text-sm text-white/70 mb-1.5 block">Email</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
@@ -225,7 +234,7 @@ export default function CadastroPage() {
                   placeholder="seu@email.com"
                   {...form.register("email")}
                   aria-invalid={!!form.formState.errors.email}
-                  className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7C5CFF]/50 focus:shadow-[0_0_20px_rgba(124,92,255,0.15)]"
                 />
               </div>
               {form.formState.errors.email && (
@@ -234,9 +243,9 @@ export default function CadastroPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="text-sm text-text-secondary mb-1.5 block">Senha</label>
+              <label htmlFor="password" className="text-sm text-white/70 mb-1.5 block">Senha</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 <Input
                   id="password"
                   type="password"
@@ -244,13 +253,13 @@ export default function CadastroPage() {
                   placeholder="Mínimo 8 caracteres"
                   {...form.register("password")}
                   aria-invalid={!!form.formState.errors.password}
-                  className="pl-11 h-12 bg-background-secondary/60 border-border-subtle focus:border-purple-600/50 focus:shadow-glow-sm"
+                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7C5CFF]/50 focus:shadow-[0_0_20px_rgba(124,92,255,0.15)]"
                 />
               </div>
               {form.formState.errors.password ? (
                 <p className="text-sm text-danger mt-1">{form.formState.errors.password.message}</p>
               ) : (
-                <p className="text-xs text-text-muted mt-1">Mínimo 8 caracteres, com pelo menos 1 número.</p>
+                <p className="text-xs text-white/40 mt-1">Mínimo 8 caracteres, com pelo menos 1 número.</p>
               )}
             </div>
 
@@ -263,13 +272,13 @@ export default function CadastroPage() {
                     form.setValue("acceptTerms", c === true, { shouldValidate: true })
                   }
                   aria-invalid={!!form.formState.errors.acceptTerms}
-                  className="mt-0.5 border-border-medium data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                  className="mt-0.5 border-white/20 data-[state=checked]:bg-[#7C5CFF] data-[state=checked]:border-[#7C5CFF]"
                 />
-                <label htmlFor="acceptTerms" className="text-sm font-normal leading-snug cursor-pointer text-text-secondary">
+                <label htmlFor="acceptTerms" className="text-sm font-normal leading-snug cursor-pointer text-white/70">
                   Concordo com os{" "}
-                  <Link href="/termos" className="text-purple-400 hover:text-purple-300 transition-colors">termos de uso</Link>{" "}
+                  <Link href="/termos" className="text-[#B8A4EA] hover:text-[#D5C8F0] transition-colors">termos de uso</Link>{" "}
                   e a{" "}
-                  <Link href="/privacidade" className="text-purple-400 hover:text-purple-300 transition-colors">política de privacidade</Link>.
+                  <Link href="/privacidade" className="text-[#B8A4EA] hover:text-[#D5C8F0] transition-colors">política de privacidade</Link>.
                 </label>
               </div>
               {form.formState.errors.acceptTerms && (
@@ -286,7 +295,7 @@ export default function CadastroPage() {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 group"
+              className="w-full h-12 group bg-[#7C5CFF] hover:bg-[#6B4CE8] text-white border-0"
               disabled={isPending}
             >
               {isPending ? (
@@ -303,9 +312,9 @@ export default function CadastroPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-text-secondary mt-6">
+          <p className="text-center text-sm text-white/60 mt-6">
             Já tem uma conta?{" "}
-            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+            <Link href="/login" className="text-[#B8A4EA] hover:text-[#D5C8F0] font-medium transition-colors">
               Entrar
             </Link>
           </p>

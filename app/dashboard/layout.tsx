@@ -6,6 +6,7 @@ import { FloatingMascot } from "@/components/dashboard/floating-mascot"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
 import { getActiveBrandIdFromCookie } from "@/lib/active-brand"
+import "./dashboard.css"
 
 export default async function DashboardLayout({
   children,
@@ -38,7 +39,7 @@ export default async function DashboardLayout({
   const sidebarBrands = brands.map((b) => ({ id: b.id, name: b.name }))
 
   return (
-    <div className="flex h-screen bg-background relative overflow-hidden">
+    <div className="dashboard-root dark flex h-screen bg-background relative overflow-hidden">
       <DashboardAmbient />
       <DashboardSidebar
         userName={displayName}

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
@@ -38,9 +38,21 @@ export function DashboardAmbient() {
       aria-hidden
       className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
     >
+      {/* Base: imagem gerada com higgsfield (orbs roxos com bokeh) */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-50"
+        style={{
+          backgroundImage: "url(/dashboard-ambient.png)",
+          maskImage:
+            "radial-gradient(ellipse 90% 60% at 50% 40%, black 30%, transparent 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 90% 60% at 50% 40%, black 30%, transparent 80%)",
+        }}
+      />
+
       {/* Mesh blobs animados — só roxo/violet/preto */}
       <motion.div
-        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-purple-700/30 blur-[120px]"
+        className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-brand-700/30 blur-[120px]"
         animate={{
           x: [0, 80, -40, 0],
           y: [0, 60, -50, 0],
@@ -58,7 +70,7 @@ export function DashboardAmbient() {
         transition={{ duration: 28, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
       <motion.div
-        className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-purple-900/30 blur-[120px]"
+        className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-brand-900/30 blur-[120px]"
         animate={{
           x: [0, 60, -80, 0],
           y: [0, -40, 60, 0],
@@ -89,7 +101,7 @@ export function DashboardAmbient() {
           height: 700,
           transform: "translate(-50%, -50%)",
           background:
-            "radial-gradient(circle, rgba(167,139,250,0.18) 0%, rgba(124,58,237,0.10) 25%, transparent 60%)",
+            "radial-gradient(circle, rgba(184,164,234,0.18) 0%, rgba(124,92,255,0.10) 25%, transparent 60%)",
           opacity: mouse.active ? 1 : 0,
           willChange: "left, top",
         }}
