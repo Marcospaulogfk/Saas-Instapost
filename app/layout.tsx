@@ -1,20 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Space_Grotesk, JetBrains_Mono, Bebas_Neue, Playfair_Display, Anton } from 'next/font/google'
+import { Bebas_Neue, Playfair_Display, Anton } from 'next/font/google'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-jetbrains-mono',
-})
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -59,7 +49,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${bebasNeue.variable} ${playfair.variable} ${anton.variable}`}
     >
       <head>
         {/*

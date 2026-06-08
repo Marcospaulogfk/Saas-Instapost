@@ -22,7 +22,8 @@
   --lime-dim: rgba(124, 92, 255, 0.65);
 
   /* === Funcionais (idênticas em ambos modos) === */
-  --success: #10B981;
+  /* Sucesso é roxo por decisão de marca (sem verde). Ver IDENTIDADE-VISUAL.md §2. */
+  --success: #9B87FF;
   --warning: #F59E0B;
   --danger: #EF4444;
   --info: #3B82F6;
@@ -45,6 +46,15 @@
   --border-medium: rgba(14, 14, 14, 0.16);
   --border-strong: rgba(124, 92, 255, 0.35);
   --border-glow: rgba(124, 92, 255, 0.6);
+
+  /* === Identidade visual (ver IDENTIDADE-VISUAL.md) ===
+     Hairlines adaptam por modo (apontam pros border-* acima).
+     rule-top, border-accent e logo-gradient são constantes de marca. */
+  --hairline: var(--border-subtle);
+  --hairline-strong: var(--border-medium);
+  --border-accent: rgba(124, 92, 255, 0.22);
+  --rule-top: 2px solid #7C5CFF;
+  --logo-gradient: linear-gradient(135deg, #C94CF1, #8B2BEB 55%, #580CE8);
 
   /* Glass / gradient backgrounds (variáveis pra trocar por modo) */
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -91,6 +101,7 @@
   --sidebar-border: var(--border-subtle);
   --sidebar-ring: var(--brand-600);
   --surface: var(--background-secondary);
+  --surface-2: var(--background-tertiary);
 
   /* === Template Editorial (canvas Konva — namespace isolado, dark-only) === */
   --editorial-bg-dark: #0e0e0e;
@@ -128,6 +139,10 @@
   --border-strong: rgba(124, 92, 255, 0.4);
   --border-glow: rgba(124, 92, 255, 0.6);
 
+  /* Identidade visual — hairlines do dark (alto contraste contido) */
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.15);
+
   --glass-bg: rgba(20, 20, 30, 0.6);
   --glass-strong-bg: rgba(24, 24, 36, 0.8);
   --card-gradient-from: rgba(32, 28, 56, 0.55);
@@ -143,9 +158,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Space Grotesk', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Geist Mono', monospace;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   /* shadcn vars */
   --color-background: var(--background);
@@ -185,6 +200,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
 
   /* === Sync namespace === */
   --color-background-secondary: var(--background-secondary);
@@ -219,6 +235,9 @@
   --color-border-medium: var(--border-medium);
   --color-border-strong: var(--border-strong);
   --color-border-glow: var(--border-glow);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-border-accent: var(--border-accent);
 
   /* font-size escala briefing */
   --text-hero: 64px;
@@ -256,13 +275,15 @@
   --text-tiny--letter-spacing: 0.05em;
   --text-tiny--font-weight: 500;
 
-  /* shadows com glow roxo */
-  --shadow-glow-sm: 0 0 20px rgba(124, 92, 255, 0.15);
-  --shadow-glow: 0 0 40px rgba(124, 92, 255, 0.25);
-  --shadow-glow-lg: 0 0 80px rgba(124, 92, 255, 0.3);
-  --shadow-glow-xl: 0 0 120px rgba(124, 92, 255, 0.4);
+  /* Glow desativado pela identidade visual (sem glow/neon na interface).
+     Tokens mantidos como no-op pra não quebrar utilities shadow-glow*. */
+  --shadow-glow-sm: none;
+  --shadow-glow: none;
+  --shadow-glow-lg: none;
+  --shadow-glow-xl: none;
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 32px rgba(124, 92, 255, 0.15), 0 0 0 1px rgba(124, 92, 255, 0.2);
+  /* hover: elevação neutra + anel hairline roxo (sem glow) */
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border-accent);
 
   /* animations */
   --animate-shimmer: shimmer 2s linear infinite;
@@ -412,10 +433,11 @@
             mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
   }
 
-  /* Glow effects */
-  .glow-sm { box-shadow: 0 0 20px rgba(124, 92, 255, 0.15); }
-  .glow-brand { box-shadow: 0 0 40px rgba(124, 92, 255, 0.3); }
-  .glow-lg { box-shadow: 0 0 80px rgba(124, 92, 255, 0.3); }
+  /* Glow effects — desativados pela identidade visual (sem glow/neon).
+     Mantidos como no-op pra não quebrar classes existentes. */
+  .glow-sm,
+  .glow-brand,
+  .glow-lg { box-shadow: none; }
 
   /* Gradients utility */
   .bg-gradient-brand {
@@ -424,11 +446,14 @@
   .bg-gradient-brand-vertical {
     background-image: linear-gradient(180deg, var(--brand-600) 0%, var(--brand-900) 100%);
   }
+  /* Cards achatados pela identidade visual (sem gradiente na interface). */
   .bg-gradient-card {
-    background-image: linear-gradient(180deg, var(--card-gradient-from) 0%, var(--card-gradient-to) 100%);
+    background-color: var(--surface);
+    background-image: none;
   }
   .bg-gradient-card-hover {
-    background-image: linear-gradient(180deg, var(--card-gradient-hover-from) 0%, var(--card-gradient-hover-to) 100%);
+    background-color: var(--surface-2);
+    background-image: none;
   }
   .bg-gradient-shine {
     background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
@@ -448,11 +473,11 @@
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
 
-  /* Lime accent helpers */
-  .glow-lime { box-shadow: 0 0 20px rgba(124, 92, 255, 0.35); }
+  /* Accent helpers — glow removido pela identidade visual. */
+  .glow-lime { box-shadow: none; }
   .text-lime-glow {
     color: var(--lime);
-    text-shadow: 0 0 12px rgba(124, 92, 255, 0.5);
+    text-shadow: none;
   }
 
   /* No scrollbar */

@@ -35,6 +35,7 @@ import {
 import { signOut } from "@/app/actions/auth"
 import { setActiveBrand } from "@/app/actions/brands"
 import { getBrandGradient } from "@/lib/brand-colors"
+import { Logo } from "@/components/brand/logo"
 
 interface BrandItem {
   id: string
@@ -118,23 +119,8 @@ export function DashboardSidebar({
     >
       {/* Brand block — logo + seletor de marca em um cartão só */}
       <div className="px-4 pt-6 pb-2">
-        <Link href="/dashboard" className="flex items-center gap-2.5 mb-5 px-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #8a6cff 0%, #7C5CFF 50%, #5b3fe0 100%)",
-              boxShadow:
-                "0 4px 14px rgba(124,92,255,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
-            }}
-          >
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <span
-            className="font-display font-bold text-base tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
-            SyncPost
-          </span>
+        <Link href="/dashboard" className="flex items-center mb-5 px-2">
+          <Logo size={32} />
         </Link>
 
         {activeBrand ? (

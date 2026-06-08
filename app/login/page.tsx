@@ -7,10 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Sparkles, Mail, Lock, ArrowRight, Loader2, Zap, Brain, Wand2 } from "lucide-react"
+import { Mail, Lock, ArrowRight, Loader2, Zap, Brain, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AntigravityShowcase } from "@/components/login/antigravity-showcase"
+import { Logo } from "@/components/brand/logo"
 import { signInWithPassword, signInWithGoogle } from "@/app/actions/auth"
 
 const schema = z.object({
@@ -87,11 +88,8 @@ function LoginPageInner() {
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10"
         >
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7C5CFF] to-[#5B3FE0] shadow-[0_0_40px_rgba(124,92,255,0.35)]">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-bold text-2xl text-white">SyncPost</span>
+          <Link href="/" className="inline-flex items-center">
+            <Logo size={40} className="[&_span]:text-white" />
           </Link>
         </motion.div>
 
@@ -172,11 +170,8 @@ function LoginPageInner() {
         >
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-[#7C5CFF] to-[#5B3FE0] shadow-[0_0_20px_rgba(124,92,255,0.25)]">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-display font-bold text-xl text-white">SyncPost</span>
+            <Link href="/" className="inline-flex items-center">
+              <Logo size={36} className="[&_span]:text-white" />
             </Link>
           </div>
 
