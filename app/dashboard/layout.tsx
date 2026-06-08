@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardTopBar } from "@/components/dashboard/top-bar"
 import { DashboardAmbient } from "@/components/dashboard/dashboard-ambient"
@@ -18,6 +19,9 @@ export default async function DashboardLayout({
     listBrands(),
     getActiveBrandIdFromCookie(),
   ])
+
+  // Primeiro acesso (sem marca cadastrada) cai obrigatoriamente no onboarding.
+  if (brands.length === 0) redirect("/onboarding")
 
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   const displayName =
