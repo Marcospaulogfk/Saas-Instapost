@@ -25,6 +25,12 @@ Princípios:
 4. **Verbos vivos, no imperativo direto.** "Marque", "Pare", "Veja" — não "Saiba".
 5. **Use o que o briefing fornece.** Se tem dado/ângulo/fato, USA. Não substitua por chavão.
 6. **PT-BR coloquial culto.** Sem gerundismo, sem "podemos te ajudar".
+7. **NOMEIE os sujeitos reais na COPY.** Se o tema cita marca, pessoa, produto ou
+   lugar (BYD, Tesla, Elon Musk, iPhone…), ESCREVA o nome no title/body/subtitle.
+   É isso que dá autoridade e especificidade. NÃO troque por genérico tipo
+   "uma montadora chinesa" ou "um fabricante americano" — isso enfraquece a copy.
+   ⚠️ ATENÇÃO: a proibição de nomes próprios vale APENAS para 'imagePrompts'
+   (geração de imagem), NUNCA para a copy. Copy nomeia; imagem descreve.
 
 ================================================
 🎨 PALETA SYNCPOST — REGRA INVIOLÁVEL
@@ -154,22 +160,69 @@ Cada slide DEVE ter "titlePosition": "top" | "middle" | "bottom".
 - Outros: alterne. Ex: top, middle, top, bottom, middle, bottom, top.
 
 ================================================
-🖼️ IMAGEPROMPTS — INSTRUÇÕES PARA Fal.ai
+🖼️ IMAGEPROMPTS — INSTRUÇÕES PARA GERAÇÃO DE IMAGEM (CRÍTICO)
 ================================================
 
-PROPRIEDADE 'imagePrompts': array de prompts em INGLÊS para gerar imagens
+PROPRIEDADE 'imagePrompts': array de prompts em INGLÊS.
 
-REGRAS CRÍTICAS:
-- Prompts em INGLÊS (Flux funciona muito melhor em inglês)
-- Específico sobre clima, iluminação, atmosfera (cinematic, editorial, dramatic lighting...)
-- NUNCA mencione personagens reais (Brad Pitt, Tom Cruise, Will Smith, etc) — proibido por copyright
-- NUNCA peça texto na imagem (Flux escreve mal — peça apenas elementos visuais)
-- Conecte com TEMA do carrossel (não foto genérica)
-- Para representar uma marca, descreva PRODUTO/AMBIENTE da marca (não logo nem nome)
+⚠️ A imagem É a parte que mais quebra. O leitor olha a imagem ANTES de ler.
+Se a imagem não casar com o que o slide fala, o carrossel inteiro parece amador.
+A meta é: quem olha a imagem SEM ler o texto já entende o assunto do slide.
+
+────────────────────────────────────
+REGRA 1 — ANCORE NO QUE O SLIDE FALA
+────────────────────────────────────
+O prompt da imagem PRECISA representar o sujeito concreto do PRÓPRIO slide
+(não do carrossel em geral, não uma foto bonita aleatória).
+- Identifique o sujeito principal da copy do slide (o quê / quem / onde).
+- Descreva ESSE sujeito de forma que seja inconfundível visualmente.
+- Se o slide fala de "fábrica no Brasil", a imagem é uma fábrica — não um carro.
+- Se o slide fala de "preço", a imagem é o produto em contexto de compra/showroom.
+Cada imagem responde: "o que esse slide específico está mostrando?"
+
+────────────────────────────────────
+REGRA 2 — NOMES PRÓPRIOS: PROIBIDO ESCREVER, OBRIGATÓRIO DESCREVER
+────────────────────────────────────
+(Esta regra vale SÓ para 'imagePrompts'. Na COPY você DEVE nomear — ver
+princípio 7 lá em cima. Não deixe esta regra contaminar o title/body.)
+
+Dentro do imagePrompt, NUNCA escreva o nome de: marca, empresa, produto/modelo,
+pessoa real, app, time, filme. (O modelo de imagem renderiza nomes como
+logo/texto borrado e erra — e há copyright.) Isso vale para QUALQUER nome,
+inclusive no meio da frase. Bug clássico a evitar: "empty Tesla dealership" ❌.
+
+Em vez do nome, descreva os ATRIBUTOS VISUAIS inconfundíveis:
+- Marca/produto → categoria + forma + material + acabamento + contexto de uso
+  típico daquele produto (sem logo, sem nome, sem texto).
+- Pessoa real → gênero, faixa etária, etnia, cabelo, expressão, vestimenta,
+  cenário coerente com a profissão/época (sem nomear).
+- Lugar nomeado → marcos visuais genéricos da região + luz/clima.
+A descrição deve ser específica o suficiente pra "ler" como aquele sujeito,
+mesmo sem o nome.
+
+────────────────────────────────────
+REGRA 3 — ESPECIFICIDADE > BELEZA GENÉRICA
+────────────────────────────────────
+Prompt fraco = foto bonita sem relação. Prompt forte = sujeito certo + clima.
+Cada prompt deve ter, nesta ordem:
+1. SUJEITO concreto e específico (o objeto/cena exata do slide)
+2. AÇÃO/CONTEXTO (o que está acontecendo / onde)
+3. ENQUADRAMENTO (close-up, wide shot, aerial, eye-level, top-down…)
+4. LUZ + CLIMA (dramatic side lighting, golden hour, moody, high-key…)
+5. ACABAMENTO ("editorial photography, ultra-sharp, premium, no text, no logos")
+Sempre termine com "no text, no logos, no watermark".
+
+────────────────────────────────────
+REGRA 4 — COR / CLIMA ALINHADO AO TEMA
+────────────────────────────────────
+Puxe a paleta da imagem pro clima do carrossel (ex: tema sério/tech → deep
+shadows, cool tones; tema caloroso → warm light). Quando fizer sentido, inclua
+1 cor de acento sutil coerente com a marca — mas NUNCA peça "purple branding"
+nem cores que dominem a foto; é acento, não tema.
 
 QUANTIDADE DE IMAGENS — DECIDA PELA COPY DO SLIDE:
-- 1 sujeito/entidade mencionado → 1 imagem (ex: "BYD lançou..." → 1 foto de carro)
-- 2 sujeitos distintos → 2 imagens (ex: "Pelé E Maradona" → 2 fotos)
+- 1 sujeito/entidade mencionado → 1 imagem
+- 2 sujeitos distintos → 2 imagens (ex: comparação A vs B)
 - 3+ → até 3 imagens (process/grid)
 - Slides text-only → 0 imagens
 
@@ -184,28 +237,26 @@ QUANTIDADE POR LAYOUT (limite máximo):
 - serif: 0 ou 1
 - cta: 0, 1 ou 2
 
-REGRA ESPECÍFICA — SUJEITOS REAIS NO TEMA:
-Quando a copy do slide cita uma pessoa real (ator, atleta, CEO, marca específica), você NÃO PODE usar o nome no prompt. Use estas técnicas:
-1. Descrição física detalhada (idade, etnia, traços, expressão, vestimenta) que a pessoa SEM cita-la
-2. Para uma marca: descreva PRODUTOS/AMBIENTE característicos da marca (sem logo, sem texto)
-3. Para um ato/profissão: descreva a CENA/ATIVIDADE típica
+────────────────────────────────────
+EXEMPLOS — FIÉIS AO SUJEITO, SEM NOMEAR
+────────────────────────────────────
+Slide: "BYD bateu a Tesla no Brasil" (capa)
+✅ "A sleek modern electric SUV with a smooth aerodynamic silhouette and glossy deep-black finish, parked on a wide São Paulo avenue at golden hour, low three-quarter front angle, dramatic warm side lighting, Brazilian city skyline softly blurred behind, premium automotive editorial photography, ultra-sharp, no text, no logos"
 
-EXEMPLOS — sujeito específico mas SEM violar copyright:
-Tema do slide: "Will Smith e Leonardo DiCaprio mudaram Hollywood"
-✅ Imagem 1: "Athletic Black man in his 50s with short hair and confident smile, dramatic film noir lighting, vintage Hollywood studio backdrop, cinematic editorial portrait, premium professional photography, no text, no logos"
-✅ Imagem 2: "Charismatic White man in his 40s with intense gaze, golden hour Los Angeles streetscape, retro 1960s aesthetic, dramatic lighting, cinematic film still aesthetic, no text"
+Slide: "Fábrica aqui, imposto não" (sobre produção local)
+✅ "Interior of a large modern automotive assembly plant, robotic arms welding a car body on a bright production line, wide industrial shot, cool steel-and-chrome tones with strong overhead lighting, documentary editorial photography, ultra-sharp, no text, no logos"
 
-Tema: "BYD lançou o novo carro"
-✅ "Modern electric SUV from a Chinese automaker, futuristic streamlined design, polished obsidian black finish, photographed on a sleek studio set with dramatic side lighting, premium automotive editorial photography, ultra-clean composition, no text, no logos"
+Slide sobre um CEO polêmico (sem nomear a pessoa):
+✅ "A white man in his early 50s with short hair and a tense, distracted expression, wearing a dark casual blazer, standing alone in a dim high-tech office, cold blue screen light on his face, moody cinematic portrait, shallow depth of field, no text, no logos"
 
-Tema: "Era Uma Vez em Hollywood":
-✅ "Vintage 1969 Los Angeles street at golden hour, classic cars, neon cinema marquee lights, warm orange and red tones, cinematic atmosphere, retro film aesthetic, no people, no text"
-
-EXEMPLOS ERRADOS:
-❌ "Brad Pitt and Leonardo DiCaprio in Hollywood"  (copyright)
-❌ "Hollywood sign"  (genérico demais, sem clima)
-❌ "Image with text saying ONCE UPON A TIME"  (Flux erra texto)
-❌ Imagem genérica que não tem nada a ver com o sujeito específico
+────────────────────────────────────
+EXEMPLOS ERRADOS
+────────────────────────────────────
+❌ "empty Tesla dealership"            (nome próprio — vira logo borrado)
+❌ "Brad Pitt in Hollywood"            (pessoa real nomeada)
+❌ "a Chinese electric car"            (genérico demais — pode sair qualquer coisa)
+❌ "beautiful cinematic photo"         (bonito, mas sem sujeito → não casa com o slide)
+❌ "image with text ONCE UPON A TIME"  (texto na imagem sempre sai errado)
 
 ================================================
 🔄 VARIANTES — APENAS PARA LAYOUTS FLEXÍVEIS
@@ -357,6 +408,14 @@ interface GenerateCarouselParams {
   tone: 'profissional' | 'casual' | 'direto'
   targetAudience: string
   desiredSlides?: number
+  /** Contexto rico da marca ativa (vindo do banco) — melhora MUITO a copy. */
+  brandContext?: {
+    description?: string | null
+    visualStyle?: string | null
+    toneOfVoice?: string | null
+    mainObjective?: string | null
+    brandColors?: string[]
+  }
 }
 
 const VALID_LAYOUTS: LayoutType[] = [
@@ -497,6 +556,22 @@ function validateAndFixCarousel(raw: unknown): EditorialCarousel {
 export async function generateEditorialCarousel(
   params: GenerateCarouselParams,
 ): Promise<EditorialCarousel> {
+  const ctx = params.brandContext
+  const brandContextBlock = ctx
+    ? `
+CONTEXTO DA MARCA (use pra calibrar copy E imagens — NÃO copie literalmente):
+${ctx.description ? `- O que a marca faz: ${ctx.description}` : ''}
+${ctx.mainObjective ? `- Objetivo principal: ${ctx.mainObjective}` : ''}
+${ctx.toneOfVoice ? `- Voz da marca: ${ctx.toneOfVoice}` : ''}
+${ctx.visualStyle ? `- Estilo visual: ${ctx.visualStyle}` : ''}
+${ctx.brandColors && ctx.brandColors.length ? `- Cores da marca (acento sutil nas imagens, NUNCA dominante): ${ctx.brandColors.join(', ')}` : ''}
+
+Regras de uso do contexto:
+- A copy deve soar como ESSA marca falando pro público dela — não genérica.
+- As imagens devem combinar com o universo visual da marca e o assunto do slide.
+- Se o contexto não cobrir algo, use bom senso editorial; nunca invente fatos.`
+    : ''
+
   const userPrompt = `Tema do carrossel: "${params.topic}"
 
 Marca: ${params.brandInfo.name}
@@ -504,6 +579,7 @@ Handle: ${params.brandInfo.handle}
 Tom de voz: ${params.tone}
 Público-alvo: ${params.targetAudience}
 Número de slides desejado: ${params.desiredSlides || '5-7 (você decide)'}
+${brandContextBlock}
 
 Gere um carrossel editorial completo no formato JSON.`
 

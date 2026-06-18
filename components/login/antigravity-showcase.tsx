@@ -153,7 +153,7 @@ function FloatingCard({
           border: "0.5px solid rgba(255, 255, 255, 0.06)",
           boxShadow:
             accent === "primary"
-              ? "0 24px 60px -12px rgba(124, 92, 255, 0.35), 0 0 0 1px rgba(124, 92, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
+              ? "0 24px 60px -12px rgba(115, 32, 230, 0.35), 0 0 0 1px rgba(115, 32, 230, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
               : "0 20px 50px -12px rgba(184, 164, 234, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06)",
         }}
       >
@@ -162,7 +162,7 @@ function FloatingCard({
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124, 92, 255, 0.25), transparent 60%)",
+              "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(115, 32, 230, 0.25), transparent 60%)",
           }}
         />
 
@@ -173,7 +173,7 @@ function FloatingCard({
               className="w-5 h-5 rounded-full"
               style={{
                 background:
-                  "linear-gradient(135deg, #B8A4EA, #7C5CFF)",
+                  "linear-gradient(135deg, #9C5FF1, #7320E6)",
               }}
             />
             <div className="h-1.5 w-12 rounded-full bg-white/20" />
@@ -181,9 +181,9 @@ function FloatingCard({
           <div
             className="px-2 py-0.5 rounded-full text-[8px] font-semibold tracking-wider"
             style={{
-              background: "rgba(124, 92, 255, 0.2)",
+              background: "rgba(115, 32, 230, 0.2)",
               color: "#D5C8F0",
-              border: "0.5px solid rgba(124, 92, 255, 0.4)",
+              border: "0.5px solid rgba(115, 32, 230, 0.4)",
             }}
           >
             NEW
@@ -209,7 +209,7 @@ function FloatingCard({
         <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
           <div
             className="h-1 w-12 rounded-full"
-            style={{ background: "linear-gradient(90deg, #B8A4EA, #7C5CFF)" }}
+            style={{ background: "linear-gradient(90deg, #9C5FF1, #7320E6)" }}
           />
           <div className="flex gap-0.5">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -219,7 +219,7 @@ function FloatingCard({
                 style={{
                   background:
                     i === 0
-                      ? "#7C5CFF"
+                      ? "#7320E6"
                       : "rgba(255, 255, 255, 0.25)",
                 }}
               />
@@ -255,7 +255,7 @@ function Particles() {
               width: size,
               height: size,
               background: "rgba(184, 164, 234, 0.5)",
-              boxShadow: "0 0 8px rgba(124, 92, 255, 0.6)",
+              boxShadow: "0 0 8px rgba(115, 32, 230, 0.6)",
             }}
             animate={{
               y: [0, -800],

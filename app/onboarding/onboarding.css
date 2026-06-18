@@ -1,11 +1,11 @@
 .onb-root {
   /* === Roxo SyncPost (escopo onboarding) === */
-  --onb-primary: #7c5cff;
-  --onb-primary-hover: #6b4ce8;
-  --onb-primary-light: #b8a4ea;
-  --onb-primary-dim: rgba(124, 92, 255, 0.15);
-  --onb-primary-border: rgba(124, 92, 255, 0.3);
-  --onb-primary-glow: rgba(124, 92, 255, 0.12);
+  --onb-primary: #7320E6;
+  --onb-primary-hover: #5F14D6;
+  --onb-primary-light: #9C5FF1;
+  --onb-primary-dim: rgba(115, 32, 230, 0.15);
+  --onb-primary-border: rgba(115, 32, 230, 0.3);
+  --onb-primary-glow: rgba(115, 32, 230, 0.12);
 
   /* Gradient do banner */
   --onb-gradient-banner: linear-gradient(
@@ -76,12 +76,12 @@
   background:
     radial-gradient(
       ellipse 60% 50% at 50% 0%,
-      rgba(124, 92, 255, 0.08),
+      rgba(115, 32, 230, 0.08),
       transparent 70%
     ),
     radial-gradient(
       ellipse 40% 30% at 80% 100%,
-      rgba(91, 63, 224, 0.06),
+      rgba(88, 12, 232, 0.06),
       transparent 60%
     );
 }
@@ -95,26 +95,26 @@
   z-index: -1;
   background-image:
     linear-gradient(
-      rgba(124, 92, 255, 0.025) 1px,
+      rgba(115, 32, 230, 0.025) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(124, 92, 255, 0.025) 1px,
+      rgba(115, 32, 230, 0.025) 1px,
       transparent 1px
     );
-  background-size: 40px 40px;
+  background-size: 64px 64px;
   mask-image: radial-gradient(
-    ellipse 80% 60% at 50% 30%,
+    ellipse 70% 50% at 50% 25%,
     black,
-    transparent 75%
+    transparent 70%
   );
   -webkit-mask-image: radial-gradient(
-    ellipse 80% 60% at 50% 30%,
+    ellipse 70% 50% at 50% 25%,
     black,
-    transparent 75%
+    transparent 70%
   );
-  opacity: 0.4;
+  opacity: 0.15;
 }
 
 .onb-card-selectable {
@@ -142,7 +142,7 @@
   transform: translateY(-1px);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(124, 92, 255, 0.12);
+    0 0 0 1px rgba(115, 32, 230, 0.12);
 }
 
 .onb-card-selectable[data-selected="true"] {
@@ -153,8 +153,8 @@
     rgba(28, 20, 60, 0.5) 100%
   );
   box-shadow:
-    0 4px 24px rgba(124, 92, 255, 0.2),
-    0 0 0 1px rgba(124, 92, 255, 0.4),
+    0 4px 24px rgba(115, 32, 230, 0.2),
+    0 0 0 1px rgba(115, 32, 230, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
@@ -184,7 +184,7 @@
   border-color: var(--onb-primary);
   box-shadow:
     0 0 0 3px var(--onb-primary-glow),
-    0 0 20px rgba(124, 92, 255, 0.12);
+    0 0 20px rgba(115, 32, 230, 0.12);
 }
 
 .onb-input[aria-invalid="true"] {
@@ -215,7 +215,7 @@
   border-color: var(--onb-primary);
   box-shadow:
     0 0 0 3px var(--onb-primary-glow),
-    0 0 20px rgba(124, 92, 255, 0.12);
+    0 0 20px rgba(115, 32, 230, 0.12);
 }
 
 .onb-label {
@@ -236,9 +236,9 @@
 .onb-btn-primary {
   background: linear-gradient(
     180deg,
-    #8a6cff 0%,
+    #8A33EC 0%,
     var(--onb-primary) 50%,
-    #6b4ce8 100%
+    #5F14D6 100%
   );
   color: #ffffff;
   border: none;
@@ -255,20 +255,20 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.18) inset,
     0 -1px 0 rgba(0, 0, 0, 0.18) inset,
-    0 4px 14px rgba(124, 92, 255, 0.35);
+    0 4px 14px rgba(115, 32, 230, 0.35);
 }
 
 .onb-btn-primary:hover:not(:disabled) {
   background: linear-gradient(
     180deg,
-    #9a7eff 0%,
-    #8364ff 50%,
-    #7050ff 100%
+    #9A52EF 0%,
+    #7E2BE8 50%,
+    #6E18E2 100%
   );
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.22) inset,
     0 -1px 0 rgba(0, 0, 0, 0.18) inset,
-    0 6px 22px rgba(124, 92, 255, 0.45);
+    0 6px 22px rgba(115, 32, 230, 0.45);
   transform: translateY(-1px);
 }
 
@@ -277,7 +277,7 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12) inset,
     0 -1px 0 rgba(0, 0, 0, 0.2) inset,
-    0 2px 8px rgba(124, 92, 255, 0.3);
+    0 2px 8px rgba(115, 32, 230, 0.3);
 }
 
 .onb-btn-primary:disabled {
@@ -343,14 +343,14 @@
   background: radial-gradient(
     circle at 30% 25%,
     rgba(184, 164, 234, 0.18) 0%,
-    rgba(124, 92, 255, 0.12) 40%,
-    rgba(91, 63, 224, 0.04) 100%
+    rgba(115, 32, 230, 0.12) 40%,
+    rgba(88, 12, 232, 0.04) 100%
   );
   border: 0.5px solid var(--onb-primary-border);
   border-radius: 999px;
   color: var(--onb-primary-light);
   box-shadow:
-    0 0 32px rgba(124, 92, 255, 0.18),
+    0 0 32px rgba(115, 32, 230, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 

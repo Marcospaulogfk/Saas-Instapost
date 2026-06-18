@@ -35,7 +35,7 @@ export interface PreviewSlide {
   cta_badge?: string
   image: {
     url: string | null
-    source: "ai" | "unsplash" | null
+    source: "ai" | "unsplash" | "wikimedia" | null
     attribution: SlideAttribution | null
     error: string | null
   }
@@ -68,6 +68,8 @@ interface SlidePreviewProps {
   lightBg?: string
   /** Cor do bg "escuro" no auto-legacy. Default preto. */
   darkBg?: string
+  /** Formato do frame: "feed" (4:5) ou "stories" (9:16). Default "feed". */
+  format?: "feed" | "stories"
 }
 
 export function SlidePreview({
@@ -83,6 +85,7 @@ export function SlidePreview({
   brandLabel = "Content Machine",
   lightBg = "#FAF8F5",
   darkBg = "#0A0A0A",
+  format = "feed",
 }: SlidePreviewProps) {
   const accent = brandColors[0] || "#FBBF24"
   const dark = brandColors[1] || "#1A1A1A"
@@ -103,6 +106,7 @@ export function SlidePreview({
         brandLabel={brandLabel}
         lightBg={lightBg}
         darkBg={darkBg}
+        format={format}
       />
     ) : template === "hybrid" ? (
       <HybridSlide
@@ -122,7 +126,14 @@ export function SlidePreview({
 
   return (
     <div className="relative">
-      {inner}
+      {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
+      <div
+        className={
+          format === "stories" ? "w-full [&>*]:!aspect-[9/16]" : "contents"
+        }
+      >
+        {inner}
+      </div>
       {showDevBadges && slide.image.source && (
         <div
           className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider z-20 ${
@@ -131,7 +142,11 @@ export function SlidePreview({
               : "bg-zinc-700 text-white"
           }`}
         >
-          {slide.image.source === "ai" ? "🤖 IA" : "📷 UNSPLASH"}
+          {slide.image.source === "ai"
+            ? "🤖 IA"
+            : slide.image.source === "wikimedia"
+              ? "🏢 REAL"
+              : "📷 UNSPLASH"}
         </div>
       )}
     </div>
@@ -204,6 +219,7 @@ interface RouterProps {
   brandLabel: string
   lightBg: string
   darkBg: string
+  format: "feed" | "stories"
 }
 
 function EditorialSlideRouter(props: RouterProps) {
@@ -220,6 +236,7 @@ function EditorialSlideRouter(props: RouterProps) {
     brandLabel,
     lightBg,
     darkBg,
+    format,
   } = props
 
   const isCover = slide.order_index === 0
@@ -365,6 +382,7 @@ function EditorialSlideRouter(props: RouterProps) {
       handle={handle}
       lightBg={lightBg}
       darkBg={darkBg}
+      format={format}
     />
   )
 }
@@ -392,6 +410,7 @@ function LegacyEditorialSlide({
   handle,
   lightBg,
   darkBg,
+  format = "feed",
 }: {
   slide: PreviewSlide
   totalSlides: number
@@ -402,8 +421,10 @@ function LegacyEditorialSlide({
   handle: string
   lightBg: string
   darkBg: string
+  format?: "feed" | "stories"
 }) {
   const variant = pickLegacyVariant(slide.order_index, totalSlides)
+  const isStories = format === "stories"
   const categoryTag = slide.cta_badge || "Editorial"
 
   // Alterna bg dark/light entre splits ímpares e pares pra dar variedade
@@ -436,9 +457,17 @@ function LegacyEditorialSlide({
           <Pill>{categoryTag}</Pill>
         </div>
 
-        <div className="absolute inset-x-5 top-[44%] z-10 space-y-3">
+        <div
+          className={
+            isStories
+              ? // Stories: bloco do título ocupa do topo (abaixo das pills) ao
+                // rodapé, centralizado — evita o título transbordar/colidir.
+                "absolute inset-x-5 top-16 bottom-16 z-10 flex flex-col justify-center space-y-3"
+              : "absolute inset-x-5 top-[44%] z-10 space-y-3"
+          }
+        >
           <h1
-            className={`text-[2.5rem] uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
+            className={`${isStories ? "text-[2rem]" : "text-[2.5rem]"} uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
             style={{ textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
           >
             <HighlightedText

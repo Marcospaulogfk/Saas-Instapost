@@ -347,7 +347,7 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
         {template.value === "hybrid" && <HybridPreview />}
 
         {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(124,92,255,0.6)]">
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(115, 32, 230,0.6)]">
             <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
           </div>
         )}
@@ -419,7 +419,7 @@ function CinematicPreview() {
       </div>
       {/* Indicador top */}
       <div className="absolute top-3 left-3 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(124,92,255,0.7)]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(115, 32, 230,0.7)]" />
         <span className="text-[7px] uppercase tracking-wider text-white/80 font-mono">LIVE</span>
       </div>
     </div>

@@ -21,7 +21,7 @@ export function ProximasDatasCard() {
   const datas = getProximasDatas(new Date(), 5)
 
   return (
-    <div className="rounded-xl bg-gradient-card border border-border-subtle p-5">
+    <div className="dash-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="w-4 h-4 text-brand-400" />
         <h3 className="text-sm font-semibold text-text-primary">Próximas Datas</h3>

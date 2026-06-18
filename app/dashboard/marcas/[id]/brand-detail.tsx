@@ -305,7 +305,7 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
           </div>
         )}
         {savedAt && !editing && (
-          <div className="relative z-10 mt-4 rounded-lg bg-lime/10 border border-[rgba(124,92,255,0.3)] p-3 text-sm text-lime">
+          <div className="relative z-10 mt-4 rounded-lg bg-lime/10 border border-[rgba(115, 32, 230,0.3)] p-3 text-sm text-lime">
             Marca atualizada com sucesso.
           </div>
         )}

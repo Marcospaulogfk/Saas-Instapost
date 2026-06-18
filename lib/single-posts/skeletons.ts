@@ -266,13 +266,14 @@ const cardCenterOnColor: SkeletonImpl = {
       })
     }
 
-    // Stack vertical centralizado dentro do card — flow natural, sem sobrepor
+    // Card de vidro ESCURO + texto branco: legível tanto se o card renderizar
+    // quanto se o texto cair direto sobre a foto escura (alto contraste sempre).
     const stackChildren: FreeBlock[] = [
       {
         type: "icon",
         position: {},
         name: "alert-triangle",
-        color: bgColor,
+        color: c.accent,
         size: "min(10cqw, 44px)",
       },
       {
@@ -285,11 +286,12 @@ const cardCenterOnColor: SkeletonImpl = {
           [25, "min(7cqw, 1.9rem)"],
         ], "min(5.5cqw, 1.5rem)"),
         font_weight: 800,
-        color: bgColor,
+        color: "#FFFFFF",
         line_height: 1,
         letter_spacing: "-0.01em",
         text_transform: "uppercase",
         text_align: "center",
+        text_shadow: true,
       },
     ]
     if (content.body) {
@@ -303,9 +305,10 @@ const cardCenterOnColor: SkeletonImpl = {
           [180, "min(2.3cqw, 0.75rem)"],
         ], "min(2cqw, 0.7rem)"),
         font_weight: 400,
-        color: "#6B7280",
+        color: "rgba(255,255,255,0.88)",
         line_height: 1.5,
         text_align: "center",
+        text_shadow: true,
       })
     }
     if (content.cta_text) {
@@ -313,8 +316,8 @@ const cardCenterOnColor: SkeletonImpl = {
         type: "pill",
         position: {},
         text: content.cta_text,
-        bg: bgColor,
-        fg: "#FFFFFF",
+        bg: c.accent,
+        fg: "#0A0A0F",
         font: "inter",
         font_size: "min(2.7cqw, 0.85rem)",
         font_weight: 600,
@@ -328,8 +331,9 @@ const cardCenterOnColor: SkeletonImpl = {
         font: "inter",
         font_size: "min(2.4cqw, 0.78rem)",
         font_weight: 500,
-        color: "#6B7280",
+        color: "rgba(255,255,255,0.7)",
         text_align: "center",
+        text_shadow: true,
       })
     }
     blocks.push({
@@ -340,7 +344,7 @@ const cardCenterOnColor: SkeletonImpl = {
       gap: "min(2.5cqw, 12px)",
       align: "center",
       justify: "center",
-      bg: c.surface,
+      bg: "rgba(10,10,15,0.55)",
       radius: 20,
       padding: "min(5.5cqw, 24px)",
       shadow: true,

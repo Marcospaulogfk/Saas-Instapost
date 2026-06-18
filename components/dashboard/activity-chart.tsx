@@ -78,7 +78,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
           </div>
           <div>
             <div className="flex items-center gap-1.5 justify-end text-xs text-text-muted mb-1">
-              <span className="w-2 h-2 rounded-full bg-lime shadow-[0_0_8px_rgba(124,92,255,0.6)]" />
+              <span className="w-2 h-2 rounded-full bg-lime shadow-[0_0_8px_rgba(115, 32, 230,0.6)]" />
               Imagens
             </div>
             <div className="text-xl font-bold text-text-primary tabular-nums">{totalImagens}</div>
@@ -95,12 +95,12 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
           <AreaChart data={data} margin={{ top: 10, right: 24, bottom: 8, left: 8 }}>
             <defs>
               <linearGradient id="postsArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#B8A4EA" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#B8A4EA" stopOpacity={0} />
+                <stop offset="0%" stopColor="#9C5FF1" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#9C5FF1" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="imagensArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#7C5CFF" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#7C5CFF" stopOpacity={0} />
+                <stop offset="0%" stopColor="#7320E6" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#7320E6" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -127,7 +127,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             <Area
               type="monotone"
               dataKey="posts"
-              stroke="#B8A4EA"
+              stroke="#9C5FF1"
               strokeWidth={2}
               fill="url(#postsArea)"
               name="Posts"
@@ -135,7 +135,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             <Area
               type="monotone"
               dataKey="imagens"
-              stroke="#7C5CFF"
+              stroke="#7320E6"
               strokeWidth={2}
               fill="url(#imagensArea)"
               name="Imagens"

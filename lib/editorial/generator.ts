@@ -11,6 +11,13 @@ interface GenerateParams {
   tone: 'profissional' | 'casual' | 'direto'
   targetAudience: string
   desiredSlides?: number
+  brandContext?: {
+    description?: string | null
+    visualStyle?: string | null
+    toneOfVoice?: string | null
+    mainObjective?: string | null
+    brandColors?: string[]
+  }
   onProgress?: (step: string, current: number, total: number) => void
 }
 
@@ -30,6 +37,7 @@ export async function generateCompleteCarousel(
     tone: params.tone,
     targetAudience: params.targetAudience,
     desiredSlides: params.desiredSlides,
+    brandContext: params.brandContext,
   })
 
   console.log('✅ [Editorial] Roteiro gerado:', {

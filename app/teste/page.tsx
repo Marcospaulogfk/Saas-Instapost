@@ -36,6 +36,7 @@ import { SlideEditorModal } from "./slide-editor-modal"
 import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
 import { PostPreview } from "@/components/single-posts/post-preview"
 import { SKELETONS } from "@/lib/single-posts/skeletons"
+import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import { DEMO_CONTENT } from "@/lib/single-posts/demo"
 import {
@@ -45,6 +46,7 @@ import {
 import type { FreePostSpec, FreeBlock } from "@/lib/single-posts/free-spec"
 import type { PostBrand, PostContent } from "@/lib/single-posts/types"
 import { generateMonogram } from "@/lib/single-posts/palette"
+import type { ClaudeSlide } from "@/lib/generation/claude"
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 const bebas = Bebas_Neue({ subsets: ["latin"], weight: "400" })
@@ -166,6 +168,8 @@ export default function TestePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ApiResult | null>(null)
+  // Legenda do carrossel aprovada no wizard (mostrada junto do resultado).
+  const [carouselCaption, setCarouselCaption] = useState<string | null>(null)
   const [loadingMessage, setLoadingMessage] = useState("")
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -778,6 +782,64 @@ export default function TestePage() {
     }
   }
 
+  // Monta o design a partir de conteúdo JÁ aprovado no wizard (sem regenerar texto).
+  async function runSinglePostApproved(args: {
+    brand: PostBrand
+    skeletonId: string
+    content: SkeletonContent
+    photoPrompt?: string | null
+    photoEntity?: string | null
+  }) {
+    setSinglePostError(null)
+    setSinglePostLoading(true)
+    setSinglePostSpec(null)
+    setSinglePostTemplateContent(null)
+    setSinglePostTemplateId(null)
+    setSinglePostMetrics(null)
+
+    const brand = args.brand
+    setSinglePostBrand(brand)
+    if (typeof brand.name === "string") setActiveBrandName(brand.name)
+    if (Array.isArray(brand.brand_colors) && brand.brand_colors.length === 3) {
+      setColors(brand.brand_colors)
+    }
+    if (typeof brand.instagram_handle === "string") {
+      setHandle(`@${brand.instagram_handle}`)
+    }
+
+    try {
+      const res = await fetch("/api/post-unico/free-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand,
+          skeleton_id: args.skeletonId,
+          approved_content: args.content,
+          photo_prompt: args.photoPrompt ?? null,
+          image_entity: args.photoEntity ?? null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setSinglePostError(data.error ?? "erro desconhecido")
+        return
+      }
+      setSinglePostSpec(data.spec)
+      setSinglePostPhotoUrl(data.photo_url ?? null)
+      setSinglePostSkeletonPicked(data.skeleton_id ?? null)
+      setSinglePostRationale(data.rationale ?? null)
+      setSinglePostMetrics({
+        ms: data.metrics.ms,
+        totalCostUsd: data.metrics.totalCostUsd ?? data.metrics.costUsd,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "erro de rede"
+      setSinglePostError(message)
+    } finally {
+      setSinglePostLoading(false)
+    }
+  }
+
   async function handleSinglePostExport() {
     if (!singlePostPreviewRef.current) return
     // Esconde UI de edição (outlines roxo, cursor) durante export
@@ -856,6 +918,128 @@ export default function TestePage() {
     }
   }
 
+  /**
+   * Roteiro já aprovado no wizard → NÃO regenera o texto. Só gera as IMAGENS
+   * (uma por slide, via image_prompt) e monta o resultado no mesmo formato que
+   * o renderizador consome. Espelha runSinglePostApproved, mas pro carrossel.
+   */
+  async function runCarouselApproved(args: {
+    projectTitle: string
+    slides: ClaudeSlide[]
+    caption: string
+    mode: typeof DEFAULTS.mode
+  }) {
+    setError(null)
+    setResult(null)
+    setCarouselCaption(args.caption || null)
+    setLoading(true)
+    setLoadingMessage("Gerando imagens do carrossel...")
+
+    const start = performance.now()
+    const interval = setInterval(() => {
+      setLoadingMessage((prev) =>
+        prev.includes("imagens") ? "Finalizando arte..." : "Gerando imagens...",
+      )
+    }, 7000)
+
+    try {
+      const enriched: ApiSlide[] = await Promise.all(
+        args.slides.map(async (slide, i) => {
+          const base: ApiSlide = {
+            order_index: typeof slide.order_index === "number" ? slide.order_index : i,
+            title: slide.title,
+            highlight_words: slide.highlight_words ?? [],
+            subtitle: slide.subtitle ?? "",
+            body: slide.body,
+            cta_badge: slide.cta_badge,
+            image: {
+              url: null,
+              source: null,
+              attribution: null,
+              error: null,
+              prompt: slide.image_prompt ?? null,
+              unsplashQuery: slide.unsplash_query ?? null,
+              ms: 0,
+              costUsd: 0,
+            },
+          }
+          const prompt = (slide.image_prompt ?? "").trim()
+          const entity = (slide.image_entity ?? "").trim()
+
+          // 1) Se o slide é sobre uma entidade real (empresa/pessoa/marca),
+          //    tenta foto/logo real na Wikipedia antes de cair pra IA.
+          if (entity) {
+            try {
+              const wRes = await fetch("/api/post-unico/image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode: "wikimedia", query: entity }),
+              })
+              const wData = await wRes.json()
+              if (wRes.ok && wData?.url) {
+                base.image.url = wData.url
+                base.image.source = "wikimedia"
+                // atribuição do Wikimedia tem shape próprio; sem overlay de crédito por ora
+                base.image.attribution = null
+                base.image.ms = wData.ms ?? 0
+                return base
+              }
+              // sem foto na Wikipedia → segue pro fallback de IA abaixo
+            } catch {
+              // erro na busca → segue pro fallback de IA abaixo
+            }
+          }
+
+          // 2) Fallback: imagem gerada por IA com o image_prompt.
+          if (!prompt) return base
+          try {
+            const res = await fetch("/api/editorial/generate-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prompt, aspectRatio: "4:5" }),
+            })
+            const data = await res.json()
+            if (!res.ok || !data?.success) {
+              base.image.error = data?.error ?? "falha ao gerar imagem"
+              return base
+            }
+            base.image.url = data.url
+            base.image.source = "ai"
+            base.image.ms = data.ms ?? 0
+            return base
+          } catch (err) {
+            base.image.error =
+              err instanceof Error ? err.message : "erro de rede"
+            return base
+          }
+        }),
+      )
+
+      const totalMs = performance.now() - start
+      setResult({
+        project_title: args.projectTitle || "Carrossel",
+        slides: enriched,
+        metrics: {
+          claude: {
+            ms: 0,
+            inputTokens: 0,
+            outputTokens: 0,
+            cacheCreationInputTokens: 0,
+            cacheReadInputTokens: 0,
+            costUsd: 0,
+          },
+          images: { totalCostUsd: 0, parallelMs: totalMs },
+          total: { ms: totalMs, costUsd: 0 },
+        },
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "erro ao montar carrossel")
+    } finally {
+      clearInterval(interval)
+      setLoading(false)
+    }
+  }
+
   function onGenerate() {
     void runGeneration({
       topic,
@@ -896,6 +1080,21 @@ export default function TestePage() {
           if (typeof p.brand.instagram_handle === "string") {
             setHandle(`@${p.brand.instagram_handle}`)
           }
+          // Conteúdo já aprovado no wizard → monta design + foto sem regenerar texto
+          if (p.kind === "approved" && p.approvedContent && typeof p.skeletonId === "string") {
+            setSinglePostBriefing(typeof p.briefing === "string" ? p.briefing : "")
+            setSinglePostSkeleton(p.skeletonId)
+            if (p.autoRun) {
+              void runSinglePostApproved({
+                brand: p.brand as PostBrand,
+                skeletonId: p.skeletonId,
+                content: p.approvedContent,
+                photoPrompt: typeof p.photoPrompt === "string" ? p.photoPrompt : null,
+                photoEntity: typeof p.photoEntity === "string" ? p.photoEntity : null,
+              })
+            }
+            return
+          }
           const briefing = (p.kind === "template" ? p.rawContent : p.briefing) as string
           const skeleton = p.kind === "template" && typeof p.templateId === "string"
             ? p.templateId
@@ -933,6 +1132,27 @@ export default function TestePage() {
     }
     if (!parsed || typeof parsed !== "object") return
     autoRunStartedRef.current = true
+
+    // Roteiro aprovado no wizard → só gera imagens (não regenera o texto).
+    if (parsed.kind === "approved" && Array.isArray(parsed.slides)) {
+      setPageMode("carrossel")
+      if (typeof parsed.brandName === "string" && parsed.brandName) {
+        setActiveBrandName(parsed.brandName)
+      }
+      const approvedColors = Array.isArray(parsed.colors)
+        ? parsed.colors.filter((c: unknown): c is string => typeof c === "string").slice(0, 3)
+        : null
+      if (approvedColors && approvedColors.length === 3) setColors(approvedColors)
+      if (parsed.autoRun) {
+        void runCarouselApproved({
+          projectTitle: typeof parsed.projectTitle === "string" ? parsed.projectTitle : "",
+          slides: parsed.slides as ClaudeSlide[],
+          caption: typeof parsed.caption === "string" ? parsed.caption : "",
+          mode,
+        })
+      }
+      return
+    }
 
     const sanitizedColors = Array.isArray(parsed.colors)
       ? parsed.colors.filter((c: unknown): c is string => typeof c === "string").slice(0, 3)
@@ -1520,6 +1740,28 @@ export default function TestePage() {
                 <h2 className="text-2xl font-bold">{result.project_title}</h2>
                 <MetricsBar metrics={result.metrics} />
               </div>
+
+              {carouselCaption && (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Legenda do Instagram
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(carouselCaption)
+                      }}
+                      className="text-xs text-brand-400 hover:text-brand-300"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {carouselCaption}
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                 {result.slides.map((slide) => (
@@ -2206,7 +2448,13 @@ export default function TestePage() {
           totalSlides={result.slides.length}
           onSave={(updated) => {
             const newSlides = [...result.slides]
-            newSlides[editingIndex] = { ...newSlides[editingIndex], ...updated }
+            newSlides[editingIndex] = {
+              ...newSlides[editingIndex],
+              ...updated,
+              // preserva os metadados da imagem (prompt/query/ms/cost) que o
+              // modal não carrega, aplicando só url/source/attribution/error.
+              image: { ...newSlides[editingIndex].image, ...updated.image },
+            }
             setResult({ ...result, slides: newSlides })
           }}
           onClose={() => setEditingIndex(null)}

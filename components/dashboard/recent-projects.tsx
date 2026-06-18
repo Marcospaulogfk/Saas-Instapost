@@ -34,7 +34,7 @@ interface RecentProjectsProps {
 export function RecentProjects({ projects }: RecentProjectsProps) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-h3 font-display font-semibold text-text-primary">Projetos recentes</h2>
         {projects.length > 0 && (
           <Link

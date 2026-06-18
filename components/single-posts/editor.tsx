@@ -174,7 +174,10 @@ export function PostUnicoEditor({
     void runGeneration({ brand, templateId, rawContent: rawBrief.trim() })
   }
 
-  async function generateImageForSlot(slot: ImageSlot, mode: "ai" | "unsplash") {
+  async function generateImageForSlot(
+    slot: ImageSlot,
+    mode: "ai" | "unsplash" | "wikimedia",
+  ) {
     const promptOrQuery = imagePromptDraft.trim()
     if (mode === "ai" && !promptOrQuery) {
       setGenerateError("Descreva a imagem desejada antes de gerar")
@@ -491,6 +494,22 @@ export function PostUnicoEditor({
                         <ImageIcon className="w-3 h-3 mr-1" />
                       )}
                       Unsplash
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-xs"
+                      onClick={() => generateImageForSlot(slot, "wikimedia")}
+                      disabled={imageLoadingSlot === slot}
+                      title="Busca foto real de pessoa/marca na Wikipedia"
+                    >
+                      {imageLoadingSlot === slot ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-3 h-3 mr-1" />
+                      )}
+                      Foto real
                     </Button>
                   </div>
                   <Input

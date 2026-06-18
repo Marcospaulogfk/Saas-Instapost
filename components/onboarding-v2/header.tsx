@@ -27,25 +27,13 @@ export function OnboardingHeader({
       <header
         className="sticky top-0 z-30"
         style={{
-          background: "var(--onb-bg-surface)",
-          borderBottom: "0.5px solid var(--onb-border-subtle)",
+          background: "rgba(10, 10, 10, 0.72)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
         }}
       >
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-8 py-5">
-          <div className="flex flex-col gap-0.5">
-            <SyncPostLogo />
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--onb-text-tertiary)",
-                marginLeft: 34,
-              }}
-            >
-              {showStep
-                ? "Configure sua conta em 5 passos simples"
-                : "Configure sua conta rapidamente"}
-            </span>
-          </div>
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-8 py-4">
+          <SyncPostLogo />
 
           {showStep && (
             <div className="flex items-center gap-4">

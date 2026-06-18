@@ -40,18 +40,14 @@ export default async function DashboardPage() {
   const greeting = getGreeting()
 
   return (
-    <div className="relative max-w-[1280px] mx-auto px-6 md:px-10 py-8 md:py-12 space-y-12">
-      <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-text-muted font-medium">
-            <span className="inline-block w-6 h-px bg-brand-600" />
-            Dashboard
-          </div>
-          <h1 className="text-[40px] md:text-[52px] font-display font-bold leading-[1.05] tracking-tight text-text-primary">
+    <div className="relative max-w-[1280px] mx-auto px-6 md:px-10 py-8 md:py-10 space-y-8">
+      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-[34px] md:text-[44px] font-display font-bold leading-[1.05] tracking-tight text-text-primary">
             {greeting},{" "}
             <span className="gradient-text">{displayName}</span>.
           </h1>
-          <p className="text-text-secondary max-w-xl">
+          <p className="text-text-secondary">
             {credits > 0
               ? "Tudo pronto pra criar o próximo carrossel."
               : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
@@ -59,7 +55,7 @@ export default async function DashboardPage() {
         </div>
 
         {credits > 0 && (
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-border-medium bg-background-secondary/60 backdrop-blur-md px-4 py-2.5">
+          <div className="inline-flex items-center gap-2.5 self-start rounded-full border border-border-medium bg-background-secondary/60 backdrop-blur-md px-4 py-2.5">
             <Sparkles className="w-3.5 h-3.5 text-brand-300" />
             <span className="text-sm text-text-primary tabular-nums font-semibold">
               {credits}
@@ -71,18 +67,17 @@ export default async function DashboardPage() {
         )}
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
-        <div className="space-y-6">
+      {/* Bloco principal: hero + atividade à esquerda, próximas datas no trilho */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
+        <div className="space-y-5">
           <QuickActionCard />
-          <PopularTemplates />
+          <ActivityChart
+            projectsCount={counts.projectsCount}
+            creditsUsedThisMonth={creditsUsed}
+          />
         </div>
         <ProximasDatasCard />
       </div>
-
-      <ActivityChart
-        projectsCount={counts.projectsCount}
-        creditsUsedThisMonth={creditsUsed}
-      />
 
       <StatsGrid
         projectsCount={counts.projectsCount}
@@ -90,6 +85,8 @@ export default async function DashboardPage() {
         creditsUsedThisMonth={creditsUsed}
         subscriptionStatus={profile?.subscription_status ?? "trial"}
       />
+
+      <PopularTemplates />
 
       <RecentProjects projects={projects} />
 

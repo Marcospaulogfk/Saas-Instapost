@@ -18,7 +18,7 @@ interface BrandsSectionProps {
 export function BrandsSection({ brands }: BrandsSectionProps) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-h3 font-display font-semibold text-text-primary">Suas marcas</h2>
         <Button
           asChild

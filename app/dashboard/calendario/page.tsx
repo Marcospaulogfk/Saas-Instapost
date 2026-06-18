@@ -25,6 +25,17 @@ import {
   type PautaStatus,
 } from "@/lib/pautas"
 import { getProximasDatas } from "@/lib/datas-comemorativas"
+import {
+  listActiveScheduledPosts,
+  deleteScheduledPost,
+} from "@/app/actions/scheduled-posts"
+import {
+  statusColor as spStatusColor,
+  statusLabel as spStatusLabel,
+  FORMATO_LABEL,
+  type ScheduledPost,
+} from "@/lib/planejar"
+import Link from "next/link"
 
 const MESES_LONG = [
   "Janeiro",
@@ -58,10 +69,26 @@ export default function CalendarioPage() {
   const [filterStatus, setFilterStatus] = useState<"todos" | PautaStatus>("todos")
   const [novaModal, setNovaModal] = useState<{ data: string } | null>(null)
   const [iaModalOpen, setIaModalOpen] = useState(false)
+  const [scheduled, setScheduled] = useState<ScheduledPost[]>([])
 
   useEffect(() => {
     setPautas(loadPautas())
+    // Carrega os posts pré-agendados (vindos do Planejador) da marca ativa.
+    listActiveScheduledPosts()
+      .then((res) => setScheduled(res.posts))
+      .catch(() => setScheduled([]))
   }, [])
+
+  function scheduledNoDia(date: Date | null): ScheduledPost[] {
+    if (!date) return []
+    const iso = formatDate(date)
+    return scheduled.filter((s) => s.scheduled_date === iso)
+  }
+
+  async function handleDeleteScheduled(id: string) {
+    setScheduled((list) => list.filter((s) => s.id !== id))
+    await deleteScheduledPost(id)
+  }
 
   const grid = useMemo(() => buildMonthGrid(year, month), [year, month])
   const datasComemorativas = useMemo(() => {
@@ -190,22 +217,34 @@ export default function CalendarioPage() {
         })}
       </div>
 
-      {/* Recomendações IA banner */}
-      <button
-        type="button"
-        onClick={() => setIaModalOpen(true)}
+      {/* Planejador IA banner — chat humanizado que monta o cronograma */}
+      <Link
+        href="/dashboard/planejar"
         className="w-full mb-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white p-4 flex items-center gap-3 transition-all text-left shadow-lg shadow-brand-900/20"
       >
         <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">Recomendações IA</p>
+          <p className="text-sm font-semibold">Planejar com IA</p>
           <p className="text-[11px] opacity-90">
-            Gere um calendário inteligente baseado nas suas inspirações
+            Um papo rápido e a IA monta seu cronograma da semana, baseado na sua marca
           </p>
         </div>
         <ChevronRight className="w-5 h-5" />
+      </Link>
+
+      {/* Recomendações IA local (sementes rápidas, sem chamar API) */}
+      <button
+        type="button"
+        onClick={() => setIaModalOpen(true)}
+        className="w-full mb-4 rounded-xl border border-border-subtle hover:bg-background-tertiary/40 text-text-secondary p-3 flex items-center gap-3 transition-all text-left"
+      >
+        <Sparkles className="w-4 h-4 text-brand-400 flex-shrink-0" />
+        <span className="text-[13px] flex-1">
+          Gerar pautas-semente rápidas (sem IA)
+        </span>
+        <ChevronRight className="w-4 h-4" />
       </button>
 
       {/* Grid mensal */}
@@ -221,6 +260,8 @@ export default function CalendarioPage() {
           {grid.map((cell, i) => {
             const isToday = cell && cell.toDateString() === today.toDateString()
             const dayPautas = pautasNoDia(cell)
+            const daySched = scheduledNoDia(cell)
+            const totalItems = dayPautas.length + daySched.length
             const dataCom = dataComemorativaNoDia(cell)
             const isOtherMonth = cell && cell.getMonth() !== month
             return (
@@ -258,7 +299,18 @@ export default function CalendarioPage() {
                       )}
                     </div>
                     <div className="flex-1 space-y-1 overflow-hidden">
-                      {dayPautas.slice(0, 3).map((p) => (
+                      {daySched.slice(0, 3).map((s) => (
+                        <div
+                          key={s.id}
+                          className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1"
+                          style={{ background: "rgba(115,32,230,0.12)" }}
+                          title={`${s.title} (Planejador IA)`}
+                        >
+                          <Sparkles className="w-2.5 h-2.5 text-brand-300 flex-shrink-0" />
+                          <span className="text-text-primary truncate">{s.title}</span>
+                        </div>
+                      ))}
+                      {dayPautas.slice(0, Math.max(0, 3 - daySched.length)).map((p) => (
                         <div
                           key={p.id}
                           className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1"
@@ -271,8 +323,8 @@ export default function CalendarioPage() {
                           <span className="text-text-primary truncate">{p.titulo}</span>
                         </div>
                       ))}
-                      {dayPautas.length > 3 && (
-                        <p className="text-[9px] text-text-muted">+{dayPautas.length - 3} mais</p>
+                      {totalItems > 3 && (
+                        <p className="text-[9px] text-text-muted">+{totalItems - 3} mais</p>
                       )}
                     </div>
                   </button>
@@ -282,6 +334,55 @@ export default function CalendarioPage() {
           })}
         </div>
       </div>
+
+      {/* Posts pré-agendados pela IA (Planejador) no mês */}
+      {(() => {
+        const monthSched = scheduled
+          .filter((s) => {
+            const d = new Date(s.scheduled_date + "T00:00:00")
+            return d.getMonth() === month && d.getFullYear() === year
+          })
+          .sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date))
+        if (monthSched.length === 0) return null
+        return (
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-brand-400" />
+              Pré-agendados pela IA
+            </h3>
+            <div className="space-y-2">
+              {monthSched.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-brand-600/5 border border-brand-600/20"
+                >
+                  <span className={`w-2 h-2 rounded-full ${spStatusColor(s.status)} flex-shrink-0`} />
+                  <span className="text-[11px] tabular-nums text-text-muted w-14 flex-shrink-0">
+                    {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
+                  </span>
+                  <p className="text-sm font-medium text-text-primary flex-1 truncate">
+                    {s.title}
+                  </p>
+                  <span className="hidden sm:inline text-[10px] text-text-muted">
+                    {FORMATO_LABEL[s.format] ?? s.format}
+                  </span>
+                  <span className="hidden sm:inline text-[10px] text-text-muted">
+                    {spStatusLabel(s.status)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteScheduled(s.id)}
+                    className="text-text-muted hover:text-red-400 p-1"
+                    title="Remover do calendário"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Lista de pautas filtradas */}
       {filtered.length > 0 && (

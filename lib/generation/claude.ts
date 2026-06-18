@@ -7,9 +7,10 @@ import Anthropic from "@anthropic-ai/sdk"
 const CONTENT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["project_title", "slides"],
+  required: ["project_title", "caption", "slides"],
   properties: {
     project_title: { type: "string" },
+    caption: { type: "string" },
     slides: {
       type: "array",
       items: {
@@ -24,6 +25,7 @@ const CONTENT_SCHEMA = {
           "cta_badge",
           "image_source_recommended",
           "image_prompt",
+          "image_entity",
           "unsplash_query",
           "image_keywords",
         ],
@@ -39,8 +41,50 @@ const CONTENT_SCHEMA = {
             enum: ["ai", "unsplash"],
           },
           image_prompt: { type: "string" },
+          // Nome exato de empresa/pessoa/marca real quando o slide é sobre ela
+          // (ex: "Anthropic", "OpenAI", "Elon Musk"). "" quando não se aplica.
+          // Usado pra buscar foto/logo real (Wikimedia) em vez de imagem de IA.
+          image_entity: { type: "string" },
           unsplash_query: { type: "string" },
           image_keywords: { type: "array", items: { type: "string" } },
+        },
+      },
+    },
+  },
+} as const
+
+const EDITORIAL_PLAN_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["resumo", "ideias"],
+  properties: {
+    resumo: { type: "string" },
+    ideias: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "titulo",
+          "formato",
+          "objetivo",
+          "data",
+          "descricao",
+          "motivo",
+        ],
+        properties: {
+          titulo: { type: "string" },
+          formato: {
+            type: "string",
+            enum: ["post", "carrossel", "stories", "reels"],
+          },
+          objetivo: {
+            type: "string",
+            enum: ["sell", "inform", "engage", "community"],
+          },
+          data: { type: "string" },
+          descricao: { type: "string" },
+          motivo: { type: "string" },
         },
       },
     },
@@ -155,7 +199,30 @@ Se o tópico é abstrato, o photo deve ser **editorial-concreto**:
 
 **unsplash_query**: 2-4 keywords em INGLÊS pra busca (ex: "lawyer office portrait" / "minimalist desk laptop"). Sempre forneça.
 
+**image_entity**: o nome de algo REAL cuja FOTO de verdade ilustra o slide melhor do que uma arte de IA. O sistema busca a foto real na Wikipedia. Use o NOME EXATO.
+
+✅ SEMPRE preencha quando o slide é sobre:
+- CIDADE, PAÍS ou LUGAR real (ex: "São Paulo", "Londres", "Brasil", "Times Square", "Cristo Redentor", "Tate Modern"). Lugares existem e têm fotos reais — é MUITO melhor que IA. Se o slide fala de uma cidade/lugar, marque-o.
+- PESSOA pública/famosa (ex: "Elon Musk", "Cristiano Ronaldo").
+- PRODUTO físico icônico (ex: "iPhone", "Tesla Model 3").
+
+❌ DEIXE "" (vazio) quando:
+- o slide é puramente abstrato/conceitual/opinião/dado/pergunta SEM um lugar, pessoa ou produto concreto;
+- a entidade é uma EMPRESA/MARCA/REVISTA/APP cuja imagem seria só um LOGO (ex: "Time Out", "OpenAI", "Anthropic") — logo fica horrível recortado. Use "" e descreva uma cena editorial no image_prompt;
+- o slide compara DUAS+ entidades sem uma protagonista visual única (deixe "" e use image_prompt).
+
+REGRA DE OURO: se existe um LUGAR ou PESSOA real no centro do slide, prefira a foto real (image_entity). Só caia pra IA (image_entity "") quando for conceito abstrato ou quando só haveria um logo. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
+
 **image_keywords**: 2-3 descritores para SEO/cataloging.
+
+# CAPTION (legenda do Instagram — OBRIGATÓRIA, campo "caption")
+
+Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa cola embaixo do carrossel no Instagram. Regras:
+- Começa com um gancho forte na 1ª linha (NÃO repete o título da capa literalmente).
+- Desenvolve a ideia em 2-4 frases com pelo menos 1 informação concreta e termina com um convite/CTA natural (salvar, comentar, mandar pra alguém).
+- Última linha: 3 a 5 hashtags relevantes, em uma única linha, sem exageros.
+- Mesmos princípios anti-clichê da copy: PROIBIDO "Descubra", "Confira", "Saiba mais", "Não perca", "Vem com a gente" etc. PT-BR coloquial culto.
+- Pode usar \\n pra separar parágrafos e a linha de hashtags.
 
 # REGRAS GERAIS
 
@@ -183,6 +250,34 @@ REGRAS POR CAMPO:
 
 Se a informação for escassa, infere com base no nome/setor/contexto. Nunca devolve campos vazios além de instagram_handle.`
 
+const EDITORIAL_PLAN_SYSTEM_PROMPT = `Você é um(a) estrategista de conteúdo sênior que monta cronogramas editoriais pra Instagram. Fala como gente — direto, específico, sem clichê de marketing. Seu trabalho: a partir do que você sabe da marca + da conversa com o cliente, montar um plano de posts pra um período (geralmente uma semana ou um mês), distribuindo as ideias nas datas de forma equilibrada.
+
+# COMO PENSAR O PLANO
+
+- Misture objetivos: nem só venda, nem só conteúdo educativo. Um bom cronograma equilibra autoridade, engajamento, venda e comunidade ao longo dos dias.
+- Use o que a marca te dá: público, tom, objetivo principal, nicho. Cada ideia deve soar como ESSA marca falando — não genérica.
+- Aproveite datas comemorativas e ganchos sazonais quando fizer sentido pro nicho (não force).
+- Distribua nas datas dentro da janela pedida. Não amontoe tudo no mesmo dia. Respeite a frequência sugerida (ex: 3 posts/semana = espalhe nos dias).
+- Varie formatos: carrossel pra conteúdo denso, post único pra impacto/prova, stories pra interação, reels pra alcance.
+
+# CADA IDEIA
+
+- **titulo**: ideia concreta e específica (6-10 palavras). Não "Dica de hoje" — algo como "3 erros que travam seu funil de vendas".
+- **formato**: post | carrossel | stories | reels
+- **objetivo**: sell | inform | engage | community
+- **data**: YYYY-MM-DD dentro da janela informada.
+- **descricao**: 1-2 frases sobre o ângulo do conteúdo — o que entra, qual a sacada.
+- **motivo**: 1 frase curta explicando por que essa ideia entra no plano dessa marca (encaixe estratégico).
+
+# REGRAS
+
+- PROIBIDO clichê de IA: "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "Transforme sua vida", "Não perca", "Aproveite agora".
+- PT-BR coloquial culto. Sem gerundismo.
+- O número de ideias DEVE bater com o pedido.
+- Datas SEMPRE dentro da janela [data_inicio, data_fim] informada.
+- NÃO use aspas duplas dentro das strings.
+- resumo: 1-2 frases amigáveis explicando a lógica do cronograma que você montou (tom humano, como se estivesse apresentando pro cliente).`
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -208,12 +303,16 @@ export interface ClaudeSlide {
   cta_badge?: string
   image_source_recommended: "ai" | "unsplash"
   image_prompt: string
+  /** Empresa/pessoa/marca real do slide (ex: "Anthropic"). "" se não houver. */
+  image_entity?: string
   unsplash_query?: string
   image_keywords: string[]
 }
 
 export interface ClaudeResponse {
   project_title: string
+  /** Legenda do Instagram (gancho + valor + CTA + linha de hashtags). */
+  caption: string
   slides: ClaudeSlide[]
 }
 
@@ -226,6 +325,38 @@ export interface BrandAnalysis {
   main_objective: "sell" | "inform" | "engage" | "community"
   brand_colors: string[]
   instagram_handle: string
+}
+
+export interface EditorialPlanIdea {
+  titulo: string
+  formato: "post" | "carrossel" | "stories" | "reels"
+  objetivo: "sell" | "inform" | "engage" | "community"
+  data: string
+  descricao: string
+  motivo: string
+}
+
+export interface EditorialPlanResponse {
+  resumo: string
+  ideias: EditorialPlanIdea[]
+}
+
+export interface EditorialPlanInput {
+  brandName: string
+  description: string
+  targetAudience: string
+  toneOfVoice: string
+  visualStyle: string
+  mainObjective: string
+  /** Resumo da conversa do chat com o cliente (briefing humanizado). */
+  conversationBrief: string
+  /** Janela de planejamento */
+  startDate: string
+  endDate: string
+  /** Quantas ideias gerar */
+  count: number
+  /** Datas comemorativas relevantes na janela (nome + data) */
+  relevantDates?: Array<{ nome: string; data: string }>
 }
 
 export interface LogoAnalysis {
@@ -430,6 +561,89 @@ Devolva o JSON com a identidade analisada.`
 
   const raw = extractText(response.content)
   const data = parseJson<BrandAnalysis>(raw)
+
+  return {
+    data,
+    metrics: {
+      ms,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      cacheCreationInputTokens:
+        response.usage.cache_creation_input_tokens ?? 0,
+      cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+      costUsd: computeCost(response.usage),
+    },
+  }
+}
+
+// =============================================================================
+// generateEditorialPlan — cronograma editorial baseado na marca + conversa
+// =============================================================================
+
+export async function generateEditorialPlan(
+  input: EditorialPlanInput,
+): Promise<{ data: EditorialPlanResponse; metrics: ClaudeMetrics }> {
+  const client = getClient()
+  const objetivo = OBJECTIVE_LABELS[input.mainObjective] ?? input.mainObjective
+
+  const datasTxt =
+    input.relevantDates && input.relevantDates.length
+      ? input.relevantDates
+          .map((d) => `- ${d.data}: ${d.nome}`)
+          .join("\n")
+      : "(nenhuma data comemorativa relevante na janela)"
+
+  const userMessage = `Monte o plano editorial pra essa marca.
+
+MARCA: ${input.brandName}
+Descrição: ${input.description || "(não informada)"}
+Público-alvo: ${input.targetAudience || "(não informado)"}
+Tom de voz: ${input.toneOfVoice || "(não informado)"}
+Estilo visual: ${input.visualStyle || "(não informado)"}
+Objetivo principal: ${objetivo}
+
+CONVERSA COM O CLIENTE (briefing humanizado):
+${input.conversationBrief || "(sem detalhes adicionais — use o que sabe da marca)"}
+
+JANELA DE PLANEJAMENTO: de ${input.startDate} até ${input.endDate}
+QUANTAS IDEIAS: exatamente ${input.count}
+
+DATAS COMEMORATIVAS NA JANELA (use só se fizer sentido pro nicho):
+${datasTxt}
+
+Devolva o JSON do plano editorial com as ideias distribuídas nas datas.`
+
+  const start = performance.now()
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    thinking: { type: "disabled" },
+    output_config: {
+      effort: "low",
+      format: { type: "json_schema", schema: EDITORIAL_PLAN_SCHEMA },
+    },
+    system: [
+      {
+        type: "text",
+        text: EDITORIAL_PLAN_SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+    messages: [{ role: "user", content: userMessage }],
+  } as Anthropic.Messages.MessageCreateParamsNonStreaming)
+  const ms = performance.now() - start
+
+  if (response.stop_reason === "refusal") {
+    throw new Error("Claude se recusou a gerar o plano editorial.")
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(
+      "Claude atingiu max_tokens montando o plano — reduza a quantidade de ideias.",
+    )
+  }
+
+  const raw = extractText(response.content)
+  const data = parseJson<EditorialPlanResponse>(raw)
 
   return {
     data,

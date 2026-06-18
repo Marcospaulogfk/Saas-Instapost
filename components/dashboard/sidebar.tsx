@@ -5,24 +5,26 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
-  LayoutDashboard,
-  Sparkles,
-  Folder,
-  Building2,
-  Layers,
+  House,
+  SquarePen,
+  Library,
+  Store,
+  LayoutTemplate,
   Settings,
   ChevronUp,
   ChevronsUpDown,
   Plus,
-  FileText,
+  Images,
   Check,
   Loader2,
   Pencil,
   Lightbulb,
-  Calendar,
-  Users,
+  CalendarDays,
+  CalendarPlus,
+  UsersRound,
   Trophy,
   Zap,
+  Building2,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -56,16 +58,17 @@ interface DashboardSidebarProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Criar", href: "/dashboard/criar", icon: Sparkles, badge: "Novo" },
+  { name: "Dashboard", href: "/dashboard", icon: House },
+  { name: "Criar", href: "/dashboard/criar", icon: SquarePen, badge: "Novo" },
   { name: "Inspirações", href: "/dashboard/inspiracoes", icon: Lightbulb },
-  { name: "Biblioteca", href: "/dashboard/projetos", icon: Folder },
-  { name: "Calendário", href: "/dashboard/calendario", icon: Calendar },
-  { name: "Comunidade", href: "/dashboard/comunidade", icon: Users },
+  { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
+  { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
+  { name: "Calendário", href: "/dashboard/calendario", icon: CalendarDays },
+  { name: "Comunidade", href: "/dashboard/comunidade", icon: UsersRound },
   { name: "Jornada", href: "/dashboard/jornada", icon: Trophy },
-  { name: "Marcas", href: "/dashboard/marcas", icon: Building2 },
-  { name: "Templates", href: "/dashboard/templates", icon: Layers },
-  { name: "Posts únicos", href: "/dashboard/posts-unicos", icon: FileText },
+  { name: "Marcas", href: "/dashboard/marcas", icon: Store },
+  { name: "Templates", href: "/dashboard/templates", icon: LayoutTemplate },
+  { name: "Posts únicos", href: "/dashboard/posts-unicos", icon: Images },
   { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
 
@@ -111,12 +114,7 @@ export function DashboardSidebar({
   const progress = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
 
   return (
-    <aside
-      className="hidden md:flex w-64 flex-col"
-      style={{
-        background: "var(--sidebar)",
-      }}
-    >
+    <aside className="dash-sidebar-float hidden md:flex w-64 flex-col">
       {/* Brand block — logo + seletor de marca em um cartão só */}
       <div className="px-4 pt-6 pb-2">
         <Link href="/dashboard" className="flex items-center mb-5 px-2">
@@ -133,7 +131,7 @@ export function DashboardSidebar({
                   background: "rgba(255,255,255,0.03)",
                 }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "rgba(124,92,255,0.06)")
+                  (e.currentTarget.style.background = "rgba(115, 32, 230,0.06)")
                 }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
@@ -242,7 +240,7 @@ export function DashboardSidebar({
               color: "var(--text-secondary)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(124,92,255,0.08)"
+              e.currentTarget.style.background = "rgba(115, 32, 230,0.08)"
               e.currentTarget.style.color = "var(--text-primary)"
             }}
             onMouseLeave={(e) => {
@@ -252,7 +250,7 @@ export function DashboardSidebar({
           >
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(124,92,255,0.1)" }}
+              style={{ background: "rgba(115, 32, 230,0.1)" }}
             >
               <Plus className="w-4 h-4" />
             </div>
@@ -261,21 +259,21 @@ export function DashboardSidebar({
         )}
       </div>
 
-      {/* CTA Criar carrossel */}
+      {/* CTA Criar conteúdo (formato é escolhido no passo seguinte) */}
       <div className="px-4 mt-3 mb-3">
         <Link
           href="/dashboard/criar"
           className="group flex items-center justify-center gap-2 w-full h-10 rounded-lg text-sm font-semibold transition-all"
           style={{
             background:
-              "linear-gradient(180deg, #8a6cff 0%, #7C5CFF 50%, #6b4ce8 100%)",
+              "linear-gradient(180deg, #8A33EC 0%, #7320E6 50%, #5F14D6 100%)",
             color: "#ffffff",
             boxShadow:
-              "0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 4px 14px rgba(124,92,255,0.4)",
+              "0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 4px 14px rgba(115, 32, 230,0.4)",
           }}
         >
           <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
-          Criar carrossel
+          Criar conteúdo
         </Link>
       </div>
 
@@ -293,7 +291,7 @@ export function DashboardSidebar({
                   ? "var(--text-primary)"
                   : "var(--text-muted)",
                 background: isActive
-                  ? "rgba(124,92,255,0.1)"
+                  ? "rgba(115, 32, 230,0.1)"
                   : "transparent",
               }}
               onMouseEnter={(e) => {
@@ -323,7 +321,7 @@ export function DashboardSidebar({
                 <span
                   className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                   style={{
-                    background: "rgba(124,92,255,0.15)",
+                    background: "rgba(115, 32, 230,0.15)",
                     color: "var(--brand-300)",
                   }}
                 >
@@ -382,7 +380,7 @@ export function DashboardSidebar({
               style={{
                 background:
                   "linear-gradient(90deg, var(--brand-400), var(--brand-600))",
-                boxShadow: "0 0 8px rgba(124,92,255,0.5)",
+                boxShadow: "0 0 8px rgba(115, 32, 230,0.5)",
               }}
             />
           </div>
@@ -421,7 +419,7 @@ export function DashboardSidebar({
                 )}
                 <AvatarFallback
                   style={{
-                    background: "rgba(124,92,255,0.18)",
+                    background: "rgba(115, 32, 230,0.18)",
                     color: "var(--brand-300)",
                     fontSize: 11,
                     fontWeight: 600,

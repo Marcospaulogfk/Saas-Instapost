@@ -4,22 +4,24 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* === Brand (roxo SyncPost — idêntico em ambos os modos) === */
-  --brand-50:  #F5F2FF;
-  --brand-100: #ECE4FF;
-  --brand-200: #D5C2FF;
-  --brand-300: #B8A4EA;
-  --brand-400: #9D85FF;
-  --brand-500: #8B6FFF;
-  --brand-600: #7C5CFF; /* principal */
-  --brand-700: #6B4CE8;
-  --brand-800: #5B3FE0;
-  --brand-900: #3A2A6A; /* sombra */
-  --brand-950: #1F1238;
+  /* === Brand (roxo SyncPost — extraído da logo oficial) ===
+     Gradiente da logo: magenta-violeta #D53FF4 → core #7320E6 → índigo #580CE8.
+     Escala calibrada a partir desses pixels reais (ver IDENTIDADE-VISUAL.md). */
+  --brand-50:  #F6F3FE;
+  --brand-100: #EBE3FD;
+  --brand-200: #D7C5FB;
+  --brand-300: #BD9BF7;
+  --brand-400: #9C5FF1;
+  --brand-500: #832FEC;
+  --brand-600: #7320E6; /* principal — tom central da logo */
+  --brand-700: #5F14D6;
+  --brand-800: #4D0FB4;
+  --brand-900: #320B74; /* sombra */
+  --brand-950: #1D0846;
 
   /* Acento (alias do brand principal — nome legado "lime" mantido por compat) */
-  --lime: #7C5CFF;
-  --lime-dim: rgba(124, 92, 255, 0.65);
+  --lime: #7320E6;
+  --lime-dim: rgba(115, 32, 230, 0.65);
 
   /* === Funcionais (idênticas em ambos modos) === */
   /* Sucesso é roxo por decisão de marca (sem verde). Ver IDENTIDADE-VISUAL.md §2. */
@@ -44,17 +46,17 @@
 
   --border-subtle: rgba(14, 14, 14, 0.08);
   --border-medium: rgba(14, 14, 14, 0.16);
-  --border-strong: rgba(124, 92, 255, 0.35);
-  --border-glow: rgba(124, 92, 255, 0.6);
+  --border-strong: rgba(115, 32, 230, 0.35);
+  --border-glow: rgba(115, 32, 230, 0.6);
 
   /* === Identidade visual (ver IDENTIDADE-VISUAL.md) ===
      Hairlines adaptam por modo (apontam pros border-* acima).
      rule-top, border-accent e logo-gradient são constantes de marca. */
   --hairline: var(--border-subtle);
   --hairline-strong: var(--border-medium);
-  --border-accent: rgba(124, 92, 255, 0.22);
-  --rule-top: 2px solid #7C5CFF;
-  --logo-gradient: linear-gradient(135deg, #C94CF1, #8B2BEB 55%, #580CE8);
+  --border-accent: rgba(115, 32, 230, 0.22);
+  --rule-top: 2px solid #7320E6;
+  --logo-gradient: linear-gradient(135deg, #9C4DEF, #7320E6 55%, #580CE8);
 
   /* Glass / gradient backgrounds (variáveis pra trocar por modo) */
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -136,8 +138,8 @@
 
   --border-subtle: rgba(255, 255, 255, 0.03);
   --border-medium: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(124, 92, 255, 0.4);
-  --border-glow: rgba(124, 92, 255, 0.6);
+  --border-strong: rgba(115, 32, 230, 0.4);
+  --border-glow: rgba(115, 32, 230, 0.6);
 
   /* Identidade visual — hairlines do dark (alto contraste contido) */
   --hairline: rgba(255, 255, 255, 0.07);
@@ -361,23 +363,23 @@
   background: var(--background-secondary);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(124, 92, 255, 0.35);
+  background: rgba(115, 32, 230, 0.35);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 92, 255, 0.6);
+  background: rgba(115, 32, 230, 0.6);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(124, 92, 255, 0.3);
+  background: rgba(115, 32, 230, 0.3);
   color: var(--text-primary);
 }
 
 /* Focus visible */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.5), 0 0 0 4px var(--background);
+  box-shadow: 0 0 0 2px rgba(115, 32, 230, 0.5), 0 0 0 4px var(--background);
 }
 
 @layer utilities {
@@ -412,22 +414,22 @@
   /* Aurora background */
   .aurora {
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 255, 0.22), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(124, 92, 255, 0.12), transparent),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(115, 32, 230, 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(115, 32, 230, 0.12), transparent),
       radial-gradient(ellipse 60% 40% at 0% 50%, rgba(58, 42, 106, 0.5), transparent);
   }
 
   /* Grid background */
   .grid-bg {
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(115, 32, 230, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(115, 32, 230, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
   .grid-bg-fade {
     background-image:
-      linear-gradient(rgba(124, 92, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124, 92, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(115, 32, 230, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(115, 32, 230, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
     -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
             mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
@@ -459,10 +461,10 @@
     background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
   }
   .bg-gradient-aura {
-    background-image: radial-gradient(circle, rgba(124, 92, 255, 0.15) 0%, transparent 70%);
+    background-image: radial-gradient(circle, rgba(115, 32, 230, 0.15) 0%, transparent 70%);
   }
   .bg-gradient-aura-strong {
-    background-image: radial-gradient(circle, rgba(124, 92, 255, 0.3) 0%, transparent 60%);
+    background-image: radial-gradient(circle, rgba(115, 32, 230, 0.3) 0%, transparent 60%);
   }
 
   /* Shadows shortcut */

@@ -46,7 +46,7 @@ export function StatsGrid({
       delta: projectsCount > 0 ? "+12% vs mês anterior" : "Crie o primeiro",
       deltaUp: projectsCount > 0,
       icon: Sparkles,
-      sparkColor: "#B8A4EA",
+      sparkColor: "#9C5FF1",
       sparkSeed: 7 + projectsCount,
       accent: "brand" as const,
     },
@@ -66,7 +66,7 @@ export function StatsGrid({
       delta: brandsCount === 0 ? "Cadastre uma" : brandsCount === 1 ? "marca" : "marcas",
       deltaUp: null,
       icon: Building2,
-      sparkColor: "#B8A4EA",
+      sparkColor: "#9C5FF1",
       sparkSeed: 23 + brandsCount,
       accent: "brand" as const,
     },
@@ -76,7 +76,7 @@ export function StatsGrid({
       delta: isActivePlan ? "Ativo" : "Faça upgrade",
       deltaUp: isActivePlan,
       icon: Crown,
-      sparkColor: isActivePlan ? "#7C5CFF" : "#B8A4EA",
+      sparkColor: isActivePlan ? "#7320E6" : "#9C5FF1",
       sparkSeed: 41,
       accent: (isActivePlan ? "lime" : "brand") as "lime" | "brand",
     },
@@ -127,12 +127,12 @@ function StatCard({ stat, index }: StatCardProps) {
 
   const isLime = stat.accent === "lime"
   const iconBg = isLime
-    ? "bg-[rgba(124,92,255,0.12)] border-[rgba(124,92,255,0.4)]"
+    ? "bg-[rgba(115, 32, 230,0.12)] border-[rgba(115, 32, 230,0.4)]"
     : "bg-brand-500/10 border-brand-500/30"
   const iconColor = isLime ? "text-lime" : "text-brand-300"
-  const hoverBorder = isLime ? "hover:border-[rgba(124,92,255,0.4)]" : "hover:border-brand-600/50"
+  const hoverBorder = isLime ? "hover:border-[rgba(115, 32, 230,0.4)]" : "hover:border-brand-600/50"
   const hoverShadow = isLime ? "hover:glow-lime" : "hover:shadow-glow-sm"
-  const spotlightColor = isLime ? "rgba(124,92,255,0.18)" : "rgba(184,164,234,0.18)"
+  const spotlightColor = isLime ? "rgba(115, 32, 230,0.18)" : "rgba(184,164,234,0.18)"
 
   return (
     <motion.div

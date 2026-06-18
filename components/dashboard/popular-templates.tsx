@@ -37,8 +37,7 @@ export function PopularTemplates() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             whileHover={{ y: -4 }}
-            className="group relative aspect-[4/5] rounded-xl overflow-hidden bg-surface-2 transition-colors cursor-pointer"
-            style={{ borderTop: "var(--rule-top)", boxShadow: "inset 0 0 0 1px var(--hairline)" }}
+            className="dash-template-card group relative aspect-[4/5] rounded-xl overflow-hidden cursor-pointer"
           >
             <div className="absolute inset-x-0 bottom-0 p-4">
               <h3 className="font-display font-semibold text-text-primary">{template.name}</h3>

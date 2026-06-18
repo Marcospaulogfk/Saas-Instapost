@@ -37,7 +37,7 @@ const BRAND_PRESETS: Record<string, PostBrand> = {
     name: "SYNCPOST",
     monogram: "SP",
     profession: "PRODUTO",
-    brand_colors: ["#0A0A0A", "#7C5CFF", "#B8A4EA"],
+    brand_colors: ["#0A0A0A", "#7320E6", "#9C5FF1"],
     logo_url: null,
     phone: null,
     website: "syncpost.com.br",

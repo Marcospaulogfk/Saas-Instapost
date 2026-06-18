@@ -190,7 +190,7 @@ function CriarEditorialInner() {
               <p className="text-text-secondary mb-6">{progress.step}</p>
               <div className="w-full h-2 bg-background-secondary rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-lime shadow-[0_0_8px_rgba(124,92,255,0.5)]"
+                  className="h-full bg-lime shadow-[0_0_8px_rgba(115, 32, 230,0.5)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress.current}%` }}
                   transition={{ duration: 0.3 }}

@@ -176,6 +176,88 @@ export const INSPIRACOES: Inspiracao[] = [
   },
 ]
 
+/** Contexto mínimo da marca pra personalizar as inspirações. */
+export interface BrandContext {
+  name: string
+  description: string | null
+  target_audience: string | null
+  tone_of_voice: string | null
+  main_objective: string | null
+}
+
+/** Mapeia o objetivo da marca (sell/inform/...) pra categoria de inspiração. */
+function objetivoToCategoria(
+  objetivo: string | null,
+): InspiracaoCategoria | null {
+  switch (objetivo) {
+    case "sell":
+      return "venda"
+    case "inform":
+      return "autoridade"
+    case "engage":
+      return "engajamento"
+    case "community":
+      return "comunidade"
+    default:
+      return null
+  }
+}
+
+/** Infere o nicho aproximado a partir da descrição/público da marca. */
+export function inferNicho(brand: BrandContext): InspiracaoNicho {
+  const hay = `${brand.description ?? ""} ${brand.target_audience ?? ""}`.toLowerCase()
+  const map: Array<[InspiracaoNicho, string[]]> = [
+    ["advocacia", ["advog", "jurídic", "juridic", "direito", "escritório de advocacia"]],
+    ["fitness", ["fitness", "academia", "treino", "personal", "musculação"]],
+    ["beleza", ["beleza", "estética", "estetica", "salão", "salao", "cabelo", "maquiagem"]],
+    ["alimentacao", ["restaurante", "comida", "food", "gastronom", "delivery", "confeitaria"]],
+    ["tech", ["tech", "software", "saas", "tecnologia", "app", "startup", "dev"]],
+    ["educacao", ["curso", "educa", "ensino", "escola", "professor", "mentoria"]],
+    ["imobiliario", ["imóv", "imov", "imobiliár", "imobiliar", "corretor", "aluguel"]],
+    ["moda", ["moda", "roupa", "vestuário", "vestuario", "loja de roupa", "boutique"]],
+    ["saude", ["saúde", "saude", "clínica", "clinica", "médic", "medic", "psicólog", "psicolog", "nutri"]],
+  ]
+  for (const [nicho, terms] of map) {
+    if (terms.some((t) => hay.includes(t))) return nicho
+  }
+  return "geral"
+}
+
+/**
+ * Retorna inspirações personalizadas pra marca: filtra por nicho + prioriza
+ * o objetivo principal, e injeta o nome/contexto da marca no briefing.
+ */
+export function getInspiracoesParaMarca(
+  brand: BrandContext,
+): Array<Inspiracao & { briefing: string; personalizada: boolean }> {
+  const nicho = inferNicho(brand)
+  const categoriaPrioritaria = objetivoToCategoria(brand.main_objective)
+  const base = getInspiracoesByNicho(nicho)
+
+  // Ordena: categoria do objetivo principal primeiro, depois trends, depois resto.
+  const ordered = [...base].sort((a, b) => {
+    const aPrio = a.categoria === categoriaPrioritaria ? 0 : a.trend ? 1 : 2
+    const bPrio = b.categoria === categoriaPrioritaria ? 0 : b.trend ? 1 : 2
+    return aPrio - bPrio
+  })
+
+  const contexto = [
+    `Esse conteúdo é da marca "${brand.name}".`,
+    brand.description ? `Sobre a marca: ${brand.description}.` : "",
+    brand.target_audience ? `Público-alvo: ${brand.target_audience}.` : "",
+    brand.tone_of_voice ? `Tom de voz: ${brand.tone_of_voice}.` : "",
+    "Adapte o conteúdo abaixo pra essa marca específica, sem genérico.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+
+  return ordered.map((i) => ({
+    ...i,
+    briefing: `${contexto}\n\n${i.briefing}`,
+    personalizada: true,
+  }))
+}
+
 export function getInspiracoesByNicho(nicho: InspiracaoNicho): Inspiracao[] {
   if (nicho === "geral") return INSPIRACOES
   return INSPIRACOES.filter(

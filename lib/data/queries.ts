@@ -2,6 +2,7 @@ import { cache } from "react"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getActiveBrandIdFromCookie } from "@/lib/active-brand"
 
 const DEV_MODE_ENABLED =
   process.env.DEV_MODE === "true" &&
@@ -257,6 +258,21 @@ export async function listProjectsByBrand(
   if (error || !data) return []
   return data as ProjectSummary[]
 }
+
+/**
+ * Resolve a marca ativa server-side: usa o cookie de marca ativa e cai
+ * na primeira marca do usuario como fallback. Retorna a marca completa
+ * (com description, target_audience, tone_of_voice, etc).
+ */
+export const getActiveBrand = cache(async (): Promise<Brand | null> => {
+  const brands = await listBrands()
+  if (brands.length === 0) return null
+  const cookieId = await getActiveBrandIdFromCookie()
+  const matched =
+    (cookieId && brands.find((b) => b.id === cookieId)) || brands[0]
+  if (!matched) return null
+  return getBrandById(matched.id)
+})
 
 export async function getDashboardCounts() {
   const { supabase, user } = await requireUser()

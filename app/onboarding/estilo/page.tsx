@@ -230,7 +230,7 @@ export default function EstiloPage() {
                   style={{
                     border: `1px dashed ${dragOver ? "var(--onb-primary)" : "var(--onb-border-default)"}`,
                     background: dragOver
-                      ? "rgba(124, 92, 255, 0.04)"
+                      ? "rgba(115, 32, 230, 0.04)"
                       : "transparent",
                   }}
                 >

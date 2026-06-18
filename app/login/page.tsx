@@ -69,11 +69,11 @@ function LoginPageInner() {
       {/* === LADO ESQUERDO: showcase antigravity + storytelling === */}
       <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-black">
         {/* Base preto profundo */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(124,92,255,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(80,40,160,0.3),transparent_60%),linear-gradient(135deg,#000000_0%,#160B26_50%,#000000_100%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(115, 32, 230,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(80,40,160,0.3),transparent_60%),linear-gradient(135deg,#000000_0%,#160B26_50%,#000000_100%)] pointer-events-none" />
         <div className="absolute inset-0 grid-bg-fade opacity-20 pointer-events-none" />
 
         {/* Orbs animados — atrás dos cards */}
-        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-[#7C5CFF]/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-[#7320E6]/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-violet-700/20 rounded-full blur-3xl animate-pulse-glow pointer-events-none" style={{ animationDelay: "1.5s" }} />
 
         {/* Sobreposição preta — escurece o fundo e faz os cards saltarem */}
@@ -102,7 +102,7 @@ function LoginPageInner() {
         >
           <h2 className="text-5xl font-display font-bold leading-tight text-white">
             A IA cria.{" "}
-            <span className="block bg-gradient-to-r from-violet-200 via-[#B8A4EA] to-violet-200 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-violet-200 via-[#9C5FF1] to-violet-200 bg-clip-text text-transparent">
               Você publica.
             </span>
           </h2>
@@ -123,8 +123,8 @@ function LoginPageInner() {
                 transition={{ delay: 0.3 + i * 0.1 }}
                 className="flex items-center gap-3 text-white/80"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#7C5CFF]/15 border border-[#7C5CFF]/30 flex items-center justify-center backdrop-blur-sm">
-                  <item.icon className="w-4 h-4 text-[#B8A4EA]" />
+                <div className="w-8 h-8 rounded-lg bg-[#7320E6]/15 border border-[#7320E6]/30 flex items-center justify-center backdrop-blur-sm">
+                  <item.icon className="w-4 h-4 text-[#9C5FF1]" />
                 </div>
                 <span className="text-sm">{item.label}</span>
               </motion.div>
@@ -158,7 +158,7 @@ function LoginPageInner() {
       <div className="relative flex items-center justify-center p-6 lg:p-10 bg-black">
         {/* Mobile-only background */}
         <div className="lg:hidden absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,255,0.35),transparent_60%),linear-gradient(180deg,#000000_0%,#1C1227_60%,#000000_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(115, 32, 230,0.35),transparent_60%),linear-gradient(180deg,#000000_0%,#1C1227_60%,#000000_100%)]" />
           <div className="absolute inset-0 grid-bg-fade opacity-20" />
         </div>
 
@@ -187,7 +187,7 @@ function LoginPageInner() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 mb-5 border-white/10 text-white hover:border-[#7C5CFF]/50 hover:bg-[#7C5CFF]/5 bg-white/[0.03] backdrop-blur-sm"
+            className="w-full h-12 mb-5 border-white/10 text-white hover:border-[#7320E6]/50 hover:bg-[#7320E6]/5 bg-white/[0.03] backdrop-blur-sm"
             onClick={onGoogle}
             disabled={isPending}
           >
@@ -215,7 +215,7 @@ function LoginPageInner() {
                   placeholder="seu@email.com"
                   {...form.register("email")}
                   aria-invalid={!!form.formState.errors.email}
-                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7C5CFF]/50 focus:shadow-[0_0_20px_rgba(124,92,255,0.15)]"
+                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7320E6]/50 focus:shadow-[0_0_20px_rgba(115, 32, 230,0.15)]"
                 />
               </div>
               {form.formState.errors.email && (
@@ -230,7 +230,7 @@ function LoginPageInner() {
                 </label>
                 <Link
                   href="/recuperar-senha"
-                  className="text-xs text-[#B8A4EA] hover:text-[#D5C8F0] transition-colors"
+                  className="text-xs text-[#9C5FF1] hover:text-[#D5C8F0] transition-colors"
                 >
                   Esqueci a senha
                 </Link>
@@ -244,7 +244,7 @@ function LoginPageInner() {
                   placeholder="••••••••"
                   {...form.register("password")}
                   aria-invalid={!!form.formState.errors.password}
-                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7C5CFF]/50 focus:shadow-[0_0_20px_rgba(124,92,255,0.15)]"
+                  className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 focus:border-[#7320E6]/50 focus:shadow-[0_0_20px_rgba(115, 32, 230,0.15)]"
                 />
               </div>
               {form.formState.errors.password && (
@@ -261,7 +261,7 @@ function LoginPageInner() {
             <Button
               type="submit"
               size="lg"
-              className="w-full h-12 group bg-[#7C5CFF] hover:bg-[#6B4CE8] text-white border-0"
+              className="w-full h-12 group bg-[#7320E6] hover:bg-[#5F14D6] text-white border-0"
               disabled={isPending}
             >
               {isPending ? (
@@ -280,7 +280,7 @@ function LoginPageInner() {
 
           <p className="text-center text-sm text-white/60 mt-6">
             Não tem conta?{" "}
-            <Link href="/cadastro" className="text-[#B8A4EA] hover:text-[#D5C8F0] font-medium transition-colors">
+            <Link href="/cadastro" className="text-[#9C5FF1] hover:text-[#D5C8F0] font-medium transition-colors">
               Criar conta grátis
             </Link>
           </p>

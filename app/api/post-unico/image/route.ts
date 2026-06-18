@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { generateImage } from "@/lib/generation/fal"
 import { searchUnsplash } from "@/lib/generation/unsplash"
+import { searchWikimedia } from "@/lib/generation/wikimedia"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
 
 interface RequestBody {
-  mode: "ai" | "unsplash"
+  mode: "ai" | "unsplash" | "wikimedia"
   prompt?: string
   query?: string
 }
@@ -19,7 +20,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 })
   }
 
-  if (body.mode !== "ai" && body.mode !== "unsplash") {
+  if (
+    body.mode !== "ai" &&
+    body.mode !== "unsplash" &&
+    body.mode !== "wikimedia"
+  ) {
     return NextResponse.json({ error: "mode inválido" }, { status: 400 })
   }
 
@@ -46,6 +51,29 @@ export async function POST(req: Request) {
     if (!query) {
       return NextResponse.json({ error: "query obrigatória" }, { status: 400 })
     }
+
+    if (body.mode === "wikimedia") {
+      const result = await searchWikimedia(query)
+      if (!result) {
+        return NextResponse.json(
+          {
+            error: `Sem foto na Wikipedia pra "${query}". Tente outro nome ou use Unsplash/IA.`,
+          },
+          { status: 404 },
+        )
+      }
+      return NextResponse.json({
+        url: result.url,
+        source: "wikimedia",
+        attribution: {
+          title: result.title,
+          sourcePage: result.sourcePage,
+        },
+        costUsd: 0,
+        ms: result.ms,
+      })
+    }
+
     const result = await searchUnsplash(query)
     return NextResponse.json({
       url: result.url,

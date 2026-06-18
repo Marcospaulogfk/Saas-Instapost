@@ -54,9 +54,14 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
       const result = await fal.subscribe('fal-ai/flux-pro/v1.1', {
         input: {
           prompt: enhancedPrompt,
-          image_size: ASPECT_TO_SIZE[params.aspectRatio || '4:5'],
-          num_inference_steps: 28,
-          guidance_scale: 3.5,
+          image_size: ASPECT_TO_SIZE[params.aspectRatio || '4:5'] as
+            | 'portrait_4_3'
+            | 'square_hd'
+            | 'landscape_16_9'
+            | 'portrait_16_9',
+          num_inference_steps: 32,
+          // guidance mais alto = imagem mais fiel ao prompt (menos "viagem").
+          guidance_scale: 4.5,
           num_images: 1,
           enable_safety_checker: true,
         },
@@ -87,15 +92,16 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
 export async function generateImagesForSlide(slide: EditorialSlide): Promise<string[]> {
   if (!slide.imagePrompts?.length) return []
 
-  // Style baseado no layoutType
+  // Style baseado no layoutType.
+  // Slides de conteúdo (demo/novidade/prova) usam 'editorial' em vez de
+  // 'minimal': minimal adiciona muito espaço vazio e dilui o sujeito, o que
+  // fazia a imagem "fugir" do assunto. Editorial mantém o sujeito nítido.
   const style: GenerateImageParams['style'] =
     slide.layoutType === 'sepia'
       ? 'sepia'
       : slide.layoutType === 'capa'
         ? 'cinematic'
-        : slide.layoutType === 'texto-foto'
-          ? 'editorial'
-          : 'minimal'
+        : 'editorial'
 
   // Aspect ratio baseado em variant
   const aspectRatio: GenerateImageParams['aspectRatio'] =

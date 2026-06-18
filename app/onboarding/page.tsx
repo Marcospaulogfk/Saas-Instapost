@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Globe, Instagram, Pencil, Sparkles, ArrowRight, Loader2 } from "lucide-react"
+import { Globe, Instagram, Pencil, ArrowRight, Loader2 } from "lucide-react"
 import { OnboardingHeader } from "@/components/onboarding-v2/header"
 import { useOnboardingState } from "@/lib/onboarding/store"
 
@@ -55,30 +55,40 @@ export default function OnboardingEntryPage() {
           className="mx-auto w-full max-w-[560px] px-8 py-16"
         >
           <div className="mb-10 flex flex-col items-center text-center">
-            <div
-              className="onb-icon-circle mb-5"
-              style={{ width: 56, height: 56 }}
-            >
-              <Sparkles size={24} strokeWidth={2} />
-            </div>
             <h1
               style={{
-                fontSize: 26,
-                fontWeight: 600,
-                letterSpacing: "-0.025em",
+                fontSize: 34,
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
                 color: "var(--onb-text-primary)",
-                marginBottom: 6,
+                marginBottom: 10,
               }}
             >
-              Vamos agilizar!
+              Vamos{" "}
+              <span
+                style={{
+                  background:
+                    "linear-gradient(90deg, #9C5FF1 0%, #7320E6 60%, #5F14D6 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  color: "transparent",
+                }}
+              >
+                agilizar
+              </span>
             </h1>
             <p
               style={{
-                fontSize: 14,
+                fontSize: 15,
+                lineHeight: 1.5,
                 color: "var(--onb-text-secondary)",
+                maxWidth: 380,
               }}
             >
-              Podemos preencher quase tudo automaticamente usando IA
+              Conecte sua marca e a IA preenche cores, tom de voz e identidade
+              pra você. Em segundos.
             </p>
           </div>
 

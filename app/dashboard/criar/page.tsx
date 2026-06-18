@@ -23,8 +23,23 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { ApprovalStep, type ApprovalDraft } from "./ApprovalStep"
+import {
+  CarouselApprovalStep,
+  type CarouselDraft,
+} from "./CarouselApprovalStep"
+import type { SkeletonContent } from "@/lib/single-posts/skeletons"
+import type { ClaudeSlide } from "@/lib/generation/claude"
 
-type StepId = 1 | 2 | 3
+type StepId = 1 | 2 | 3 | 4
+
+/** Marca demo usada pelo wizard ao empurrar pra /teste. */
+const WIZARD_BRAND = {
+  id: "wizard-brand",
+  name: "Marca Demo",
+  brand_colors: ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+  instagram_handle: "marca",
+}
 
 type Formato = {
   id: string
@@ -40,7 +55,7 @@ type Formato = {
 const FORMATOS: Formato[] = [
   {
     id: "post-portrait",
-    label: "Post Portrait",
+    label: "Post Vertical",
     size: "1080 × 1350px",
     pageMode: "post-unico",
     format: "post",
@@ -50,7 +65,7 @@ const FORMATOS: Formato[] = [
   },
   {
     id: "carrossel-portrait",
-    label: "Carrossel Portrait",
+    label: "Carrossel Vertical",
     size: "1080 × 1350px",
     pageMode: "carrossel",
     format: "post",
@@ -96,6 +111,23 @@ export default function CriarWizardPage() {
   const [refinando, setRefinando] = useState(false)
   const [refineErr, setRefineErr] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // --- Modo "A partir de Link" ---
+  const [linkUrl, setLinkUrl] = useState("")
+  const [analisandoLink, setAnalisandoLink] = useState(false)
+  const [linkErr, setLinkErr] = useState<string | null>(null)
+
+  // --- Etapa de aprovação (post-único) ---
+  const [approvalDraft, setApprovalDraft] = useState<ApprovalDraft | null>(null)
+  const [approvalLoading, setApprovalLoading] = useState(false)
+  const [approvalErr, setApprovalErr] = useState<string | null>(null)
+  const [approving, setApproving] = useState(false)
+
+  // --- Etapa de aprovação (carrossel) ---
+  const [carouselDraft, setCarouselDraft] = useState<CarouselDraft | null>(null)
+  const [carouselLoading, setCarouselLoading] = useState(false)
+  const [carouselErr, setCarouselErr] = useState<string | null>(null)
+  const [carouselApproving, setCarouselApproving] = useState(false)
 
   // Pré-preenche briefing se vier de Inspiração
   useEffect(() => {
@@ -162,85 +194,268 @@ export default function CriarWizardPage() {
     }
   }
 
-  function handleGerar() {
-    if (!formato || !canFinish()) return
-    setSubmitting(true)
-    const finalBriefing = (promptRefinado ?? briefing).trim()
-    if (formato.pageMode === "post-unico") {
-      // Post único / Stories único — vai pra /teste com payload
-      try {
-        sessionStorage.setItem(
-          "syncpost_pending_post_unico",
-          JSON.stringify({
-            kind: "skeleton",
-            brand: {
-              id: "wizard-brand",
-              name: "Marca Demo",
-              brand_colors: ["#7C3AED", "#0A0A0F", "#FAF8F5"],
-              instagram_handle: "marca",
-            },
-            briefing: finalBriefing,
-            autoRun: true,
-            ts: Date.now(),
-          }),
-        )
-      } catch {}
-      router.push(`/teste?format=${formato.format}`)
+  /** Extrai o conteúdo de um link e preenche o briefing com o resumo da IA. */
+  async function analisarLink() {
+    const url = linkUrl.trim()
+    if (url.length < 4) {
+      setLinkErr("Cole um link válido")
       return
     }
-    // Carrossel
+    setLinkErr(null)
+    setAnalisandoLink(true)
+    try {
+      const res = await fetch("/api/extract-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          formato: formato?.id ?? "post-portrait",
+          objetivo,
+          abordagem,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setLinkErr(data.error ?? "erro ao analisar o link")
+        return
+      }
+      setBriefing(data.briefing ?? "")
+      setPromptRefinado(null)
+    } catch (err) {
+      setLinkErr(err instanceof Error ? err.message : "erro de rede")
+    } finally {
+      setAnalisandoLink(false)
+    }
+  }
+
+  /** Mapeia os slots do skeleton pros 3 campos editáveis da aprovação. */
+  function draftFromContent(
+    skeletonId: string,
+    content: SkeletonContent,
+    caption: string,
+    photoPrompt: string | null,
+    photoEntity: string | null = null,
+  ): ApprovalDraft {
+    const title =
+      content.title ??
+      (content.title_lines ? content.title_lines.join(" ") : "") ??
+      ""
+    const body = content.body ?? content.subtitle ?? ""
+    return {
+      skeletonId,
+      title,
+      body,
+      caption,
+      rawContent: content,
+      photoPrompt,
+      photoEntity,
+    }
+  }
+
+  /** Gera SÓ o texto (sem foto) e abre a tela de revisão/aprovação. */
+  async function gerarTextoParaAprovacao() {
+    if (!formato) return
+    const finalBriefing = (promptRefinado ?? briefing).trim()
+    setApprovalErr(null)
+    setApprovalLoading(true)
+    setStep(4)
+    try {
+      const res = await fetch("/api/post-unico/free-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand: WIZARD_BRAND,
+          briefing: finalBriefing,
+          text_only: true,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setApprovalErr(data.error ?? "erro ao gerar conteúdo")
+        return
+      }
+      setApprovalDraft(
+        draftFromContent(
+          data.skeleton_id,
+          data.content ?? {},
+          data.caption ?? "",
+          data.photo_prompt ?? null,
+          data.image_entity ?? null,
+        ),
+      )
+    } catch (err) {
+      setApprovalErr(err instanceof Error ? err.message : "erro de rede")
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  /** Empurra o conteúdo aprovado pra /teste montar o design (sem regerar texto). */
+  function aprovarECriar() {
+    if (!formato || !approvalDraft) return
+    setApproving(true)
+    // Reconstrói o content do skeleton com as edições do usuário aplicadas.
+    const editedContent: SkeletonContent = { ...approvalDraft.rawContent }
+    if (approvalDraft.rawContent.title_lines) {
+      editedContent.title_lines = approvalDraft.title.split(/\s*\n\s*/)
+      editedContent.title = approvalDraft.title
+    } else {
+      editedContent.title = approvalDraft.title
+    }
+    if (approvalDraft.rawContent.body !== undefined) {
+      editedContent.body = approvalDraft.body
+    } else if (approvalDraft.rawContent.subtitle !== undefined) {
+      editedContent.subtitle = approvalDraft.body
+    } else if (approvalDraft.body.trim()) {
+      editedContent.body = approvalDraft.body
+    }
     try {
       sessionStorage.setItem(
-        "syncpost_pending_generation",
+        "syncpost_pending_post_unico",
         JSON.stringify({
-          topic: finalBriefing,
-          objective: objetivo === "vender" ? "sell" : "engage",
-          template: "editorial",
-          nSlides: formato.slides ?? 7,
+          kind: "approved",
+          brand: WIZARD_BRAND,
+          skeletonId: approvalDraft.skeletonId,
+          approvedContent: editedContent,
+          caption: approvalDraft.caption,
+          photoPrompt: approvalDraft.photoPrompt,
+          photoEntity: approvalDraft.photoEntity ?? null,
+          briefing: (promptRefinado ?? briefing).trim(),
           autoRun: true,
           ts: Date.now(),
         }),
       )
     } catch {}
-    router.push("/teste")
+    router.push(`/teste?format=${formato.format}`)
   }
+
+  /** Gera SÓ o roteiro do carrossel (texto + legenda) e abre a aprovação. */
+  async function gerarRoteiroParaAprovacao() {
+    if (!formato) return
+    const finalBriefing = (promptRefinado ?? briefing).trim()
+    setCarouselErr(null)
+    setCarouselLoading(true)
+    setStep(4)
+    try {
+      const res = await fetch("/api/editorial/generate-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: finalBriefing,
+          objective: objetivo === "vender" ? "sell" : "engage",
+          template: "editorial",
+          brandName: WIZARD_BRAND.name,
+          handle: WIZARD_BRAND.instagram_handle,
+          colors: WIZARD_BRAND.brand_colors,
+          desiredSlides: formato.slides ?? 7,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setCarouselErr(data.error ?? "erro ao gerar roteiro")
+        return
+      }
+      setCarouselDraft({
+        projectTitle: data.project_title ?? "",
+        slides: Array.isArray(data.slides) ? data.slides : [],
+        caption: data.caption ?? "",
+      })
+    } catch (err) {
+      setCarouselErr(err instanceof Error ? err.message : "erro de rede")
+    } finally {
+      setCarouselLoading(false)
+    }
+  }
+
+  /** Empurra o roteiro aprovado pra /teste montar o design (só gera imagens). */
+  function aprovarECriarCarrossel() {
+    if (!formato || !carouselDraft) return
+    setCarouselApproving(true)
+    try {
+      sessionStorage.setItem(
+        "syncpost_pending_generation",
+        JSON.stringify({
+          kind: "approved",
+          projectTitle: carouselDraft.projectTitle,
+          slides: carouselDraft.slides,
+          caption: carouselDraft.caption,
+          objective: objetivo === "vender" ? "sell" : "engage",
+          template: "editorial",
+          nSlides: carouselDraft.slides.length || (formato.slides ?? 7),
+          colors: WIZARD_BRAND.brand_colors,
+          brandName: WIZARD_BRAND.name,
+          autoRun: true,
+          ts: Date.now(),
+        }),
+      )
+    } catch {}
+    router.push("/dashboard/carrossel")
+  }
+
+  function handleGerar() {
+    if (!formato || !canFinish()) return
+    if (formato.pageMode === "post-unico") {
+      // Novo fluxo: gera o TEXTO primeiro e abre a etapa de aprovação.
+      void gerarTextoParaAprovacao()
+      return
+    }
+    // Carrossel: mesma etapa de aprovação — gera SÓ o roteiro (text-only),
+    // o usuário revisa/edita e só então as imagens são geradas em /teste.
+    void gerarRoteiroParaAprovacao()
+  }
+
+  const isPostUnico = formato?.pageMode === "post-unico"
+  const steps: { id: StepId; label: string }[] = [
+    { id: 1, label: "Formato" },
+    { id: 2, label: "Modo" },
+    { id: 3, label: "Ideia" },
+    // Etapa de aprovação existe pros dois fluxos (post-único e carrossel).
+    ...(formato ? [{ id: 4 as StepId, label: "Aprovar" }] : []),
+  ]
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
       {/* Stepper */}
       <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8">
-        {[1, 2, 3].map((s, i) => (
-          <div key={s} className="flex items-center gap-2 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (s < step) setStep(s as StepId)
-              }}
-              disabled={s >= step}
-              className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-colors ${
-                step === s
-                  ? "text-brand-400"
-                  : step > s
-                    ? "text-text-secondary hover:text-text-primary cursor-pointer"
-                    : "text-text-muted"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
+        {steps.map((stepDef, i) => {
+          const s = stepDef.id
+          // Não deixa clicar pra "voltar" no meio da aprovação assíncrona.
+          const clickable =
+            s < step &&
+            !(step === 4 && (approvalLoading || carouselLoading))
+          return (
+            <div key={s} className="flex items-center gap-2 sm:gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (clickable) setStep(s)
+                }}
+                disabled={!clickable}
+                className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-colors ${
                   step === s
-                    ? "bg-brand-500 ring-4 ring-brand-500/30"
+                    ? "text-brand-400"
                     : step > s
-                      ? "bg-emerald-500"
-                      : "bg-text-muted"
+                      ? "text-text-secondary hover:text-text-primary cursor-pointer"
+                      : "text-text-muted"
                 }`}
-              />
-              <span>
-                {s === 1 ? "Formato" : s === 2 ? "Modo" : "Criar"}
-              </span>
-            </button>
-            {i < 2 && <div className="w-8 sm:w-16 h-px bg-border-subtle" />}
-          </div>
-        ))}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    step === s
+                      ? "bg-brand-500 ring-4 ring-brand-500/30"
+                      : step > s
+                        ? "bg-emerald-500"
+                        : "bg-text-muted"
+                  }`}
+                />
+                <span>{stepDef.label}</span>
+              </button>
+              {i < steps.length - 1 && (
+                <div className="w-6 sm:w-12 h-px bg-border-subtle" />
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {step === 1 && (
@@ -277,9 +492,64 @@ export default function CriarWizardPage() {
           refinando={refinando}
           refineErr={refineErr}
           submitting={submitting}
+          linkUrl={linkUrl}
+          setLinkUrl={setLinkUrl}
+          onAnalisarLink={analisarLink}
+          analisandoLink={analisandoLink}
+          linkErr={linkErr}
           onBack={() => setStep(2)}
           onGerar={handleGerar}
           canFinish={canFinish()}
+        />
+      )}
+
+      {step === 4 && formato && isPostUnico && (
+        <ApprovalStep
+          draft={approvalDraft}
+          loading={approvalLoading}
+          error={approvalErr}
+          approving={approving}
+          onChange={(patch) =>
+            setApprovalDraft((d) => (d ? { ...d, ...patch } : d))
+          }
+          onRegenerate={() => void gerarTextoParaAprovacao()}
+          onBack={() => {
+            setApprovalDraft(null)
+            setApprovalErr(null)
+            setStep(3)
+          }}
+          onApprove={aprovarECriar}
+        />
+      )}
+
+      {step === 4 && formato && !isPostUnico && (
+        <CarouselApprovalStep
+          draft={carouselDraft}
+          loading={carouselLoading}
+          error={carouselErr}
+          approving={carouselApproving}
+          onSlideChange={(index, patch) =>
+            setCarouselDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    slides: d.slides.map((s, i) =>
+                      i === index ? { ...s, ...patch } : s,
+                    ),
+                  }
+                : d,
+            )
+          }
+          onCaptionChange={(caption) =>
+            setCarouselDraft((d) => (d ? { ...d, caption } : d))
+          }
+          onRegenerate={() => void gerarRoteiroParaAprovacao()}
+          onBack={() => {
+            setCarouselDraft(null)
+            setCarouselErr(null)
+            setStep(3)
+          }}
+          onApprove={aprovarECriarCarrossel}
         />
       )}
     </div>
@@ -298,11 +568,11 @@ function Step1({
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
-          Escolha o Formato
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2 tracking-tight">
+          Qual formato você quer criar?
         </h1>
         <p className="text-sm text-text-secondary">
-          Você está no modo IA. Escolha o formato pra começar.
+          Escolha o tipo de conteúdo. Você define o tema no próximo passo.
         </p>
       </div>
 
@@ -316,7 +586,7 @@ function Step1({
               onClick={() => onSelect(f)}
               className={`group relative aspect-[4/5] rounded-2xl overflow-hidden text-white p-4 flex flex-col justify-between transition-all ${
                 selected
-                  ? "ring-2 ring-brand-400 scale-[1.02] shadow-[0_8px_32px_rgba(124,92,255,0.35)]"
+                  ? "ring-2 ring-brand-400 scale-[1.02] shadow-[0_8px_32px_rgba(115, 32, 230,0.35)]"
                   : "ring-1 ring-white/[0.06] hover:ring-brand-500/40 hover:scale-[1.01]"
               }`}
               style={{
@@ -339,8 +609,8 @@ function Step1({
                   className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center z-10"
                   style={{
                     background:
-                      "linear-gradient(180deg, #8a6cff 0%, #7C5CFF 60%, #6b4ce8 100%)",
-                    boxShadow: "0 4px 14px rgba(124,92,255,0.5)",
+                      "linear-gradient(180deg, #8A33EC 0%, #7320E6 60%, #5F14D6 100%)",
+                    boxShadow: "0 4px 14px rgba(115, 32, 230,0.5)",
                   }}
                 >
                   <Check className="w-4 h-4 text-white" strokeWidth={3} />
@@ -410,17 +680,18 @@ function Step2({
 }) {
   return (
     <div>
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
-          Defina o Conteúdo
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5 tracking-tight">
+          Defina o conteúdo
         </h1>
         <p className="text-sm text-text-secondary">
-          Esse contexto será expandido em prompt visual pra gerar a arte com IA.
+          Objetivo, abordagem e ponto de partida — em um só lugar.
         </p>
       </div>
 
+      <div className="rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-6 space-y-5">
       {/* Objetivo */}
-      <div className="mb-6">
+      <div>
         <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">
           Qual o objetivo deste post?
         </p>
@@ -475,8 +746,8 @@ function Step2({
       </div>
 
       {/* Abordagem */}
-      <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1">
+      <div className="pt-1 border-t border-border-subtle/60">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-1 mt-3">
           Abordagem
         </p>
         <p className="text-[11px] text-text-muted mb-2">
@@ -513,8 +784,8 @@ function Step2({
       </div>
 
       {/* Como criar */}
-      <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">
+      <div className="pt-1 border-t border-border-subtle/60">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 mt-3">
           Como você quer criar?
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -564,6 +835,7 @@ function Step2({
           })}
         </div>
       </div>
+      </div>
 
       <div className="flex justify-between gap-3">
         <Button variant="outline" onClick={onBack}>
@@ -590,6 +862,11 @@ function Step3({
   refinando,
   refineErr,
   submitting,
+  linkUrl,
+  setLinkUrl,
+  onAnalisarLink,
+  analisandoLink,
+  linkErr,
   onBack,
   onGerar,
   canFinish,
@@ -605,29 +882,89 @@ function Step3({
   refinando: boolean
   refineErr: string | null
   submitting: boolean
+  linkUrl: string
+  setLinkUrl: (v: string) => void
+  onAnalisarLink: () => void
+  analisandoLink: boolean
+  linkErr: string | null
   onBack: () => void
   onGerar: () => void
   canFinish: boolean
 }) {
+  const isPostUnico = formato.pageMode === "post-unico"
+  const isLinkMode = comoCriar === "link"
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">
-          Sua Ideia
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5 tracking-tight">
+          Sua ideia
         </h1>
         <p className="text-sm text-text-secondary">
-          Vamos transformar sua ideia em conteúdo profissional.
+          {isLinkMode
+            ? "Cole um link. A IA lê a página e transforma o conteúdo na sua ideia."
+            : isPostUnico
+              ? "Escreva a ideia. A IA escreve o texto e você revisa antes da arte."
+              : "Vamos transformar sua ideia em conteúdo profissional."}
         </p>
       </div>
 
       {/* Resumo das escolhas */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
         <Pill icon={formato.icon} label="FORMATO" value={formato.label} sub={formato.size} />
         <Pill icon={Wand2} label="MODO" value={comoCriar === "zero" ? "Criar do Zero" : comoCriar === "link" ? "A partir de Link" : "Inspirações"} sub="Criação livre" />
         <Pill icon={Sparkles} label="CRÉDITOS" value="10 cr" sub={formato.slides && formato.slides > 1 ? `${formato.slides} slides` : "1 slide"} />
       </div>
 
-      {/* Briefing */}
+      {/* Modo Link: campo de URL + análise */}
+      {isLinkMode && (
+        <div className="rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 flex items-center gap-1.5">
+            <Link2 className="w-3 h-3" />
+            Link de referência
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !analisandoLink) {
+                  e.preventDefault()
+                  onAnalisarLink()
+                }
+              }}
+              placeholder="https://exemplo.com/artigo"
+              className="flex-1 h-10 px-3 rounded-xl bg-background-tertiary/40 border border-border-subtle text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500/60"
+            />
+            <Button
+              onClick={onAnalisarLink}
+              disabled={analisandoLink || linkUrl.trim().length < 4}
+              className="min-w-[130px]"
+            >
+              {analisandoLink ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Analisando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Analisar link
+                </>
+              )}
+            </Button>
+          </div>
+          {linkErr && (
+            <p className="text-xs text-destructive mt-2">{linkErr}</p>
+          )}
+          <p className="text-[10px] text-text-muted mt-2">
+            A IA lê o conteúdo da página e gera o briefing abaixo — você pode editar antes de gerar.
+          </p>
+        </div>
+      )}
+
+      {/* Briefing + refino agrupados num card coeso */}
+      <div className="rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5">
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
@@ -702,7 +1039,7 @@ function Step3({
           type="button"
           onClick={onRefinar}
           disabled={refinando}
-          className="w-full mb-4 py-3 rounded-xl border-2 border-dashed border-brand-500/40 hover:border-brand-500/70 hover:bg-brand-500/5 text-brand-300 text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+          className="w-full py-3 rounded-xl border-2 border-dashed border-brand-500/40 hover:border-brand-500/70 hover:bg-brand-500/5 text-brand-300 text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
         >
           {refinando ? (
             <>
@@ -717,6 +1054,7 @@ function Step3({
           )}
         </button>
       )}
+      </div>
 
       <div className="flex justify-between gap-3">
         <Button variant="outline" onClick={onBack}>
@@ -730,6 +1068,12 @@ function Step3({
         >
           {submitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
+          ) : isPostUnico ? (
+            <>
+              <Sparkles className="w-4 h-4 mr-1.5" />
+              Gerar conteúdo
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </>
           ) : (
             <>
               <Sparkles className="w-4 h-4 mr-1.5" />

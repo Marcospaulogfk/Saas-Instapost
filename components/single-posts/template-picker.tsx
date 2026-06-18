@@ -59,7 +59,7 @@ export function TemplatePicker({
                       content={DEMO_CONTENT[tpl.id] ?? {}}
                     />
                     {selected && (
-                      <span className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(124,92,255,0.6)]">
+                      <span className="absolute top-2 right-2 z-30 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(115, 32, 230,0.6)]">
                         <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                       </span>
                     )}
