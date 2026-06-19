@@ -1,6 +1,7 @@
 import { HandlePill } from "../../shared/HandlePill"
 import { InlineFooter } from "../../shared/InlineFooter"
 import { playfair, inter } from "../../fonts"
+import { autoTitleSize } from "../../shared/autofit"
 import type { PostBrand, PostContent, PostPalette } from "@/lib/single-posts/types"
 
 interface Props {
@@ -50,7 +51,7 @@ export function BeautyCloseupSerifEditorial({ brand, content, palette }: Props) 
           className={playfair.className}
           style={{
             color: "#FFFFFF",
-            fontSize: "min(15cqw, 4rem)",
+            fontSize: autoTitleSize(titleLines, 15, 55),
             fontWeight: 500,
             lineHeight: 1,
             letterSpacing: "-0.02em",
