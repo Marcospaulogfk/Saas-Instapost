@@ -61,33 +61,24 @@ const buildBeauty01: TemplateSpecBuilder = (content, brand, photoUrl) => {
         gradient_angle: 135,
       }
 
-  const titleSize = autoTitleSize(titleLines, 15, 55)
-  // Linhas do título — stack interno bem apertado (line-height visual)
-  const titleStack: FreeBlock = {
-    type: "stack",
-    position: {},
-    direction: "column",
-    gap: "min(0.5cqw, 2px)",
-    align: "start",
-    children: titleLines.map((line, i): FreeBlock => {
-      const isMiddle = i === 1 && titleLines.length === 3
-      return {
-        type: "text",
-        position: {},
-        text: line,
-        font: isMiddle ? "playfair_italic" : "playfair",
-        font_size: titleSize,
-        font_weight: isMiddle ? 400 : 500,
-        color: "#FFFFFF",
-        line_height: 1,
-        letter_spacing: "-0.02em",
-        font_style: isMiddle ? "italic" : "normal",
-        text_shadow: true,
-      }
-    }),
+  // ESTRUTURA PLANA (padrão dos skeletons): título = UM bloco de texto com \n.
+  // Stack de nível único com filhos-folha → auto-detach solta cada bloco
+  // individualmente e todos viram editáveis (mover/fonte/tamanho) no painel.
+  const outerChildren: FreeBlock[] = []
+  if (titleLines.length) {
+    outerChildren.push({
+      type: "text",
+      position: {},
+      text: titleLines.join("\n"),
+      font: "playfair",
+      font_size: autoTitleSize(titleLines, 15, 55),
+      font_weight: 500,
+      color: "#FFFFFF",
+      line_height: 1.05,
+      letter_spacing: "-0.02em",
+      text_shadow: true,
+    })
   }
-
-  const outerChildren: FreeBlock[] = titleLines.length ? [titleStack] : []
   outerChildren.push({
     type: "divider",
     position: { width: "min(15cqw, 60px)" },
@@ -97,7 +88,7 @@ const buildBeauty01: TemplateSpecBuilder = (content, brand, photoUrl) => {
   if (content.body) {
     outerChildren.push({
       type: "text",
-      position: { width: "90%" },
+      position: {},
       text: content.body,
       font: "inter",
       font_size: "min(3cqw, 0.92rem)",

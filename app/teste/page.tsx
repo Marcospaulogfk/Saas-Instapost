@@ -352,13 +352,13 @@ export default function TestePage() {
           for (let j = 0; j < b.children.length; j++) {
             const child = b.children[j]
             const childPath = `${path}.${j}`
-            // Se o child for stack/card, faz recursão (já vai ser tratado depois)
-            if (child.type === "stack" || child.type === "card") continue
             const flowEl = singlePostPreviewRef.current!.querySelector(
               `[data-flow-path="${childPath}"]`,
             ) as HTMLElement | null
             if (!flowEl) continue
             const r = flowEl.getBoundingClientRect()
+            // child stack/card aninhado: solta o GRUPO inteiro como bloco top-level
+            // posicionado (não some). Filhos-folha viram blocos individuais.
             detached.push({
               block: {
                 ...child,
