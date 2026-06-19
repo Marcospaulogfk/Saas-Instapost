@@ -30,8 +30,33 @@ import {
 } from "./CarouselApprovalStep"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { ClaudeSlide } from "@/lib/generation/claude"
+import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
+import type { PostTemplateMeta } from "@/lib/single-posts/types"
 
-type StepId = 1 | 2 | 3 | 4
+type StepId = 1 | 2 | 3 | 4 | 5
+
+// === Recomendação de templates por objetivo + abordagem ===
+// Mapeia o que o usuário quer (objetivo/abordagem) pras categorias de template
+// que combinam. v1 rule-based; depois dá pra cruzar com o nicho da marca.
+const RECO_BY_ABORDAGEM: Record<Abordagem, string[]> = {
+  viral: ["comercial", "fitness", "informativo"],
+  educativo: ["profissional", "informativo", "empresa"],
+  comunidade: ["informativo", "beauty", "profissional"],
+}
+const RECO_BY_OBJETIVO: Record<Objetivo, string[]> = {
+  vender: ["comercial", "fitness", "empresa"],
+  engajar: ["informativo", "profissional", "beauty"],
+}
+function recommendedTemplates(
+  objetivo: Objetivo,
+  abordagem: Abordagem | null,
+): PostTemplateMeta[] {
+  const cats = new Set<string>([
+    ...(abordagem ? RECO_BY_ABORDAGEM[abordagem] : []),
+    ...RECO_BY_OBJETIVO[objetivo],
+  ])
+  return POST_TEMPLATES.filter((t) => cats.has(t.category)).slice(0, 6)
+}
 
 /** Marca demo usada pelo wizard ao empurrar pra /teste. */
 const WIZARD_BRAND = {
@@ -107,6 +132,8 @@ export default function CriarWizardPage() {
   const [abordagem, setAbordagem] = useState<Abordagem | null>(null)
   const [comoCriar, setComoCriar] = useState<ComoCriar>("zero")
   const [briefing, setBriefing] = useState("")
+  // Template escolhido na etapa nova ("auto" = deixa a IA escolher).
+  const [templateId, setTemplateId] = useState<string>("auto")
   const [promptRefinado, setPromptRefinado] = useState<string | null>(null)
   const [refinando, setRefinando] = useState(false)
   const [refineErr, setRefineErr] = useState<string | null>(null)
@@ -258,7 +285,7 @@ export default function CriarWizardPage() {
     const finalBriefing = (promptRefinado ?? briefing).trim()
     setApprovalErr(null)
     setApprovalLoading(true)
-    setStep(4)
+    setStep(5)
     try {
       const res = await fetch("/api/post-unico/free-generate", {
         method: "POST",
@@ -335,7 +362,7 @@ export default function CriarWizardPage() {
     const finalBriefing = (promptRefinado ?? briefing).trim()
     setCarouselErr(null)
     setCarouselLoading(true)
-    setStep(4)
+    setStep(5)
     try {
       const res = await fetch("/api/editorial/generate-script", {
         method: "POST",
@@ -392,10 +419,39 @@ export default function CriarWizardPage() {
     router.push("/dashboard/carrossel")
   }
 
+  /** Template curado escolhido → vai direto pro /teste no modo template:
+   *  o editor gera o conteúdo estruturado daquele template e monta o design. */
+  function criarComTemplateEscolhido() {
+    if (!formato) return
+    setSubmitting(true)
+    const finalBriefing = (promptRefinado ?? briefing).trim()
+    try {
+      sessionStorage.setItem(
+        "syncpost_pending_post_unico",
+        JSON.stringify({
+          kind: "template",
+          brand: WIZARD_BRAND,
+          templateId,
+          rawContent: finalBriefing,
+          briefing: finalBriefing,
+          autoRun: true,
+          ts: Date.now(),
+        }),
+      )
+    } catch {}
+    router.push(`/teste?format=${formato.format}`)
+  }
+
   function handleGerar() {
     if (!formato || !canFinish()) return
     if (formato.pageMode === "post-unico") {
-      // Novo fluxo: gera o TEXTO primeiro e abre a etapa de aprovação.
+      // Escolheu um template curado → gera direto nele (sem etapa de aprovação,
+      // que é do caminho auto/skeleton).
+      if (templateId !== "auto") {
+        criarComTemplateEscolhido()
+        return
+      }
+      // Auto: gera o TEXTO primeiro e abre a etapa de aprovação.
       void gerarTextoParaAprovacao()
       return
     }
@@ -408,9 +464,11 @@ export default function CriarWizardPage() {
   const steps: { id: StepId; label: string }[] = [
     { id: 1, label: "Formato" },
     { id: 2, label: "Modo" },
-    { id: 3, label: "Ideia" },
+    // Template só pra post-único (carrossel usa estilo editorial, sem catálogo).
+    ...(isPostUnico ? [{ id: 3 as StepId, label: "Template" }] : []),
+    { id: 4, label: "Ideia" },
     // Etapa de aprovação existe pros dois fluxos (post-único e carrossel).
-    ...(formato ? [{ id: 4 as StepId, label: "Aprovar" }] : []),
+    ...(formato ? [{ id: 5 as StepId, label: "Aprovar" }] : []),
   ]
 
   return (
@@ -422,7 +480,7 @@ export default function CriarWizardPage() {
           // Não deixa clicar pra "voltar" no meio da aprovação assíncrona.
           const clickable =
             s < step &&
-            !(step === 4 && (approvalLoading || carouselLoading))
+            !(step === 5 && (approvalLoading || carouselLoading))
           return (
             <div key={s} className="flex items-center gap-2 sm:gap-4">
               <button
@@ -475,11 +533,22 @@ export default function CriarWizardPage() {
           onAbordagem={setAbordagem}
           onComoCriar={setComoCriar}
           onBack={() => setStep(1)}
-          onNext={() => canAdvanceStep2() && setStep(3)}
+          onNext={() => canAdvanceStep2() && setStep(isPostUnico ? 3 : 4)}
         />
       )}
 
-      {step === 3 && formato && (
+      {step === 3 && formato && isPostUnico && (
+        <TemplateStep
+          objetivo={objetivo}
+          abordagem={abordagem}
+          templateId={templateId}
+          onSelect={setTemplateId}
+          onBack={() => setStep(2)}
+          onNext={() => setStep(4)}
+        />
+      )}
+
+      {step === 4 && formato && (
         <Step3
           formato={formato}
           objetivo={objetivo}
@@ -497,13 +566,13 @@ export default function CriarWizardPage() {
           onAnalisarLink={analisarLink}
           analisandoLink={analisandoLink}
           linkErr={linkErr}
-          onBack={() => setStep(2)}
+          onBack={() => setStep(isPostUnico ? 3 : 2)}
           onGerar={handleGerar}
           canFinish={canFinish()}
         />
       )}
 
-      {step === 4 && formato && isPostUnico && (
+      {step === 5 && formato && isPostUnico && (
         <ApprovalStep
           draft={approvalDraft}
           loading={approvalLoading}
@@ -516,13 +585,13 @@ export default function CriarWizardPage() {
           onBack={() => {
             setApprovalDraft(null)
             setApprovalErr(null)
-            setStep(3)
+            setStep(4)
           }}
           onApprove={aprovarECriar}
         />
       )}
 
-      {step === 4 && formato && !isPostUnico && (
+      {step === 5 && formato && !isPostUnico && (
         <CarouselApprovalStep
           draft={carouselDraft}
           loading={carouselLoading}
@@ -547,7 +616,7 @@ export default function CriarWizardPage() {
           onBack={() => {
             setCarouselDraft(null)
             setCarouselErr(null)
-            setStep(3)
+            setStep(4)
           }}
           onApprove={aprovarECriarCarrossel}
         />
@@ -1080,6 +1149,175 @@ function Step3({
               Gerar com IA · 10
             </>
           )}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function TemplateCard({
+  t,
+  selected,
+  recommended,
+  onSelect,
+}: {
+  t: PostTemplateMeta
+  selected: boolean
+  recommended?: boolean
+  onSelect: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      title={t.use_when?.[0] ?? t.description}
+      className={`group relative aspect-[4/5] rounded-xl overflow-hidden text-left transition-all ${
+        selected
+          ? "ring-2 ring-brand-400 scale-[1.02]"
+          : "ring-1 ring-white/[0.06] hover:ring-brand-500/40"
+      }`}
+      style={{
+        backgroundImage: `url(${t.reference_image})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: "#0A0A0F",
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(10,10,15,0.1) 0%, rgba(10,10,15,0.2) 45%, rgba(10,10,15,0.9) 100%)",
+        }}
+      />
+      {recommended && !selected && (
+        <span className="absolute top-2 left-2 z-10 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600/90 text-white">
+          Recomendado
+        </span>
+      )}
+      {selected && (
+        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center z-10">
+          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+        </div>
+      )}
+      <div className="absolute bottom-0 inset-x-0 p-2.5 z-10">
+        <p className="text-[11px] font-bold text-white leading-tight">{t.label}</p>
+        <p className="text-[9px] text-white/60">
+          {CATEGORY_LABELS[t.category] ?? t.category}
+        </p>
+      </div>
+    </button>
+  )
+}
+
+function TemplateStep({
+  objetivo,
+  abordagem,
+  templateId,
+  onSelect,
+  onBack,
+  onNext,
+}: {
+  objetivo: Objetivo
+  abordagem: Abordagem | null
+  templateId: string
+  onSelect: (id: string) => void
+  onBack: () => void
+  onNext: () => void
+}) {
+  const recomendados = recommendedTemplates(objetivo, abordagem)
+  const recoIds = new Set(recomendados.map((t) => t.id))
+  const byCategory = POST_TEMPLATES.reduce<Record<string, PostTemplateMeta[]>>(
+    (acc, t) => {
+      ;(acc[t.category] ??= []).push(t)
+      return acc
+    },
+    {},
+  )
+
+  return (
+    <div>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5 tracking-tight">
+          Escolha um template
+        </h1>
+        <p className="text-sm text-text-secondary">
+          Recomendados pro seu objetivo — ou navegue a biblioteca completa.
+        </p>
+      </div>
+
+      {/* Auto + Recomendados */}
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">
+          Recomendados pra sua marca
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <button
+            type="button"
+            onClick={() => onSelect("auto")}
+            className={`group aspect-[4/5] rounded-xl border-2 flex flex-col items-center justify-center gap-2 text-center p-3 transition-all ${
+              templateId === "auto"
+                ? "border-brand-500 bg-brand-500/10"
+                : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
+            }`}
+          >
+            <Sparkles
+              className={`w-7 h-7 ${templateId === "auto" ? "text-brand-300" : "text-text-secondary"}`}
+            />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Auto</p>
+              <p className="text-[10px] text-text-muted leading-tight">
+                A IA escolhe o melhor layout
+              </p>
+            </div>
+          </button>
+
+          {recomendados.map((t) => (
+            <TemplateCard
+              key={t.id}
+              t={t}
+              selected={templateId === t.id}
+              onSelect={() => onSelect(t.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Biblioteca completa */}
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">
+          Biblioteca completa
+        </p>
+        <div className="space-y-5">
+          {Object.entries(byCategory).map(([cat, items]) => (
+            <div key={cat}>
+              <p className="text-[11px] font-medium text-text-secondary mb-2">
+                {CATEGORY_LABELS[cat] ?? cat}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {items.map((t) => (
+                  <TemplateCard
+                    key={t.id}
+                    t={t}
+                    selected={templateId === t.id}
+                    recommended={recoIds.has(t.id)}
+                    onSelect={() => onSelect(t.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-between gap-3">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Voltar
+        </Button>
+        <Button onClick={onNext}>
+          Continuar
+          <ArrowRight className="w-4 h-4 ml-1.5" />
         </Button>
       </div>
     </div>

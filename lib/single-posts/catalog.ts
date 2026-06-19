@@ -11,7 +11,7 @@ export const POST_TEMPLATES: PostTemplateMeta[] = [
     label: "Retrato + Título Bottom",
     description:
       "Retrato fullbleed escurecido + logo top-right + introdução serif italic + chamada uppercase grande no rodapé",
-    reference_image: "/posts-unicos/profissional/01.jpg",
+    reference_image: "/refs-posts-unicos/Profissional/01/referencia.jpg",
     required_fields: ["title_lines"],
     optional_fields: ["intro", "intro_2", "image_url"],
     needs_photo: true,
@@ -28,7 +28,7 @@ export const POST_TEMPLATES: PostTemplateMeta[] = [
     label: "Split + CTA",
     description:
       "Layout split 50/50: texto + logo + CTA pill na esquerda, retrato fullbleed na direita",
-    reference_image: "/posts-unicos/profissional/02.jpg",
+    reference_image: "/refs-posts-unicos/Profissional/02/referencia.jpg",
     required_fields: ["title", "body"],
     optional_fields: [
       "cta_text",
@@ -50,7 +50,7 @@ export const POST_TEMPLATES: PostTemplateMeta[] = [
     label: "Pergunta Provocativa",
     description:
       "Retrato fullbleed escurecido + logo centralizado no torso + pergunta uppercase 2 linhas com palavra riscada",
-    reference_image: "/posts-unicos/profissional/03.jpg",
+    reference_image: "/refs-posts-unicos/Profissional/03/referencia.jpg",
     required_fields: ["title_lines"],
     optional_fields: ["strikethrough_word", "image_url"],
     needs_photo: true,
@@ -67,7 +67,7 @@ export const POST_TEMPLATES: PostTemplateMeta[] = [
     label: "Frase Educativa + Moldura",
     description:
       "Fundo escuro com retrato à direita + frase serif italic à esquerda terminando com palavra-chave moldurada",
-    reference_image: "/posts-unicos/profissional/04.jpg",
+    reference_image: "/refs-posts-unicos/Profissional/04/referencia.jpg",
     required_fields: ["title", "framed_word"],
     optional_fields: ["highlight_words", "image_url"],
     needs_photo: true,
