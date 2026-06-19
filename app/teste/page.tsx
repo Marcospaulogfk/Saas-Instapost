@@ -348,6 +348,13 @@ export default function TestePage() {
       return blocks.flatMap((b, i) => {
         const path = pathPrefix ? `${pathPrefix}.${i}` : String(i)
         if (b.type === "stack" || b.type === "card") {
+          // Cards e stacks com bg são "cards visuais": ficam ATÔMICOS (preservam
+          // fundo/padding/shadow, movíveis como unidade). Só explode stack de
+          // layout (sem bg) — textos internos seguem editáveis pelo painel
+          // (collectEditableTexts recursa nos children).
+          if (b.type === "card" || (b.type === "stack" && b.bg)) {
+            return [b]
+          }
           // walk recursivamente nos children — eles podem ter sub-stacks
           for (let j = 0; j < b.children.length; j++) {
             const child = b.children[j]
@@ -410,8 +417,10 @@ export default function TestePage() {
   useEffect(() => {
     if (!singlePostSpec) return
     if (lastAutoDetachedSpecRef.current === singlePostSpec) return
+    // Só dispara pra stacks de layout (sem bg). Cards e stacks-com-bg ficam
+    // atômicos e não precisam de detach.
     const hasGroups = singlePostSpec.blocks.some(
-      (b) => b.type === "stack" || b.type === "card",
+      (b) => b.type === "stack" && !b.bg,
     )
     if (!hasGroups) {
       lastAutoDetachedSpecRef.current = singlePostSpec
