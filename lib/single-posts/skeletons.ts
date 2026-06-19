@@ -76,7 +76,7 @@ export interface SkeletonImpl {
  * @param tiers array de [maxChars, fontSize] em ordem ascendente de comprimento
  * @param fallback fonte pra textos acima do último tier
  */
-function autoFont(
+export function autoFont(
   text: string,
   tiers: Array<[number, string]>,
   fallback: string,
@@ -88,7 +88,7 @@ function autoFont(
   return fallback
 }
 
-function pickColors(brand: PostBrand): {
+export function pickColors(brand: PostBrand): {
   primary: string
   dark: string
   accent: string
@@ -113,7 +113,7 @@ function pickColors(brand: PostBrand): {
   }
 }
 
-function handlePill(brand: PostBrand, variant: "dark" | "light"): FreeBlock {
+export function handlePill(brand: PostBrand, variant: "dark" | "light"): FreeBlock {
   const isDark = variant === "dark"
   return {
     type: "pill",

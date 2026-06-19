@@ -37,6 +37,7 @@ import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
 import { PostPreview } from "@/components/single-posts/post-preview"
 import { SKELETONS } from "@/lib/single-posts/skeletons"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
+import { buildTemplateSpec } from "@/lib/single-posts/template-specs"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import { DEMO_CONTENT } from "@/lib/single-posts/demo"
 import {
@@ -730,18 +731,28 @@ export default function TestePage() {
           setSinglePostError(data.error ?? "erro desconhecido")
           return
         }
-        setSinglePostTemplateId(data.template_id ?? skeletonChoice)
-        setSinglePostTemplateContent({
-          ...DEMO_CONTENT[data.template_id ?? skeletonChoice],
+        const tid = data.template_id ?? skeletonChoice
+        const tcontent = {
+          ...DEMO_CONTENT[tid],
           ...data.content,
-        })
-        setSinglePostSkeletonPicked(data.template_id ?? skeletonChoice)
+        }
+        const tphoto = data.photo_url ?? null
+        setSinglePostPhotoUrl(tphoto)
+        setSinglePostSkeletonPicked(tid)
         setSinglePostRationale(null)
-        setSinglePostPhotoUrl(data.photo_url ?? null)
         setSinglePostMetrics({
           ms: data.metrics.ms,
           totalCostUsd: data.metrics.totalCostUsd ?? data.metrics.costUsd,
         })
+        // Unificação: se o template já tem spec editável, renderiza pelo editor
+        // livre (mover/fonte/tamanho por elemento). Senão, cai no PostPreview.
+        const tspec = buildTemplateSpec(tid, tcontent, brand, tphoto)
+        if (tspec) {
+          setSinglePostSpec(tspec)
+        } else {
+          setSinglePostTemplateId(tid)
+          setSinglePostTemplateContent(tcontent)
+        }
       } else {
         // Modo skeleton (auto ou específico) — usa /api/post-unico/free-generate
         const res = await fetch("/api/post-unico/free-generate", {
