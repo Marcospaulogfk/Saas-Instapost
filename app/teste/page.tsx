@@ -1232,7 +1232,22 @@ export default function TestePage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-background-secondary/60 border border-border-subtle shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+        {pageMode === "post-unico" && (singlePostSpec || singlePostTemplateId) && (
+          <Button
+            type="button"
+            onClick={handleSinglePostExport}
+            disabled={singlePostExporting}
+            size="sm"
+            className="h-8 bg-primary text-white hover:bg-primary/90 shrink-0"
+          >
+            <Download className="w-4 h-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">
+              {singlePostExporting ? "Exportando..." : "Exportar PNG"}
+            </span>
+          </Button>
+        )}
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-background-secondary/60 border border-border-subtle">
           <button
             type="button"
             onClick={() => setPageMode("carrossel")}
@@ -1257,6 +1272,7 @@ export default function TestePage() {
             <Square className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Post único</span>
           </button>
+        </div>
         </div>
       </div>
 
@@ -1935,12 +1951,37 @@ export default function TestePage() {
                   Foto de fundo
                 </p>
                 {singlePostSpec.background.photo_url && (
-                  <img
-                    src={singlePostSpec.background.photo_url}
-                    alt="Foto atual"
-                    className="w-full h-24 object-cover rounded-md border border-border-subtle"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBgPhotoTab("upload")
+                      bgUploadInputRef.current?.click()
+                    }}
+                    title="Clique pra trocar a foto (upload do seu dispositivo)"
+                    className="group relative block w-full h-24 rounded-md border border-border-subtle overflow-hidden"
+                  >
+                    <img
+                      src={singlePostSpec.background.photo_url}
+                      alt="Foto atual"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center gap-1.5 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 bg-black/0 group-hover:bg-black/55 transition">
+                      <Download className="w-3.5 h-3.5 rotate-180" /> Trocar (upload)
+                    </span>
+                  </button>
                 )}
+                {/* Input de upload sempre montado — permite acionar pela miniatura acima */}
+                <input
+                  ref={bgUploadInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleBgUpload(file)
+                    e.target.value = ""
+                  }}
+                />
                 <div className="grid grid-cols-3 gap-1 p-1 rounded-md bg-background-secondary/40 border border-border-subtle">
                   <button
                     type="button"
@@ -2073,18 +2114,6 @@ export default function TestePage() {
 
                 {bgPhotoTab === "upload" && (
                   <div className="space-y-2">
-                    <input
-                      ref={bgUploadInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleBgUpload(file)
-                        // resetar pra permitir selecionar o mesmo arquivo de novo
-                        e.target.value = ""
-                      }}
-                    />
                     <button
                       type="button"
                       onClick={() => bgUploadInputRef.current?.click()}
@@ -2151,6 +2180,10 @@ export default function TestePage() {
                         : undefined) ?? 1
                     const align =
                       block && block.type === "text" ? (block.text_align ?? "left") : null
+                    const fontVal =
+                      block && (block.type === "text" || block.type === "pill")
+                        ? (block.font ?? "")
+                        : null
                     const isInGroup = entry.path.includes(".")
                     const textColor =
                       block && block.type === "text" ? block.color : null
@@ -2229,6 +2262,38 @@ export default function TestePage() {
                             </button>
                           )}
                         </div>
+                        {fontVal !== null && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] text-text-muted w-10 shrink-0">
+                              fonte
+                            </span>
+                            <select
+                              value={fontVal}
+                              onChange={(e) =>
+                                handleSpecBlockPatch(entry.path, { font: e.target.value })
+                              }
+                              className="flex-1 h-7 rounded-md bg-background-secondary border border-border px-2 text-[11px] text-text-primary"
+                              style={{ colorScheme: "dark" }}
+                            >
+                              {[
+                                ["inter", "Inter"],
+                                ["inter_bold", "Inter Bold"],
+                                ["playfair", "Playfair"],
+                                ["playfair_italic", "Playfair Italic"],
+                                ["anton", "Anton"],
+                                ["bebas", "Bebas Neue"],
+                                ["montserrat", "Montserrat"],
+                                ["archivo", "Archivo Black"],
+                                ["grotesk", "Space Grotesk"],
+                                ["allura", "Allura (script)"],
+                              ].map(([val, lbl]) => (
+                                <option key={val} value={val}>
+                                  {lbl}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                         {align !== null && (
                           <div className="flex items-center gap-2">
                             <span className="text-[9px] text-text-muted w-10 shrink-0">

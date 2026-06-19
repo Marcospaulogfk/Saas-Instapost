@@ -203,14 +203,13 @@ function renderImage(b: FreeImageBlock) {
 }
 
 function renderPill(b: FreePillBlock) {
-  return (
+  // A pílula em si — sempre abraça o conteúdo (inline-flex), nunca estica.
+  const pill = (
     <span
-      key={`pill-${b.text}-${JSON.stringify(b.position)}`}
       className={`inline-flex items-center font-medium leading-none ${
         b.font ? FONT_CLASSES[b.font] : inter.className
       }`}
       style={{
-        ...positionToStyle(b.position),
         background: b.bg,
         color: b.fg,
         padding: b.with_avatar ? "0.7cqw 2cqw 0.7cqw 0.7cqw" : "0.9cqw 2.4cqw",
@@ -224,13 +223,14 @@ function renderPill(b: FreePillBlock) {
         fontWeight: b.font_weight ?? 500,
         textTransform: b.text_transform ?? "none",
         letterSpacing: b.letter_spacing,
-        zIndex: b.z ?? 2,
         backdropFilter: "blur(8px)",
+        maxWidth: "100%",
+        whiteSpace: "nowrap",
       }}
     >
       {b.with_avatar && (
         <span
-          className="rounded-full flex items-center justify-center font-bold leading-none"
+          className="rounded-full flex items-center justify-center font-bold leading-none shrink-0"
           style={{
             width: "min(5.5cqw, 26px)",
             height: "min(5.5cqw, 26px)",
@@ -243,6 +243,23 @@ function renderPill(b: FreePillBlock) {
         </span>
       )}
       {b.text}
+    </span>
+  )
+  // Caixa de posição: quando o bloco tem largura explícita (ex: pílula detachada
+  // do stack, que herda 100% do wrapper), a pílula fica CENTRALIZADA dentro da
+  // caixa e abraça o conteúdo — em vez de o fundo esticar até as laterais.
+  return (
+    <span
+      key={`pill-${b.text}-${JSON.stringify(b.position)}`}
+      style={{
+        ...positionToStyle(b.position),
+        zIndex: b.z ?? 2,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      {pill}
     </span>
   )
 }

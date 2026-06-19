@@ -739,10 +739,10 @@ const questionPhoto: SkeletonImpl = {
     id: "question-photo",
     name: "Pergunta provocativa",
     description:
-      "Foto fullbleed escurecida + pergunta sans-serif média + palavra-chave Playfair italic gigante + CTA pill.",
+      "Foto fullbleed escurecida + pergunta editorial centralizada + CTA pill.",
     vibe: "engajamento, pergunta, autoridade",
     needs_photo: true,
-    required_slots: ["title", "question_keyword"],
+    required_slots: ["title"],
     optional_slots: ["cta_text"],
   },
   build: ({ brand, content, photo_url }) => {
@@ -779,24 +779,6 @@ const questionPhoto: SkeletonImpl = {
       letter_spacing: "-0.02em",
       text_align: "center",
       highlights: content.highlight_words,
-      text_shadow: true,
-    })
-    // Complemento — palavra-chave destacada com cor accent, menor que o título
-    stackChildren.push({
-      type: "text",
-      position: {},
-      text: content.question_keyword ?? "PALAVRA?",
-      font: "playfair_italic",
-      font_size: autoFont(content.question_keyword ?? "", [
-        [12, "min(7cqw, 1.9rem)"],
-        [25, "min(5.5cqw, 1.5rem)"],
-      ], "min(4.5cqw, 1.2rem)"),
-      font_weight: 500,
-      color: c.accent,
-      letter_spacing: "-0.01em",
-      line_height: 1.1,
-      text_align: "center",
-      font_style: "italic",
       text_shadow: true,
     })
     if (content.cta_text) {
