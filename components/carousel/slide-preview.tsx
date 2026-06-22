@@ -364,7 +364,7 @@ function EditorialSlideRouter(props: RouterProps) {
       <SplitBoloCream
         slide={splitData}
         {...baseProps}
-        imageSlot={isLast ? "none" : "bottom-card"}
+        imageSlot={imgCount >= 1 ? "bottom-card" : "none"}
       />
     )
   }
@@ -461,6 +461,13 @@ function LegacyEditorialSlide({
     ? "rgba(255,255,255,0.85)"
     : "rgba(10,10,15,0.72)"
   const splitTextOpacity = isDarkSplit ? 0.85 : 0.7
+  // Título da capa adapta ao comprimento — evita ficar gigante em títulos longos.
+  const coverTitleClass =
+    slide.title.length > 58
+      ? "text-[1.85rem]"
+      : slide.title.length > 40
+        ? "text-[2.1rem]"
+        : "text-[2.5rem]"
 
   if (variant === "cover") {
     return (
@@ -494,7 +501,7 @@ function LegacyEditorialSlide({
           }
         >
           <h1
-            className={`${isStories ? "text-[2rem]" : "text-[2.5rem]"} uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
+            className={`${isStories ? "text-[2rem]" : coverTitleClass} uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
             style={{ textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
           >
             <HighlightedText
