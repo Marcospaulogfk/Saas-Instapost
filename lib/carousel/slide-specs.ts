@@ -674,14 +674,14 @@ function buildAuto(slide: CarouselSlideInput, opts: CarouselSpecOpts): FreePostS
         type: "text",
         position: {},
         text: lines.join("\n"),
-        // mistura: capa em serif, internos em anton
-        font: isCover ? "playfair" : "anton",
+        // sans condensada limpa (Anton) — capa e internos. Cabe sem quebra feia.
+        font: "anton",
         font_size: autoTitleSize(lines, isCover ? 14 : 12, 90),
-        font_weight: isCover ? 700 : 800,
+        font_weight: 800,
         color: "#FFFFFF",
-        line_height: isCover ? 1.0 : 0.95,
+        line_height: 0.95,
         letter_spacing: "-0.01em",
-        text_transform: isCover ? "none" : "uppercase",
+        text_transform: "uppercase",
         highlights: slide.highlight_words,
         text_shadow: true,
       })
@@ -691,12 +691,11 @@ function buildAuto(slide: CarouselSlideInput, opts: CarouselSpecOpts): FreePostS
         type: "text",
         position: {},
         text: slide.subtitle,
-        font: "playfair_italic",
-        font_size: "min(3.2cqw, 1rem)",
-        font_weight: 400,
-        color: "rgba(255,255,255,0.8)",
+        font: "inter",
+        font_size: "min(3cqw, 0.95rem)",
+        font_weight: 500,
+        color: "rgba(255,255,255,0.85)",
         line_height: 1.4,
-        font_style: "italic",
         text_shadow: true,
       })
     }
