@@ -668,10 +668,21 @@ export function FreePostRenderer({
                 left: undefined,
                 right: undefined,
                 bottom: undefined,
+                // Imagem/shape preenchem o wrapper (o wrapper já tem o tamanho
+                // certo). Sem isso, height em % vira % do wrapper e a imagem
+                // encolhe pra um cantinho. Texto/pill mantêm width natural.
                 width:
-                  ((rendered.props as { style?: React.CSSProperties }).style as
-                    | React.CSSProperties
-                    | undefined)?.width ?? "auto",
+                  b.type === "image" || b.type === "shape"
+                    ? "100%"
+                    : (((rendered.props as { style?: React.CSSProperties }).style as
+                        | React.CSSProperties
+                        | undefined)?.width ?? "auto"),
+                height:
+                  b.type === "image" || b.type === "shape"
+                    ? "100%"
+                    : ((rendered.props as { style?: React.CSSProperties }).style as
+                        | React.CSSProperties
+                        | undefined)?.height,
                 transform: undefined,
                 zIndex: undefined,
                 cursor: "inherit",
