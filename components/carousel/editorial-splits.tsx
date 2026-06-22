@@ -127,9 +127,14 @@ function CompositionImages({ images }: { images: SplitSlideData["images"] }) {
 }
 
 function BottomCardGrid({ images }: { images: SplitSlideData["images"] }) {
+  const real = images.filter((img) => img.url).slice(0, 3)
+  const cols = Math.max(1, real.length)
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {images.slice(0, 3).map((img, i) => (
+    <div
+      className="grid gap-3"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+    >
+      {real.map((img, i) => (
         <SingleImageBox
           key={i}
           imageUrl={img.url}

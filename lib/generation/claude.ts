@@ -26,6 +26,7 @@ const CONTENT_SCHEMA = {
           "image_source_recommended",
           "image_prompt",
           "image_entity",
+          "extra_image_prompts",
           "unsplash_query",
           "image_keywords",
         ],
@@ -45,6 +46,10 @@ const CONTENT_SCHEMA = {
           // (ex: "Anthropic", "OpenAI", "Elon Musk"). "" quando não se aplica.
           // Usado pra buscar foto/logo real (Wikimedia) em vez de imagem de IA.
           image_entity: { type: "string" },
+          // Imagens ADICIONAIS quando o slide mostra mais de uma coisa distinta
+          // (comparação, antes/depois, exemplos). [] na grande maioria dos slides.
+          // Cada prompt deve ser uma CENA DIFERENTE (nunca repetir a principal).
+          extra_image_prompts: { type: "array", items: { type: "string" } },
           unsplash_query: { type: "string" },
           image_keywords: { type: "array", items: { type: "string" } },
         },
@@ -218,6 +223,11 @@ Se o tópico é abstrato, o photo deve ser **editorial-concreto**:
 
 REGRA DE OURO: só use image_entity quando a foto real DAQUELA entidade for OBVIAMENTE o melhor visual pro slide. Pra todo o resto — stats, conceitos, demografia, tendências — deixe "" e capriche no image_prompt editorial. Uma imagem fora de contexto é PIOR que uma genérica boa. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
 
+**extra_image_prompts**: VOCÊ decide se o slide precisa de mais de uma imagem. Na GRANDE MAIORIA dos slides, deixe \`[]\` (uma imagem só). Preencha com 1-2 prompts SÓ quando o slide mostra naturalmente coisas DIFERENTES lado a lado:
+- comparação / antes-e-depois (ex: 2 cenas distintas);
+- 2-3 exemplos visuais diferentes do mesmo ponto.
+Regras: cada prompt é uma CENA DIFERENTE da principal (NUNCA repita o mesmo assunto — imagens repetidas ficam ridículas). Mesmo padrão editorial-concreto, em INGLÊS. Se o slide é uma ideia/stat/conceito único, deixe \`[]\` — uma imagem basta. Não force múltiplas imagens só pra preencher.
+
 **image_keywords**: 2-3 descritores para SEO/cataloging.
 
 # CAPTION (legenda do Instagram — OBRIGATÓRIA, campo "caption")
@@ -310,6 +320,8 @@ export interface ClaudeSlide {
   image_prompt: string
   /** Empresa/pessoa/marca real do slide (ex: "Anthropic"). "" se não houver. */
   image_entity?: string
+  /** Prompts de imagens ADICIONAIS (cenas diferentes). [] na maioria. */
+  extra_image_prompts?: string[]
   unsplash_query?: string
   image_keywords: string[]
 }

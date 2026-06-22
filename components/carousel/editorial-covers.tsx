@@ -194,28 +194,32 @@ export function CoverWesleyLabios({
 
       {/* Sem header pills — visual mais limpo */}
 
-      <div className="absolute left-6 z-10" style={{ bottom: "11rem" }}>
-        <AvatarPill
-          avatar={slide.handle_avatar}
-          handle={slide.handle || "@brand"}
-          variant="light"
-        />
-      </div>
-
-      <div className="absolute left-6 right-6 z-10 space-y-2.5" style={{ bottom: "5rem" }}>
-        <h1
-          className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 700 }}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
+      {/* Handle + título num stack único ancorado embaixo: o handle fica sempre
+          a um gap fixo acima do título, independente do tamanho do título
+          (antes eram blocos separados e o título longo encostava no handle). */}
+      <div className="absolute left-6 right-6 z-10" style={{ bottom: "5rem" }}>
+        <div className="mb-6">
+          <AvatarPill
+            avatar={slide.handle_avatar}
+            handle={slide.handle || "@brand"}
+            variant="light"
           />
-        </h1>
-        {slide.subtitle && (
-          <p className="text-xs text-white/85">{slide.subtitle}</p>
-        )}
+        </div>
+        <div className="space-y-2.5">
+          <h1
+            className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
+            style={{ fontWeight: 700 }}
+          >
+            <HighlightedText
+              text={slide.title}
+              words={slide.highlight_words || []}
+              color={accent}
+            />
+          </h1>
+          {slide.subtitle && (
+            <p className="text-xs text-white/85">{slide.subtitle}</p>
+          )}
+        </div>
       </div>
 
       <div className="absolute bottom-4 inset-x-0 flex justify-center z-10">
@@ -273,16 +277,15 @@ export function CoverWesleyChurrasco({
             color={accent}
           />
         </h1>
+        {slide.subtitle && (
+          <p
+            className="text-sm text-white/85"
+            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}
+          >
+            {slide.subtitle}
+          </p>
+        )}
       </div>
-
-      {slide.subtitle && (
-        <p
-          className="absolute left-6 right-6 text-xs text-white/85 z-10"
-          style={{ bottom: "5rem" }}
-        >
-          {slide.subtitle}
-        </p>
-      )}
 
       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-10">
         <Pill>{slide.category || "Editorial"}</Pill>

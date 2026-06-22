@@ -35,6 +35,36 @@ export async function generateCarouselImages(
       const entity = (slide.image_entity ?? "").trim()
       const prompt = (slide.image_prompt ?? "").trim()
 
+      // Imagens ADICIONAIS (cenas diferentes) que a IA decidiu incluir.
+      // Geradas em paralelo, no máx 2, cada uma do seu próprio prompt (distinto).
+      const extraPrompts = (slide.extra_image_prompts ?? [])
+        .map((p) => (p ?? "").trim())
+        .filter(Boolean)
+        .slice(0, 2)
+      async function genAiImage(p: string): Promise<PreviewSlide["image"]> {
+        const img: PreviewSlide["image"] = { url: null, source: null, attribution: null, error: null }
+        try {
+          const res = await fetch("/api/editorial/generate-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: p, aspectRatio: "4:5" }),
+          })
+          const data = await res.json()
+          if (!res.ok || !data?.success) {
+            img.error = data?.error ?? "falha ao gerar imagem"
+            return img
+          }
+          img.url = data.url
+          img.source = "ai"
+        } catch (err) {
+          img.error = err instanceof Error ? err.message : "erro de rede"
+        }
+        return img
+      }
+      if (extraPrompts.length) {
+        base.extra_images = await Promise.all(extraPrompts.map((p) => genAiImage(p)))
+      }
+
       // 1) Entidade real → Wikimedia (logo/foto)
       if (entity) {
         try {

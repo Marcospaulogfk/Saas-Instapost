@@ -55,9 +55,14 @@ export default function EstiloPage() {
   }
 
   const removeLogo = () => {
-    update({ logoUrl: null, logoFileName: null })
+    // Limpa tanto o upload manual quanto a logo extraída do site, pra "remover"
+    // de fato (senão a extraída reaparecia como fallback).
+    update({ logoUrl: null, logoFileName: null, detectedLogoUrl: null })
     if (fileRef.current) fileRef.current.value = ""
   }
+
+  // Logo a exibir: upload manual tem prioridade; senão a extraída do site.
+  const logoPreview = state.logoUrl ?? state.detectedLogoUrl ?? null
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -85,7 +90,7 @@ export default function EstiloPage() {
       visual_style: state.archetype || "",
       main_objective: objectiveDb,
       brand_colors: [state.primaryColor, state.secondaryColor, state.accentColor],
-      logo_url: state.logoUrl ?? null,
+      logo_url: state.logoUrl ?? state.detectedLogoUrl ?? null,
     })
 
     setSubmitting(false)
@@ -131,7 +136,7 @@ export default function EstiloPage() {
                 <span className="onb-label-tag">opcional</span>
               </div>
 
-              {state.logoUrl ? (
+              {logoPreview ? (
                 <div
                   className="flex items-center gap-4 rounded-xl p-4"
                   style={{
@@ -151,7 +156,7 @@ export default function EstiloPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={state.logoUrl}
+                        src={logoPreview}
                         alt="Logo"
                         style={{
                           width: "100%",
@@ -191,7 +196,9 @@ export default function EstiloPage() {
                           verticalAlign: "middle",
                         }}
                       />
-                      Logo enviada com sucesso
+                      {state.logoUrl
+                        ? "Logo enviada com sucesso"
+                        : "Logo encontrada no seu site"}
                     </div>
                     <div
                       style={{
@@ -199,9 +206,26 @@ export default function EstiloPage() {
                         color: "var(--onb-text-secondary)",
                       }}
                     >
-                      {state.logoFileName ?? "logo"}
+                      {state.logoUrl
+                        ? (state.logoFileName ?? "logo")
+                        : "Use o botão Trocar pra subir outra"}
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center justify-center rounded-md px-3"
+                    style={{
+                      height: 28,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--onb-text-primary)",
+                      background: "var(--onb-bg-elevated)",
+                      border: "0.5px solid var(--onb-border-default)",
+                    }}
+                  >
+                    Trocar
+                  </button>
                   <button
                     type="button"
                     onClick={removeLogo}

@@ -39,6 +39,15 @@ export interface PreviewSlide {
     attribution: SlideAttribution | null
     error: string | null
   }
+  /** Imagens adicionais (cenas DIFERENTES) quando a IA decide que o slide
+   *  mostra mais de uma coisa. Vazio na maioria. Usadas em layouts de
+   *  comparação/composição — nunca duplicam a principal. */
+  extra_images?: Array<{
+    url: string | null
+    source: "ai" | "unsplash" | "wikimedia" | null
+    attribution: SlideAttribution | null
+    error: string | null
+  }>
 }
 
 /** Estilo visual do carrossel — escolhe família de variantes pra capa e splits. */
@@ -193,6 +202,12 @@ function toSplitSlideData(
         attribution: slide.image.attribution,
         error: slide.image.error,
       },
+      // Imagens adicionais (cenas diferentes) que a IA decidiu incluir.
+      ...(slide.extra_images ?? []).map((img) => ({
+        url: img.url,
+        attribution: img.attribution,
+        error: img.error,
+      })),
     ],
     handle: extras.handle,
     handle_avatar: extras.handleAvatar,
@@ -200,6 +215,21 @@ function toSplitSlideData(
     brand_label: extras.brandLabel,
     year_label: `${new Date().getFullYear()} //`,
   }
+}
+
+/**
+ * Slot multi-imagem (comparação/composição/grid) só vale se a IA gerou 2+
+ * imagens DISTINTAS. Senão cai pra uma imagem só — NUNCA duplica a mesma.
+ */
+function resolveImageSlot(slot: SplitImageSlot, imgCount: number): SplitImageSlot {
+  const isMulti =
+    slot === "composition-top" ||
+    slot === "comparison-bottom" ||
+    slot === "bottom-card"
+  if (!isMulti) return slot
+  if (imgCount >= 2) return slot
+  if (imgCount >= 1) return "single-bottom"
+  return "none"
 }
 
 // ============================================================================
@@ -246,6 +276,8 @@ function EditorialSlideRouter(props: RouterProps) {
 
   const coverData = toCoverSlideData(slide, { handle, handleAvatar, brandLabel })
   const splitData = toSplitSlideData(slide, { handle, handleAvatar, brandLabel })
+  // Quantas imagens DISTINTAS o slide realmente tem (decidido pela IA).
+  const imgCount = splitData.images.filter((im) => im.url).length
 
   const baseProps = {
     totalSlides,
@@ -275,7 +307,7 @@ function EditorialSlideRouter(props: RouterProps) {
         return <CoverWesleyChurrasco slide={coverData} {...baseProps} />
       return <CoverWesleyInternet slide={coverData} {...baseProps} />
     }
-    const slot: SplitImageSlot = isLast
+    const rawSlot: SplitImageSlot = isLast
       ? "single-bottom"
       : isMidBreak
         ? "composition-top"
@@ -284,12 +316,8 @@ function EditorialSlideRouter(props: RouterProps) {
           : slide.order_index % 3 === 2
             ? "comparison-bottom"
             : "none"
-    // composition-top precisa de 2 imagens; comparison-bottom também
-    const splitDataExpanded =
-      slot === "composition-top" || slot === "comparison-bottom"
-        ? { ...splitData, images: [splitData.images[0], splitData.images[0]] }
-        : splitData
-    return <SplitWesleyDark slide={splitDataExpanded} {...baseProps} imageSlot={slot} />
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitWesleyDark slide={splitData} {...baseProps} imageSlot={slot} />
   }
 
   // ===== STYLE: BRANDSDECODED =====
@@ -306,23 +334,20 @@ function EditorialSlideRouter(props: RouterProps) {
         />
       )
     }
-    const slot: SplitImageSlot =
+    const rawSlot: SplitImageSlot =
       slide.order_index % 3 === 1
         ? "single-top"
         : slide.order_index % 3 === 2
           ? "single-middle"
           : "bottom-card"
-    const expanded =
-      slot === "bottom-card"
-        ? {
-            ...splitData,
-            images: [splitData.images[0], splitData.images[0], splitData.images[0]],
-            callout: "Esse carrossel foi feito no Claude.",
-          }
-        : splitData
+    const slot = resolveImageSlot(rawSlot, imgCount)
     return (
       <SplitBrandsdecodedLight
-        slide={expanded}
+        slide={
+          slot === "bottom-card"
+            ? { ...splitData, callout: "Esse carrossel foi feito no Claude." }
+            : splitData
+        }
         {...baseProps}
         imageSlot={slot}
         titleSize="massive"
@@ -358,16 +383,13 @@ function EditorialSlideRouter(props: RouterProps) {
         />
       )
     }
-    const slot: SplitImageSlot = isMidBreak
+    const rawSlot: SplitImageSlot = isMidBreak
       ? "composition-top"
       : slide.order_index % 2 === 1
         ? "single-bottom"
         : "none"
-    const expanded =
-      slot === "composition-top"
-        ? { ...splitData, images: [splitData.images[0], splitData.images[0]] }
-        : splitData
-    return <SplitWesleyDark slide={expanded} {...baseProps} imageSlot={slot} />
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitWesleyDark slide={splitData} {...baseProps} imageSlot={slot} />
   }
 
   // ===== STYLE: AUTO (legacy) =====
