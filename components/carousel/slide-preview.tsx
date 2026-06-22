@@ -431,8 +431,13 @@ function LegacyEditorialSlide({
   // (sem isso ficavam todos no mesmo bg cream).
   const isDarkSplit = slide.order_index % 2 === 0 // par = dark, ímpar = light
   const splitBg = isDarkSplit ? darkBg : lightBg
-  const splitText = isDarkSplit ? "#FFFFFF" : dark
-  const splitTextMuted = isDarkSplit ? "rgba(255,255,255,0.85)" : dark
+  // Texto base é SEMPRE neutro (preto no claro, branco no escuro). A cor da
+  // marca fica só no destaque (accent) — usar brandColors[1] como texto deixava
+  // o título inteiro colorido quando a 2ª cor da marca não era um preto neutro.
+  const splitText = isDarkSplit ? "#FFFFFF" : "#0A0A0F"
+  const splitTextMuted = isDarkSplit
+    ? "rgba(255,255,255,0.85)"
+    : "rgba(10,10,15,0.72)"
   const splitTextOpacity = isDarkSplit ? 0.85 : 0.7
 
   if (variant === "cover") {
