@@ -32,6 +32,7 @@ import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { ClaudeSlide } from "@/lib/generation/claude"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
+import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
 
 type StepId = 1 | 2 | 3 | 4 | 5
 
@@ -155,6 +156,29 @@ export default function CriarWizardPage() {
   const [carouselLoading, setCarouselLoading] = useState(false)
   const [carouselErr, setCarouselErr] = useState<string | null>(null)
   const [carouselApproving, setCarouselApproving] = useState(false)
+
+  // --- Marca ativa: usada na geração em vez da Marca Demo hardcoded ---
+  const [activeBrand, setActiveBrand] = useState<ActiveBrandLite | null>(null)
+  useEffect(() => {
+    getActiveBrandLite()
+      .then((b) => {
+        if (b) setActiveBrand(b)
+      })
+      .catch(() => {})
+  }, [])
+  // Marca efetiva pra geração: a ativa real, com fallback pros defaults demo
+  // só quando ainda não carregou / o usuário não tem marca.
+  const wizardBrand = activeBrand
+    ? {
+        id: activeBrand.id,
+        name: activeBrand.name,
+        brand_colors: activeBrand.brand_colors?.length
+          ? activeBrand.brand_colors
+          : WIZARD_BRAND.brand_colors,
+        instagram_handle:
+          activeBrand.instagram_handle || WIZARD_BRAND.instagram_handle,
+      }
+    : WIZARD_BRAND
 
   // Pré-preenche briefing se vier de Inspiração
   useEffect(() => {
@@ -291,7 +315,7 @@ export default function CriarWizardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          brand: WIZARD_BRAND,
+          brand: wizardBrand,
           briefing: finalBriefing,
           text_only: true,
         }),
@@ -341,7 +365,7 @@ export default function CriarWizardPage() {
         "syncpost_pending_post_unico",
         JSON.stringify({
           kind: "approved",
-          brand: WIZARD_BRAND,
+          brand: wizardBrand,
           skeletonId: approvalDraft.skeletonId,
           approvedContent: editedContent,
           caption: approvalDraft.caption,
@@ -371,9 +395,9 @@ export default function CriarWizardPage() {
           topic: finalBriefing,
           objective: objetivo === "vender" ? "sell" : "engage",
           template: "editorial",
-          brandName: WIZARD_BRAND.name,
-          handle: WIZARD_BRAND.instagram_handle,
-          colors: WIZARD_BRAND.brand_colors,
+          brandName: wizardBrand.name,
+          handle: wizardBrand.instagram_handle,
+          colors: wizardBrand.brand_colors,
           desiredSlides: formato.slides ?? 7,
         }),
       })
@@ -409,8 +433,9 @@ export default function CriarWizardPage() {
           objective: objetivo === "vender" ? "sell" : "engage",
           template: "editorial",
           nSlides: carouselDraft.slides.length || (formato.slides ?? 7),
-          colors: WIZARD_BRAND.brand_colors,
-          brandName: WIZARD_BRAND.name,
+          colors: wizardBrand.brand_colors,
+          brandName: wizardBrand.name,
+          handle: wizardBrand.instagram_handle,
           autoRun: true,
           ts: Date.now(),
         }),
@@ -430,7 +455,7 @@ export default function CriarWizardPage() {
         "syncpost_pending_post_unico",
         JSON.stringify({
           kind: "template",
-          brand: WIZARD_BRAND,
+          brand: wizardBrand,
           templateId,
           rawContent: finalBriefing,
           briefing: finalBriefing,

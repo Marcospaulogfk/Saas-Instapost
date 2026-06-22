@@ -142,6 +142,10 @@ PROIBIDO (bandeira vermelha de IA, NUNCA usar): "Descubra", "Conheça", "Saiba m
 
 **6. PT-BR coloquial culto.** Sem gerundismo, sem "podemos te ajudar".
 
+**7. Pontuação natural.** Encadeia ideias com vírgula — NÃO quebra toda oração numa frase separada terminada em ponto. Evita o staccato robótico: "Não é nicho. É três em cada quatro." soa de IA — prefira "Não é nicho — já são três em cada quatro." ou "Não é nicho: três em cada quatro." Ponto final separa ideias DIFERENTES, não pedaços da mesma frase.
+
+**8. Não invente nada fora do briefing.** PROIBIDO introduzir números, datas, nomes ou jargão de negócio (ex: "freemium", "growth hacking", "MRR", "churn", "TAM") que NÃO estejam no tema nem sejam parte óbvia do assunto. Se o briefing não dá um dado, não cria um. Fica NO tema — não desvia pra outro assunto pra parecer esperto.
+
 # ARCO NARRATIVO POR OBJETIVO
 
 - **vender (AIDA):** S1 capa-gancho → S2-3 problema concreto → S4-5 mecanismo / desejo → S(n-1) prova/resultado → S(n) CTA direto
@@ -199,19 +203,20 @@ Se o tópico é abstrato, o photo deve ser **editorial-concreto**:
 
 **unsplash_query**: 2-4 keywords em INGLÊS pra busca (ex: "lawyer office portrait" / "minimalist desk laptop"). Sempre forneça.
 
-**image_entity**: o nome de algo REAL cuja FOTO de verdade ilustra o slide melhor do que uma arte de IA. O sistema busca a foto real na Wikipedia. Use o NOME EXATO.
+**image_entity**: o nome de algo REAL cuja FOTO de verdade ilustra o slide melhor do que uma arte de IA. O sistema busca a foto real na Wikipedia. Use o NOME EXATO. NA DÚVIDA, deixe "" — a IA gera uma cena editorial sob medida, quase sempre mais relevante que uma foto genérica.
 
-✅ SEMPRE preencha quando o slide é sobre:
-- CIDADE, PAÍS ou LUGAR real (ex: "São Paulo", "Londres", "Brasil", "Times Square", "Cristo Redentor", "Tate Modern"). Lugares existem e têm fotos reais — é MUITO melhor que IA. Se o slide fala de uma cidade/lugar, marque-o.
-- PESSOA pública/famosa (ex: "Elon Musk", "Cristiano Ronaldo").
-- PRODUTO físico icônico (ex: "iPhone", "Tesla Model 3").
+✅ Preencha SÓ quando a entidade É O ASSUNTO LITERAL e VISUAL do slide:
+- PESSOA pública/famosa que o slide cita pelo nome (ex: "Elon Musk", "Cristiano Ronaldo").
+- PRODUTO físico icônico que o slide discute (ex: "iPhone", "Tesla Model 3").
+- LUGAR/MARCO específico SÓ quando o slide é REALMENTE sobre aquele lugar como destino/local (ex: slide "o que ver na Tate Modern" → "Tate Modern"; "pôr do sol em Santorini" → "Santorini").
 
-❌ DEIXE "" (vazio) quando:
-- o slide é puramente abstrato/conceitual/opinião/dado/pergunta SEM um lugar, pessoa ou produto concreto;
-- a entidade é uma EMPRESA/MARCA/REVISTA/APP cuja imagem seria só um LOGO (ex: "Time Out", "OpenAI", "Anthropic") — logo fica horrível recortado. Use "" e descreva uma cena editorial no image_prompt;
-- o slide compara DUAS+ entidades sem uma protagonista visual única (deixe "" e use image_prompt).
+❌ DEIXE "" (vazio) — este é o caso MAIS COMUM:
+- slide de estatística, dado, conceito, opinião, pergunta ou tendência. Ex: "75% dos brasileiros usam IA" NÃO é sobre o Brasil-lugar — é sobre adoção de IA. NÃO use "Brasil"/"São Paulo": uma foto de skyline ou ponte não tem NADA a ver com o assunto e fica fora de contexto. Descreva uma cena editorial concreta no image_prompt (pessoas reais usando celular, tela com IA, etc).
+- país/cidade só MENCIONADO de passagem (demografia, mercado, origem) — não é o assunto visual.
+- EMPRESA/MARCA/REVISTA/APP cuja imagem seria só um LOGO (ex: "OpenAI", "Anthropic") — logo recortado fica horrível. Use "" e cena editorial no image_prompt.
+- slide que compara 2+ entidades sem uma protagonista visual única.
 
-REGRA DE OURO: se existe um LUGAR ou PESSOA real no centro do slide, prefira a foto real (image_entity). Só caia pra IA (image_entity "") quando for conceito abstrato ou quando só haveria um logo. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
+REGRA DE OURO: só use image_entity quando a foto real DAQUELA entidade for OBVIAMENTE o melhor visual pro slide. Pra todo o resto — stats, conceitos, demografia, tendências — deixe "" e capriche no image_prompt editorial. Uma imagem fora de contexto é PIOR que uma genérica boa. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
 
 **image_keywords**: 2-3 descritores para SEO/cataloging.
 

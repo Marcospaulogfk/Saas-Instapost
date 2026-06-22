@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { getActiveBrand } from "@/lib/data/queries"
 import {
   clearActiveBrandCookie,
   getActiveBrandIdFromCookie,
@@ -174,6 +175,28 @@ export async function deleteBrand(brandId: string): Promise<DeleteBrandResult> {
 export type SetActiveBrandResult =
   | { ok: true }
   | { ok: false; error: string }
+
+/**
+ * Versão "lite" da marca ativa pra usar em client components (wizard).
+ * Devolve só os campos que a geração precisa, ou null se não houver marca.
+ */
+export interface ActiveBrandLite {
+  id: string
+  name: string
+  brand_colors: string[]
+  instagram_handle: string | null
+}
+
+export async function getActiveBrandLite(): Promise<ActiveBrandLite | null> {
+  const brand = await getActiveBrand()
+  if (!brand) return null
+  return {
+    id: brand.id,
+    name: brand.name,
+    brand_colors: brand.brand_colors ?? [],
+    instagram_handle: brand.instagram_handle ?? null,
+  }
+}
 
 export async function setActiveBrand(
   brandId: string,
