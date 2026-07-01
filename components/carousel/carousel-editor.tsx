@@ -25,14 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  SlidePreview,
   type PreviewSlide,
   type EditorialStyle,
 } from "@/components/carousel/slide-preview"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
-import { buildSlideSpec } from "@/lib/carousel/slide-specs"
-import { useSpecEditor } from "@/lib/single-posts/use-spec-editor"
-import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
-import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 
@@ -79,70 +76,10 @@ export function CarouselEditor({
   const [showUrl, setShowUrl] = useState(false)
   const [urlDraft, setUrlDraft] = useState("")
   const [exporting, setExporting] = useState(false)
-
-  // Specs editáveis (Canva-like) por slide. Cada slide vira um FreePostSpec
-  // que o usuário arrasta/restiliza. Construído sob demanda.
-  const [specs, setSpecs] = useState<Record<number, FreePostSpec>>({})
+  const [zipBusy, setZipBusy] = useState(false)
 
   const previewRef = useRef<HTMLDivElement | null>(null)
-  const exportRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Constrói o spec do slide selecionado quando ainda não existe.
-  useEffect(() => {
-    const s = slides[selected]
-    if (!s) return
-    setSpecs((prev) => {
-      if (prev[selected]) return prev
-      const spec = buildSlideSpec(
-        {
-          title: s.title,
-          subtitle: s.subtitle,
-          body: s.body,
-          highlight_words: s.highlight_words,
-          cta_badge: s.cta_badge,
-          image: { url: s.image.url },
-          extra_images: s.extra_images?.map((x) => ({ url: x.url })),
-        },
-        { style, index: selected, total: slides.length, brandColors: colors, handle },
-      )
-      return { ...prev, [selected]: spec }
-    })
-  }, [selected, slides, style, colors, handle])
-
-  const currentSpec = specs[selected] ?? null
-  const { canvas, panel } = useSpecEditor(
-    currentSpec,
-    (s) => setSpecs((prev) => ({ ...prev, [selected]: s })),
-    { format: format === "stories" ? "story" : "post" },
-  )
-
-  // Aplica uma imagem nova ao spec do slide (bg foto ou 1º bloco image).
-  function applyImageToSpec(url: string) {
-    setSpecs((prev) => {
-      const sp = prev[selected]
-      if (!sp) return prev
-      let bg = sp.background
-      let blocks = sp.blocks
-      if (bg.kind === "photo") {
-        bg = { ...bg, photo_url: url }
-      } else {
-        const idx = blocks.findIndex((b) => b.type === "image")
-        if (idx >= 0) {
-          blocks = blocks.map((b, i) =>
-            i === idx && b.type === "image" ? { ...b, url } : b,
-          )
-        } else {
-          bg = {
-            kind: "photo",
-            photo_url: url,
-            photo_overlay: { color: "#000000", opacity: 0.45, direction: "to top", start: 0.4 },
-          }
-        }
-      }
-      return { ...prev, [selected]: { ...sp, background: bg, blocks } }
-    })
-  }
 
   // Autosave do rascunho em localStorage — não perde o trabalho ao recarregar.
   // (Persistência em nuvem/biblioteca depende de migration no Supabase — pendente de OK.)
@@ -183,7 +120,6 @@ export function CarouselEditor({
           : s,
       ),
     )
-    applyImageToSpec(url)
   }
 
   async function generateImage(mode: ImageMode) {
@@ -250,11 +186,11 @@ export function CarouselEditor({
   }
 
   async function handleExport() {
-    if (!exportRef.current) return
+    if (!previewRef.current) return
     setExporting(true)
     try {
       const { toPng } = await import("html-to-image")
-      const dataUrl = await toPng(exportRef.current, {
+      const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
         canvasWidth: 1080,
         canvasHeight: format === "stories" ? 1920 : 1350,
@@ -270,6 +206,50 @@ export function CarouselEditor({
       setImgError(err instanceof Error ? err.message : "erro no export")
     } finally {
       setExporting(false)
+    }
+  }
+
+  // Exporta TODOS os slides num único .zip. Percorre os slides no preview
+  // visível (cada um renderiza no previewRef) e captura o PNG de cada.
+  async function handleExportAllZip() {
+    if (!previewRef.current || slides.length === 0) return
+    setZipBusy(true)
+    setImgError(null)
+    const prevSelected = selected
+    try {
+      const { toPng } = await import("html-to-image")
+      const JSZip = (await import("jszip")).default
+      const zip = new JSZip()
+      for (let i = 0; i < slides.length; i++) {
+        setSelected(i)
+        // espera o slide (e a imagem) renderizar antes de capturar
+        await new Promise((r) => setTimeout(r, 650))
+        if (!previewRef.current) continue
+        const dataUrl = await toPng(previewRef.current, {
+          cacheBust: true,
+          canvasWidth: 1080,
+          canvasHeight: format === "stories" ? 1920 : 1350,
+          pixelRatio: 1,
+        })
+        const base64 = dataUrl.split(",")[1]
+        zip.file(`slide-${String(i + 1).padStart(2, "0")}.png`, base64, {
+          base64: true,
+        })
+      }
+      const blob = await zip.generateAsync({ type: "blob" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${(title || "carrossel").replace(/[^a-z0-9-]+/gi, "-")}-carrossel.zip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "erro no export do zip")
+    } finally {
+      setSelected(prevSelected)
+      setZipBusy(false)
     }
   }
 
@@ -290,10 +270,31 @@ export function CarouselEditor({
         </div>
         <div className="flex items-center gap-2">
           <PublishToInstagram
-            imageUrls={slides.map((s) => s.image.url).filter((u): u is string => !!u)}
+            imageUrls={slides
+              .map((s) => s.image.url)
+              .filter((u): u is string => !!u)}
             caption={caption ?? ""}
           />
-          <Button type="button" size="sm" onClick={handleExport} disabled={exporting}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportAllZip}
+            disabled={zipBusy || exporting}
+          >
+            {zipBusy ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {zipBusy ? "Gerando ZIP…" : "Baixar carrossel (ZIP)"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting || zipBusy}
+          >
             {exporting ? (
               <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
             ) : (
@@ -333,30 +334,20 @@ export function CarouselEditor({
 
           <div
             ref={previewRef}
-            className={`w-full rounded-xl overflow-hidden ${
+            className={`w-full rounded-xl overflow-hidden bg-black ${
               format === "stories" ? "max-w-[300px]" : "max-w-[420px]"
             }`}
           >
-            {canvas ?? (
-              <div className="aspect-[4/5] flex items-center justify-center bg-background-tertiary text-text-muted text-xs">
-                montando editor…
-              </div>
-            )}
-          </div>
-
-          {/* Render offscreen sem contornos pra exportar PNG limpo */}
-          <div
-            ref={exportRef}
-            className="fixed -left-[9999px] top-0 pointer-events-none"
-            style={{ width: 420 }}
-            aria-hidden
-          >
-            {currentSpec && (
-              <FreePostRenderer
-                spec={currentSpec}
-                format={format === "stories" ? "story" : "post"}
-              />
-            )}
+            <SlidePreview
+              slide={slide}
+              totalSlides={slides.length}
+              template={template}
+              brandColors={colors}
+              fontClass={inter.className}
+              editorialStyle={style}
+              handle={handle}
+              format={format}
+            />
           </div>
 
           {/* Thumbnails */}
@@ -395,10 +386,7 @@ export function CarouselEditor({
             <Label className="text-xs">Estilo / módulo do carrossel</Label>
             <Select
               value={style}
-              onValueChange={(v) => {
-                setStyle(v as EditorialStyle)
-                setSpecs({}) // re-gera os specs no novo estilo
-              }}
+              onValueChange={(v) => setStyle(v as EditorialStyle)}
             >
               <SelectTrigger className="h-9 mt-1.5">
                 <SelectValue />
@@ -452,9 +440,54 @@ export function CarouselEditor({
             <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
               Editar slide {selected + 1}
             </p>
-            {panel ?? (
-              <p className="text-xs text-text-muted">montando editor…</p>
-            )}
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Título</Label>
+                <Input
+                  value={slide.title}
+                  onChange={(e) => patchSlide({ title: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Subtítulo</Label>
+                <Input
+                  value={slide.subtitle}
+                  onChange={(e) => patchSlide({ subtitle: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Corpo</Label>
+                <Textarea
+                  value={slide.body || ""}
+                  onChange={(e) => patchSlide({ body: e.target.value })}
+                  rows={3}
+                  placeholder="Texto do slide. Suporta **bold** e \n\n."
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Palavras destacadas (vírgula)</Label>
+                <Input
+                  value={(slide.highlight_words || []).join(", ")}
+                  onChange={(e) =>
+                    patchSlide({
+                      highlight_words: e.target.value
+                        .split(",")
+                        .map((w) => w.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder="GIGANTE, VIRAL"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Badge (tag)</Label>
+                <Input
+                  value={slide.cta_badge || ""}
+                  onChange={(e) => patchSlide({ cta_badge: e.target.value })}
+                  placeholder="ESTUDO 01, NOVO…"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Imagem */}
