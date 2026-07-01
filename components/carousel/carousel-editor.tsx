@@ -33,6 +33,19 @@ import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 
+/** Nome de arquivo a partir do título do slide (NN- pra manter ordem no zip). */
+function slideFileName(s: PreviewSlide, i: number): string {
+  const idx = String(i + 1).padStart(2, "0")
+  const slug = (s.title || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // remove acentos
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 50)
+  return slug ? `${idx}-${slug}` : `slide-${idx}`
+}
+
 const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "auto", label: "Auto (alternado)" },
   { value: "wesley", label: "Wesley (dark/impacto)" },
@@ -198,7 +211,7 @@ export function CarouselEditor({
       })
       const a = document.createElement("a")
       a.href = dataUrl
-      a.download = `${(title || "carrossel").replace(/[^a-z0-9-]+/gi, "-")}-slide-${selected + 1}.png`
+      a.download = `${slideFileName(slide, selected)}.png`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -232,7 +245,7 @@ export function CarouselEditor({
           pixelRatio: 1,
         })
         const base64 = dataUrl.split(",")[1]
-        zip.file(`slide-${String(i + 1).padStart(2, "0")}.png`, base64, {
+        zip.file(`${slideFileName(slides[i], i)}.png`, base64, {
           base64: true,
         })
       }

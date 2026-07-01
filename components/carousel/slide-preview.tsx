@@ -497,7 +497,9 @@ function LegacyEditorialSlide({
               ? // Stories: bloco do título ocupa do topo (abaixo das pills) ao
                 // rodapé, centralizado — evita o título transbordar/colidir.
                 "absolute inset-x-5 top-16 bottom-16 z-10 flex flex-col justify-center space-y-3"
-              : "absolute inset-x-5 top-[44%] z-10 space-y-3"
+              : // Feed: título/subtítulo ancorados EMBAIXO (estilo impacto Wesley),
+                // não no meio.
+                "absolute inset-x-5 bottom-16 z-10 space-y-3"
           }
         >
           <h1
@@ -658,9 +660,16 @@ function LegacySlideImage({
   placeholderBg: string
   placeholderText: string
 }) {
+  // aspect-ratio FIXO (não height em %) — assim a imagem tem a mesma proporção
+  // no preview e no PNG exportado (o % de altura era resolvido diferente pelo
+  // html-to-image e a imagem crescia, cortando o texto embaixo). object-cover
+  // preenche a caixa mantendo a proporção da foto.
   if (slide.image.url) {
     return (
-      <div className="rounded-md overflow-hidden flex-shrink-0" style={{ height: "44%" }}>
+      <div
+        className="w-full rounded-md overflow-hidden flex-shrink-0"
+        style={{ aspectRatio: "16 / 10" }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={slide.image.url} alt="" className="w-full h-full object-cover" />
       </div>
@@ -668,8 +677,13 @@ function LegacySlideImage({
   }
   return (
     <div
-      className="rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
-      style={{ height: "44%", backgroundColor: placeholderBg, color: placeholderText, opacity: 0.4 }}
+      className="w-full rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
+      style={{
+        aspectRatio: "16 / 10",
+        backgroundColor: placeholderBg,
+        color: placeholderText,
+        opacity: 0.4,
+      }}
     >
       {slide.image.error || "sem imagem"}
     </div>

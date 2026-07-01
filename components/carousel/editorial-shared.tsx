@@ -16,13 +16,17 @@ export function Pill({
   className?: string
 }) {
   const isDark = variant === "dark"
+  // Fill SÓLIDO + borda fina (destaque limpo que aparece no fundo claro e escuro).
+  // Sem backdrop-filter: o blur virava uma "sombra" borrada no export PNG.
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold ${className}`}
       style={{
-        backgroundColor: isDark ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)",
-        backdropFilter: "blur(8px)",
+        backgroundColor: isDark ? "#0A0A0F" : "#FFFFFF",
         color: isDark ? "#FFFFFF" : "#0A0A0F",
+        border: isDark
+          ? "1px solid rgba(255,255,255,0.16)"
+          : "1px solid rgba(0,0,0,0.12)",
       }}
     >
       {children}
@@ -54,12 +58,18 @@ export function AvatarPill({
 
   const initials = handle.replace(/^@/, "").slice(0, 2).toUpperCase()
 
+  const border =
+    variant === "dark"
+      ? "1px solid rgba(255,255,255,0.16)"
+      : variant === "light"
+        ? "1px solid rgba(0,0,0,0.12)"
+        : undefined
   return (
     <span
       className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 ${className}`}
       style={{
-        backgroundColor: styles.bg,
-        backdropFilter: variant !== "transparent" ? "blur(8px)" : undefined,
+        backgroundColor: variant === "dark" ? "#0A0A0F" : styles.bg,
+        border,
         color: styles.text,
       }}
     >
