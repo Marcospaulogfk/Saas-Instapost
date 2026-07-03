@@ -91,6 +91,10 @@ const TEMPLATES = [
 const EDITORIAL_STYLES = [
   { value: "auto", label: "Auto (legacy)", description: "Cover + splits alternados" },
   { value: "bolo", label: "Bolo (lista)", description: "Lista de ideias numeradas" },
+  { value: "gradient", label: "Gradiente (dark)", description: "Dark vibrante com glow do accent" },
+  { value: "minimal", label: "Minimal (branco)", description: "Suíço: tipografia gigante + hairlines" },
+  { value: "seamless", label: "Seamless (panorâmico)", description: "Linha contínua atravessa os slides" },
+  { value: "notes", label: "Notes (nativo)", description: "Screenshot do app Notas" },
 ] as const
 type EditorialStyleKey = (typeof EDITORIAL_STYLES)[number]["value"]
 

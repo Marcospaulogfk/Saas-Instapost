@@ -488,4 +488,36 @@
 
   /* Tabular numbers */
   .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* ── Landing page (marketing) — expressivos, escopo lp-.
+     A regra "sem glow" vale pra interface do app; a landing pode vender. ── */
+  @keyframes lp-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .lp-marquee {
+    display: flex;
+    width: max-content;
+    animation: lp-marquee 32s linear infinite;
+  }
+  .lp-text-gradient {
+    background-image: linear-gradient(100deg, #BD9BF7 0%, #9D5CF0 55%, #7320E6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lp-cta-glow {
+    box-shadow: 0 0 28px rgba(115, 32, 230, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: box-shadow 0.25s ease;
+  }
+  .lp-cta-glow:hover {
+    box-shadow: 0 0 42px rgba(115, 32, 230, 0.65), 0 4px 18px rgba(0, 0, 0, 0.4);
+  }
+  .lp-aurora {
+    background-image: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(115, 32, 230, 0.16) 0%, transparent 65%);
+  }
+  .lp-fade-x {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+  }
 }

@@ -241,6 +241,100 @@ export function HighlightedText({
 }
 
 // ============================================================================
+// mixWithWhite — clareia um hex misturando com branco (ratio 0..1)
+// ============================================================================
+
+export function mixWithWhite(hex: string, ratio: number): string {
+  const m = hex.replace("#", "")
+  const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m
+  const num = parseInt(full, 16)
+  if (Number.isNaN(num) || full.length !== 6) return hex
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  const mix = (c: number) => Math.round(c + (255 - c) * ratio)
+  return `#${[mix(r), mix(g), mix(b)]
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`
+}
+
+// ============================================================================
+// HighlightedGradientText — destaca palavras com gradiente (accent → claro)
+// ============================================================================
+
+export function HighlightedGradientText({
+  text,
+  words,
+  color,
+}: {
+  text: string
+  words: string[]
+  color: string
+}) {
+  if (!words?.length) return <>{text}</>
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  const re = new RegExp(`(${escaped.join("|")})`, "gi")
+  const parts = text.split(re)
+  const gradient = `linear-gradient(100deg, ${color} 0%, ${mixWithWhite(color, 0.55)} 100%)`
+  return (
+    <>
+      {parts.map((part, i) => {
+        const isHighlight = words.some(
+          (w) => w.toLowerCase() === part.toLowerCase(),
+        )
+        return isHighlight ? (
+          <span
+            key={i}
+            style={{
+              backgroundImage: gradient,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      })}
+    </>
+  )
+}
+
+// ============================================================================
+// GradientProgressBar — barra de progresso do carrossel (substitui dots)
+// ============================================================================
+
+export function GradientProgressBar({
+  total,
+  active,
+  color,
+  trackColor = "rgba(255,255,255,0.12)",
+}: {
+  total: number
+  active: number
+  color: string
+  trackColor?: string
+}) {
+  const pct = total > 0 ? ((active + 1) / total) * 100 : 0
+  return (
+    <div
+      className="h-1 w-full rounded-full overflow-hidden"
+      style={{ backgroundColor: trackColor }}
+    >
+      <div
+        className="h-full rounded-full"
+        style={{
+          width: `${pct}%`,
+          backgroundImage: `linear-gradient(90deg, ${color}, ${mixWithWhite(color, 0.45)})`,
+        }}
+      />
+    </div>
+  )
+}
+
+// ============================================================================
 // parseBoldInline — converte **texto** em <strong>
 // ============================================================================
 

@@ -14,6 +14,10 @@ import {
   CoverWesleyChurrasco,
   CoverBrandsdecodedMassive,
   CoverBrandsdecodedPortrait,
+  CoverGradientGlow,
+  CoverMinimalClean,
+  CoverSeamlessFlow,
+  CoverNotesNative,
   type CoverSlideData,
 } from "./editorial-covers"
 import {
@@ -22,6 +26,10 @@ import {
   SplitBrandsdecodedDarkSerif,
   SplitBoloCream,
   SplitMyPostFlowCta,
+  SplitGradientDark,
+  SplitMinimalClean,
+  SplitSeamlessFlow,
+  SplitNotesNative,
   type SplitSlideData,
   type SplitImageSlot,
 } from "./editorial-splits"
@@ -57,6 +65,10 @@ export type EditorialStyle =
   | "brandsdecoded" // capas brandsdecoded + splits light/dark-serif
   | "bolo" // capa wesley-labios + splits bolo-cream
   | "mypostflow" // capa wesley + splits mypostflow
+  | "gradient" // dark vibrante com glow do accent + highlights em gradiente
+  | "minimal" // branco suíço: tipografia gigante + ghost numbers + hairlines
+  | "seamless" // panorâmico: linha contínua atravessa os slides (+completion)
+  | "notes" // app Notas nativo/orgânico (não parece anúncio → share no DM)
 
 interface SlidePreviewProps {
   slide: PreviewSlide
@@ -390,6 +402,64 @@ function EditorialSlideRouter(props: RouterProps) {
         : "none"
     const slot = resolveImageSlot(rawSlot, imgCount)
     return <SplitWesleyDark slide={splitData} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: GRADIENT (dark vibrante + glow) =====
+  if (editorialStyle === "gradient") {
+    if (isCover) {
+      return <CoverGradientGlow slide={coverData} {...baseProps} />
+    }
+    const rawSlot: SplitImageSlot = isLast
+      ? "single-bottom"
+      : isMidBreak
+        ? "composition-top"
+        : slide.order_index % 2 === 1
+          ? "single-bottom"
+          : "none"
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitGradientDark slide={splitData} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: MINIMAL (branco suíço) =====
+  if (editorialStyle === "minimal") {
+    if (isCover) {
+      return <CoverMinimalClean slide={coverData} {...baseProps} />
+    }
+    const rawSlot: SplitImageSlot = isLast
+      ? "single-bottom"
+      : isMidBreak
+        ? "single-top"
+        : slide.order_index % 3 === 1
+          ? "single-bottom"
+          : slide.order_index % 3 === 2
+            ? "single-top"
+            : "none"
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitMinimalClean slide={splitData} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: SEAMLESS (panorâmico — linha contínua) =====
+  if (editorialStyle === "seamless") {
+    if (isCover) {
+      return <CoverSeamlessFlow slide={coverData} {...baseProps} />
+    }
+    // Faixa de imagem em slides alternados; o fundo panorâmico + linha fazem
+    // a continuidade — não precisa de slot em todo slide.
+    const rawSlot: SplitImageSlot =
+      isLast || slide.order_index % 2 === 1 ? "single-bottom" : "none"
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitSeamlessFlow slide={splitData} {...baseProps} imageSlot={slot} />
+  }
+
+  // ===== STYLE: NOTES (app Notas nativo) =====
+  if (editorialStyle === "notes") {
+    if (isCover) {
+      return <CoverNotesNative slide={coverData} {...baseProps} />
+    }
+    const rawSlot: SplitImageSlot =
+      slide.order_index % 2 === 1 && !isLast ? "single-bottom" : "none"
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return <SplitNotesNative slide={splitData} {...baseProps} imageSlot={slot} />
   }
 
   // ===== STYLE: AUTO (legacy) =====

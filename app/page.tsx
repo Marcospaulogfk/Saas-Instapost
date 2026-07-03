@@ -20,6 +20,8 @@ import {
   X,
   Wand2,
   Building2,
+  TrendingUp,
+  Zap,
 } from "lucide-react"
 
 /* ── Helpers de marca ─────────────────────────────────────────── */
@@ -37,11 +39,35 @@ function SectionLabel({ children }: { children: ReactNode }) {
 // Régua roxa de topo (2px) — sal nº3.
 const ruleTop = "border-t-2 border-t-primary"
 
+// Segmentos que aparecem no marquee de social proof.
+const MARQUEE_SEGMENTS = [
+  "Criadores",
+  "Social medias",
+  "Agências",
+  "Infoprodutos",
+  "E-commerce",
+  "Clínicas",
+  "Restaurantes",
+  "Moda",
+  "Fitness",
+  "Educação",
+  "Coaches",
+  "Imobiliárias",
+]
+
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       {/* Grid hairline sutil de fundo */}
       <div className="grid-bg-fade fixed inset-0 -z-10 pointer-events-none" />
+
+      {/* ── Barra de anúncio ──────────────────────────────────── */}
+      <div className="bg-gradient-brand text-white text-center px-4 py-2">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em]">
+          <TrendingUp className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+          Carrossel completo — copy, design e imagem — em menos de 3 minutos
+        </p>
+      </div>
 
       {/* ── Navegação ─────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-hairline">
@@ -63,15 +89,16 @@ export default function HomePage() {
             <Button asChild variant="ghost" size="sm">
               <Link href="/login">Entrar</Link>
             </Button>
-            <Button asChild size="sm" className="bg-primary text-white hover:bg-primary/90">
-              <Link href="/onboarding">Começar grátis</Link>
+            <Button asChild size="sm" className="bg-primary text-white hover:bg-primary/90 rounded-full px-5">
+              <Link href="/onboarding">Começar agora</Link>
             </Button>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+      <section className="relative px-6 pt-16 pb-16 md:pt-24 md:pb-20">
+        <div className="lp-aurora absolute inset-0 -z-10 pointer-events-none" />
         <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center">
           {/* Coluna texto */}
           <div>
@@ -83,25 +110,27 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-[2.6rem] md:text-6xl font-semibold tracking-[-0.03em] leading-[1.04] mb-6">
-              Carrosséis que param o feed,
+              Carrosséis que{" "}
+              <span className="lp-text-gradient">param o feed</span>,
               <br className="hidden md:block" />{" "}
-              em <span className="text-brand-300">3 minutos</span>
+              em <span className="lp-text-gradient">3 minutos</span>
               <span className="inline-block w-[0.5em] h-[0.85em] align-[-0.05em] bg-primary ml-1.5" aria-hidden />
             </h1>
 
             <p className="text-lg text-text-secondary max-w-xl mb-9 leading-relaxed">
               A IA que aprende a sua marca e entrega o carrossel pronto pra postar —
-              roteiro, design e imagem no seu estilo. Sem Canva, sem Photoshop, sem travar.
+              roteiro, design e imagem no seu estilo.{" "}
+              <span className="text-foreground font-medium">Sem Canva. Sem designer. Sem perder horas.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-7">
-              <Button asChild size="lg" className="bg-primary text-white hover:bg-primary/90 h-12 px-7">
+              <Button asChild size="lg" className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-7 rounded-full">
                 <Link href="/onboarding">
-                  Começar grátis — 2 imagens
+                  Quero criar carrosséis virais
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 px-7 border-hairline-strong">
+              <Button asChild variant="outline" size="lg" className="h-12 px-7 border-hairline-strong rounded-full">
                 <Link href="#como-funciona">
                   <Play className="w-4 h-4 mr-2" />
                   Ver como funciona
@@ -110,7 +139,7 @@ export default function HomePage() {
             </div>
 
             <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-              Sem cartão · Pronto em 5 min · Cancela quando quiser
+              Sem cartão · Acesso imediato · Cancela quando quiser
             </p>
 
             {/* Stats */}
@@ -131,7 +160,7 @@ export default function HomePage() {
 
           {/* Coluna mockup — carrossel sendo gerado pela engine */}
           <div className="relative">
-            <div className={`relative rounded-2xl border border-border-accent bg-surface ${ruleTop} p-4 shadow-card`}>
+            <div className={`relative rounded-2xl border border-border-accent bg-surface ${ruleTop} p-4 shadow-card lp-cta-glow`}>
               {/* chrome */}
               <div className="flex items-center justify-between px-1 pb-3 border-b border-hairline">
                 <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted">SyncPost / Engine</span>
@@ -175,20 +204,49 @@ export default function HomePage() {
                 <span className="text-sm font-medium">Tom · Público · Visual</span>
               </div>
             </div>
+
+            {/* card flutuante: velocidade */}
+            <div className={`absolute -top-5 -right-3 hidden sm:block rounded-xl border border-border-accent bg-surface-2 ${ruleTop} p-3.5 shadow-card`}>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-secondary">Pronto em 3 min</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── O problema ────────────────────────────────────────── */}
+      {/* ── Marquee social proof ──────────────────────────────── */}
+      <section className="py-8 border-t border-hairline overflow-hidden">
+        <p className="text-center font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted mb-6">
+          Feito pra quem publica todo dia
+        </p>
+        <div className="lp-fade-x">
+          <div className="lp-marquee gap-3 pr-3">
+            {[...MARQUEE_SEGMENTS, ...MARQUEE_SEGMENTS].map((s, i) => (
+              <span
+                key={`${s}-${i}`}
+                className="shrink-0 rounded-full border border-hairline bg-surface px-5 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-text-secondary"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── A verdade (algoritmo) ─────────────────────────────── */}
       <section className="px-6 py-20 md:py-24 border-t border-hairline">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <SectionLabel>O problema</SectionLabel>
+            <SectionLabel>A verdade que ninguém te conta</SectionLabel>
             <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.02em] mt-4 mb-3">
-              Postar todo dia trava quem não é designer
+              O algoritmo premia carrossel.
+              <br className="hidden md:block" /> E pune quem some do feed.
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Constância é o que faz o perfil crescer. E é exatamente onde quase todo mundo desiste.
+              Carrossel é o formato com mais alcance do Instagram. Enquanto você gasta
+              horas no Canva pra fazer 1 post, tem gente publicando 10 no mesmo tempo — com IA.
             </p>
           </div>
 
@@ -207,6 +265,19 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          <div className="text-center mt-10">
+            <p className="text-text-secondary mb-5">
+              A diferença entre quem vende e quem só posta bonito?{" "}
+              <span className="text-foreground font-semibold">Velocidade + constância.</span>
+            </p>
+            <Button asChild size="lg" className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-8 rounded-full">
+              <Link href="/onboarding">
+                Quero parar de perder tempo
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -216,10 +287,10 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <SectionLabel>Como funciona</SectionLabel>
             <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.02em] mt-4 mb-3">
-              No feed em 3 passos, sem design
+              Tão simples que parece mágica
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Da configuração à IA montando o carrossel sozinha.
+              3 passos. 3 minutos. Carrossel pronto pra postar.
             </p>
           </div>
 
@@ -298,8 +369,8 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: Layers, title: "Editor de camadas", desc: "Ajuste texto, cor e posição de cada slide com controle total." },
-              { icon: Palette, title: "Templates virais", desc: "Layouts inspirados em quem viraliza, prontos pra usar." },
-              { icon: Download, title: "Export Full HD", desc: "PNG 1080×1350, formato 4:5 nativo do Instagram retrato." },
+              { icon: Palette, title: "7 estilos de carrossel", desc: "Do dark vibrante ao minimal suíço — layouts inspirados em quem viraliza." },
+              { icon: Download, title: "Export Full HD + ZIP", desc: "PNG 1080×1350 nomeado por slide, ou o carrossel inteiro em ZIP." },
               { icon: Check, title: "Sem marca d'água", desc: "Conteúdo limpo e profissional nos planos pagos." },
               { icon: Sparkles, title: "Roteiro que prende", desc: "Gancho, desenvolvimento e CTA — 1 ideia por slide." },
               { icon: Building2, title: "Multi-marca", desc: "Gerencie várias marcas e troque de contexto num clique." },
@@ -314,6 +385,53 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Faça as contas ────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-24 border-t border-hairline">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-14">
+            <SectionLabel>Faça as contas</SectionLabel>
+            <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.02em] mt-4 mb-3">
+              Quanto você pagaria separado por tudo isso?
+            </h2>
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+              Pra fazer o que o SyncPost faz, você precisaria montar (e pagar) esse arsenal:
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-hairline bg-surface overflow-hidden">
+            {[
+              { item: "Canva Pro (design)", price: "R$ 49,90/mês" },
+              { item: "ChatGPT Plus (textos e ideias)", price: "R$ 109,00/mês" },
+              { item: "Gerador de imagem com IA", price: "R$ 79,00/mês" },
+              { item: "Designer freelancer (layouts)", price: "R$ 250,00/mês" },
+              { item: "Copywriter freelancer (roteiros)", price: "R$ 85,00/mês" },
+            ].map((row) => (
+              <div key={row.item} className="flex items-center justify-between px-6 py-4 border-b border-hairline">
+                <span className="text-[15px] text-text-secondary">{row.item}</span>
+                <span className="font-mono text-sm text-text-secondary tabular-nums line-through decoration-danger/60">{row.price}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-between px-6 py-5 bg-surface-2">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-text-muted">Soma de tudo (referência)</span>
+              <span className="font-mono text-xl font-semibold tabular-nums text-danger">~R$ 572/mês</span>
+            </div>
+            <div className={`flex items-center justify-between px-6 py-5 ${ruleTop}`}>
+              <span className="font-semibold">SyncPost Pro — tudo num lugar só</span>
+              <span className="font-mono text-2xl font-semibold tabular-nums text-primary">R$ 97/mês</span>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button asChild size="lg" className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-8 rounded-full">
+              <Link href="#planos">
+                Ver planos
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* ── Depoimentos ───────────────────────────────────────── */}
       <section className="px-6 py-20 md:py-24 border-t border-hairline">
         <div className="max-w-6xl mx-auto">
@@ -324,7 +442,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               { ini: "CM", nome: "Cláudia M.", area: "Boutique de moda", txt: "Eu travava no Canva e postava 1x por semana. Agora saio com 4 carrosséis por dia, todos com a minha cara." },
               { ini: "RT", nome: "Rafael T.", area: "Social media", txt: "Atendo 6 clientes sozinho. O que levava uma tarde por marca agora sai em minutos — e fica melhor." },
@@ -349,15 +467,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-
-          {/* tags de segmento */}
-          <div className="flex flex-wrap justify-center gap-2.5">
-            {["Criadores", "Social medias", "Agências", "Infoprodutos", "E-commerce", "Clínicas", "Restaurantes"].map((s) => (
-              <span key={s} className="rounded-full border border-hairline px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-text-secondary">
-                {s}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -376,14 +485,14 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
             {[
-              { name: "Starter", price: 47, tag: "Pra quem está começando", feats: ["50 imagens / mês", "1 marca configurada", "Templates básicos", "Flux Schnell"], popular: false },
-              { name: "Pro", price: 97, tag: "O favorito de quem posta todo dia", feats: ["200 imagens / mês", "5 marcas configuradas", "Flux + Nano Banana 2", "Sem marca d'água", "Export em lote"], popular: true },
-              { name: "Studio", price: 247, tag: "Pra agências e operações", feats: ["800 imagens / mês", "Marcas ilimitadas", "Nano Banana Pro", "API + white-label", "Até 3 usuários"], popular: false },
+              { name: "Starter", price: 47, tag: "Pra quem está começando", perDay: "~R$ 1,57/dia", feats: ["50 imagens / mês", "1 marca configurada", "Templates básicos", "Flux Schnell"], popular: false },
+              { name: "Pro", price: 97, tag: "O favorito de quem posta todo dia", perDay: "~R$ 3,23/dia", feats: ["200 imagens / mês", "5 marcas configuradas", "Flux + Nano Banana 2", "Sem marca d'água", "Export em lote"], popular: true },
+              { name: "Studio", price: 247, tag: "Pra agências e operações", perDay: "~R$ 8,23/dia", feats: ["800 imagens / mês", "Marcas ilimitadas", "Nano Banana Pro", "API + white-label", "Até 3 usuários"], popular: false },
             ].map((p) => (
               <div
                 key={p.name}
                 className={`relative rounded-2xl border bg-surface p-7 ${
-                  p.popular ? `border-border-accent ${ruleTop}` : "border-hairline"
+                  p.popular ? `border-border-accent ${ruleTop} lp-cta-glow` : "border-hairline"
                 }`}
               >
                 {p.popular && (
@@ -393,13 +502,14 @@ export default function HomePage() {
                 )}
                 <h3 className="text-lg font-semibold">{p.name}</h3>
                 <p className="text-sm text-text-secondary mt-1 mb-5">{p.tag}</p>
-                <div className="flex items-baseline gap-1 mb-6">
+                <div className="flex items-baseline gap-1 mb-1">
                   <span className="text-4xl font-semibold tabular-nums">R$ {p.price}</span>
                   <span className="font-mono text-xs text-text-muted">/mês</span>
                 </div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted mb-6">{p.perDay}</p>
                 <Button
                   asChild
-                  className={`w-full mb-6 ${p.popular ? "bg-primary text-white hover:bg-primary/90" : "border border-hairline-strong bg-transparent hover:border-primary hover:text-primary"}`}
+                  className={`w-full mb-6 rounded-full ${p.popular ? "bg-primary text-white hover:bg-primary/90" : "border border-hairline-strong bg-transparent hover:border-primary hover:text-primary"}`}
                 >
                   <Link href="/onboarding">Começar agora</Link>
                 </Button>
@@ -454,20 +564,28 @@ export default function HomePage() {
       {/* ── CTA final ─────────────────────────────────────────── */}
       <section className="px-6 py-20 md:py-24 border-t border-hairline">
         <div className="max-w-4xl mx-auto">
-          <div className={`rounded-3xl border border-border-accent bg-surface ${ruleTop} p-10 md:p-14 text-center`}>
-            <SectionLabel>2 imagens grátis</SectionLabel>
-            <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.02em] mt-4 mb-4">
-              Coloque seu Instagram pra rodar hoje
-            </h2>
-            <p className="text-lg text-text-secondary mb-9 max-w-xl mx-auto">
-              Conta sua marca, digita o tema e exporta o primeiro carrossel em minutos. Sem cartão, sem código.
-            </p>
-            <Button asChild size="lg" className="bg-primary text-white hover:bg-primary/90 h-12 px-9">
-              <Link href="/onboarding">
-                Começar grátis agora
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+          <div className={`relative overflow-hidden rounded-3xl border border-border-accent bg-surface ${ruleTop} p-10 md:p-14 text-center`}>
+            <div className="lp-aurora absolute inset-0 pointer-events-none" />
+            <div className="relative">
+              <SectionLabel>2 imagens grátis</SectionLabel>
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-[-0.02em] mt-4 mb-4">
+                Comece a publicar com{" "}
+                <span className="lp-text-gradient">constância de verdade</span>
+              </h2>
+              <p className="text-lg text-text-secondary mb-9 max-w-xl mx-auto">
+                Conta sua marca, digita o tema e exporta o primeiro carrossel em minutos.
+                Sem cartão, sem código.
+              </p>
+              <Button asChild size="lg" className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-9 rounded-full">
+                <Link href="/onboarding">
+                  Começar grátis agora
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted mt-6">
+                Acesso imediato · Conteúdo pronto em minutos
+              </p>
+            </div>
           </div>
         </div>
       </section>
