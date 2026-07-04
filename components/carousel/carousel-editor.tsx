@@ -12,7 +12,10 @@ import {
   Link as LinkIcon,
   ChevronLeft,
   ChevronRight,
+  Save,
+  Check,
 } from "lucide-react"
+import { saveCarouselV2 } from "@/app/actions/carousel"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,7 +58,6 @@ const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "gradient", label: "Gradiente (dark/vibrante)" },
   { value: "minimal", label: "Minimal (branco/clean)" },
   { value: "seamless", label: "Seamless (panorâmico)" },
-  { value: "notes", label: "Notes (nativo/orgânico)" },
 ]
 
 export interface CarouselEditorProps {
@@ -67,6 +69,10 @@ export interface CarouselEditorProps {
   colors: string[]
   template?: "editorial" | "cinematic" | "hybrid"
   editorialStyle?: EditorialStyle
+  /** Formato inicial do frame. Default "feed". */
+  initialFormat?: "feed" | "stories"
+  /** ID do carrossel salvo (quando reaberto da biblioteca) — habilita update in-place. */
+  initialCarouselId?: string
 }
 
 type ImageMode = "ai" | "unsplash" | "wikimedia"
@@ -80,12 +86,19 @@ export function CarouselEditor({
   colors,
   template = "editorial",
   editorialStyle = "auto",
+  initialFormat = "feed",
+  initialCarouselId,
 }: CarouselEditorProps) {
   const [slides, setSlides] = useState<PreviewSlide[]>(initialSlides)
   const [selected, setSelected] = useState(0)
   const [title, setTitle] = useState(initialTitle)
   const [style, setStyle] = useState<EditorialStyle>(editorialStyle)
-  const [format, setFormat] = useState<"feed" | "stories">("feed")
+  const [format, setFormat] = useState<"feed" | "stories">(initialFormat)
+
+  // Salvar na biblioteca (Supabase). savedId liga o próximo save a um update.
+  const [savedId, setSavedId] = useState<string | undefined>(initialCarouselId)
+  const [saveBusy, setSaveBusy] = useState(false)
+  const [saveOk, setSaveOk] = useState(false)
 
   const [imageQuery, setImageQuery] = useState("")
   const [imgBusy, setImgBusy] = useState<ImageMode | "upload" | null>(null)
@@ -202,6 +215,39 @@ export function CarouselEditor({
     setImgError(null)
   }
 
+  async function handleSave() {
+    setSaveBusy(true)
+    setImgError(null)
+    try {
+      const res = await saveCarouselV2({
+        id: savedId,
+        data: {
+          _kind: "carousel-v2",
+          slides,
+          title,
+          caption: caption ?? "",
+          brandName,
+          handle,
+          colors,
+          template,
+          editorialStyle: style,
+          format,
+        },
+      })
+      if (!res.ok) {
+        setImgError(res.error || "erro ao salvar")
+        return
+      }
+      setSavedId(res.id)
+      setSaveOk(true)
+      setTimeout(() => setSaveOk(false), 2500)
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "erro ao salvar")
+    } finally {
+      setSaveBusy(false)
+    }
+  }
+
   async function handleExport() {
     if (!previewRef.current) return
     setExporting(true)
@@ -286,6 +332,28 @@ export function CarouselEditor({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant={saveOk ? "outline" : "default"}
+            size="sm"
+            onClick={handleSave}
+            disabled={saveBusy}
+          >
+            {saveBusy ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : saveOk ? (
+              <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
+            ) : (
+              <Save className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {saveBusy
+              ? "Salvando…"
+              : saveOk
+                ? "Salvo!"
+                : savedId
+                  ? "Salvar alterações"
+                  : "Salvar na biblioteca"}
+          </Button>
           <PublishToInstagram
             imageUrls={slides
               .map((s) => s.image.url)

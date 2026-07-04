@@ -208,20 +208,25 @@ Se o tópico é abstrato, o photo deve ser **editorial-concreto**:
 
 **unsplash_query**: 2-4 keywords em INGLÊS pra busca (ex: "lawyer office portrait" / "minimalist desk laptop"). Sempre forneça.
 
-**image_entity**: o nome de algo REAL cuja FOTO de verdade ilustra o slide melhor do que uma arte de IA. O sistema busca a foto real na Wikipedia. Use o NOME EXATO. NA DÚVIDA, deixe "" — a IA gera uma cena editorial sob medida, quase sempre mais relevante que uma foto genérica.
+**image_entity**: o nome de algo REAL cuja FOTO de verdade ilustra o slide melhor do que uma arte de IA. O sistema busca a foto real na Wikipedia. Use o NOME EXATO.
 
-✅ Preencha SÓ quando a entidade É O ASSUNTO LITERAL e VISUAL do slide:
-- PESSOA pública/famosa que o slide cita pelo nome (ex: "Elon Musk", "Cristiano Ronaldo").
+⚠️ PRIORIDADE MÁXIMA — se o slide é sobre uma PESSOA, FILME/SÉRIE, PRODUTO ou EVENTO real nomeado, PREENCHER image_entity é OBRIGATÓRIO, não opcional. Uma foto real do Tom Cruise num slide sobre o Tom Cruise é SEMPRE melhor que uma arte de IA de uma mão ou cena genérica. Errar isso (gerar IA quando o assunto tem rosto/foto real conhecida) é o pior erro de imagem que existe — o post fica com cara de que não sabe do que está falando.
+
+✅ PREENCHA (nome exato) sempre que a entidade É O ASSUNTO do slide:
+- PESSOA pública/famosa citada pelo nome: ator, atleta, músico, CEO, político (ex: "Tom Cruise", "Elon Musk", "Cristiano Ronaldo", "Anitta"). → foto real da pessoa.
+- FILME/SÉRIE/JOGO/ÁLBUM/LIVRO nomeado → use a PESSOA protagonista/diretor quando o slide gira em torno dela (ex: post sobre o filme novo do Tom Cruise → image_entity "Tom Cruise"), ou o nome da obra se for o mais reconhecível visualmente.
 - PRODUTO físico icônico que o slide discute (ex: "iPhone", "Tesla Model 3").
-- LUGAR/MARCO específico SÓ quando o slide é REALMENTE sobre aquele lugar como destino/local (ex: slide "o que ver na Tate Modern" → "Tate Modern"; "pôr do sol em Santorini" → "Santorini").
+- LUGAR/MARCO específico SÓ quando o slide é REALMENTE sobre aquele lugar como destino/local (ex: "o que ver na Tate Modern" → "Tate Modern"; "pôr do sol em Santorini" → "Santorini").
 
-❌ DEIXE "" (vazio) — este é o caso MAIS COMUM:
-- slide de estatística, dado, conceito, opinião, pergunta ou tendência. Ex: "75% dos brasileiros usam IA" NÃO é sobre o Brasil-lugar — é sobre adoção de IA. NÃO use "Brasil"/"São Paulo": uma foto de skyline ou ponte não tem NADA a ver com o assunto e fica fora de contexto. Descreva uma cena editorial concreta no image_prompt (pessoas reais usando celular, tela com IA, etc).
+REGRA DA CAPA (slide 0): se o carrossel inteiro é sobre uma pessoa/obra/produto real nomeado, a CAPA quase sempre deve trazer image_entity dessa entidade — é o rosto que o público reconhece e faz parar o dedo.
+
+❌ DEIXE "" (vazio) nestes casos:
+- slide de estatística, dado, conceito, opinião, pergunta ou tendência SEM protagonista real. Ex: "75% dos brasileiros usam IA" NÃO é sobre o Brasil-lugar — é sobre adoção de IA. NÃO use "Brasil"/"São Paulo": uma foto de skyline não tem NADA a ver e fica fora de contexto. Descreva uma cena editorial concreta no image_prompt.
 - país/cidade só MENCIONADO de passagem (demografia, mercado, origem) — não é o assunto visual.
-- EMPRESA/MARCA/REVISTA/APP cuja imagem seria só um LOGO (ex: "OpenAI", "Anthropic") — logo recortado fica horrível. Use "" e cena editorial no image_prompt.
+- EMPRESA/MARCA/APP cuja imagem seria só um LOGO recortado (ex: "OpenAI", "Anthropic") — use "" e cena editorial no image_prompt.
 - slide que compara 2+ entidades sem uma protagonista visual única.
 
-REGRA DE OURO: só use image_entity quando a foto real DAQUELA entidade for OBVIAMENTE o melhor visual pro slide. Pra todo o resto — stats, conceitos, demografia, tendências — deixe "" e capriche no image_prompt editorial. Uma imagem fora de contexto é PIOR que uma genérica boa. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
+REGRA DE OURO: entidade real nomeada COM foto conhecida (pessoa/filme/produto/evento) → SEMPRE image_entity. Só deixe "" pra stats, conceitos, demografia, tendências e lugares-de-passagem. Uma imagem fora de contexto é PIOR que uma genérica boa, MAS uma IA genérica num slide sobre uma celebridade é o PIOR de tudo. NUNCA invente nome. SEMPRE preencha image_prompt também (é o fallback).
 
 **extra_image_prompts**: VOCÊ decide se o slide precisa de mais de uma imagem. Na GRANDE MAIORIA dos slides, deixe \`[]\` (uma imagem só). Preencha com 1-2 prompts SÓ quando o slide mostra naturalmente coisas DIFERENTES lado a lado:
 - comparação / antes-e-depois (ex: 2 cenas distintas);

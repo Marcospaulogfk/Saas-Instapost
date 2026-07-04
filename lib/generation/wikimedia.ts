@@ -87,6 +87,7 @@ async function wikidataCandidates(query: string): Promise<{
   logo: string | null
   label: string
   sourcePage: string
+  isHuman: boolean
 } | null> {
   // 1. Acha o QID da entidade.
   const search = new URL("https://www.wikidata.org/w/api.php")
@@ -132,6 +133,16 @@ async function wikidataCandidates(query: string): Promise<{
     return typeof v === "string" ? v : null
   }
 
+  // P31 = instance-of. Q5 = ser humano. Usado pela rede de segurança pra só
+  // puxar foto real quando a entidade extraída do texto é REALMENTE uma pessoa
+  // (evita puxar foto de lugar/conceito fora de contexto).
+  const instanceOf = (claims["P31"] ?? [])
+    .map((c) => {
+      const v = c.mainsnak?.datavalue?.value
+      return typeof v === "object" && v ? v.id : undefined
+    })
+    .filter((id): id is string => Boolean(id))
+
   // P18 = foto/imagem; P154 = logo. Devolve os dois candidatos e deixa a cascata
   // decidir — foto SEMPRE antes de logo (logo full-bleed fica recortado/feio).
   return {
@@ -139,6 +150,7 @@ async function wikidataCandidates(query: string): Promise<{
     logo: fileOf("P154"),
     label: hit.label ?? query,
     sourcePage: hit.concepturi ?? `https://www.wikidata.org/wiki/${hit.id}`,
+    isHuman: instanceOf.includes("Q5"),
   }
 }
 
@@ -241,4 +253,32 @@ export async function searchWikimedia(
   }
 
   return null
+}
+
+/**
+ * Rede de segurança: busca foto real SÓ se a entidade for uma PESSOA (P31=Q5)
+ * com foto (P18). Usada quando a IA esqueceu de marcar image_entity mas o texto
+ * cita alguém famoso pelo nome. Retorna null pra qualquer coisa que não seja
+ * humano-com-foto — assim nunca puxa foto de lugar/conceito fora de contexto.
+ */
+export async function searchWikimediaPerson(
+  query: string,
+): Promise<WikimediaResult | null> {
+  const cleaned = query.trim()
+  if (cleaned.length < 3 || !cleaned.includes(" ")) return null // nome+sobrenome
+
+  const start = performance.now()
+  const wd = await wikidataCandidates(cleaned)
+  if (!wd || !wd.isHuman || !wd.photo) return null
+
+  const t = await commonsThumb(wd.photo)
+  if (!t) return null
+  return {
+    url: t.url,
+    title: wd.label,
+    sourcePage: wd.sourcePage,
+    width: t.width,
+    height: t.height,
+    ms: performance.now() - start,
+  }
 }

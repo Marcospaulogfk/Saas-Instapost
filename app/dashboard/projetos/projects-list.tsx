@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useState, useTransition } from "react"
 import {
   Search,
   MoreHorizontal,
@@ -10,6 +11,8 @@ import {
   Trash2,
   Download,
   Plus,
+  Loader2,
+  Layers,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +32,7 @@ import {
 } from "@/components/ui/select"
 import { getProjectGradient } from "@/lib/brand-colors"
 import { formatRelativeDate } from "@/lib/format-date"
+import { deleteCarouselV2, type CarouselListItem } from "@/app/actions/carousel"
 
 interface Project {
   id: string
@@ -44,20 +48,52 @@ interface BrandOption {
 
 interface ProjectsListProps {
   projects: Project[]
+  carousels?: CarouselListItem[]
   brands: BrandOption[]
 }
 
-export function ProjectsList({ projects, brands }: ProjectsListProps) {
+export function ProjectsList({
+  projects,
+  carousels = [],
+  brands,
+}: ProjectsListProps) {
+  const router = useRouter()
   const [query, setQuery] = useState("")
   const [brandFilter, setBrandFilter] = useState("todos")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
 
-  const isEmpty = projects.length === 0
+  const isEmpty = projects.length === 0 && carousels.length === 0
+
+  const selectedBrandName =
+    brandFilter === "todos"
+      ? null
+      : (brands.find((b) => b.id === brandFilter)?.name ?? null)
 
   const filtered = projects.filter((p) => {
     const matchesQuery = p.title.toLowerCase().includes(query.toLowerCase())
     const matchesBrand = brandFilter === "todos" || p.brand.id === brandFilter
     return matchesQuery && matchesBrand
   })
+
+  const filteredCarousels = carousels.filter((c) => {
+    const matchesQuery = c.title.toLowerCase().includes(query.toLowerCase())
+    // Carrosséis guardam brand por nome (não têm brand_id), então filtramos
+    // por nome da marca selecionada.
+    const matchesBrand =
+      !selectedBrandName ||
+      (c.brand_name?.toLowerCase() === selectedBrandName.toLowerCase())
+    return matchesQuery && matchesBrand
+  })
+
+  function handleDeleteCarousel(id: string) {
+    setDeletingId(id)
+    startTransition(async () => {
+      await deleteCarouselV2(id)
+      setDeletingId(null)
+      router.refresh()
+    })
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -129,7 +165,7 @@ export function ProjectsList({ projects, brands }: ProjectsListProps) {
             )}
           </div>
 
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && filteredCarousels.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <p className="text-muted-foreground">
                 Nenhum projeto encontrado com esses filtros.
@@ -137,6 +173,77 @@ export function ProjectsList({ projects, brands }: ProjectsListProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredCarousels.map((carousel) => (
+                <Link
+                  key={carousel.id}
+                  href={`/dashboard/carrossel?id=${carousel.id}`}
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02] bg-black"
+                >
+                  {carousel.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={carousel.cover_url}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
+                    />
+                  )}
+                  <Badge
+                    variant="secondary"
+                    className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs flex items-center gap-1"
+                  >
+                    <Layers className="w-3 h-3" />
+                    {carousel.slide_count} slides
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        {deletingId === carousel.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <MoreHorizontal className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/carrossel?id=${carousel.id}`}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Abrir no editor
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onSelect={(e) => {
+                          e.preventDefault()
+                          handleDeleteCarousel(carousel.id)
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <h3 className="font-semibold text-white truncate">
+                      {carousel.title}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {carousel.brand_name
+                        ? `${carousel.brand_name} · ${formatRelativeDate(carousel.updated_at)}`
+                        : formatRelativeDate(carousel.updated_at)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
               {filtered.map((project) => (
                 <Link
                   key={project.id}

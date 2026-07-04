@@ -335,6 +335,53 @@ export function GradientProgressBar({
 }
 
 // ============================================================================
+// SeamlessProgressLine — linha que AVANÇA slide a slide (trilho full-bleed +
+// preenchimento até o progresso + nó luminoso no ponto atual). Dá a sensação
+// de jornada contínua: no slide 1 a bolinha está no começo, no último no fim.
+// ============================================================================
+
+export function SeamlessProgressLine({
+  orderIndex,
+  totalSlides,
+  accent,
+}: {
+  orderIndex: number
+  totalSlides: number
+  accent: string
+}) {
+  // Progresso de 0..1. Deixa uma margem nas pontas pra bolinha não colar na borda.
+  const raw = totalSlides > 1 ? orderIndex / (totalSlides - 1) : 0
+  const pct = 6 + raw * 88 // 6%..94%
+  return (
+    <div className="relative h-3 w-full flex items-center flex-shrink-0 z-10">
+      {/* trilho apagado, ponta a ponta */}
+      <div
+        className="absolute left-0 right-0 h-[2px]"
+        style={{ backgroundColor: "rgba(255,255,255,0.14)" }}
+      />
+      {/* preenchimento até o progresso */}
+      <div
+        className="absolute left-0 h-[3px] rounded-full"
+        style={{
+          width: `${pct}%`,
+          backgroundImage: `linear-gradient(90deg, ${mixWithWhite(accent, 0.35)}, ${accent})`,
+          boxShadow: `0 0 10px ${accent}80`,
+        }}
+      />
+      {/* nó luminoso no ponto atual */}
+      <div
+        className="absolute w-3 h-3 rounded-full -translate-x-1/2"
+        style={{
+          left: `${pct}%`,
+          backgroundColor: accent,
+          boxShadow: `0 0 14px ${accent}, 0 0 0 4px ${accent}22`,
+        }}
+      />
+    </div>
+  )
+}
+
+// ============================================================================
 // parseBoldInline — converte **texto** em <strong>
 // ============================================================================
 

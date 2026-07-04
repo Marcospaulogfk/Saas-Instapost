@@ -84,6 +84,30 @@ export async function generateCarouselImages(
         }
       }
 
+      // 1.5) REDE DE SEGURANÇA — se a IA não marcou entidade (ou falhou) mas o
+      // slide cita uma PESSOA famosa pelo nome, puxa a foto real dela. Só dispara
+      // se o texto tem nome+sobrenome que resolve pra humano com foto (Wikidata),
+      // então nunca puxa foto fora de contexto. Garante o caso "Tom Cruise".
+      if (!base.image.url) {
+        const netText = `${slide.title ?? ""} ${slide.subtitle ?? ""}`.trim()
+        try {
+          const res = await fetch("/api/carousel/person-photo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: netText }),
+          })
+          const data = await res.json()
+          if (res.ok && data?.url) {
+            base.image.url = data.url
+            base.image.source = "wikimedia"
+            base.image.attribution = data.attribution ?? null
+            return base
+          }
+        } catch {
+          // segue pro fallback de IA
+        }
+      }
+
       // 2) Fallback IA
       if (!prompt) return base
       try {

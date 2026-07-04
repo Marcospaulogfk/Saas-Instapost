@@ -11,6 +11,7 @@ import {
   PaginationDots,
   Pill,
   SectionTag,
+  SeamlessProgressLine,
   mixWithWhite,
   parseBoldInline,
   type SlideAttribution,
@@ -178,37 +179,45 @@ export function SplitWesleyDark({
         </div>
       )}
 
-      {/* Avatar */}
-      <div className="mb-3">
-        <AvatarPill
-          avatar={slide.handle_avatar}
-          handle={slide.handle || "@brand"}
-          variant="transparent"
+      {/* ZONA DE TEXTO — flex-1, recorta se longo (nunca invade a imagem) */}
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        {/* Avatar */}
+        <div className="mb-3">
+          <AvatarPill
+            avatar={slide.handle_avatar}
+            handle={slide.handle || "@brand"}
+            variant="transparent"
+          />
+        </div>
+
+        {/* Título */}
+        <h2
+          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
+          style={{ fontWeight: titleWeight }}
+        >
+          <HighlightedText
+            text={slide.title}
+            words={slide.highlight_words || []}
+            color={accent}
+          />
+        </h2>
+
+        {/* Body */}
+        {slide.body && (
+          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-6">
+            {parseBoldInline(slide.body)}
+          </p>
+        )}
+
+        <div
+          className="pointer-events-none absolute bottom-0 inset-x-0 h-8"
+          style={{ backgroundImage: "linear-gradient(180deg, transparent, #000)" }}
         />
       </div>
 
-      {/* Título */}
-      <h2
-        className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
-        style={{ fontWeight: titleWeight }}
-      >
-        <HighlightedText
-          text={slide.title}
-          words={slide.highlight_words || []}
-          color={accent}
-        />
-      </h2>
-
-      {/* Body */}
-      {slide.body && (
-        <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-6">
-          {parseBoldInline(slide.body)}
-        </p>
-      )}
-
-      {/* Slot de imagem inferior */}
+      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto */}
       {imageSlot === "single-bottom" && (
-        <div className="mt-auto">
+        <div className="flex-shrink-0 pt-3">
           <SingleImageBox
             imageUrl={slide.images[0]?.url}
             error={slide.images[0]?.error}
@@ -218,7 +227,7 @@ export function SplitWesleyDark({
         </div>
       )}
       {imageSlot === "comparison-bottom" && (
-        <div className="mt-auto">
+        <div className="flex-shrink-0 pt-3">
           <ComparisonImages images={slide.images} />
         </div>
       )}
@@ -260,7 +269,7 @@ export function SplitBrandsdecodedLight({
         textColor="rgba(0,0,0,0.5)"
       />
 
-      <div className="flex-1 px-5 pt-3 flex flex-col min-h-0">
+      <div className="flex-1 px-5 pt-3 flex flex-col min-h-0 overflow-hidden">
         <h2
           className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.92 }}
@@ -329,7 +338,7 @@ export function SplitBrandsdecodedLight({
           </>
         )}
         {imageSlot === "bottom-card" && (
-          <div className="mt-auto">
+          <div className="mt-4">
             <BottomCardGrid images={slide.images} />
             {slide.callout && (
               <div className="mt-4 bg-black text-white px-4 py-2.5 rounded-md text-sm">
@@ -376,7 +385,7 @@ export function SplitBrandsdecodedDarkSerif({
         textColor="rgba(255,255,255,0.6)"
       />
 
-      <div className="flex-1 px-6 pt-4 flex flex-col min-h-0">
+      <div className="flex-1 px-6 pt-4 flex flex-col min-h-0 overflow-hidden">
         <h2
           className="text-[1.7rem] tracking-tight text-white"
           style={{
@@ -398,7 +407,7 @@ export function SplitBrandsdecodedDarkSerif({
         )}
 
         {imageSlot === "single-bottom" && slide.images[0] && (
-          <div className="mt-auto pb-2">
+          <div className="mt-4 pb-2">
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
@@ -445,7 +454,7 @@ export function SplitBoloCream({
         <Pill variant="light">{slide.category || "Editorial"}</Pill>
       </div>
 
-      <div className="flex-1 px-4 pt-5 flex flex-col min-h-0">
+      <div className="flex-1 px-4 pt-5 flex flex-col min-h-0 overflow-hidden">
         <SectionTag
           prefix={slide.section_prefix || "IDEIA"}
           number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
@@ -462,7 +471,7 @@ export function SplitBoloCream({
         )}
 
         {imageSlot === "bottom-card" && slide.images[0] && (
-          <div className="mt-auto pb-2">
+          <div className="mt-4 pb-2">
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
@@ -516,22 +525,31 @@ export function SplitMyPostFlowCta({
         </span>
       </div>
 
-      <h2
-        className={`text-[2rem] uppercase tracking-tight text-black ${fontClass}`}
-        style={{ fontWeight: 800, lineHeight: 1 }}
-      >
-        {slide.title}
-      </h2>
+      {/* ZONA DE TEXTO — flex-1, recorta se longo (nunca invade a imagem) */}
+      <div className="relative flex-1 min-h-0 overflow-hidden">
+        <h2
+          className={`text-[2rem] uppercase tracking-tight text-black ${fontClass}`}
+          style={{ fontWeight: 800, lineHeight: 1 }}
+        >
+          {slide.title}
+        </h2>
 
-      {slide.body && (
-        <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-6">
-          {parseBoldInline(slide.body)}
-        </p>
-      )}
+        {slide.body && (
+          <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-6">
+            {parseBoldInline(slide.body)}
+          </p>
+        )}
 
+        <div
+          className="pointer-events-none absolute bottom-0 inset-x-0 h-8"
+          style={{ backgroundImage: "linear-gradient(180deg, transparent, #F5F2EC)" }}
+        />
+      </div>
+
+      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto */}
       {imageSlot === "bottom-large" && slide.images[0] && (
         <div
-          className="mt-auto rounded-2xl overflow-hidden"
+          className="flex-shrink-0 mt-4 rounded-2xl overflow-hidden"
           style={{ aspectRatio: "16/10", boxShadow: "0 12px 32px rgba(0,0,0,0.15)" }}
         >
           {slide.images[0].url ? (
@@ -566,9 +584,11 @@ export function SplitGradientDark({
   fontClass,
   imageSlot = "none",
 }: SplitProps) {
+  const hasBottomImage =
+    imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
   return (
     <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col p-6 pb-14"
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
       style={{ backgroundColor: "#08080D" }}
     >
       {/* Glow radial sutil (menos intenso que a capa) */}
@@ -579,72 +599,81 @@ export function SplitGradientDark({
         }}
       />
 
-      {/* Composition top */}
+      {/* Composition top (imagem no topo — zona própria, flex-shrink-0) */}
       {imageSlot === "composition-top" && (
-        <div className="relative z-10 mb-5 flex-shrink-0">
+        <div className="relative z-10 px-6 pt-6 flex-shrink-0">
           <CompositionImages images={slide.images} />
         </div>
       )}
 
-      <div className="relative z-10 mb-3">
-        <AvatarPill
-          avatar={slide.handle_avatar}
-          handle={slide.handle || "@brand"}
-          variant="transparent"
+      {/* ZONA DE TEXTO — flex-1, recorta se longo. Nunca compartilha espaço com
+          a imagem (que tem zona própria abaixo) → impossível sobrepor. */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-hidden px-6 pt-6">
+        <div className="mb-5">
+          <AvatarPill
+            avatar={slide.handle_avatar}
+            handle={slide.handle || "@brand"}
+            variant="transparent"
+          />
+        </div>
+
+        <h2
+          className={`text-[2.3rem] uppercase leading-[1] tracking-tight text-white ${fontClass}`}
+          style={{ fontWeight: 800 }}
+        >
+          <HighlightedGradientText
+            text={slide.title}
+            words={slide.highlight_words || []}
+            color={accent}
+          />
+        </h2>
+
+        {slide.body && (
+          <p className="mt-6 text-base text-white/80 leading-[1.5] line-clamp-6">
+            {parseBoldInline(slide.body)}
+          </p>
+        )}
+
+        {/* Fade no rodapé da zona de texto — suaviza o corte quando longo */}
+        <div
+          className="pointer-events-none absolute bottom-0 inset-x-0 h-10"
+          style={{ backgroundImage: "linear-gradient(180deg, transparent, #08080D)" }}
         />
       </div>
 
-      <h2
-        className={`relative z-10 text-[2.3rem] uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
-        style={{ fontWeight: 800 }}
-      >
-        <HighlightedGradientText
-          text={slide.title}
-          words={slide.highlight_words || []}
-          color={accent}
-        />
-      </h2>
-
-      {slide.body && (
-        <p className="relative z-10 mt-4 text-base text-white/80 leading-[1.45] line-clamp-6">
-          {parseBoldInline(slide.body)}
-        </p>
-      )}
-
-      {/* Slots de imagem inferiores — com aura do accent */}
-      {imageSlot === "single-bottom" && (
-        <div className="relative z-10 mt-auto">
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              aspectRatio: "16/9",
-              boxShadow: `0 0 32px ${accent}47, 0 8px 22px rgba(0,0,0,0.5)`,
-              border: `1px solid ${accent}33`,
-            }}
-          >
-            {slide.images[0]?.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.images[0].url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
-                {slide.images[0]?.error || "sem imagem"}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {imageSlot === "comparison-bottom" && (
-        <div className="relative z-10 mt-auto">
-          <ComparisonImages images={slide.images} />
+      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto, com aura */}
+      {hasBottomImage && (
+        <div className="relative z-10 px-6 pt-3 flex-shrink-0">
+          {imageSlot === "comparison-bottom" ? (
+            <ComparisonImages images={slide.images} />
+          ) : (
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                aspectRatio: "16/9",
+                boxShadow: `0 0 32px ${accent}47, 0 8px 22px rgba(0,0,0,0.5)`,
+                border: `1px solid ${accent}33`,
+              }}
+            >
+              {slide.images[0]?.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={slide.images[0].url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
+                  {slide.images[0]?.error || "sem imagem"}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Footer fixo: contador + barra de progresso gradiente */}
-      <div className="absolute bottom-0 inset-x-0 z-10 px-6 pb-5 space-y-3">
+      {/* Footer no FLUXO (flex-shrink-0) — imagem fica sempre acima dele */}
+      <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-5 space-y-3">
         <div className="flex items-center justify-between">
           <span
             className="text-[10px] uppercase tracking-[0.18em] font-semibold"
@@ -695,7 +724,9 @@ export function SplitMinimalClean({
         <span>{slide.handle || "@brand"}</span>
       </div>
 
-      <div className="relative z-10 flex-1 px-6 pt-8 flex flex-col min-h-0 pb-14">
+      {/* Zona de TEXTO — flex-1 e clipa se ficar muito longo. Separada da
+          imagem pra nunca haver sobreposição (título/descrição vs foto). */}
+      <div className="relative z-10 flex-1 px-6 pt-8 min-h-0 overflow-hidden">
         {/* Kicker accent */}
         <div
           className="text-[11px] uppercase tracking-[0.18em] font-bold mb-3"
@@ -703,26 +734,6 @@ export function SplitMinimalClean({
         >
           {slide.category || "Conteúdo"} · {ghost}
         </div>
-
-        {imageSlot === "single-top" && slide.images[0] && (
-          <div
-            className="mb-5 rounded-lg overflow-hidden flex-shrink-0"
-            style={{ aspectRatio: "16/9", border: "1px solid rgba(0,0,0,0.12)" }}
-          >
-            {slide.images[0].url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.images[0].url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
-                {slide.images[0].error || "sem imagem"}
-              </div>
-            )}
-          </div>
-        )}
 
         <h2
           className={`text-[2.2rem] uppercase tracking-tight text-black ${fontClass}`}
@@ -736,39 +747,53 @@ export function SplitMinimalClean({
         </h2>
 
         {slide.body && (
-          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-6 whitespace-pre-line">
+          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-5 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
 
-        {imageSlot === "single-bottom" && slide.images[0] && (
-          <div
-            className="mt-auto rounded-lg overflow-hidden"
-            style={{ aspectRatio: "16/10", border: "1px solid rgba(0,0,0,0.12)" }}
-          >
-            {slide.images[0].url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={slide.images[0].url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
-                {slide.images[0].error || "sem imagem"}
-              </div>
-            )}
-          </div>
-        )}
-        {imageSlot === "comparison-bottom" && (
-          <div className="mt-auto">
-            <ComparisonImages images={slide.images} />
-          </div>
-        )}
+        {/* Fade no rodapé da zona de texto — suaviza o corte quando o texto é
+            longo (some quando o texto é curto, pois fica sobre o branco). */}
+        <div
+          className="pointer-events-none absolute bottom-0 inset-x-0 h-10"
+          style={{
+            backgroundImage: "linear-gradient(180deg, transparent, #FFFFFF)",
+          }}
+        />
       </div>
 
-      {/* Footer: linha + contador + arrasta */}
-      <div className="absolute bottom-0 inset-x-0 px-6 pb-5">
+      {/* Zona de IMAGEM — sempre ABAIXO do texto, altura própria (flex-shrink-0),
+          nunca invade a descrição. */}
+      {(imageSlot === "single-bottom" || imageSlot === "comparison-bottom") && (
+        <div className="relative z-10 px-6 pt-3 flex-shrink-0">
+          {imageSlot === "comparison-bottom" ? (
+            <ComparisonImages images={slide.images} />
+          ) : (
+            slide.images[0] && (
+              <div
+                className="rounded-lg overflow-hidden"
+                style={{ aspectRatio: "16/9", border: "1px solid rgba(0,0,0,0.12)" }}
+              >
+                {slide.images[0].url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={slide.images[0].url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
+                    {slide.images[0].error || "sem imagem"}
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Footer no FLUXO (flex-shrink-0): linha + contador + arrasta */}
+      <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-5">
         <div className="h-px w-full bg-black/10 mb-3" />
         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
           <span className="tabular-nums">
@@ -797,33 +822,65 @@ export function SplitSeamlessFlow({
   imageSlot = "none",
 }: SplitProps) {
   const isLast = orderIndex === totalSlides - 1
+  const ghost = String(orderIndex + 1).padStart(2, "0")
+  const bgUrl = slide.images[0]?.url ?? null
   return (
     <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
-      style={{
-        backgroundImage: `linear-gradient(115deg, #0B0B10 0%, ${accent}30 50%, #0B0B10 100%)`,
-        backgroundSize: `${Math.max(totalSlides, 2) * 100}% 100%`,
-        backgroundPosition: `${totalSlides > 1 ? (orderIndex / (totalSlides - 1)) * 100 : 0}% 50%`,
-        backgroundColor: "#0B0B10",
-      }}
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
+      style={{ backgroundColor: "#0A0A12" }}
     >
-      <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold">
+      {/* FOTO como fundo full-bleed */}
+      {bgUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={bgUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(150deg, #0A0A12 0%, ${accent}22 45%, #0A0A12 100%)`,
+          }}
+        />
+      )}
+      {/* Overlay escuro pra legibilidade + tint do accent */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(10,10,18,0.86) 0%, rgba(10,10,18,0.5) 45%, rgba(10,10,18,0.6) 70%, rgba(10,10,18,0.94) 100%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${accent}2E 0%, transparent 60%)`,
+        }}
+      />
+
+      {/* Header */}
+      <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold">
           {slide.handle || "@brand"}
         </span>
         <span
           className="text-[10px] uppercase tracking-[0.18em] font-bold tabular-nums"
           style={{ color: accent }}
         >
-          {String(orderIndex + 1).padStart(2, "0")} — {String(totalSlides).padStart(2, "0")}
+          {ghost} — {String(totalSlides).padStart(2, "0")}
         </span>
       </div>
 
-      {/* Título acima da linha */}
-      <div className="absolute left-6 right-6 z-10" style={{ bottom: "53%" }}>
+      {/* Conteúdo ancorado embaixo, sobre a foto */}
+      <div className="mt-auto px-6 pb-6 z-10 space-y-4">
         <h2
-          className={`text-[2rem] uppercase tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 800, lineHeight: 0.98 }}
+          className={`text-[2rem] uppercase tracking-tight text-white line-clamp-3 ${fontClass}`}
+          style={{
+            fontWeight: 800,
+            lineHeight: 0.98,
+            textShadow: "0 2px 22px rgba(0,0,0,0.7)",
+          }}
         >
           <HighlightedText
             text={slide.title}
@@ -831,180 +888,31 @@ export function SplitSeamlessFlow({
             color={accent}
           />
         </h2>
-      </div>
 
-      {/* A LINHA — atravessa o slide de borda a borda (contínua no feed).
-          No último slide, termina num nó (fim da jornada). */}
-      <div
-        className="absolute z-10 flex items-center"
-        style={{ top: "50%", left: "-2px", right: isLast ? "24px" : "-2px" }}
-      >
-        <span
-          className="h-[3px] flex-1"
-          style={{
-            backgroundImage: `linear-gradient(90deg, ${mixWithWhite(accent, 0.4)}, ${accent})`,
-          }}
+        {/* Linha de PROGRESSO — avança slide a slide */}
+        <SeamlessProgressLine
+          orderIndex={orderIndex}
+          totalSlides={totalSlides}
+          accent={accent}
         />
-        {isLast && (
-          <span
-            className="w-3 h-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }}
-          />
-        )}
-      </div>
 
-      {/* Body abaixo da linha */}
-      <div className="absolute left-6 right-6 z-10" style={{ top: "55%" }}>
         {slide.body && (
-          <p className="text-[15px] text-white/85 leading-[1.5] line-clamp-5">
+          <p
+            className="text-[15px] text-white/85 leading-[1.5] line-clamp-4"
+            style={{ textShadow: "0 1px 10px rgba(0,0,0,0.6)" }}
+          >
             {parseBoldInline(slide.body)}
           </p>
         )}
-        {isLast && (
-          <p
-            className="mt-4 text-[11px] uppercase tracking-[0.18em] font-bold"
-            style={{ color: mixWithWhite(accent, 0.3) }}
-          >
-            fim da linha · salva esse post
-          </p>
-        )}
+        <p
+          className="text-[11px] uppercase tracking-[0.18em] font-bold"
+          style={{ color: mixWithWhite(accent, 0.4) }}
+        >
+          {isLast ? "fim da linha · salva esse post" : "arrasta →"}
+        </p>
       </div>
-
-      {/* Imagem: faixa fullwidth sangrando nas bordas */}
-      {(imageSlot === "single-bottom" || imageSlot === "comparison-bottom") &&
-        slide.images[0]?.url && (
-          <div className="absolute bottom-0 inset-x-0" style={{ height: "24%" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={slide.images[0].url}
-              alt=""
-              className="w-full h-full object-cover"
-              style={{ opacity: 0.85 }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: "linear-gradient(180deg, #0B0B10 0%, transparent 45%)",
-              }}
-            />
-          </div>
-        )}
 
       <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
-    </div>
-  )
-}
-
-// ============================================================================
-// 9. split-notes-native — nota do app Notas com checklist (cheat-sheet → save)
-// ============================================================================
-
-const NOTES_FONT_SPLIT =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif'
-
-export function SplitNotesNative({
-  slide,
-  totalSlides,
-  orderIndex,
-  accent,
-  imageSlot = "none",
-}: SplitProps) {
-  // Corpo vira checklist quando tem quebras de linha (cheat-sheet salvável);
-  // senão renderiza como parágrafo de nota mesmo.
-  const lines = (slide.body || "")
-    .split(/\n+/)
-    .map((l) => l.replace(/^[-•*]\s*/, "").trim())
-    .filter(Boolean)
-  const isChecklist = lines.length >= 2
-
-  return (
-    <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#FBF9F3", fontFamily: NOTES_FONT_SPLIT }}
-    >
-      {/* Chrome do app Notas */}
-      <div className="px-4 pt-4 flex items-center justify-between">
-        <span className="text-[13px] font-medium" style={{ color: "#E8A33D" }}>
-          ‹ Notas
-        </span>
-        <span className="text-[13px] tracking-widest" style={{ color: "#E8A33D" }}>
-          ⋯
-        </span>
-      </div>
-
-      <div className="flex-1 px-6 pt-6 flex flex-col min-h-0 pb-14">
-        <h2
-          className="text-[1.55rem] text-black"
-          style={{ fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em" }}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </h2>
-
-        {isChecklist ? (
-          <ul className="mt-4 space-y-2.5">
-            {lines.slice(0, 6).map((line, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span
-                  className="mt-0.5 w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center text-[11px]"
-                  style={
-                    i === 0
-                      ? { backgroundColor: accent, color: "#FFF" }
-                      : { border: "1.5px solid #C9C6BE" }
-                  }
-                >
-                  {i === 0 ? "✓" : ""}
-                </span>
-                <span className="text-[15px] leading-[1.45]" style={{ color: "#3A3833" }}>
-                  {line}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          slide.body && (
-            <p className="mt-4 text-[15px] leading-[1.6]" style={{ color: "#3A3833" }}>
-              {parseBoldInline(slide.body)}
-            </p>
-          )
-        )}
-
-        {/* Imagem como foto anexada */}
-        {imageSlot !== "none" && slide.images[0]?.url && (
-          <div className="mt-auto pt-4">
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ aspectRatio: "16/9", boxShadow: "0 3px 12px rgba(0,0,0,0.12)" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={slide.images[0].url}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer discreto */}
-      <div className="absolute bottom-0 inset-x-0 px-6 pb-4">
-        <div className="h-px w-full mb-2.5" style={{ backgroundColor: "rgba(0,0,0,0.08)" }} />
-        <div
-          className="flex items-center justify-between text-[10px]"
-          style={{ color: "#9C9A94" }}
-        >
-          <span>{slide.handle || "@brand"}</span>
-          <span className="tabular-nums">
-            nota {orderIndex + 1} de {totalSlides} · arrasta →
-          </span>
-        </div>
-      </div>
-
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#000" />
     </div>
   )
 }

@@ -14,9 +14,8 @@ export function DashboardAmbient() {
     >
       {/* banda pôr-do-sol fraca full-bleed */}
       <div className="dash-rio-base" />
-      {/* glows flutuantes */}
+      {/* glows flutuantes (removido o dash-rio-2 laranja do canto inferior direito) */}
       <div className="dash-rio-glow dash-rio-1" />
-      <div className="dash-rio-glow dash-rio-2" />
       <div className="dash-rio-glow dash-rio-3" />
       {/* grid bem sutil */}
       <div className="absolute inset-0 grid-bg-fade opacity-[0.05]" />

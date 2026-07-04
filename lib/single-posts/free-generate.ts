@@ -135,16 +135,19 @@ embaixo do post no Instagram. Regras:
 
 Preencha "image_entity" com o NOME EXATO de algo REAL cuja FOTO de verdade ilustra o post melhor que uma arte de IA. O sistema busca a foto real (Wikipedia, grátis).
 
+⚠️ OBRIGATÓRIO quando o post é sobre uma PESSOA, FILME/SÉRIE ou PRODUTO real nomeado: preencher image_entity NÃO é opcional. Foto real do Tom Cruise num post sobre o Tom Cruise é SEMPRE melhor que arte de IA genérica. Gerar IA quando o assunto tem rosto/foto real conhecida é o pior erro de imagem possível.
+
 ✅ Preencha quando o post é sobre:
+- PESSOA pública/famosa citada pelo nome (ator, atleta, músico, CEO — ex: "Tom Cruise", "Elon Musk", "Cristiano Ronaldo", "Anitta") → foto real da pessoa
+- FILME/SÉRIE/JOGO/ÁLBUM nomeado → use a PESSOA protagonista (ex: post sobre o filme novo do Tom Cruise → "Tom Cruise")
 - LUGAR / cidade / país / ponto turístico real (ex: "São Paulo", "Cristo Redentor", "Times Square")
-- PESSOA pública/famosa (ex: "Elon Musk", "Cristiano Ronaldo")
 - PRODUTO físico icônico (ex: "iPhone", "Tesla Model 3")
 
 ❌ Deixe vazio (não inclua o campo) quando:
 - o post é sobre NEGÓCIO LOCAL / oferta / serviço genérico (ex: "vagas de muay thai", "nova unidade") — isso NÃO tem foto na Wikipedia, use photo_prompt (IA);
 - é conceito abstrato, ou a entidade só teria um LOGO (empresa/marca/app — logo fica ruim).
 
-SEMPRE forneça photo_prompt também (é o fallback se a foto real não existir). Na dúvida, deixe image_entity vazio — a maioria dos posts de negócio local usa IA mesmo.
+SEMPRE forneça photo_prompt também (é o fallback se a foto real não existir). Regra: entidade real nomeada com foto conhecida (pessoa/filme/produto) → SEMPRE image_entity; negócio local / oferta / conceito → vazio (IA).
 
 Preencha SÓ slots required + opcionais que adicionam valor. Slots vazios não viram nada — não invente. Minimal vence ruidoso.`
 

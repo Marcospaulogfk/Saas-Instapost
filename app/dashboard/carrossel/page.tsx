@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CarouselEditor } from "@/components/carousel/carousel-editor"
 import { generateCarouselImages } from "@/lib/carousel/generate-images"
-import type { PreviewSlide } from "@/components/carousel/slide-preview"
+import { loadCarouselV2 } from "@/app/actions/carousel"
+import type { PreviewSlide, EditorialStyle } from "@/components/carousel/slide-preview"
 import type { ClaudeSlide } from "@/lib/generation/claude"
 
 interface PendingGeneration {
@@ -30,6 +31,8 @@ function handleFromBrand(name?: string): string {
 
 export default function CarrosselEditorPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const carouselId = searchParams.get("id")
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">(
     "loading",
   )
@@ -41,6 +44,9 @@ export default function CarrosselEditorPage() {
     colors: string[]
     handle: string
   } | null>(null)
+  const [savedStyle, setSavedStyle] = useState<EditorialStyle>("auto")
+  const [savedFormat, setSavedFormat] = useState<"feed" | "stories">("feed")
+  const [savedId, setSavedId] = useState<string | undefined>(undefined)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [progress, setProgress] = useState("Gerando as imagens do carrossel…")
   const startedRef = useRef(false)
@@ -49,6 +55,36 @@ export default function CarrosselEditorPage() {
     if (startedRef.current) return
     startedRef.current = true
     if (typeof window === "undefined") return
+
+    // Reabrindo um carrossel salvo da biblioteca (?id=...).
+    if (carouselId) {
+      setProgress("Carregando carrossel salvo…")
+      ;(async () => {
+        const res = await loadCarouselV2(carouselId)
+        if (!res.ok) {
+          setStatus("error")
+          setErrorMsg(res.error || "Não foi possível carregar o carrossel.")
+          return
+        }
+        const d = res.data
+        setSlides(Array.isArray(d.slides) ? d.slides : [])
+        setMeta({
+          title: d.title || "Carrossel",
+          caption: d.caption || "",
+          brandName: d.brandName || "Marca",
+          colors:
+            Array.isArray(d.colors) && d.colors.length
+              ? d.colors
+              : ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+          handle: d.handle || handleFromBrand(d.brandName),
+        })
+        setSavedStyle(d.editorialStyle || "auto")
+        setSavedFormat(d.format === "stories" ? "stories" : "feed")
+        setSavedId(carouselId)
+        setStatus("ready")
+      })()
+      return
+    }
 
     let raw: string | null = null
     try {
@@ -177,7 +213,9 @@ export default function CarrosselEditorPage() {
       handle={meta.handle}
       colors={meta.colors}
       template="editorial"
-      editorialStyle="auto"
+      editorialStyle={savedStyle}
+      initialFormat={savedFormat}
+      initialCarouselId={savedId}
     />
   )
 }

@@ -17,7 +17,6 @@ import {
   CoverGradientGlow,
   CoverMinimalClean,
   CoverSeamlessFlow,
-  CoverNotesNative,
   type CoverSlideData,
 } from "./editorial-covers"
 import {
@@ -29,7 +28,6 @@ import {
   SplitGradientDark,
   SplitMinimalClean,
   SplitSeamlessFlow,
-  SplitNotesNative,
   type SplitSlideData,
   type SplitImageSlot,
 } from "./editorial-splits"
@@ -67,8 +65,7 @@ export type EditorialStyle =
   | "mypostflow" // capa wesley + splits mypostflow
   | "gradient" // dark vibrante com glow do accent + highlights em gradiente
   | "minimal" // branco suíço: tipografia gigante + ghost numbers + hairlines
-  | "seamless" // panorâmico: linha contínua atravessa os slides (+completion)
-  | "notes" // app Notas nativo/orgânico (não parece anúncio → share no DM)
+  | "seamless" // panorâmico: linha de progresso avança pelos slides (+completion)
 
 interface SlidePreviewProps {
   slide: PreviewSlide
@@ -425,16 +422,9 @@ function EditorialSlideRouter(props: RouterProps) {
     if (isCover) {
       return <CoverMinimalClean slide={coverData} {...baseProps} />
     }
-    const rawSlot: SplitImageSlot = isLast
-      ? "single-bottom"
-      : isMidBreak
-        ? "single-top"
-        : slide.order_index % 3 === 1
-          ? "single-bottom"
-          : slide.order_index % 3 === 2
-            ? "single-top"
-            : "none"
-    const slot = resolveImageSlot(rawSlot, imgCount)
+    // Imagem SEMPRE embaixo do texto, em TODO slide de conteúdo (nunca acima
+    // da descrição, nunca slide sem foto).
+    const slot = resolveImageSlot("single-bottom", imgCount)
     return <SplitMinimalClean slide={splitData} {...baseProps} imageSlot={slot} />
   }
 
@@ -443,23 +433,10 @@ function EditorialSlideRouter(props: RouterProps) {
     if (isCover) {
       return <CoverSeamlessFlow slide={coverData} {...baseProps} />
     }
-    // Faixa de imagem em slides alternados; o fundo panorâmico + linha fazem
-    // a continuidade — não precisa de slot em todo slide.
-    const rawSlot: SplitImageSlot =
-      isLast || slide.order_index % 2 === 1 ? "single-bottom" : "none"
-    const slot = resolveImageSlot(rawSlot, imgCount)
+    // Faixa de imagem em TODO slide de conteúdo — a banda panorâmica embaixo
+    // reforça a continuidade e preenche o vazio dos slides sem foto.
+    const slot = resolveImageSlot("single-bottom", imgCount)
     return <SplitSeamlessFlow slide={splitData} {...baseProps} imageSlot={slot} />
-  }
-
-  // ===== STYLE: NOTES (app Notas nativo) =====
-  if (editorialStyle === "notes") {
-    if (isCover) {
-      return <CoverNotesNative slide={coverData} {...baseProps} />
-    }
-    const rawSlot: SplitImageSlot =
-      slide.order_index % 2 === 1 && !isLast ? "single-bottom" : "none"
-    const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitNotesNative slide={splitData} {...baseProps} imageSlot={slot} />
   }
 
   // ===== STYLE: AUTO (legacy) =====

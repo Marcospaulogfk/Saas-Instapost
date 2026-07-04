@@ -10,6 +10,7 @@ import {
   HighlightedText,
   PaginationDots,
   Pill,
+  SeamlessProgressLine,
   mixWithWhite,
   type SlideAttribution,
 } from "./editorial-shared"
@@ -472,16 +473,16 @@ export function CoverGradientGlow({
         }}
       />
 
-      <div className="relative z-10 px-4 pt-4 flex items-center justify-between">
+      <div className="relative z-10 flex-shrink-0 px-5 pt-5 flex items-center justify-between">
         <Pill>{slide.handle || "@brand"}</Pill>
         <Pill>{slide.category || "Viral"}</Pill>
       </div>
 
-      {/* Título gigante com highlight em gradiente */}
-      <div className="relative z-10 px-6 pt-8 space-y-4">
+      {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-hidden px-6 pt-11 space-y-6">
         <h1
-          className={`text-[2.7rem] uppercase tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.95 }}
+          className={`text-[2.7rem] uppercase tracking-tight text-white line-clamp-5 ${fontClass}`}
+          style={{ fontWeight: 900, lineHeight: 0.98 }}
         >
           <HighlightedGradientText
             text={slide.title}
@@ -490,12 +491,14 @@ export function CoverGradientGlow({
           />
         </h1>
         {slide.subtitle && (
-          <p className="text-sm text-white/75 leading-[1.45]">{slide.subtitle}</p>
+          <p className="text-sm text-white/75 leading-[1.55] line-clamp-3">
+            {slide.subtitle}
+          </p>
         )}
       </div>
 
-      {/* Imagem com aura do accent */}
-      <div className="relative z-10 mt-auto px-6 pb-16">
+      {/* ZONA DE IMAGEM — flex-shrink-0, sempre abaixo do título */}
+      <div className="relative z-10 flex-shrink-0 px-6 pt-4">
         <div
           className="rounded-2xl overflow-hidden"
           style={{
@@ -519,8 +522,8 @@ export function CoverGradientGlow({
         </div>
       </div>
 
-      {/* Footer: arrasta + barra de progresso gradiente */}
-      <div className="absolute bottom-0 inset-x-0 z-10 px-6 pb-5 space-y-3">
+      {/* Footer no FLUXO — barra de progresso gradiente */}
+      <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-5 space-y-3">
         <div className="flex items-center justify-between">
           <span
             className="text-[10px] uppercase tracking-[0.18em] font-semibold"
@@ -557,16 +560,16 @@ export function CoverMinimalClean({
       style={{ backgroundColor: "#FFFFFF" }}
     >
       {/* Header texto puro */}
-      <div className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
+      <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
         <span>{slide.handle || "@brand"}</span>
         <span>{slide.category || "Editorial"}</span>
       </div>
 
-      {/* Régua accent + título preto gigante */}
-      <div className="px-6 pt-10 space-y-5">
+      {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
+      <div className="relative flex-1 min-h-0 overflow-hidden px-6 pt-10 space-y-5">
         <div className="h-1 w-12" style={{ backgroundColor: accent }} />
         <h1
-          className={`text-[2.9rem] uppercase tracking-tight text-black ${fontClass}`}
+          className={`text-[2.9rem] uppercase tracking-tight text-black line-clamp-5 ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.93 }}
         >
           <HighlightedText
@@ -576,14 +579,14 @@ export function CoverMinimalClean({
           />
         </h1>
         {slide.subtitle && (
-          <p className="text-sm text-black/60 leading-[1.5] max-w-[85%]">
+          <p className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-3">
             {slide.subtitle}
           </p>
         )}
       </div>
 
-      {/* Imagem em janela com hairline */}
-      <div className="mt-auto px-6 pb-14">
+      {/* ZONA DE IMAGEM — flex-shrink-0, sempre abaixo do título */}
+      <div className="flex-shrink-0 px-6 pt-3">
         <div
           className="rounded-lg overflow-hidden"
           style={{ aspectRatio: "16/10", border: "1px solid rgba(0,0,0,0.12)" }}
@@ -603,8 +606,8 @@ export function CoverMinimalClean({
         </div>
       </div>
 
-      {/* Footer: linha + contador tabular + arrasta */}
-      <div className="absolute bottom-0 inset-x-0 px-6 pb-5">
+      {/* Footer no FLUXO: linha + contador tabular + arrasta */}
+      <div className="flex-shrink-0 px-6 pt-3 pb-5">
         <div className="h-px w-full bg-black/10 mb-3" />
         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
           <span className="tabular-nums">
@@ -631,138 +634,64 @@ export function CoverSeamlessFlow({
   accent,
   fontClass,
 }: CoverProps) {
+  const ghost = String(orderIndex + 1).padStart(2, "0")
   return (
     <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
-      style={{
-        // Gradiente panorâmico: cada slide mostra uma "janela" diferente do
-        // mesmo fundo — no feed, os slides parecem um pano contínuo.
-        backgroundImage: `linear-gradient(115deg, #0B0B10 0%, ${accent}30 50%, #0B0B10 100%)`,
-        backgroundSize: `${Math.max(totalSlides, 2) * 100}% 100%`,
-        backgroundPosition: `${totalSlides > 1 ? (orderIndex / (totalSlides - 1)) * 100 : 0}% 50%`,
-        backgroundColor: "#0B0B10",
-      }}
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
+      style={{ backgroundColor: "#0A0A12" }}
     >
-      <div className="absolute top-4 left-5 right-5 flex items-center justify-between z-10">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold">
+      {/* FOTO como fundo full-bleed (preenche o slide inteiro) */}
+      {slide.image.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={slide.image.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(150deg, #0A0A12 0%, ${accent}22 45%, #0A0A12 100%)`,
+          }}
+        />
+      )}
+      {/* Overlay escuro pra legibilidade (mais forte em cima/embaixo) + tint do accent */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(10,10,18,0.82) 0%, rgba(10,10,18,0.4) 42%, rgba(10,10,18,0.55) 68%, rgba(10,10,18,0.94) 100%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${accent}33 0%, transparent 60%)`,
+        }}
+      />
+
+      {/* Header */}
+      <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold">
           {slide.handle || "@brand"}
         </span>
         <span
           className="text-[10px] uppercase tracking-[0.18em] font-bold tabular-nums"
           style={{ color: accent }}
         >
-          {String(orderIndex + 1).padStart(2, "0")} — {String(totalSlides).padStart(2, "0")}
+          {ghost} — {String(totalSlides).padStart(2, "0")}
         </span>
       </div>
 
-      {/* Título acima da linha */}
-      <div className="absolute left-6 right-6 z-10" style={{ bottom: "47%" }}>
+      {/* Conteúdo ancorado embaixo, sobre a foto */}
+      <div className="mt-auto px-6 pb-6 z-10 space-y-4">
         <h1
-          className={`text-[2.5rem] uppercase tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.95 }}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </h1>
-      </div>
-
-      {/* A LINHA — começa no meio da capa e SAI pela borda direita (continua
-          no próximo slide). Nó marca o início da jornada. */}
-      <div
-        className="absolute z-10 flex items-center"
-        style={{ top: "56%", left: "24px", right: "-2px" }}
-      >
-        <span
-          className="w-3 h-3 rounded-full flex-shrink-0"
-          style={{ backgroundColor: accent, boxShadow: `0 0 14px ${accent}` }}
-        />
-        <span
-          className="h-[3px] flex-1"
+          className={`text-[2.5rem] uppercase tracking-tight text-white line-clamp-4 ${fontClass}`}
           style={{
-            backgroundImage: `linear-gradient(90deg, ${accent}, ${mixWithWhite(accent, 0.4)})`,
+            fontWeight: 900,
+            lineHeight: 0.95,
+            textShadow: "0 2px 24px rgba(0,0,0,0.7)",
           }}
-        />
-      </div>
-
-      {/* Subtítulo + convite abaixo da linha */}
-      <div className="absolute left-6 right-6 z-10 space-y-3" style={{ top: "61%" }}>
-        {slide.subtitle && (
-          <p className="text-sm text-white/75 leading-[1.45]">{slide.subtitle}</p>
-        )}
-        <p
-          className="text-[11px] uppercase tracking-[0.18em] font-bold"
-          style={{ color: mixWithWhite(accent, 0.3) }}
-        >
-          segue a linha →
-        </p>
-      </div>
-
-      {/* Imagem: faixa fullwidth colada nas bordas (sangra pro próximo) */}
-      {slide.image.url && (
-        <div className="absolute bottom-0 inset-x-0" style={{ height: "26%" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.image.url}
-            alt=""
-            className="w-full h-full object-cover"
-            style={{ opacity: 0.85 }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "linear-gradient(180deg, #0B0B10 0%, transparent 45%)",
-            }}
-          />
-        </div>
-      )}
-
-      <Attribution attribution={slide.image.attribution} textColor="#fff" />
-    </div>
-  )
-}
-
-// ============================================================================
-// 10. cover-notes-native — screenshot do app Notas (nativo/orgânico,
-//     "não parece anúncio" — estética que mais gera share no DM)
-// ============================================================================
-
-const NOTES_FONT =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif'
-
-export function CoverNotesNative({
-  slide,
-  totalSlides,
-  orderIndex,
-  accent,
-}: CoverProps) {
-  return (
-    <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#FBF9F3", fontFamily: NOTES_FONT }}
-    >
-      {/* Chrome do app Notas */}
-      <div className="px-4 pt-4 flex items-center justify-between">
-        <span className="text-[13px] font-medium" style={{ color: "#E8A33D" }}>
-          ‹ Notas
-        </span>
-        <span className="text-[13px] tracking-widest" style={{ color: "#E8A33D" }}>
-          ⋯
-        </span>
-      </div>
-
-      {/* Data centralizada (detalhe que vende o "screenshot real") */}
-      <p className="text-center text-[10px] mt-3" style={{ color: "#9C9A94" }}>
-        {new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long" })} às 09:41
-      </p>
-
-      {/* Título natural (sem caixa alta — como se digita numa nota) */}
-      <div className="px-6 pt-5 space-y-3">
-        <h1
-          className="text-[1.9rem] text-black"
-          style={{ fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.02em" }}
         >
           <HighlightedText
             text={slide.title}
@@ -770,41 +699,31 @@ export function CoverNotesNative({
             color={accent}
           />
         </h1>
+
+        {/* Linha de PROGRESSO — avança slide a slide */}
+        <SeamlessProgressLine
+          orderIndex={orderIndex}
+          totalSlides={totalSlides}
+          accent={accent}
+        />
+
         {slide.subtitle && (
-          <p className="text-[15px] leading-[1.5]" style={{ color: "#55534E" }}>
+          <p
+            className="text-sm text-white/85 leading-[1.45] line-clamp-2"
+            style={{ textShadow: "0 1px 10px rgba(0,0,0,0.6)" }}
+          >
             {slide.subtitle}
           </p>
         )}
-      </div>
-
-      {/* Imagem como foto anexada na nota */}
-      {slide.image.url && (
-        <div className="mt-auto px-6 pb-16">
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{ aspectRatio: "16/10", boxShadow: "0 3px 12px rgba(0,0,0,0.12)" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={slide.image.url} alt="" className="w-full h-full object-cover" />
-          </div>
-        </div>
-      )}
-
-      {/* Footer discreto */}
-      <div className="absolute bottom-0 inset-x-0 px-6 pb-4">
-        <div className="h-px w-full mb-2.5" style={{ backgroundColor: "rgba(0,0,0,0.08)" }} />
-        <div
-          className="flex items-center justify-between text-[10px]"
-          style={{ color: "#9C9A94" }}
+        <p
+          className="text-[11px] uppercase tracking-[0.18em] font-bold"
+          style={{ color: mixWithWhite(accent, 0.4) }}
         >
-          <span>{slide.handle || "@brand"}</span>
-          <span className="tabular-nums">
-            nota {orderIndex + 1} de {totalSlides} · arrasta →
-          </span>
-        </div>
+          arrasta →
+        </p>
       </div>
 
-      <Attribution attribution={slide.image.attribution} textColor="#000" />
+      <Attribution attribution={slide.image.attribution} textColor="#fff" />
     </div>
   )
 }
