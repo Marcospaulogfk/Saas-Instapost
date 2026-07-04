@@ -33,12 +33,21 @@ import {
 import { getProjectGradient } from "@/lib/brand-colors"
 import { formatRelativeDate } from "@/lib/format-date"
 import { deleteCarouselV2, type CarouselListItem } from "@/app/actions/carousel"
+import { deleteSinglePost } from "@/app/actions/single-posts"
 
 interface Project {
   id: string
   title: string
   created_at: string
   brand: { id: string; name: string }
+}
+
+interface SinglePostItem {
+  id: string
+  title: string
+  brand_name: string
+  rendered_image_url: string | null
+  created_at: string
 }
 
 interface BrandOption {
@@ -49,12 +58,14 @@ interface BrandOption {
 interface ProjectsListProps {
   projects: Project[]
   carousels?: CarouselListItem[]
+  singlePosts?: SinglePostItem[]
   brands: BrandOption[]
 }
 
 export function ProjectsList({
   projects,
   carousels = [],
+  singlePosts = [],
   brands,
 }: ProjectsListProps) {
   const router = useRouter()
@@ -63,7 +74,10 @@ export function ProjectsList({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  const isEmpty = projects.length === 0 && carousels.length === 0
+  const isEmpty =
+    projects.length === 0 &&
+    carousels.length === 0 &&
+    singlePosts.length === 0
 
   const selectedBrandName =
     brandFilter === "todos"
@@ -86,6 +100,14 @@ export function ProjectsList({
     return matchesQuery && matchesBrand
   })
 
+  const filteredSinglePosts = singlePosts.filter((p) => {
+    const matchesQuery = p.title.toLowerCase().includes(query.toLowerCase())
+    const matchesBrand =
+      !selectedBrandName ||
+      p.brand_name?.toLowerCase() === selectedBrandName.toLowerCase()
+    return matchesQuery && matchesBrand
+  })
+
   function handleDeleteCarousel(id: string) {
     setDeletingId(id)
     startTransition(async () => {
@@ -95,13 +117,22 @@ export function ProjectsList({
     })
   }
 
+  function handleDeleteSinglePost(id: string) {
+    setDeletingId(id)
+    startTransition(async () => {
+      await deleteSinglePost(id)
+      setDeletingId(null)
+      router.refresh()
+    })
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold">Projetos</h1>
+          <h1 className="text-3xl font-bold">Biblioteca</h1>
           <p className="text-muted-foreground mt-1">
-            Todos os carrosseis que voce ja criou.
+            Todos os posts e carrosseis que voce ja criou.
           </p>
         </div>
         {!isEmpty && (
@@ -111,7 +142,7 @@ export function ProjectsList({
           >
             <Link href="/dashboard/criar">
               <Plus className="w-4 h-4 mr-2" />
-              Novo carrossel
+              Criar conteúdo
             </Link>
           </Button>
         )}
@@ -165,7 +196,9 @@ export function ProjectsList({
             )}
           </div>
 
-          {filtered.length === 0 && filteredCarousels.length === 0 ? (
+          {filtered.length === 0 &&
+          filteredCarousels.length === 0 &&
+          filteredSinglePosts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <p className="text-muted-foreground">
                 Nenhum projeto encontrado com esses filtros.
@@ -173,6 +206,92 @@ export function ProjectsList({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredSinglePosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all bg-black"
+                >
+                  <Link
+                    href={`/dashboard/posts-unicos/${post.id}`}
+                    className="absolute inset-0"
+                  >
+                    {post.rendered_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.rendered_image_url}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className={`absolute inset-0 ${getProjectGradient(post.id)}`}
+                      />
+                    )}
+                  </Link>
+                  <Badge
+                    variant="secondary"
+                    className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
+                  >
+                    Post
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+                      >
+                        {deletingId === post.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <MoreHorizontal className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/posts-unicos/${post.id}`}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Editar
+                        </Link>
+                      </DropdownMenuItem>
+                      {post.rendered_image_url && (
+                        <DropdownMenuItem asChild>
+                          <a
+                            href={post.rendered_image_url}
+                            download={`${post.title || "post"}.png`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Baixar
+                          </a>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onSelect={(e) => {
+                          e.preventDefault()
+                          handleDeleteSinglePost(post.id)
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pointer-events-none">
+                    <h3 className="font-semibold text-white truncate">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {post.brand_name
+                        ? `${post.brand_name} · ${formatRelativeDate(post.created_at)}`
+                        : formatRelativeDate(post.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
               {filteredCarousels.map((carousel) => (
                 <Link
                   key={carousel.id}

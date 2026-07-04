@@ -73,53 +73,32 @@ type Formato = {
   size: string
   pageMode: "carrossel" | "post-unico"
   format: "post" | "story"
-  slides: number | null
+  slides: number
   icon: typeof Sparkles
-  image: string
 }
 
-const FORMATOS: Formato[] = [
-  {
-    id: "post-portrait",
-    label: "Post Vertical",
-    size: "1080 × 1350px",
-    pageMode: "post-unico",
-    format: "post",
-    slides: 1,
-    icon: Square,
-    image: "/format-post-portrait.png",
-  },
-  {
-    id: "carrossel-portrait",
-    label: "Carrossel Vertical",
-    size: "1080 × 1350px",
-    pageMode: "carrossel",
-    format: "post",
-    slides: 7,
-    icon: GalleryHorizontal,
-    image: "/format-carrossel-portrait.png",
-  },
-  {
-    id: "stories-unico",
-    label: "Stories Único",
-    size: "1080 × 1920px",
-    pageMode: "post-unico",
-    format: "story",
-    slides: 1,
-    icon: Smartphone,
-    image: "/format-stories-unico.png",
-  },
-  {
-    id: "stories-carrossel",
-    label: "Stories Carrossel",
-    size: "1080 × 1920px",
-    pageMode: "carrossel",
-    format: "story",
-    slides: 5,
-    icon: Smartphone,
-    image: "/format-stories-carrossel.png",
-  },
-]
+type FormatKind = "post" | "story"
+
+/**
+ * Monta o objeto de formato a partir da escolha do usuário:
+ * feed vs stories + quantidade de slides (1 a 7). 1 slide = post único,
+ * 2+ = carrossel. O restante do wizard consome esse objeto genericamente.
+ */
+function buildFormato(format: FormatKind, slides: number): Formato {
+  const n = Math.min(7, Math.max(1, slides))
+  const isStory = format === "story"
+  const pageMode = n <= 1 ? "post-unico" : "carrossel"
+  const base = isStory ? "Stories" : "Feed"
+  return {
+    id: `${format}-${n}`,
+    label: n <= 1 ? `${base} · 1 slide` : `${base} · ${n} slides`,
+    size: isStory ? "1080 × 1920px" : "1080 × 1350px",
+    pageMode,
+    format,
+    slides: n,
+    icon: isStory ? Smartphone : n <= 1 ? Square : GalleryHorizontal,
+  }
+}
 
 type Objetivo = "engajar" | "vender"
 type Abordagem = "viral" | "educativo" | "comunidade"
@@ -142,7 +121,6 @@ export default function CriarWizardPage() {
 
   // --- Modo "A partir de Link" ---
   const [linkUrl, setLinkUrl] = useState("")
-  const [analisandoLink, setAnalisandoLink] = useState(false)
   const [linkErr, setLinkErr] = useState<string | null>(null)
 
   // --- Etapa de aprovação (post-único) ---
@@ -190,15 +168,15 @@ export default function CriarWizardPage() {
       const p = JSON.parse(raw)
       if (typeof p.briefing === "string") setBriefing(p.briefing)
       if (p.formato === "post") {
-        setFormato(FORMATOS[0])
+        setFormato(buildFormato("post", 1))
         setStep(2)
       }
       if (p.formato === "carrossel") {
-        setFormato(FORMATOS[1])
+        setFormato(buildFormato("post", 7))
         setStep(2)
       }
       if (p.formato === "stories") {
-        setFormato(FORMATOS[2])
+        setFormato(buildFormato("story", 1))
         setStep(2)
       }
     } catch {}
@@ -212,6 +190,12 @@ export default function CriarWizardPage() {
   }
   function canFinish() {
     return briefing.trim().length >= 10
+  }
+  // No modo link só precisamos de um link válido — o briefing vem da análise
+  // da página na hora de gerar.
+  function canGerar() {
+    if (comoCriar === "link") return linkUrl.trim().length >= 8
+    return canFinish()
   }
 
   async function refinarComIA() {
@@ -245,38 +229,30 @@ export default function CriarWizardPage() {
     }
   }
 
-  /** Extrai o conteúdo de um link e preenche o briefing com o resumo da IA. */
-  async function analisarLink() {
-    const url = linkUrl.trim()
-    if (url.length < 4) {
-      setLinkErr("Cole um link válido")
-      return
-    }
-    setLinkErr(null)
-    setAnalisandoLink(true)
-    try {
+  /**
+   * Resolve o briefing final que alimenta a geração.
+   * No modo "A partir de Link" a análise da página acontece AQUI, na hora de
+   * gerar (sem etapa separada de "Analisar link") — a tela de carregamento de
+   * "Revisando roteiro" cobre extração + geração num fluxo só.
+   */
+  async function resolveBriefing(): Promise<string> {
+    if (comoCriar === "link") {
+      const url = linkUrl.trim()
       const res = await fetch("/api/extract-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
-          formato: formato?.id ?? "post-portrait",
+          formato: formato?.id ?? "post",
           objetivo,
           abordagem,
         }),
       })
       const data = await res.json()
-      if (!res.ok) {
-        setLinkErr(data.error ?? "erro ao analisar o link")
-        return
-      }
-      setBriefing(data.briefing ?? "")
-      setPromptRefinado(null)
-    } catch (err) {
-      setLinkErr(err instanceof Error ? err.message : "erro de rede")
-    } finally {
-      setAnalisandoLink(false)
+      if (!res.ok) throw new Error(data.error ?? "erro ao analisar o link")
+      return (data.briefing ?? "").trim()
     }
+    return (promptRefinado ?? briefing).trim()
   }
 
   /** Mapeia os slots do skeleton pros 3 campos editáveis da aprovação. */
@@ -306,11 +282,11 @@ export default function CriarWizardPage() {
   /** Gera SÓ o texto (sem foto) e abre a tela de revisão/aprovação. */
   async function gerarTextoParaAprovacao() {
     if (!formato) return
-    const finalBriefing = (promptRefinado ?? briefing).trim()
     setApprovalErr(null)
     setApprovalLoading(true)
     setStep(5)
     try {
+      const finalBriefing = await resolveBriefing()
       const res = await fetch("/api/post-unico/free-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -383,11 +359,11 @@ export default function CriarWizardPage() {
   /** Gera SÓ o roteiro do carrossel (texto + legenda) e abre a aprovação. */
   async function gerarRoteiroParaAprovacao() {
     if (!formato) return
-    const finalBriefing = (promptRefinado ?? briefing).trim()
     setCarouselErr(null)
     setCarouselLoading(true)
     setStep(5)
     try {
+      const finalBriefing = await resolveBriefing()
       const res = await fetch("/api/editorial/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -468,15 +444,16 @@ export default function CriarWizardPage() {
   }
 
   function handleGerar() {
-    if (!formato || !canFinish()) return
+    if (!formato || !canGerar()) return
+    setLinkErr(null)
     if (formato.pageMode === "post-unico") {
-      // Escolheu um template curado → gera direto nele (sem etapa de aprovação,
-      // que é do caminho auto/skeleton).
-      if (templateId !== "auto") {
+      // Escolheu um template curado (e não é modo link) → gera direto nele,
+      // sem a etapa de aprovação do caminho auto/skeleton.
+      if (comoCriar !== "link" && templateId !== "auto") {
         criarComTemplateEscolhido()
         return
       }
-      // Auto: gera o TEXTO primeiro e abre a etapa de aprovação.
+      // Auto (ou link): gera o TEXTO primeiro e abre a etapa de aprovação.
       void gerarTextoParaAprovacao()
       return
     }
@@ -588,12 +565,10 @@ export default function CriarWizardPage() {
           submitting={submitting}
           linkUrl={linkUrl}
           setLinkUrl={setLinkUrl}
-          onAnalisarLink={analisarLink}
-          analisandoLink={analisandoLink}
           linkErr={linkErr}
           onBack={() => setStep(isPostUnico ? 3 : 2)}
           onGerar={handleGerar}
-          canFinish={canFinish()}
+          canFinish={canGerar()}
         />
       )}
 
@@ -659,6 +634,34 @@ function Step1({
   onSelect: (f: Formato) => void
   onNext: () => void
 }) {
+  // Escolha atual derivada do formato já montado (ou defaults).
+  const format: FormatKind = formato?.format ?? "post"
+  const slides = formato?.slides ?? 1
+  const chosen = formato !== null
+
+  const FORMAT_OPTIONS: {
+    id: FormatKind
+    label: string
+    size: string
+    desc: string
+    icon: typeof Square
+  }[] = [
+    {
+      id: "post",
+      label: "Feed",
+      size: "1080 × 1350px",
+      desc: "Post ou carrossel no feed",
+      icon: Square,
+    },
+    {
+      id: "story",
+      label: "Stories",
+      size: "1080 × 1920px",
+      desc: "Tela cheia vertical",
+      icon: Smartphone,
+    },
+  ]
+
   return (
     <div>
       <div className="text-center mb-8">
@@ -666,85 +669,82 @@ function Step1({
           Qual formato você quer criar?
         </h1>
         <p className="text-sm text-text-secondary">
-          Escolha o tipo de conteúdo. Você define o tema no próximo passo.
+          Escolha onde vai publicar e quantos slides. O tema vem no próximo passo.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-        {FORMATOS.map((f) => {
-          const selected = formato?.id === f.id
+      {/* Formato: Feed x Stories */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 max-w-xl mx-auto">
+        {FORMAT_OPTIONS.map((f) => {
+          const selected = chosen && format === f.id
           return (
             <button
               key={f.id}
               type="button"
-              onClick={() => onSelect(f)}
-              className={`group relative aspect-[4/5] rounded-2xl overflow-hidden text-white p-4 flex flex-col justify-between transition-all ${
+              onClick={() => onSelect(buildFormato(f.id, slides))}
+              className={`relative rounded-2xl p-5 text-left transition-all border-2 ${
                 selected
-                  ? "ring-2 ring-brand-400 scale-[1.02] shadow-[0_8px_32px_rgba(115, 32, 230,0.35)]"
-                  : "ring-1 ring-white/[0.06] hover:ring-brand-500/40 hover:scale-[1.01]"
+                  ? "border-brand-500 bg-brand-500/10"
+                  : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
               }`}
-              style={{
-                backgroundImage: `url(${f.image})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundColor: "#0A0A0F",
-              }}
             >
-              {/* Overlay gradient pra contraste do texto */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(10,10,15,0.35) 0%, rgba(10,10,15,0.15) 40%, rgba(10,10,15,0.85) 100%)",
-                }}
-              />
               {selected && (
-                <div
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center z-10"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, #8A33EC 0%, #7320E6 60%, #5F14D6 100%)",
-                    boxShadow: "0 4px 14px rgba(115, 32, 230,0.5)",
-                  }}
-                >
-                  <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center">
+                  <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                 </div>
               )}
-              <div className="relative z-10">
-                <div
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg backdrop-blur-md"
-                  style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "0.5px solid rgba(255,255,255,0.15)",
-                  }}
-                >
-                  <f.icon className="w-4 h-4" strokeWidth={2} />
-                </div>
+              <div
+                className={`inline-flex items-center justify-center w-10 h-10 rounded-lg mb-3 ${
+                  selected ? "bg-brand-500/20" : "bg-background-tertiary"
+                }`}
+              >
+                <f.icon
+                  className={`w-5 h-5 ${selected ? "text-brand-300" : "text-text-secondary"}`}
+                />
               </div>
-              <div className="relative z-10">
-                <p className="text-sm sm:text-base font-bold leading-tight">
-                  {f.label}
-                </p>
-                <p className="text-[10px] sm:text-xs opacity-80 mt-0.5">
-                  {f.size}
-                </p>
-                {f.slides && f.slides > 1 && (
-                  <p className="text-[10px] opacity-70 mt-0.5">
-                    {f.slides} slides
-                  </p>
-                )}
-              </div>
+              <p className="text-base font-semibold text-text-primary">
+                {f.label}
+              </p>
+              <p className="text-[11px] text-text-secondary mt-0.5">{f.desc}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">{f.size}</p>
             </button>
           )
         })}
       </div>
 
+      {/* Quantidade de slides: 1 a 7 */}
+      <div className="max-w-xl mx-auto mb-8">
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
+          Quantos slides?
+        </p>
+        <div className="grid grid-cols-7 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+            const selected = chosen && slides === n
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onSelect(buildFormato(format, n))}
+                className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
+                  selected
+                    ? "border-brand-500 bg-brand-500/10 text-brand-200"
+                    : "border-border-subtle bg-background-tertiary/30 text-text-secondary hover:border-border-medium"
+                }`}
+              >
+                <span className="text-lg font-semibold tabular-nums">{n}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-[11px] text-text-muted mt-2 text-center">
+          {slides <= 1
+            ? "1 slide = post único."
+            : `${slides} slides = carrossel.`}
+        </p>
+      </div>
+
       <div className="flex justify-end">
-        <Button
-          onClick={onNext}
-          disabled={!formato}
-          className="min-w-[140px]"
-        >
+        <Button onClick={onNext} disabled={!chosen} className="min-w-[140px]">
           Continuar
           <ArrowRight className="w-4 h-4 ml-1.5" />
         </Button>
@@ -958,8 +958,6 @@ function Step3({
   submitting,
   linkUrl,
   setLinkUrl,
-  onAnalisarLink,
-  analisandoLink,
   linkErr,
   onBack,
   onGerar,
@@ -978,8 +976,6 @@ function Step3({
   submitting: boolean
   linkUrl: string
   setLinkUrl: (v: string) => void
-  onAnalisarLink: () => void
-  analisandoLink: boolean
   linkErr: string | null
   onBack: () => void
   onGerar: () => void
@@ -1003,62 +999,52 @@ function Step3({
       </div>
 
       {/* Resumo das escolhas */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-        <Pill icon={formato.icon} label="FORMATO" value={formato.label} sub={formato.size} />
-        <Pill icon={Wand2} label="MODO" value={comoCriar === "zero" ? "Criar do Zero" : comoCriar === "link" ? "A partir de Link" : "Inspirações"} sub="Criação livre" />
-        <Pill icon={Sparkles} label="CRÉDITOS" value="10 cr" sub={formato.slides && formato.slides > 1 ? `${formato.slides} slides` : "1 slide"} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+        <Pill
+          icon={formato.icon}
+          label="FORMATO"
+          value={formato.label}
+          sub={formato.size}
+        />
+        <Pill
+          icon={Wand2}
+          label="MODO"
+          value={comoCriar === "zero" ? "Criar do Zero" : comoCriar === "link" ? "A partir de Link" : "Inspirações"}
+          sub={formato.slides > 1 ? `${formato.slides} slides` : "1 slide"}
+        />
       </div>
 
-      {/* Modo Link: campo de URL + análise */}
+      {/* Modo Link: só o campo de URL. A IA analisa a página na hora de gerar. */}
       {isLinkMode && (
         <div className="rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5">
           <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 flex items-center gap-1.5">
             <Link2 className="w-3 h-3" />
             Link de referência
           </p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !analisandoLink) {
-                  e.preventDefault()
-                  onAnalisarLink()
-                }
-              }}
-              placeholder="https://exemplo.com/artigo"
-              className="flex-1 h-10 px-3 rounded-xl bg-background-tertiary/40 border border-border-subtle text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500/60"
-            />
-            <Button
-              onClick={onAnalisarLink}
-              disabled={analisandoLink || linkUrl.trim().length < 4}
-              className="min-w-[130px]"
-            >
-              {analisandoLink ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                  Analisando...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-1.5" />
-                  Analisar link
-                </>
-              )}
-            </Button>
-          </div>
+          <input
+            type="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canFinish) {
+                e.preventDefault()
+                onGerar()
+              }
+            }}
+            placeholder="https://exemplo.com/artigo"
+            className="w-full h-10 px-3 rounded-xl bg-background-tertiary/40 border border-border-subtle text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500/60"
+          />
           {linkErr && (
             <p className="text-xs text-destructive mt-2">{linkErr}</p>
           )}
           <p className="text-[10px] text-text-muted mt-2">
-            A IA lê o conteúdo da página e gera o briefing abaixo — você pode editar antes de gerar.
+            Cole o link e clique em gerar — a IA lê a página e cria o conteúdo direto.
           </p>
         </div>
       )}
 
-      {/* Briefing + refino agrupados num card coeso */}
-      <div className="rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5">
+      {/* Briefing + refino agrupados num card coeso (oculto no modo link) */}
+      <div className={`rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5${isLinkMode ? " hidden" : ""}`}>
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
@@ -1171,7 +1157,7 @@ function Step3({
           ) : (
             <>
               <Sparkles className="w-4 h-4 mr-1.5" />
-              Gerar com IA · 10
+              Gerar com IA
             </>
           )}
         </Button>

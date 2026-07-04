@@ -1,23 +1,15 @@
 ﻿"use client"
 
-import * as React from "react"
-import { Search, Bell, HelpCircle, Sun, Moon } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Search, Bell, HelpCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
 export function DashboardTopBar() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  React.useEffect(() => setMounted(true), [])
-  const isDark = mounted ? theme === "dark" : true
-
   return (
     <header
       className="h-[60px] px-6 flex items-center justify-between sticky top-0 z-10"
@@ -60,16 +52,6 @@ export function DashboardTopBar() {
         <Button variant="ghost" size="icon">
           <HelpCircle className="w-5 h-5" />
           <span className="sr-only">Ajuda</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-          aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
-        >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          <span className="sr-only">Alternar tema</span>
         </Button>
       </div>
     </header>

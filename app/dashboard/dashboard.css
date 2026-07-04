@@ -56,22 +56,11 @@
 .dash-rio-base {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      90% 70% at 8% -8%,
-      rgba(110, 42, 150, 0.1),
-      transparent 50%
-    ),
-    radial-gradient(
-      90% 70% at 100% 108%,
-      rgba(190, 96, 56, 0.09),
-      transparent 50%
-    ),
-    radial-gradient(
-      70% 60% at 100% 4%,
-      rgba(150, 38, 104, 0.07),
-      transparent 55%
-    );
+  background: radial-gradient(
+    90% 70% at 8% -8%,
+    rgba(110, 42, 150, 0.07),
+    transparent 55%
+  );
 }
 
 /* Vinheta: escurece as bordas pra dar profundidade/sombra */
@@ -80,8 +69,8 @@
   inset: 0;
   background: radial-gradient(
     120% 100% at 50% 38%,
-    transparent 50%,
-    rgba(0, 0, 0, 0.6) 100%
+    transparent 42%,
+    rgba(0, 0, 0, 0.8) 100%
   );
 }
 
@@ -93,17 +82,17 @@
   will-change: transform;
 }
 .dash-rio-1 {
-  width: 48vw;
-  height: 48vw;
-  max-width: 680px;
-  max-height: 680px;
-  top: -14vw;
-  left: -12vw;
-  opacity: 0.55;
+  width: 44vw;
+  height: 44vw;
+  max-width: 620px;
+  max-height: 620px;
+  top: -16vw;
+  left: -14vw;
+  opacity: 0.32;
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(112, 40, 165, 0.8),
-    rgba(96, 36, 140, 0.3) 45%,
+    rgba(112, 40, 165, 0.55),
+    rgba(96, 36, 140, 0.2) 45%,
     transparent 70%
   );
   animation: rioDrift1 24s ease-in-out infinite alternate;
@@ -125,16 +114,16 @@
   animation: rioDrift2 28s ease-in-out infinite alternate;
 }
 .dash-rio-3 {
-  width: 34vw;
-  height: 34vw;
-  max-width: 500px;
-  max-height: 500px;
-  top: -10vw;
-  right: -8vw;
-  opacity: 0.42;
+  width: 32vw;
+  height: 32vw;
+  max-width: 460px;
+  max-height: 460px;
+  top: -12vw;
+  right: -10vw;
+  opacity: 0.22;
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(168, 40, 110, 0.7),
+    rgba(120, 44, 170, 0.5),
     transparent 68%
   );
   animation: rioDrift3 32s ease-in-out infinite alternate;
@@ -205,7 +194,7 @@
   height: 60%;
   background: radial-gradient(
     ellipse at 50% 0%,
-    rgba(177, 44, 122, 0.18),
+    rgba(120, 44, 170, 0.16),
     transparent 70%
   );
   pointer-events: none;
@@ -254,17 +243,17 @@
 }
 .dash-template-card:nth-child(2) {
   background:
-    linear-gradient(150deg, rgba(168, 40, 110, 0.2), rgba(18, 18, 24, 0.55) 58%),
+    linear-gradient(150deg, rgba(120, 44, 170, 0.16), rgba(18, 18, 24, 0.55) 58%),
     #0b0b0e;
 }
 .dash-template-card:nth-child(3) {
   background:
-    linear-gradient(150deg, rgba(196, 92, 48, 0.18), rgba(18, 18, 24, 0.55) 58%),
+    linear-gradient(150deg, rgba(139, 31, 234, 0.14), rgba(18, 18, 24, 0.55) 58%),
     #0b0b0e;
 }
 .dash-template-card:nth-child(4) {
   background:
-    linear-gradient(150deg, rgba(120, 44, 170, 0.2), rgba(18, 18, 24, 0.55) 58%),
+    linear-gradient(150deg, rgba(96, 36, 140, 0.18), rgba(18, 18, 24, 0.55) 58%),
     #0b0b0e;
 }
 .dash-template-card:hover {

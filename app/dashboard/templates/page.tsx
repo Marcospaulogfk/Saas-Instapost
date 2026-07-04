@@ -1,30 +1,37 @@
-﻿"use client"
+"use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import Link from "next/link"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 
-const categories = ["Todos", "Educacional", "Vendas", "Storytelling", "Listas", "Tutorial"]
-
-const templates = [
-  { id: 1, name: "Wesley Style", category: "Educacional", usageCount: 234, color: "bg-gradient-to-br from-brand-500 via-violet-700 to-zinc-950" },
-  { id: 2, name: "Minimalista Preto", category: "Storytelling", usageCount: 189, color: "bg-gradient-to-br from-zinc-800 via-zinc-900 to-black" },
-  { id: 3, name: "Cinematic", category: "Vendas", usageCount: 156, color: "bg-gradient-to-br from-violet-700 via-brand-900 to-black" },
-  { id: 4, name: "Business Pro", category: "Educacional", usageCount: 142, color: "bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950" },
-  { id: 5, name: "Lista Top 10", category: "Listas", usageCount: 128, color: "bg-gradient-to-br from-brand-700 via-zinc-900 to-black" },
-  { id: 6, name: "Tutorial Passo-a-passo", category: "Tutorial", usageCount: 117, color: "bg-gradient-to-br from-violet-600 via-brand-800 to-zinc-950" },
-  { id: 7, name: "Story Cards", category: "Storytelling", usageCount: 94, color: "bg-gradient-to-br from-brand-800 via-violet-950 to-black" },
-  { id: 8, name: "Oferta Bold", category: "Vendas", usageCount: 81, color: "bg-gradient-to-br from-violet-500 via-brand-700 to-zinc-950" },
+// Categorias reais derivadas do catálogo (ordem estável).
+const CATEGORY_ORDER = [
+  "profissional",
+  "informativo",
+  "comercial",
+  "fitness",
+  "beauty",
+  "empresa",
 ]
 
 export default function TemplatesPage() {
-  const [activeCategory, setActiveCategory] = useState("Todos")
+  const [activeCategory, setActiveCategory] = useState("todos")
   const [query, setQuery] = useState("")
 
-  const filtered = templates.filter((t) => {
-    const matchesCategory = activeCategory === "Todos" || t.category === activeCategory
-    const matchesQuery = t.name.toLowerCase().includes(query.toLowerCase())
+  const categories = useMemo(() => {
+    const present = CATEGORY_ORDER.filter((c) =>
+      POST_TEMPLATES.some((t) => t.category === c),
+    )
+    return ["todos", ...present]
+  }, [])
+
+  const filtered = POST_TEMPLATES.filter((t) => {
+    const matchesCategory =
+      activeCategory === "todos" || t.category === activeCategory
+    const matchesQuery = t.label.toLowerCase().includes(query.toLowerCase())
     return matchesCategory && matchesQuery
   })
 
@@ -50,6 +57,7 @@ export default function TemplatesPage() {
       <div className="flex gap-2 flex-wrap">
         {categories.map((cat) => {
           const isActive = cat === activeCategory
+          const label = cat === "todos" ? "Todos" : CATEGORY_LABELS[cat] ?? cat
           return (
             <button
               key={cat}
@@ -60,7 +68,7 @@ export default function TemplatesPage() {
                   : "bg-muted text-muted-foreground hover:bg-muted/70"
               }`}
             >
-              {cat}
+              {label}
             </button>
           )
         })}
@@ -73,29 +81,39 @@ export default function TemplatesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((template) => (
-            <div
+            <Link
               key={template.id}
-              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all cursor-pointer"
+              href="/dashboard/criar"
+              className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all cursor-pointer bg-black"
             >
-              <div className={`absolute inset-0 ${template.color}`} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={template.reference_image}
+                alt={template.label}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
               <Badge
                 variant="secondary"
                 className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
               >
-                {template.category}
+                {CATEGORY_LABELS[template.category] ?? template.category}
               </Badge>
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <h3 className="font-semibold text-white">{template.name}</h3>
-                <p className="text-sm text-white/60">
-                  Usado por {template.usageCount} pessoas
-                </p>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4">
+                <h3 className="font-semibold text-white leading-tight">
+                  {template.label}
+                </h3>
+                {template.use_when?.[0] && (
+                  <p className="text-xs text-white/60 mt-0.5 line-clamp-2">
+                    {template.use_when[0]}
+                  </p>
+                )}
               </div>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">
+                <span className="text-sm font-medium text-white">
                   Usar template &rarr;
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

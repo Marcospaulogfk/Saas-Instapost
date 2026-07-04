@@ -69,7 +69,7 @@ export function CarouselApprovalStep({
         <div className="rounded-2xl border border-border-subtle bg-background-tertiary/30 p-10 flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-7 h-7 animate-spin text-brand-400" />
           <p className="text-sm text-text-secondary">
-            Escrevendo o roteiro com IA...
+            Revisando roteiro...
           </p>
         </div>
       )}

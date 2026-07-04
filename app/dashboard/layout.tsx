@@ -2,7 +2,6 @@ import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardTopBar } from "@/components/dashboard/top-bar"
 import { DashboardAmbient } from "@/components/dashboard/dashboard-ambient"
-import { WhatsAppFloat } from "@/components/whatsapp-float"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
 import { getActiveBrandIdFromCookie } from "@/lib/active-brand"
@@ -60,7 +59,6 @@ export default async function DashboardLayout({
         <DashboardTopBar />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
-      <WhatsAppFloat />
     </div>
   )
 }

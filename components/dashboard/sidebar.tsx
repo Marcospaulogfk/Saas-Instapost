@@ -14,16 +14,12 @@ import {
   ChevronUp,
   ChevronsUpDown,
   Plus,
-  Images,
   Check,
   Loader2,
   Pencil,
   Lightbulb,
   CalendarDays,
   CalendarPlus,
-  UsersRound,
-  Trophy,
-  Zap,
   Building2,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -64,11 +60,8 @@ const navigation = [
   { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
   { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
   { name: "Calendário", href: "/dashboard/calendario", icon: CalendarDays },
-  { name: "Comunidade", href: "/dashboard/comunidade", icon: UsersRound },
-  { name: "Jornada", href: "/dashboard/jornada", icon: Trophy },
   { name: "Marcas", href: "/dashboard/marcas", icon: Store },
   { name: "Templates", href: "/dashboard/templates", icon: LayoutTemplate },
-  { name: "Posts únicos", href: "/dashboard/posts-unicos", icon: Images },
   { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
 
@@ -106,12 +99,6 @@ export function DashboardSidebar({
       setSwitchingId(null)
     })
   }
-
-  const isTrial = subscriptionStatus === "trial"
-  const limit = isTrial ? Math.max(credits, 2) : planCreditsMonthly || 2
-  const used = isTrial ? Math.max(0, limit - credits) : creditsUsedThisMonth
-  const remaining = Math.max(0, limit - used)
-  const progress = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
 
   return (
     <aside className="dash-sidebar-float hidden md:flex w-64 flex-col">
@@ -332,73 +319,6 @@ export function DashboardSidebar({
           )
         })}
       </nav>
-
-      {/* Credits widget */}
-      <div className="px-4 pt-4 pb-3">
-        <div
-          className="rounded-xl p-3.5"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(72,52,144,0.18) 0%, rgba(28,20,60,0.25) 100%)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <Zap
-                className="w-3 h-3"
-                style={{ color: "var(--brand-300)" }}
-              />
-              <p
-                className="text-[10px] uppercase tracking-[0.14em] font-medium"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {isTrial ? "Créditos grátis" : "Créditos"}
-              </p>
-            </div>
-            <p
-              className="text-[11px] tabular-nums"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <span
-                className="font-semibold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {remaining}
-              </span>
-              <span style={{ color: "var(--text-muted)" }}>/{limit}</span>
-            </p>
-          </div>
-          <div
-            className="w-full h-1 rounded-full overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.04)" }}
-          >
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.max(2, 100 - progress)}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="h-full"
-              style={{
-                background:
-                  "linear-gradient(90deg, var(--brand-400), var(--brand-600))",
-                boxShadow: "0 0 8px rgba(115, 32, 230,0.5)",
-              }}
-            />
-          </div>
-          <Link
-            href="/pricing"
-            className="block mt-2.5 text-[11px] font-medium transition-colors"
-            style={{ color: "var(--brand-300)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--brand-200)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--brand-300)")
-            }
-          >
-            {isTrial ? "Fazer upgrade →" : "Gerenciar plano →"}
-          </Link>
-        </div>
-      </div>
 
       {/* User */}
       <div className="px-3 pb-3">
