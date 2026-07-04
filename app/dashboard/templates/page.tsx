@@ -35,7 +35,7 @@ const CAROUSEL_STYLES: {
   { style: "seamless", name: "Seamless", desc: "Panorâmico contínuo" },
   { style: "minimal", name: "Minimal", desc: "Branco clean / suíço" },
   { style: "wesley", name: "Wesley", desc: "Dark de impacto" },
-  { style: "brandsdecoded", name: "Brandsdecoded", desc: "Editorial" },
+  { style: "brandsdecoded", name: "Revista", desc: "Editorial de revista" },
   { style: "bolo", name: "Bolo", desc: "Lista cream" },
   { style: "mypostflow", name: "MyPostFlow", desc: "Clean com CTA" },
   { style: "auto", name: "Auto", desc: "Alternado dark/light" },

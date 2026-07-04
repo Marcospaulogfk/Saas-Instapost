@@ -53,18 +53,6 @@ export default async function DashboardPage() {
               : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
           </p>
         </div>
-
-        {credits > 0 && (
-          <div className="inline-flex items-center gap-2.5 self-start rounded-full border border-border-medium bg-background-secondary/60 backdrop-blur-md px-4 py-2.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-300" />
-            <span className="text-sm text-text-primary tabular-nums font-semibold">
-              {credits}
-            </span>
-            <span className="text-xs text-text-muted">
-              {credits === 1 ? "imagem disponível" : "imagens disponíveis"}
-            </span>
-          </div>
-        )}
       </header>
 
       {/* Bloco principal: hero + atividade à esquerda, próximas datas no trilho */}

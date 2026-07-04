@@ -263,7 +263,7 @@ export function SplitBrandsdecodedLight({
       style={{ backgroundColor: "#F5F2EC" }}
     >
       <BrandsdecodedHeader
-        left={slide.brand_label || "Content Machine"}
+        left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
         right={slide.year_label || "2026 //"}
         textColor="rgba(0,0,0,0.5)"
@@ -379,7 +379,7 @@ export function SplitBrandsdecodedDarkSerif({
       style={{ backgroundColor: "#0F0F1F" }}
     >
       <BrandsdecodedHeader
-        left={slide.brand_label || "Powered by Content Machine"}
+        left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
         right={slide.year_label || "2026 //"}
         textColor="rgba(255,255,255,0.6)"

@@ -331,18 +331,10 @@ export function CoverBrandsdecodedMassive({
 
       <div className="relative z-10">
         <BrandsdecodedHeader
-          left={slide.brand_label || "Content Machine"}
+          left={slide.brand_label || ""}
+          center={slide.handle}
           right={slide.year_label || "2026 ®"}
           textColor="rgba(255,255,255,0.5)"
-        />
-      </div>
-
-      {/* Avatar pill central */}
-      <div className="absolute top-[55%] left-1/2 -translate-x-1/2 z-10">
-        <AvatarPill
-          avatar={slide.handle_avatar}
-          handle={slide.handle || "@brand"}
-          variant="dark"
         />
       </div>
 
@@ -415,7 +407,7 @@ export function CoverBrandsdecodedPortrait({
 
       <div className="relative z-10">
         <BrandsdecodedHeader
-          left={slide.brand_label || "Powered by Content Machine"}
+          left={slide.brand_label || slide.handle || ""}
           center={slide.handle || "@brand"}
           right={slide.year_label || "2026 //"}
           textColor="rgba(255,255,255,0.6)"

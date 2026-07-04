@@ -100,7 +100,7 @@ export function SlidePreview({
   editorialStyle = "auto",
   handle = "@brand",
   handleAvatar,
-  brandLabel = "Content Machine",
+  brandLabel = "",
   lightBg = "#FAF8F5",
   darkBg = "#0A0A0A",
   format = "feed",
@@ -352,14 +352,10 @@ function EditorialSlideRouter(props: RouterProps) {
     const slot = resolveImageSlot(rawSlot, imgCount)
     return (
       <SplitBrandsdecodedLight
-        slide={
-          slot === "bottom-card"
-            ? { ...splitData, callout: "Esse carrossel foi feito no Claude." }
-            : splitData
-        }
+        slide={splitData}
         {...baseProps}
         imageSlot={slot}
-        titleSize="massive"
+        titleSize="large"
       />
     )
   }
@@ -406,13 +402,9 @@ function EditorialSlideRouter(props: RouterProps) {
     if (isCover) {
       return <CoverGradientGlow slide={coverData} {...baseProps} />
     }
-    const rawSlot: SplitImageSlot = isLast
-      ? "single-bottom"
-      : isMidBreak
-        ? "composition-top"
-        : slide.order_index % 2 === 1
-          ? "single-bottom"
-          : "none"
+    // Imagem SEMPRE embaixo do texto em todo slide de conteúdo — nunca deixa
+    // slide vazio (antes alternava e o slide 3 ficava sem imagem).
+    const rawSlot: SplitImageSlot = isMidBreak ? "composition-top" : "single-bottom"
     const slot = resolveImageSlot(rawSlot, imgCount)
     return <SplitGradientDark slide={splitData} {...baseProps} imageSlot={slot} />
   }

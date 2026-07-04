@@ -55,7 +55,7 @@ const STYLES: { style: EditorialStyle; name: string }[] = [
   { style: "minimal", name: "Minimal (branco/clean)" },
   { style: "seamless", name: "Seamless (panorâmico)" },
   { style: "wesley", name: "Wesley (dark/impacto)" },
-  { style: "brandsdecoded", name: "Brandsdecoded (editorial)" },
+  { style: "brandsdecoded", name: "Revista (editorial)" },
   { style: "bolo", name: "Bolo (lista cream)" },
   { style: "mypostflow", name: "MyPostFlow" },
   { style: "auto", name: "Auto (alternado)" },

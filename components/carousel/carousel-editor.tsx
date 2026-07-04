@@ -52,7 +52,7 @@ function slideFileName(s: PreviewSlide, i: number): string {
 const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "auto", label: "Auto (alternado)" },
   { value: "wesley", label: "Wesley (dark/impacto)" },
-  { value: "brandsdecoded", label: "Brandsdecoded (editorial)" },
+  { value: "brandsdecoded", label: "Revista (editorial)" },
   { value: "bolo", label: "Bolo (lista cream)" },
   { value: "mypostflow", label: "MyPostFlow" },
   { value: "gradient", label: "Gradiente (dark/vibrante)" },
@@ -99,6 +99,17 @@ export function CarouselEditor({
   const [savedId, setSavedId] = useState<string | undefined>(initialCarouselId)
   const [saveBusy, setSaveBusy] = useState(false)
   const [saveOk, setSaveOk] = useState(false)
+
+  // Auto-salva na biblioteca assim que um carrossel NOVO é gerado (sem id
+  // prévio). Antes só salvava no clique manual, então o carrossel gerado não
+  // aparecia na Biblioteca.
+  const autoSavedRef = useRef(false)
+  useEffect(() => {
+    if (autoSavedRef.current || initialCarouselId || !initialSlides.length) return
+    autoSavedRef.current = true
+    void handleSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [imageQuery, setImageQuery] = useState("")
   const [imgBusy, setImgBusy] = useState<ImageMode | "upload" | null>(null)
@@ -431,6 +442,8 @@ export function CarouselEditor({
               fontClass={inter.className}
               editorialStyle={style}
               handle={handle}
+              brandLabel={brandName}
+              showDevBadges={false}
               format={format}
             />
           </div>
