@@ -28,7 +28,15 @@ export default function PricingPage() {
       <PricingHeader />
       <BillingToggle selected={billingCycle} onSelect={setBillingCycle} />
       <PricingCards billingCycle={billingCycle} />
-      
+
+      <div className="max-w-3xl mx-auto px-4 pt-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          Tokens sao a moeda do SyncPost: texto = 1 token, imagem normal = 5,
+          imagem Nano Banana Pro = 20. O Nano Banana Pro (qualidade maxima) esta
+          disponivel apenas nos planos Pro e Studio.
+        </p>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
         <p className="text-sm text-muted-foreground">
           <span className="text-green-500 mr-4">&#10003; Cancele quando quiser</span>

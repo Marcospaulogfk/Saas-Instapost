@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { generateContent, type ClaudeSlide } from "@/lib/generation/claude"
 import { generateImage } from "@/lib/generation/fal"
 import { searchUnsplash } from "@/lib/generation/unsplash"
+import { debitTokens, TOKEN_COST } from "@/lib/tokens"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -240,6 +241,31 @@ export async function POST(req: Request) {
       { error: `Erro ao salvar slides: ${slidesErr.message}` },
       { status: 500 },
     )
+  }
+
+  // -------------------------------------------------------------------
+  // Débito de tokens (BEST-EFFORT, não bloqueia geração).
+  // Custo = texto do carrossel (1) + imagens NORMAIS geradas por IA (5 cada).
+  // Imagens vindas do Unsplash não custam token. Nano Banana Pro (20) ainda
+  // não é usado neste endpoint (só Flux normal) — quando for, usar
+  // resolveImageQuality(plan, requested) + tokenCostForImage(quality).
+  // Qualquer falha aqui é engolida: geração legada nunca quebra por causa
+  // do sistema de tokens.
+  // -------------------------------------------------------------------
+  try {
+    const aiImages = enriched.filter(({ image }) => image.source === "ai").length
+    const tokensToDebit =
+      TOKEN_COST.textOnly + aiImages * TOKEN_COST.imageNormal
+    const debit = await debitTokens(supabase, user.id, tokensToDebit)
+    if (!debit.ok) {
+      console.warn(
+        `[projects/generate] débito parcial de tokens: ${debit.debited}/${tokensToDebit}` +
+          (debit.error ? ` (${debit.error})` : ""),
+      )
+    }
+  } catch (err) {
+    // Nunca bloquear geração por causa de tokens.
+    console.warn("[projects/generate] débito de tokens falhou (ignorado):", err)
   }
 
   console.log(

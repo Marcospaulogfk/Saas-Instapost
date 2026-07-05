@@ -6,6 +6,17 @@ import { searchWikimedia } from "@/lib/generation/wikimedia"
 export const runtime = "nodejs"
 export const maxDuration = 60
 
+// TODO(tokens): débito best-effort de tokens. Quando plugar auth aqui:
+//   import { createClient } from "@/lib/supabase/server"
+//   import { debitTokens, tokenCostForImage, resolveImageQuality } from "@/lib/tokens"
+//   const supabase = await createClient()
+//   const { data: { user } } = await supabase.auth.getUser()
+//   // 1) ler plano do perfil (subscription_status / plano) do user
+//   // 2) quality = resolveImageQuality(plano, requestedQuality)  ← GATE Nano Banana Pro
+//   // 3) gerar imagem com essa quality
+//   // 4) após sucesso: try { await debitTokens(supabase, user.id, tokenCostForImage(quality)) } catch {}
+//   //    (NUNCA bloquear geração se o débito falhar)
+
 interface RequestBody {
   mode: "ai" | "unsplash" | "wikimedia"
   prompt?: string

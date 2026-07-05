@@ -48,9 +48,14 @@ interface ResponsePayload {
   }
 }
 
-// TODO(creditos): aplicar cap de gasto por user/dia antes de chamar Claude
-// TODO(creditos): forcar capa = sempre IA quando o sistema de creditos for plugado
-// TODO(creditos): aplicar limite max_ai_per_carousel baseado no plano do user
+// TODO(tokens): este é o fluxo de TESTE GRÁTIS (trial). Regras (ESTRATEGIA §5):
+//   - trial = 1 carrossel de ATÉ 7 slides, só imagem NORMAL, com marca d'água.
+//   - Nano Banana Pro fica BLOQUEADO no trial (gancho de upgrade).
+//   - orçamento conceitual: PLAN_TOKENS.trial (40 tokens) de lib/tokens.ts.
+//   Quando plugar auth: limitar nSlides<=7, forçar quality="normal" e
+//   debitar via debitTokens(supabase, userId, TOKEN_COST.imageNormal * nImgs).
+// TODO(tokens): aplicar cap de gasto por user/dia antes de chamar Claude
+// TODO(tokens): aplicar limite max_ai_per_carousel baseado no plano do user
 
 function resolveSource(
   slide: ClaudeSlide,

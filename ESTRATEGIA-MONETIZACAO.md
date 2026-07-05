@@ -14,9 +14,9 @@
    - Texto sozinho (roteiro/legenda, sem imagem) = **1 token**
 2. **Nano Banana Pro só nos planos Pro e Studio.** Starter e teste grátis usam imagem normal.
 3. **Planos (mensal):** Starter R$47 = 300 tk · Pro R$97 = 1000 tk · Studio R$247 = 3000 tk.
-4. **Teste grátis:** 100 tokens, 7 dias, só imagem normal, com marca d'água. Pro é o gancho do upgrade.
+4. **Teste grátis:** gera **1 carrossel de até 7 slides** (imagem normal, com marca d'água). O limite é o *output*, não o tempo — sem prazo de dias. Nano Banana Pro fica bloqueado; é o gancho do upgrade.
 5. **Acabou o token:** oferecer **comprar pacote avulso (top-up)** OU **fazer upgrade**. Os pacotes são de propósito um pouco mais caros por token que a assinatura — assim o heavy user vê que **subir de plano compensa** (maximiza MRR).
-6. **Afiliados:** 40% da 1ª fatura + 15% recorrente do 2º ao 12º mês. Protege margem em usuário pesado e ainda premia aquisição.
+6. **Afiliados:** **40% da 1ª fatura + 20% recorrente** nas renovações seguintes. Front-load na aquisição, recorrência que mantém o afiliado alinhado à retenção.
 7. **Cakto:** produto de assinatura com **Pix recorrente como método principal** (0% de taxa vs 3,89% no cartão — é a maior alavanca de margem).
 
 **Margem bruta resultante (pior caso, 100% em imagem premium, via Pix):** Starter **73%** · Pro **59%** · Studio **52%**. Em uso realista (mistura de texto + imagem normal + premium) fica **70–77%**.
@@ -91,13 +91,13 @@
 
 ## 5. Teste grátis (ativar já)
 
-- **100 tokens**, válidos **7 dias**.
-- **Só imagem normal** (≈ 20 imagens ou 100 textos). Nano Banana Pro fica bloqueado no trial — é o gancho pra converter em Pro.
+- **1 carrossel de até 7 slides.** O limite é o *output* (7 slides), não um prazo de dias.
+- **Só imagem normal** (Flux/Nano Banana normal). Nano Banana Pro fica bloqueado no trial — é o gancho pra converter em Pro.
 - **Marca d'água** no export (igual Starter).
-- **Custo máximo por trial:** 100 tk = R$ 4,00 de COGS. É o seu CAC de topo de funil.
-- **Anti-abuso:** 1 trial por e-mail + device; idealmente **cartão no cadastro do trial** (Cakto permite), o que derruba fraude e melhora conversão trial→pago.
+- **Custo máximo por trial:** 7 slides com imagem normal ≈ 7 × R$0,20 + texto = **~R$ 1,60 de COGS**. É o seu CAC de topo de funil — barato.
+- **Anti-abuso:** 1 trial por e-mail + device; opcionalmente cartão no cadastro (Cakto permite), o que derruba fraude e melhora conversão trial→pago.
 
-**Por que 100 e não mais:** o suficiente pra ver valor (gerar uns posts completos) sem virar produto grátis. Se a conversão vier baixa, testar 150.
+**Por que "7 slides" e não tempo:** o usuário sente o produto completo (um carrossel inteiro, ponta a ponta) sem uma janela de dias que pressiona ou expira sem uso. Terminou o carrossel de teste → precisa assinar pra fazer o próximo. Em tokens internos, 7 slides ≈ 40 tokens de trial.
 
 ---
 
@@ -125,16 +125,14 @@ Isso converte gasto avulso (margem ~58%, não recorrente) em **assinatura maior 
 
 ## 7. Afiliados
 
-**Modelo recomendado:** **40% da 1ª fatura + 15% recorrente do 2º ao 12º mês.** Cookie de **60–90 dias**, cupom do afiliado tem prioridade sobre cookie (padrão de mercado).
+**Modelo (aprovado):** **40% da 1ª fatura + 20% recorrente** em todas as renovações seguintes. Cookie de **60–90 dias**, cupom do afiliado tem prioridade sobre cookie (padrão de mercado).
 
-Por quê não "30% recorrente eterno": num SaaS com COGS de IA em dólar, comissão recorrente alta *pra sempre* pode inviabilizar o usuário pesado. O front-load (40% no 1º mês) premia a aquisição; o recorrente menor (15%) mantém o afiliado interessado na **retenção** sem comer a margem.
+O front-load (40% no 1º mês) premia a aquisição; os 20% recorrentes mantêm o afiliado interessado na **retenção** (ele perde comissão se o cliente cancela) sem inviabilizar a margem.
 
-**Impacto no Pro (exemplo, via Pix, COGS blended ~R$25):**
-- Mês 1: comissão R$ 38,80 → lucro R$ 94,51 − 38,80 − 25 = **R$ 30,71** (ainda positivo).
-- Meses 2–12: comissão R$ 14,55 → lucro ~R$ 54,96/mês.
-- **LTV vs custo de afiliado:** com churn ~8%/mês (lifetime ~12,5 meses) e margem blended ~70%, o Pro contribui ~R$ 800+ de vida. O afiliado custa ~R$ 198 no total (1º ano). **CAC via afiliado << LTV** → saudável.
-
-**Alternativa mais simples** (se quiser 1 número só): **30% recorrente por 12 meses**. Mais fácil de comunicar, margem um pouco menor em heavy users. Dá pra começar com essa e migrar pra tiered depois.
+**Impacto no Pro (via Pix, COGS blended ~R$25):**
+- Mês 1: comissão R$ 38,80 → lucro R$ 94,51 − 38,80 − 25 = **R$ 30,71** (positivo).
+- Renovações: comissão 20% = R$ 19,40 → lucro R$ 94,51 − 19,40 − 25 = **~R$ 50/mês**.
+- **LTV vs custo de afiliado:** com churn ~8%/mês (lifetime ~12,5 meses) e margem blended ~70%, o Pro contribui ~R$ 800+ de vida. O afiliado leva ~R$ 39 + ~R$ 19,40 × ~11,5 renovações ≈ **R$ 262** no total. **CAC via afiliado << LTV** → saudável, com margem ainda positiva em cada renovação.
 
 A Cakto suporta **Pix recorrente para afiliados** (comissão a cada renovação) — usar isso.
 
