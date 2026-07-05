@@ -9,14 +9,17 @@ const PROTECTED_PREFIXES = ["/dashboard", "/editor", "/onboarding"]
 const APEX_HOSTS = new Set(["syncpost.com.br", "www.syncpost.com.br"])
 const APP_HOST = "app.syncpost.com.br"
 // Caminhos que PERMANECEM no domínio raiz (landing). Todo o resto é do app.
-const MARKETING_PREFIXES = ["/pricing"]
+const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade"]
+// Arquivos/rotas que DEVEM ser servidos na raiz (SEO): o Google busca
+// robots.txt e sitemap.xml no apex — redirecionar pro subdomínio prejudica.
+const MARKETING_EXACT = new Set(["/", "/robots.txt", "/sitemap.xml"])
 
 function matchesPrefix(path: string, prefixes: string[]) {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`))
 }
 
 function isMarketingPath(path: string) {
-  return path === "/" || matchesPrefix(path, MARKETING_PREFIXES)
+  return MARKETING_EXACT.has(path) || matchesPrefix(path, MARKETING_PREFIXES)
 }
 
 function isSupabaseConfigured() {

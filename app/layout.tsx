@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: 'fA61f3OZcsdXlM2Qg4yA4PFG3EPZqJulDFlWCTvL4kw',
+  },
   alternates: {
     canonical: '/',
   },
