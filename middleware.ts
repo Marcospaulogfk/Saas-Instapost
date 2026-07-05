@@ -4,8 +4,19 @@ import { NextResponse, type NextRequest } from "next/server"
 const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/auth"]
 const PROTECTED_PREFIXES = ["/dashboard", "/editor", "/onboarding"]
 
+// === Split de domínio ===
+// Raiz (syncpost.com.br / www) = landing/marketing. app.syncpost.com.br = o app.
+const APEX_HOSTS = new Set(["syncpost.com.br", "www.syncpost.com.br"])
+const APP_HOST = "app.syncpost.com.br"
+// Caminhos que PERMANECEM no domínio raiz (landing). Todo o resto é do app.
+const MARKETING_PREFIXES = ["/pricing"]
+
 function matchesPrefix(path: string, prefixes: string[]) {
   return prefixes.some((p) => path === p || path.startsWith(`${p}/`))
+}
+
+function isMarketingPath(path: string) {
+  return path === "/" || matchesPrefix(path, MARKETING_PREFIXES)
 }
 
 function isSupabaseConfigured() {
@@ -22,6 +33,20 @@ const DEV_MODE_BYPASS =
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
+  const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
+
+  // Raiz: rotas do app (tudo que não é landing) vão pro subdomínio app.
+  if (APEX_HOSTS.has(host) && !isMarketingPath(path)) {
+    const dest = new URL(
+      request.nextUrl.pathname + request.nextUrl.search,
+      `https://${APP_HOST}`,
+    )
+    return NextResponse.redirect(dest, 307)
+  }
+  // Subdomínio app: a home vira o dashboard (a landing mora na raiz).
+  if (host === APP_HOST && path === "/") {
+    return NextResponse.redirect(new URL("/dashboard", `https://${APP_HOST}`))
+  }
 
   if (matchesPrefix(path, PUBLIC_PREFIXES)) {
     return NextResponse.next({ request })
