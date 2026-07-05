@@ -7,8 +7,9 @@ const featureGroups = [
   {
     name: "GERACAO",
     features: [
-      { name: "Imagens por mes", starter: "50", pro: "200", studio: "800" },
-      { name: "Modelos de IA", starter: "Flux Schnell", pro: "Flux + Nano Banana 2", studio: "Nano Banana 2 + Pro" },
+      { name: "Tokens por mes", starter: "300", pro: "1.000", studio: "3.000" },
+      { name: "≈ imagens normais", starter: "60", pro: "200", studio: "600" },
+      { name: "Nano Banana Pro (premium)", starter: false, pro: true, studio: true },
       { name: "Templates", starter: "5", pro: "20+ exclusivos", studio: "Todos + custom" },
     ],
   },

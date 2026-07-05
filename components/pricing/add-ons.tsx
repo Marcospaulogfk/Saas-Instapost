@@ -7,23 +7,23 @@ import { Badge } from "@/components/ui/badge"
 const addOns = [
   {
     name: "Boost",
-    images: 100,
-    price: 27,
-    pricePerImage: "R$ 0,27",
+    tokens: 300,
+    price: 34,
+    equivalencia: "≈ 60 imagens normais",
     popular: false,
   },
   {
     name: "Pro Pack",
-    images: 500,
-    price: 97,
-    pricePerImage: "R$ 0,19",
+    tokens: 800,
+    price: 79,
+    equivalencia: "≈ 160 imagens normais",
     popular: true,
   },
   {
     name: "Power Pack",
-    images: 1500,
-    price: 197,
-    pricePerImage: "R$ 0,13",
+    tokens: 2000,
+    price: 179,
+    equivalencia: "≈ 400 imagens normais",
     popular: false,
   },
 ]
@@ -38,9 +38,9 @@ export function AddOns() {
       className="max-w-5xl mx-auto px-4 py-16"
     >
       <div className="text-center mb-12">
-        <h2 className="text-3xl font-bold mb-3">Precisa de imagens extras?</h2>
+        <h2 className="text-3xl font-bold mb-3">Precisa de mais tokens?</h2>
         <p className="text-muted-foreground">
-          Compre pacotes avulsos quando quiser, sem compromisso
+          Comprou o plano e o saldo acabou? Pegue um pacote avulso, sem compromisso
         </p>
       </div>
 
@@ -64,13 +64,13 @@ export function AddOns() {
 
             <h3 className="text-lg font-semibold mb-1">{addon.name}</h3>
             <p className="text-2xl font-bold mb-1">
-              {addon.images.toLocaleString('pt-BR')} imagens
+              {addon.tokens.toLocaleString('pt-BR')} tokens
             </p>
             <p className="text-3xl font-bold text-primary mb-2">
               R$ {addon.price}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              {addon.pricePerImage} por imagem
+              {addon.equivalencia}
             </p>
             <Button variant="outline" className="w-full hover:border-primary hover:text-primary">
               Comprar
