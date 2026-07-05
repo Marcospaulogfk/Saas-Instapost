@@ -28,10 +28,53 @@ const anton = Anton({
 })
 
 export const metadata: Metadata = {
-  title: 'SyncPost — Carrosseis virais com IA',
-  description: 'Crie carrosseis virais para Instagram em minutos com IA. Templates premium, design cinematografico, em portugues.',
+  metadataBase: new URL('https://syncpost.com.br'),
+  title: {
+    default: 'SyncPost — Conteúdo pra Instagram com IA',
+    template: '%s | SyncPost',
+  },
+  description:
+    'Crie carrosséis e posts virais para Instagram em minutos com IA. A engine aprende sua marca e entrega roteiro, design e imagem prontos pra postar — tudo em português.',
   generator: 'SyncPost',
-  keywords: ['syncpost', 'carrossel instagram', 'IA', 'inteligencia artificial', 'social media', 'marketing digital'],
+  applicationName: 'SyncPost',
+  keywords: [
+    'syncpost',
+    'carrossel instagram',
+    'conteúdo com IA',
+    'inteligência artificial',
+    'gerador de posts',
+    'social media',
+    'marketing digital',
+  ],
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    url: 'https://syncpost.com.br',
+    siteName: 'SyncPost',
+    title: 'SyncPost — Conteúdo pra Instagram com IA',
+    description:
+      'A IA que aprende a sua marca e entrega carrosséis e posts prontos pra postar no Instagram — roteiro, design e imagem em minutos.',
+    images: [
+      {
+        url: '/syncpost-icon.png',
+        alt: 'SyncPost — Conteúdo pra Instagram com IA',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SyncPost — Conteúdo pra Instagram com IA',
+    description:
+      'A IA que aprende a sua marca e entrega carrosséis e posts prontos pra postar no Instagram — roteiro, design e imagem em minutos.',
+    images: ['/syncpost-icon.png'],
+  },
 }
 
 export const viewport: Viewport = {

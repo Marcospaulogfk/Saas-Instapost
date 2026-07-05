@@ -81,6 +81,30 @@ const OBJECTIVE_LABELS: Record<string, string> = {
   community: "Comunidade",
 }
 
+type ObjectiveValue = "sell" | "inform" | "engage" | "community"
+
+/**
+ * main_objective pode vir com múltiplos valores separados por vírgula
+ * (ex: "sell,engage") — o primeiro é o principal. Normaliza pro select.
+ */
+function primaryObjective(value: string | null): ObjectiveValue {
+  const first = (value ?? "").split(",")[0]?.trim()
+  return first === "sell" ||
+    first === "engage" ||
+    first === "community" ||
+    first === "inform"
+    ? first
+    : "inform"
+}
+
+function objectiveLabels(value: string | null): string {
+  const labels = (value ?? "")
+    .split(",")
+    .map((o) => OBJECTIVE_LABELS[o.trim()])
+    .filter(Boolean)
+  return labels.length > 0 ? labels.join(", ") : "—"
+}
+
 export function BrandDetail({ brand, projects }: BrandDetailProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -99,11 +123,7 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
     target_audience: brand.target_audience ?? "",
     tone_of_voice: brand.tone_of_voice ?? "",
     visual_style: brand.visual_style ?? "",
-    main_objective: (brand.main_objective ?? "inform") as
-      | "sell"
-      | "inform"
-      | "engage"
-      | "community",
+    main_objective: primaryObjective(brand.main_objective),
     brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7C3AED"],
   })
 
@@ -116,11 +136,7 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
       target_audience: brand.target_audience ?? "",
       tone_of_voice: brand.tone_of_voice ?? "",
       visual_style: brand.visual_style ?? "",
-      main_objective: (brand.main_objective ?? "inform") as
-        | "sell"
-        | "inform"
-        | "engage"
-        | "community",
+      main_objective: primaryObjective(brand.main_objective),
       brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7C3AED"],
     })
     setError(null)
@@ -353,7 +369,7 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
               </Select>
             ) : (
               <p className="text-text-secondary">
-                {OBJECTIVE_LABELS[brand.main_objective ?? ""] ?? "—"}
+                {objectiveLabels(brand.main_objective)}
               </p>
             )}
           </FieldCard>

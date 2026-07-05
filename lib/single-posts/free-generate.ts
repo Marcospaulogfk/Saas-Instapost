@@ -22,9 +22,13 @@ BOM:  "Aqui ninguém vai te julgar pelo banco do supino"
 
 **2. Diga uma coisa, não três.**
 Um post = uma ideia. Se tem subtitle, ele tensiona o título — não repete.
+⚠️ Proibido subtitle de suspense vazio (nem variações): "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo". Se o subtitle serve pra QUALQUER título, é ruim — reescreva com algo concreto.
+RUIM: "Seu site tá falando mal de você" + "E você nem percebeu ainda."
+BOM:  "Seu site tá falando mal de você" + "O visitante decide em 5 segundos se confia."
 
 **3. Frases que cabem no Insta — curtas, com ritmo.**
 6-9 palavras no título. Body em 1-2 frases. Sem ponto-e-vírgula, sem dois-pontos no meio.
+⚠️ Pontuação natural: encadeie ideias com vírgula/travessão — ponto final só separa ideias DIFERENTES. "A audiência chegou. O site espantou." é staccato robótico; prefira "A audiência chegou, o site espantou."
 
 **4. Verbos vivos, sem clichê.**
 PROIBIDO usar (são bandeira vermelha de IA): "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora".
@@ -326,7 +330,7 @@ async function generateCopy(brand: PostBrand, briefing: string, chosen: Skeleton
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1500,
-    temperature: 1.0,
+    temperature: 0.8,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   })

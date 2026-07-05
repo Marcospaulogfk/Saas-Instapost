@@ -39,6 +39,46 @@ function SectionLabel({ children }: { children: ReactNode }) {
 // Régua roxa de topo (2px) — sal nº3.
 const ruleTop = "border-t-2 border-t-primary"
 
+// FAQ da landing — usado no accordion e no JSON-LD (FAQPage).
+const FAQ_ITEMS = [
+  { q: "Quantos carrosséis posso criar por mês?", a: "Depende do plano. Starter inclui 50 imagens (cerca de 7 carrosséis), Pro inclui 200 (cerca de 28) e Studio inclui 800 (cerca de 115). No teste grátis você tem 2 imagens pra experimentar." },
+  { q: "Preciso saber design pra usar?", a: "Não. A IA monta o roteiro e o design prontos. Você só ajusta texto e cor se quiser — os templates são clicar e usar." },
+  { q: "As imagens têm direitos comerciais?", a: "Sim. Tudo que o SyncPost gera é seu, com direitos comerciais inclusos. Pode usar em qualquer canal, inclusive em anúncios pagos." },
+  { q: "Funciona pra qual tipo de negócio?", a: "Criadores, social medias, agências, infoprodutores, e-commerces e PMEs. Se você posta carrossel no Instagram, o SyncPost funciona pra você." },
+  { q: "Posso cancelar quando quiser?", a: "Sim. Cancelamento em 1 clique no painel, sem multa e sem ligação. Você mantém o acesso até o fim do período pago." },
+  { q: "Como funciona o teste grátis?", a: "Você cria a conta sem cartão e ganha 2 imagens pra testar. Depois é só escolher um plano pra continuar." },
+]
+
+// Dados estruturados (schema.org) — SoftwareApplication + FAQPage.
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "SyncPost",
+      url: "https://syncpost.com.br",
+      applicationCategory: "DesignApplication",
+      operatingSystem: "Web",
+      inLanguage: "pt-BR",
+      description:
+        "Plataforma de geração de conteúdo para Instagram com IA. Aprende sua marca e entrega carrosséis prontos pra postar — roteiro, design e imagem em minutos.",
+      offers: [
+        { "@type": "Offer", name: "Starter", price: "47.00", priceCurrency: "BRL", category: "subscription" },
+        { "@type": "Offer", name: "Pro", price: "97.00", priceCurrency: "BRL", category: "subscription" },
+        { "@type": "Offer", name: "Studio", price: "247.00", priceCurrency: "BRL", category: "subscription" },
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ_ITEMS.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
+    },
+  ],
+}
+
 // Segmentos que aparecem no marquee de social proof.
 const MARQUEE_SEGMENTS = [
   "Criadores",
@@ -58,6 +98,12 @@ const MARQUEE_SEGMENTS = [
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
+      {/* Dados estruturados pra rich results (Google) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
+
       {/* Grid hairline sutil de fundo */}
       <div className="grid-bg-fade fixed inset-0 -z-10 pointer-events-none" />
 
@@ -544,14 +590,7 @@ export default function HomePage() {
           </div>
 
           <Accordion type="single" collapsible className="space-y-3">
-            {[
-              { q: "Quantos carrosséis posso criar por mês?", a: "Depende do plano. Starter inclui 50 imagens (cerca de 7 carrosséis), Pro inclui 200 (cerca de 28) e Studio inclui 800 (cerca de 115). No teste grátis você tem 2 imagens pra experimentar." },
-              { q: "Preciso saber design pra usar?", a: "Não. A IA monta o roteiro e o design prontos. Você só ajusta texto e cor se quiser — os templates são clicar e usar." },
-              { q: "As imagens têm direitos comerciais?", a: "Sim. Tudo que o SyncPost gera é seu, com direitos comerciais inclusos. Pode usar em qualquer canal, inclusive em anúncios pagos." },
-              { q: "Funciona pra qual tipo de negócio?", a: "Criadores, social medias, agências, infoprodutores, e-commerces e PMEs. Se você posta carrossel no Instagram, o SyncPost funciona pra você." },
-              { q: "Posso cancelar quando quiser?", a: "Sim. Cancelamento em 1 clique no painel, sem multa e sem ligação. Você mantém o acesso até o fim do período pago." },
-              { q: "Como funciona o teste grátis?", a: "Você cria a conta sem cartão e ganha 2 imagens pra testar. Depois é só escolher um plano pra continuar." },
-            ].map((item, i) => (
+            {FAQ_ITEMS.map((item, i) => (
               <AccordionItem key={i} value={`item-${i}`} className="border border-hairline rounded-xl px-6 bg-surface">
                 <AccordionTrigger className="text-left hover:no-underline py-5">{item.q}</AccordionTrigger>
                 <AccordionContent className="text-text-secondary pb-5 leading-relaxed">{item.a}</AccordionContent>

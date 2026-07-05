@@ -131,6 +131,9 @@ export default function OnboardingAnalyzePage() {
           : [],
         visualStyle: a.visual_style ?? "",
         objective: OBJECTIVE_MAP[a.main_objective] ?? null,
+        objectives: OBJECTIVE_MAP[a.main_objective]
+          ? [OBJECTIVE_MAP[a.main_objective]!]
+          : [],
         primaryColor: colorsArr[0] ?? "#7320E6",
         secondaryColor: colorsArr[1] ?? "#5B8FF9",
         accentColor: colorsArr[2] ?? "#E2D5FF",

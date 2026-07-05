@@ -152,6 +152,8 @@ telas/                        # PDFs/PNGs do BestContent AI (competitor, referê
 **Bandeira vermelha de IA — NUNCA usar:**
 "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora", "Você merece", "Imagine se".
 
+**REGRA GLOBAL — contraste do destaque.** A cor de destaque (highlight/accent das palavras destacadas) NUNCA pode ficar ilegível sobre o fundo onde é renderizada. Marcas com paleta monocromática (ex: `#000000/#FFFFFF/#4A4A4A`) quebravam: preto virava accent e sumia em fundo escuro/foto. Todo renderer que aplica cor de marca sobre um fundo deve passar por `readableAccent()` de `lib/color-contrast.ts` (contraste WCAG ≥ 3:1 pro fundo em questão, com fallback branco/preto). Já aplicado em `components/carousel/slide-preview.tsx` (accent por família de layout: dark vs light). Ao criar template novo, escolha o accent com esse helper — nunca `brand_colors[0]` cru.
+
 **Photo prompts — sem metáforas literais.** Tópico abstrato (separação OpenAI/Microsoft, "ruptura", "decisão") NUNCA gera "two ships drifting apart" / "broken chain" / "two paths diverging" / "puzzle pieces" / "lightbulb". Sempre concreto: prédio corporativo, sala de reunião, server room, retrato no contexto da profissão. Detalhes em `lib/single-posts/free-generate.ts` (SYSTEM_PROMPT).
 
 ## Os 3 produtos

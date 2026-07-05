@@ -3,6 +3,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverActions: {
+      // A logo do onboarding vai como data URL no createBrand — o limite
+      // default de 1MB fazia a action lançar erro com logos maiores.
+      // UI permite arquivo de até 5MB (~6.7MB em base64).
+      bodySizeLimit: '8mb',
+    },
+  },
   images: {
     unoptimized: true,
     remotePatterns: [

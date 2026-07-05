@@ -44,7 +44,7 @@ const TIPS_BY_PATH: Record<string, Tip[]> = {
   ],
   "/dashboard/inspiracoes": [
     {
-      text: "Cada inspiração já vem com briefing pré-pronto. Click nela e ajusta antes de gerar.",
+      text: "Cada sugestão já vem com briefing pré-pronto. Click nela e ajusta antes de gerar.",
     },
   ],
 }

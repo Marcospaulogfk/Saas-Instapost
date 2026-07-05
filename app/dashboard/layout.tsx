@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardTopBar } from "@/components/dashboard/top-bar"
+import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { DashboardAmbient } from "@/components/dashboard/dashboard-ambient"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
@@ -35,10 +36,18 @@ export default async function DashboardLayout({
     null
 
   const activeBrand = matchedActive
-    ? { id: matchedActive.id, name: matchedActive.name }
+    ? {
+        id: matchedActive.id,
+        name: matchedActive.name,
+        logo_url: matchedActive.logo_url ?? null,
+      }
     : null
 
-  const sidebarBrands = brands.map((b) => ({ id: b.id, name: b.name }))
+  const sidebarBrands = brands.map((b) => ({
+    id: b.id,
+    name: b.name,
+    logo_url: b.logo_url ?? null,
+  }))
 
   return (
     <div className="dashboard-root dark flex h-screen bg-background relative overflow-hidden">
@@ -56,7 +65,15 @@ export default async function DashboardLayout({
         brands={sidebarBrands}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardTopBar />
+        <DashboardTopBar
+          mobileNav={
+            <MobileNav
+              activeBrandName={activeBrand?.name ?? null}
+              activeBrandId={activeBrand?.id ?? null}
+              activeBrandLogoUrl={activeBrand?.logo_url ?? null}
+            />
+          }
+        />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>

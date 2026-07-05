@@ -5,22 +5,15 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
-  House,
-  Library,
-  Store,
-  LayoutTemplate,
-  Settings,
   ChevronUp,
   ChevronsUpDown,
   Plus,
   Check,
   Loader2,
   Pencil,
-  Lightbulb,
-  CalendarDays,
-  CalendarPlus,
   Building2,
 } from "lucide-react"
+import { NAV_ITEMS } from "./nav-items"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -37,6 +30,42 @@ import { Logo } from "@/components/brand/logo"
 interface BrandItem {
   id: string
   name: string
+  logo_url?: string | null
+}
+
+/** Avatar da marca: usa a logo quando existe, senão a inicial sobre gradiente. */
+function BrandAvatar({
+  brand,
+  size = 9,
+}: {
+  brand: BrandItem
+  size?: 6 | 9
+}) {
+  const sizeClass = size === 9 ? "w-9 h-9 rounded-lg" : "w-6 h-6 rounded"
+  const textClass = size === 9 ? "text-sm" : "text-[10px]"
+  if (brand.logo_url) {
+    return (
+      <div
+        className={`${sizeClass} overflow-hidden flex items-center justify-center flex-shrink-0 bg-white/10`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={brand.logo_url}
+          alt={brand.name}
+          className="w-full h-full object-contain"
+        />
+      </div>
+    )
+  }
+  return (
+    <div
+      className={`${sizeClass} ${getBrandGradient(brand.id)} flex items-center justify-center flex-shrink-0`}
+    >
+      <span className={`${textClass} font-bold text-white`}>
+        {brand.name.charAt(0).toUpperCase()}
+      </span>
+    </div>
+  )
 }
 
 interface DashboardSidebarProps {
@@ -52,16 +81,7 @@ interface DashboardSidebarProps {
   brands: BrandItem[]
 }
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: House },
-  { name: "Inspirações", href: "/dashboard/inspiracoes", icon: Lightbulb },
-  { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
-  { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
-  { name: "Calendário", href: "/dashboard/calendario", icon: CalendarDays },
-  { name: "Marcas", href: "/dashboard/marcas", icon: Store },
-  { name: "Templates", href: "/dashboard/templates", icon: LayoutTemplate },
-  { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
-]
+const navigation = NAV_ITEMS
 
 export function DashboardSidebar({
   userName,
@@ -123,13 +143,7 @@ export function DashboardSidebar({
                 }
                 aria-label="Trocar marca"
               >
-                <div
-                  className={`w-9 h-9 rounded-lg ${getBrandGradient(activeBrand.id)} flex items-center justify-center flex-shrink-0`}
-                >
-                  <span className="text-sm font-bold text-white">
-                    {activeBrand.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <BrandAvatar brand={activeBrand} size={9} />
                 <div className="flex-1 min-w-0">
                   <p
                     className="text-[10px] uppercase tracking-[0.12em] font-medium"
@@ -176,13 +190,7 @@ export function DashboardSidebar({
                     }}
                     className="flex items-center gap-2 cursor-pointer"
                   >
-                    <div
-                      className={`w-6 h-6 rounded ${getBrandGradient(b.id)} flex items-center justify-center flex-shrink-0`}
-                    >
-                      <span className="text-[10px] font-bold text-white">
-                        {b.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                    <BrandAvatar brand={b} size={6} />
                     <span className="flex-1 truncate text-[13px]">{b.name}</span>
                     {isLoading ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

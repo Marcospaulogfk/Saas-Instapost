@@ -72,6 +72,15 @@ export default function ObjetivoPage() {
 
   const next = () => router.push("/onboarding/marca")
 
+  const toggleObjective = (key: Objective) => {
+    const nextObjectives = state.objectives.includes(key)
+      ? state.objectives.filter((o) => o !== key)
+      : [...state.objectives, key]
+    // `objective` (legado) acompanha o primeiro selecionado — é ele que vira
+    // o objetivo principal no banco.
+    update({ objectives: nextObjectives, objective: nextObjectives[0] ?? null })
+  }
+
   const backLabel =
     state.entryMethod === "manual" || !state.entryMethod
       ? "Voltar"
@@ -85,17 +94,17 @@ export default function ObjetivoPage() {
       <main className="flex-1">
         <StepShell
           icon={Target}
-          title="Qual seu principal objetivo?"
-          subtitle="Vamos começar entendendo sua meta principal"
+          title="Quais são seus objetivos?"
+          subtitle="Selecione um ou mais — o primeiro será o principal"
         >
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {OPTIONS.map((opt) => {
-              const selected = state.objective === opt.key
+              const selected = state.objectives.includes(opt.key)
               return (
                 <button
                   type="button"
                   key={opt.key}
-                  onClick={() => update({ objective: opt.key })}
+                  onClick={() => toggleObjective(opt.key)}
                   className="onb-card-selectable text-left"
                   data-selected={selected}
                   aria-pressed={selected}
@@ -152,7 +161,7 @@ export default function ObjetivoPage() {
         onBack={back}
         backLabel={backLabel}
         onContinue={next}
-        continueDisabled={!hydrated || !state.objective}
+        continueDisabled={!hydrated || state.objectives.length === 0}
       />
     </>
   )

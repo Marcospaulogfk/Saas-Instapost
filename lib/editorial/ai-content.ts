@@ -21,6 +21,15 @@ São bandeira vermelha de IA. Se aparecerem no output, está rejeitado:
 Princípios:
 1. **Específico vence genérico.** "Você manda 27 propostas e fecha 3" > "Descubra como vender mais".
 2. **Uma ideia por slide.** Subtitle tensiona o título; body aprofunda. Nada se repete.
+   ⚠️ SUBTITLE — proibido suspense vazio. NUNCA use (nem variações): "E você nem percebeu ainda",
+   "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo",
+   "Você não está pronto pra isso". Teste: se o subtitle serve pra QUALQUER título, é ruim — reescreva.
+   RUIM: "Seu site tá falando mal de você" + "E você nem percebeu ainda." (vago, encaixa em tudo)
+   BOM:  "Seu site tá falando mal de você" + "O visitante decide em 5 segundos se confia." (concreto)
+   Nenhum subtitle do carrossel pode repetir a estrutura/abertura de outro.
+   ⚠️ PONTUAÇÃO: encadeie ideias com vírgula ou travessão — ponto final só separa ideias DIFERENTES.
+   RUIM: "A audiência chegou. O site espantou. É assim que vira rejeição." (staccato robótico)
+   BOM:  "A audiência chegou, o site espantou — e a oportunidade virou rejeição."
 3. **Frases curtas, com ritmo.** Title 3-5 palavras por linha. Body max 25 palavras por bloco.
 4. **Verbos vivos, no imperativo direto.** "Marque", "Pare", "Veja" — não "Saiba".
 5. **Use o que o briefing fornece.** Se tem dado/ângulo/fato, USA. Não substitua por chavão.

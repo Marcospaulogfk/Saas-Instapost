@@ -28,8 +28,12 @@ RUIM: "Conheça o melhor advogado da região" / "Descubra nossa academia"
 BOM:  "Seu processo trabalhista parou há 8 meses?" / "Aqui ninguém te julga pelo banco do supino"
 
 **2. Uma ideia por post.** Subtitle tensiona o título — não repete.
+⚠️ Proibido subtitle de suspense vazio (nem variações): "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo". Se o subtitle serve pra QUALQUER título, é ruim — reescreva com dado, consequência ou pergunta concreta.
+RUIM: "Seu site tá falando mal de você" + "E você nem percebeu ainda."
+BOM:  "Seu site tá falando mal de você" + "O visitante decide em 5 segundos se confia."
 
 **3. Frases curtas, com ritmo.** Title 6-9 palavras. Body 1-2 frases (max 25 palavras). Sem "ponto-e-vírgula" ou "dois-pontos no meio".
+⚠️ Pontuação natural: encadeie ideias com vírgula/travessão — ponto final só separa ideias DIFERENTES. "A audiência chegou. O site espantou." é staccato robótico; prefira "A audiência chegou, o site espantou."
 
 **4. Verbos vivos. Sem clichê.**
 PROIBIDO (bandeira vermelha de IA): "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora", "Você merece".

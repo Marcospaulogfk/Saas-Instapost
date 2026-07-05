@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import { ChevronDown, Check } from "lucide-react"
 import {
   Popover,
@@ -70,10 +70,22 @@ export function CountrySelect({
         align="start"
         sideOffset={6}
         className="w-[--radix-popover-trigger-width] border-0 p-1"
-        style={{
-          background: "var(--onb-bg-card)",
-          border: "0.5px solid var(--onb-border-default)",
-        }}
+        style={
+          {
+            // O conteúdo do popover renderiza em portal FORA da árvore
+            // .onb-root, então as vars --onb-* não existem nesse contexto
+            // (era isso que deixava o dropdown transparente). Usa hex sólido
+            // e redefine as vars usadas pelos itens da lista.
+            background: "#141414",
+            border: "0.5px solid #2a2a2a",
+            zIndex: 100,
+            "--onb-bg-elevated": "#181818",
+            "--onb-border-default": "#2a2a2a",
+            "--onb-text-primary": "#ffffff",
+            "--onb-primary-dim": "rgba(115, 32, 230, 0.15)",
+            "--onb-primary-light": "#9C5FF1",
+          } as CSSProperties
+        }
       >
         <div className="max-h-[280px] overflow-y-auto">
           {COUNTRIES.map((c) => {

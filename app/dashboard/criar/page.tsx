@@ -1,10 +1,12 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
   ArrowRight,
+  BarChart3,
+  BookOpen,
   Sparkles,
   Square,
   Smartphone,
@@ -13,6 +15,8 @@ import {
   DollarSign,
   Flame,
   GraduationCap,
+  Newspaper,
+  Tag,
   Users,
   Wand2,
   Link2,
@@ -43,10 +47,15 @@ const RECO_BY_ABORDAGEM: Record<Abordagem, string[]> = {
   viral: ["comercial", "fitness", "informativo"],
   educativo: ["profissional", "informativo", "empresa"],
   comunidade: ["informativo", "beauty", "profissional"],
+  storytelling: ["profissional", "beauty", "empresa"],
+  dados: ["informativo", "profissional", "empresa"],
+  oferta: ["comercial", "fitness", "empresa"],
 }
 const RECO_BY_OBJETIVO: Record<Objetivo, string[]> = {
   vender: ["comercial", "fitness", "empresa"],
   engajar: ["informativo", "profissional", "beauty"],
+  informar: ["informativo", "profissional", "empresa"],
+  comunidade: ["beauty", "informativo", "fitness"],
 }
 function recommendedTemplates(
   objetivo: Objetivo,
@@ -100,12 +109,149 @@ function buildFormato(format: FormatKind, slides: number): Formato {
   }
 }
 
-type Objetivo = "engajar" | "vender"
-type Abordagem = "viral" | "educativo" | "comunidade"
+type Objetivo = "vender" | "engajar" | "informar" | "comunidade"
+type Abordagem =
+  | "viral"
+  | "educativo"
+  | "comunidade"
+  | "storytelling"
+  | "dados"
+  | "oferta"
 type ComoCriar = "zero" | "link" | "inspiracoes"
 
+// === Objetivo: UI ↔ API (o backend usa sell/inform/engage/community) ===
+const OBJETIVO_TO_API: Record<
+  Objetivo,
+  "sell" | "inform" | "engage" | "community"
+> = {
+  vender: "sell",
+  informar: "inform",
+  engajar: "engage",
+  comunidade: "community",
+}
+const API_TO_OBJETIVO: Record<string, Objetivo> = {
+  sell: "vender",
+  inform: "informar",
+  engage: "engajar",
+  community: "comunidade",
+}
+
+/** main_objective da marca pode vir null ou com vírgulas ("sell,engage"). */
+function objetivosFromBrand(
+  mainObjective: string | null | undefined,
+): Objetivo[] {
+  if (!mainObjective) return []
+  return mainObjective
+    .split(",")
+    .map((s) => API_TO_OBJETIVO[s.trim()])
+    .filter((o): o is Objetivo => Boolean(o))
+}
+
+/** Heurística: abordagens recomendadas pra cada objetivo da marca. */
+const RECO_ABORDAGEM_BY_OBJETIVO: Record<Objetivo, Abordagem[]> = {
+  vender: ["oferta", "viral"],
+  informar: ["educativo", "dados"],
+  engajar: ["storytelling", "viral"],
+  comunidade: ["comunidade", "storytelling"],
+}
+
+const OBJETIVO_OPTIONS: {
+  id: Objetivo
+  label: string
+  desc: string
+  icon: typeof Sparkles
+}[] = [
+  {
+    id: "engajar",
+    label: "Engajar",
+    desc: "Aumentar interação e alcance",
+    icon: Heart,
+  },
+  {
+    id: "vender",
+    label: "Vender",
+    desc: "Converter seguidores em clientes",
+    icon: DollarSign,
+  },
+  {
+    id: "informar",
+    label: "Informar",
+    desc: "Educar e virar referência no tema",
+    icon: Newspaper,
+  },
+  {
+    id: "comunidade",
+    label: "Comunidade",
+    desc: "Criar conversa e pertencimento",
+    icon: Users,
+  },
+]
+
+const ABORDAGEM_OPTIONS: {
+  id: Abordagem
+  label: string
+  icon: typeof Sparkles
+  color: string
+}[] = [
+  { id: "viral", label: "Viral", icon: Flame, color: "text-orange-400" },
+  { id: "educativo", label: "Educativo", icon: GraduationCap, color: "text-blue-400" },
+  { id: "comunidade", label: "Comunidade", icon: Users, color: "text-emerald-400" },
+  { id: "storytelling", label: "Storytelling", icon: BookOpen, color: "text-purple-400" },
+  { id: "dados", label: "Dados & provas", icon: BarChart3, color: "text-sky-400" },
+  { id: "oferta", label: "Oferta direta", icon: Tag, color: "text-pink-400" },
+]
+
+const BRIEFING_PLACEHOLDER_FALLBACK =
+  "Ex: Como o distanciamento entre OpenAI e Microsoft afeta o setor de IA"
+
+/**
+ * Placeholder do briefing personalizado pela marca ativa — heurística local
+ * (sem chamar IA). Usa nome + público + objetivo principal da marca.
+ */
+function buildBriefingPlaceholder(brand: ActiveBrandLite | null): string {
+  const nome = brand?.name?.trim()
+  if (!brand || !nome) return BRIEFING_PLACEHOLDER_FALLBACK
+  const publico = brand.target_audience?.trim() || "seu público"
+  // Sem objetivo definido mas com descrição → cai no tom "engajar" genérico.
+  const primary =
+    objetivosFromBrand(brand.main_objective)[0] ??
+    (brand.description?.trim() ? "engajar" : null)
+  const variante = nome.length % 2
+  switch (primary) {
+    case "vender":
+      return variante === 0
+        ? `Ex: 3 sinais de que ${publico} está pronto pra fechar com a ${nome}`
+        : `Ex: o que ${publico} ganha ao escolher a ${nome} (e ninguém conta)`
+    case "informar":
+      return variante === 0
+        ? `Ex: o erro mais comum que ${publico} comete — e como evitar`
+        : `Ex: guia rápido: o que ${publico} precisa saber antes de decidir`
+    case "comunidade":
+      return variante === 0
+        ? `Ex: pergunta pra ${publico}: qual o maior desafio de vocês hoje?`
+        : `Ex: conta pra gente: o que faria ${publico} voltar sempre na ${nome}?`
+    case "engajar":
+      return variante === 0
+        ? `Ex: os bastidores da ${nome} que ${publico} nunca viu`
+        : `Ex: 5 curiosidades da ${nome} que ${publico} não imagina`
+    default:
+      return BRIEFING_PLACEHOLDER_FALLBACK
+  }
+}
+
 export default function CriarWizardPage() {
+  // useSearchParams (sync do step com a URL) exige Suspense boundary no App Router.
+  return (
+    <Suspense fallback={null}>
+      <CriarWizard />
+    </Suspense>
+  )
+}
+
+function CriarWizard() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<StepId>(1)
   const [formato, setFormato] = useState<Formato | null>(null)
   const [objetivo, setObjetivo] = useState<Objetivo>("engajar")
@@ -135,15 +281,75 @@ export default function CriarWizardPage() {
   const [carouselErr, setCarouselErr] = useState<string | null>(null)
   const [carouselApproving, setCarouselApproving] = useState(false)
 
+  const isPostUnico = formato?.pageMode === "post-unico"
+  // "Criar do Zero" pula a galeria de templates: vai direto pra Ideia e a
+  // geração usa o modo free/skeleton (templateId fica "auto").
+  const hasTemplateStep = isPostUnico && comoCriar !== "zero"
+
+  // --- Sincronização do step com a URL (?step=N) ---
+  // Avançar/voltar pelos botões faz push; back/forward do navegador é lido
+  // pelo efeito abaixo — assim o botão voltar não sai do fluxo.
+  function goToStep(s: StepId) {
+    setStep(s)
+    router.push(`${pathname}?step=${s}`, { scroll: false })
+  }
+
+  // Ref pro efeito ler o step atual sem entrar nas dependências (evita loop:
+  // só damos push quando o step muda por clique, só setStep quando a URL muda).
+  const stepRef = useRef<StepId>(step)
+  stepRef.current = step
+
+  useEffect(() => {
+    const raw = Number(searchParams.get("step") ?? "1")
+    const urlStep: StepId =
+      raw === 2 || raw === 3 || raw === 4 || raw === 5 ? raw : 1
+    if (urlStep === stepRef.current) return
+    // Valida pré-requisitos: entrar direto em ?step=N sem os dados das etapas
+    // anteriores cai no maior step válido (no pior caso, o 1).
+    const allowed: StepId[] = [1]
+    if (formato) allowed.push(2)
+    if (formato && abordagem) {
+      if (hasTemplateStep) allowed.push(3)
+      allowed.push(4)
+    }
+    if (approvalDraft || carouselDraft || approvalLoading || carouselLoading) {
+      allowed.push(5)
+    }
+    let target: StepId = 1
+    for (const s of allowed) {
+      if (s <= urlStep && s > target) target = s
+    }
+    setStep(target)
+    if (target !== urlStep) {
+      router.replace(`${pathname}?step=${target}`, { scroll: false })
+    }
+    // Só reage a mudança EXTERNA da URL (back/forward/entrada direta).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
   // --- Marca ativa: usada na geração em vez da Marca Demo hardcoded ---
   const [activeBrand, setActiveBrand] = useState<ActiveBrandLite | null>(null)
+  // Marca se o usuário já escolheu objetivo manualmente (não sobrescrever).
+  const objetivoTouched = useRef(false)
   useEffect(() => {
     getActiveBrandLite()
       .then((b) => {
-        if (b) setActiveBrand(b)
+        if (!b) return
+        setActiveBrand(b)
+        // Pré-seleciona o objetivo recomendado pela marca como default.
+        const recos = objetivosFromBrand(b.main_objective)
+        if (!objetivoTouched.current && recos[0]) setObjetivo(recos[0])
       })
       .catch(() => {})
   }, [])
+
+  // Recomendações derivadas da marca ativa (badge "Recomendado" no Step 2).
+  const recommendedObjetivos = objetivosFromBrand(activeBrand?.main_objective)
+  const recommendedAbordagens = Array.from(
+    new Set(
+      recommendedObjetivos.flatMap((o) => RECO_ABORDAGEM_BY_OBJETIVO[o]),
+    ),
+  )
   // Marca efetiva pra geração: a ativa real, com fallback pros defaults demo
   // só quando ainda não carregou / o usuário não tem marca.
   const wizardBrand = activeBrand
@@ -169,17 +375,19 @@ export default function CriarWizardPage() {
       if (typeof p.briefing === "string") setBriefing(p.briefing)
       if (p.formato === "post") {
         setFormato(buildFormato("post", 1))
-        setStep(2)
+        goToStep(2)
       }
       if (p.formato === "carrossel") {
         setFormato(buildFormato("post", 7))
-        setStep(2)
+        goToStep(2)
       }
       if (p.formato === "stories") {
         setFormato(buildFormato("story", 1))
-        setStep(2)
+        goToStep(2)
       }
     } catch {}
+    // Roda só no mount (consome o pending da Inspiração).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function canAdvanceStep1() {
@@ -198,10 +406,15 @@ export default function CriarWizardPage() {
     return canFinish()
   }
 
-  async function refinarComIA() {
+  /**
+   * Refina o briefing com IA. Retorna o texto refinado (ou null se falhar) —
+   * o retorno é usado pelo fluxo de geração automática, que não pode esperar
+   * o setState de `promptRefinado` propagar.
+   */
+  async function refinarComIA(): Promise<string | null> {
     if (briefing.trim().length < 10) {
       setRefineErr("Briefing precisa ter pelo menos 10 chars")
-      return
+      return null
     }
     setRefineErr(null)
     setRefinando(true)
@@ -219,11 +432,14 @@ export default function CriarWizardPage() {
       const data = await res.json()
       if (!res.ok) {
         setRefineErr(data.error ?? "erro ao refinar")
-        return
+        return null
       }
-      setPromptRefinado(data.refined)
+      const refined = typeof data.refined === "string" ? data.refined : null
+      if (refined) setPromptRefinado(refined)
+      return refined
     } catch (err) {
       setRefineErr(err instanceof Error ? err.message : "erro de rede")
+      return null
     } finally {
       setRefinando(false)
     }
@@ -235,7 +451,7 @@ export default function CriarWizardPage() {
    * gerar (sem etapa separada de "Analisar link") — a tela de carregamento de
    * "Revisando roteiro" cobre extração + geração num fluxo só.
    */
-  async function resolveBriefing(): Promise<string> {
+  async function resolveBriefing(refined?: string | null): Promise<string> {
     if (comoCriar === "link") {
       const url = linkUrl.trim()
       const res = await fetch("/api/extract-content", {
@@ -252,7 +468,9 @@ export default function CriarWizardPage() {
       if (!res.ok) throw new Error(data.error ?? "erro ao analisar o link")
       return (data.briefing ?? "").trim()
     }
-    return (promptRefinado ?? briefing).trim()
+    // `refined` cobre o refino automático da mesma submissão (o state
+    // `promptRefinado` ainda não propagou nesse ponto).
+    return (refined ?? promptRefinado ?? briefing).trim()
   }
 
   /** Mapeia os slots do skeleton pros 3 campos editáveis da aprovação. */
@@ -280,13 +498,13 @@ export default function CriarWizardPage() {
   }
 
   /** Gera SÓ o texto (sem foto) e abre a tela de revisão/aprovação. */
-  async function gerarTextoParaAprovacao() {
+  async function gerarTextoParaAprovacao(refined?: string | null) {
     if (!formato) return
     setApprovalErr(null)
     setApprovalLoading(true)
-    setStep(5)
+    goToStep(5)
     try {
-      const finalBriefing = await resolveBriefing()
+      const finalBriefing = await resolveBriefing(refined)
       const res = await fetch("/api/post-unico/free-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -357,19 +575,19 @@ export default function CriarWizardPage() {
   }
 
   /** Gera SÓ o roteiro do carrossel (texto + legenda) e abre a aprovação. */
-  async function gerarRoteiroParaAprovacao() {
+  async function gerarRoteiroParaAprovacao(refined?: string | null) {
     if (!formato) return
     setCarouselErr(null)
     setCarouselLoading(true)
-    setStep(5)
+    goToStep(5)
     try {
-      const finalBriefing = await resolveBriefing()
+      const finalBriefing = await resolveBriefing(refined)
       const res = await fetch("/api/editorial/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic: finalBriefing,
-          objective: objetivo === "vender" ? "sell" : "engage",
+          objective: OBJETIVO_TO_API[objetivo],
           template: "editorial",
           brandName: wizardBrand.name,
           handle: wizardBrand.instagram_handle,
@@ -406,7 +624,7 @@ export default function CriarWizardPage() {
           projectTitle: carouselDraft.projectTitle,
           slides: carouselDraft.slides,
           caption: carouselDraft.caption,
-          objective: objetivo === "vender" ? "sell" : "engage",
+          objective: OBJETIVO_TO_API[objetivo],
           template: "editorial",
           nSlides: carouselDraft.slides.length || (formato.slides ?? 7),
           colors: wizardBrand.brand_colors,
@@ -422,10 +640,10 @@ export default function CriarWizardPage() {
 
   /** Template curado escolhido → vai direto pro /teste no modo template:
    *  o editor gera o conteúdo estruturado daquele template e monta o design. */
-  function criarComTemplateEscolhido() {
+  function criarComTemplateEscolhido(refined?: string | null) {
     if (!formato) return
     setSubmitting(true)
-    const finalBriefing = (promptRefinado ?? briefing).trim()
+    const finalBriefing = (refined ?? promptRefinado ?? briefing).trim()
     try {
       sessionStorage.setItem(
         "syncpost_pending_post_unico",
@@ -443,31 +661,38 @@ export default function CriarWizardPage() {
     router.push(`/teste?format=${formato.format}`)
   }
 
-  function handleGerar() {
+  async function handleGerar() {
     if (!formato || !canGerar()) return
     setLinkErr(null)
+    // Refino automático: acontece SEMPRE antes de gerar (exceto no modo link,
+    // onde o briefing vem da análise da página). Se falhar, segue com o
+    // briefing bruto — o refino nunca bloqueia a geração.
+    let refined = promptRefinado
+    if (comoCriar !== "link" && !refined) {
+      refined = await refinarComIA()
+    }
     if (formato.pageMode === "post-unico") {
       // Escolheu um template curado (e não é modo link) → gera direto nele,
       // sem a etapa de aprovação do caminho auto/skeleton.
       if (comoCriar !== "link" && templateId !== "auto") {
-        criarComTemplateEscolhido()
+        criarComTemplateEscolhido(refined)
         return
       }
       // Auto (ou link): gera o TEXTO primeiro e abre a etapa de aprovação.
-      void gerarTextoParaAprovacao()
+      void gerarTextoParaAprovacao(refined)
       return
     }
     // Carrossel: mesma etapa de aprovação — gera SÓ o roteiro (text-only),
     // o usuário revisa/edita e só então as imagens são geradas em /teste.
-    void gerarRoteiroParaAprovacao()
+    void gerarRoteiroParaAprovacao(refined)
   }
 
-  const isPostUnico = formato?.pageMode === "post-unico"
   const steps: { id: StepId; label: string }[] = [
     { id: 1, label: "Formato" },
     { id: 2, label: "Modo" },
-    // Template só pra post-único (carrossel usa estilo editorial, sem catálogo).
-    ...(isPostUnico ? [{ id: 3 as StepId, label: "Template" }] : []),
+    // Template só pra post-único E fora do "Criar do Zero" (que vai direto
+    // pra ideia e usa o modo free/skeleton). Carrossel também não tem catálogo.
+    ...(hasTemplateStep ? [{ id: 3 as StepId, label: "Template" }] : []),
     { id: 4, label: "Ideia" },
     // Etapa de aprovação existe pros dois fluxos (post-único e carrossel).
     ...(formato ? [{ id: 5 as StepId, label: "Aprovar" }] : []),
@@ -488,7 +713,7 @@ export default function CriarWizardPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (clickable) setStep(s)
+                  if (clickable) goToStep(s)
                 }}
                 disabled={!clickable}
                 className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-colors ${
@@ -522,7 +747,7 @@ export default function CriarWizardPage() {
         <Step1
           formato={formato}
           onSelect={setFormato}
-          onNext={() => canAdvanceStep1() && setStep(2)}
+          onNext={() => canAdvanceStep1() && goToStep(2)}
         />
       )}
 
@@ -531,22 +756,31 @@ export default function CriarWizardPage() {
           objetivo={objetivo}
           abordagem={abordagem}
           comoCriar={comoCriar}
-          onObjetivo={setObjetivo}
+          recommendedObjetivos={recommendedObjetivos}
+          recommendedAbordagens={recommendedAbordagens}
+          onObjetivo={(v) => {
+            objetivoTouched.current = true
+            setObjetivo(v)
+          }}
           onAbordagem={setAbordagem}
-          onComoCriar={setComoCriar}
-          onBack={() => setStep(1)}
-          onNext={() => canAdvanceStep2() && setStep(isPostUnico ? 3 : 4)}
+          onComoCriar={(v) => {
+            setComoCriar(v)
+            // "Criar do Zero" pula a galeria → garante o modo free/skeleton.
+            if (v === "zero") setTemplateId("auto")
+          }}
+          onBack={() => goToStep(1)}
+          onNext={() => canAdvanceStep2() && goToStep(hasTemplateStep ? 3 : 4)}
         />
       )}
 
-      {step === 3 && formato && isPostUnico && (
+      {step === 3 && formato && hasTemplateStep && (
         <TemplateStep
           objetivo={objetivo}
           abordagem={abordagem}
           templateId={templateId}
           onSelect={setTemplateId}
-          onBack={() => setStep(2)}
-          onNext={() => setStep(4)}
+          onBack={() => goToStep(2)}
+          onNext={() => goToStep(4)}
         />
       )}
 
@@ -557,17 +791,18 @@ export default function CriarWizardPage() {
           comoCriar={comoCriar}
           briefing={briefing}
           setBriefing={setBriefing}
+          briefingPlaceholder={buildBriefingPlaceholder(activeBrand)}
           promptRefinado={promptRefinado}
           setPromptRefinado={setPromptRefinado}
-          onRefinar={refinarComIA}
+          onRefinar={() => void refinarComIA()}
           refinando={refinando}
           refineErr={refineErr}
           submitting={submitting}
           linkUrl={linkUrl}
           setLinkUrl={setLinkUrl}
           linkErr={linkErr}
-          onBack={() => setStep(isPostUnico ? 3 : 2)}
-          onGerar={handleGerar}
+          onBack={() => goToStep(hasTemplateStep ? 3 : 2)}
+          onGerar={() => void handleGerar()}
           canFinish={canGerar()}
         />
       )}
@@ -585,7 +820,7 @@ export default function CriarWizardPage() {
           onBack={() => {
             setApprovalDraft(null)
             setApprovalErr(null)
-            setStep(4)
+            goToStep(4)
           }}
           onApprove={aprovarECriar}
         />
@@ -616,7 +851,7 @@ export default function CriarWizardPage() {
           onBack={() => {
             setCarouselDraft(null)
             setCarouselErr(null)
-            setStep(4)
+            goToStep(4)
           }}
           onApprove={aprovarECriarCarrossel}
         />
@@ -757,6 +992,8 @@ function Step2({
   objetivo,
   abordagem,
   comoCriar,
+  recommendedObjetivos,
+  recommendedAbordagens,
   onObjetivo,
   onAbordagem,
   onComoCriar,
@@ -766,6 +1003,8 @@ function Step2({
   objetivo: Objetivo
   abordagem: Abordagem | null
   comoCriar: ComoCriar
+  recommendedObjetivos: Objetivo[]
+  recommendedAbordagens: Abordagem[]
   onObjetivo: (v: Objetivo) => void
   onAbordagem: (v: Abordagem) => void
   onComoCriar: (v: ComoCriar) => void
@@ -790,32 +1029,25 @@ function Step2({
           Qual o objetivo deste post?
         </p>
         <div className="grid grid-cols-2 gap-3">
-          {[
-            {
-              id: "engajar" as const,
-              label: "Engajar",
-              desc: "Aumentar interação e comunidade",
-              icon: Heart,
-            },
-            {
-              id: "vender" as const,
-              label: "Vender",
-              desc: "Converter seguidores em clientes",
-              icon: DollarSign,
-            },
-          ].map((o) => {
+          {OBJETIVO_OPTIONS.map((o) => {
             const sel = objetivo === o.id
+            const reco = recommendedObjetivos.includes(o.id)
             return (
               <button
                 key={o.id}
                 type="button"
                 onClick={() => onObjetivo(o.id)}
-                className={`text-left p-4 rounded-xl border-2 transition-all ${
+                className={`relative text-left p-4 rounded-xl border-2 transition-all ${
                   sel
                     ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
+                {reco && (
+                  <span className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600/90 text-white">
+                    Recomendado
+                  </span>
+                )}
                 <div className="flex items-start gap-2.5">
                   <div
                     className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -847,33 +1079,31 @@ function Step2({
         <p className="text-[11px] text-text-muted mb-2">
           Define a estratégia do conteúdo (textos, layout, tom).
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {[
-            { id: "viral" as const, label: "Viral", icon: Flame, color: "text-orange-400" },
-            { id: "educativo" as const, label: "Educativo", icon: GraduationCap, color: "text-blue-400" },
-            { id: "comunidade" as const, label: "Comunidade", icon: Users, color: "text-emerald-400" },
-          ].map((a) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {ABORDAGEM_OPTIONS.map((a) => {
             const sel = abordagem === a.id
+            const reco = recommendedAbordagens.includes(a.id)
             return (
               <button
                 key={a.id}
                 type="button"
                 onClick={() => onAbordagem(a.id)}
-                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
+                className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
                   sel
                     ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
+                {reco && (
+                  <span className="absolute top-1.5 right-1.5 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600/90 text-white">
+                    Recomendado
+                  </span>
+                )}
                 <a.icon className={`w-5 h-5 ${a.color}`} />
                 <p className="text-xs font-medium text-text-primary">{a.label}</p>
               </button>
             )
           })}
-          <div className="p-3 rounded-xl border-2 border-dashed border-border-subtle bg-background-tertiary/10 flex flex-col items-center justify-center gap-1.5 opacity-50 cursor-not-allowed">
-            <span className="text-text-muted">···</span>
-            <p className="text-xs text-text-muted">Ver mais</p>
-          </div>
         </div>
       </div>
 
@@ -949,6 +1179,7 @@ function Step3({
   formato,
   briefing,
   setBriefing,
+  briefingPlaceholder,
   comoCriar,
   promptRefinado,
   setPromptRefinado,
@@ -968,6 +1199,7 @@ function Step3({
   comoCriar: ComoCriar
   briefing: string
   setBriefing: (v: string) => void
+  briefingPlaceholder: string
   promptRefinado: string | null
   setPromptRefinado: (v: string | null) => void
   onRefinar: () => void
@@ -1070,7 +1302,7 @@ function Step3({
             setBriefing(e.target.value)
             if (promptRefinado) setPromptRefinado(null)
           }}
-          placeholder="Ex: Como o distanciamento entre OpenAI e Microsoft afeta o setor de IA"
+          placeholder={briefingPlaceholder}
           rows={3}
           className="text-sm"
         />
@@ -1114,39 +1346,31 @@ function Step3({
         <p className="text-xs text-destructive mb-3">{refineErr}</p>
       )}
 
-      {!promptRefinado && briefing.trim().length >= 10 && (
-        <button
-          type="button"
-          onClick={onRefinar}
-          disabled={refinando}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-brand-500/40 hover:border-brand-500/70 hover:bg-brand-500/5 text-brand-300 text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-        >
-          {refinando ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Refinando com IA...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Refinar com IA antes de gerar
-            </>
-          )}
-        </button>
+      {/* Refino agora é automático: acontece ao clicar em gerar. */}
+      {!isLinkMode && !promptRefinado && (
+        <p className="text-[10px] text-text-muted flex items-center gap-1">
+          <Sparkles className="w-2.5 h-2.5" />
+          Ao gerar, a IA refina sua ideia automaticamente antes de criar o conteúdo.
+        </p>
       )}
       </div>
 
       <div className="flex justify-between gap-3">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} disabled={refinando}>
           <ArrowLeft className="w-4 h-4 mr-1.5" />
           Voltar
         </Button>
         <Button
           onClick={onGerar}
-          disabled={!canFinish || submitting}
+          disabled={!canFinish || submitting || refinando}
           className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 min-w-[160px]"
         >
-          {submitting ? (
+          {refinando ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              Refinando sua ideia...
+            </>
+          ) : submitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : isPostUnico ? (
             <>

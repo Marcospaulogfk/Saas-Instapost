@@ -11,7 +11,17 @@ function readStorage(): OnboardingState {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return DEFAULT_STATE
     const parsed = JSON.parse(raw) as Partial<OnboardingState>
-    return { ...DEFAULT_STATE, ...parsed }
+    const merged = { ...DEFAULT_STATE, ...parsed }
+    // Migração: storage antigo tinha `objective` (single). Se `objectives`
+    // (multi) ainda não existe/está vazio, converte o valor legado.
+    if (
+      (!Array.isArray(merged.objectives) || merged.objectives.length === 0) &&
+      parsed.objective
+    ) {
+      merged.objectives = [parsed.objective]
+    }
+    if (!Array.isArray(merged.objectives)) merged.objectives = []
+    return merged
   } catch {
     return DEFAULT_STATE
   }

@@ -72,37 +72,79 @@ export default function EstiloPage() {
   }
 
   const finalize = async () => {
-    if (!hydrated) return
-    setSubmitting(true)
+    // Proteção contra duplo clique: se já está enviando, ignora.
+    if (!hydrated || submitting) return
     setSubmitError(null)
 
-    const objectiveDb = state.objective
-      ? OBJECTIVE_DB_MAP[state.objective]
-      : "sell"
-
-    const result = await createBrand({
-      name: state.brandName.trim(),
-      description: state.description.trim(),
-      website_url: state.sourceUrl || null,
-      instagram_handle: state.instagramHandle || null,
-      target_audience: state.idealCustomer.trim() || "",
-      tone_of_voice: state.tones.join(", "),
-      visual_style: state.archetype || "",
-      main_objective: objectiveDb,
-      brand_colors: [state.primaryColor, state.secondaryColor, state.accentColor],
-      logo_url: state.logoUrl ?? state.detectedLogoUrl ?? null,
-    })
-
-    setSubmitting(false)
-
-    if (!result.ok) {
-      setSubmitError(result.error)
+    const name = state.brandName.trim()
+    if (!name) {
+      setSubmitError(
+        "O nome da marca é obrigatório. Volte à etapa Marca e preencha.",
+      )
       return
     }
 
-    clearOnboardingStorage()
-    router.push(`/dashboard?brandCreated=${result.brandId}`)
-    router.refresh()
+    // Multi-select: o primeiro objetivo é o principal; os demais vão
+    // concatenados por vírgula (a coluna main_objective é text).
+    const selectedObjectives =
+      state.objectives.length > 0
+        ? state.objectives
+        : state.objective
+          ? [state.objective]
+          : []
+    const objectivesDb = Array.from(
+      new Set(
+        selectedObjectives
+          .map((o) => OBJECTIVE_DB_MAP[o])
+          .filter(
+            (v): v is "sell" | "inform" | "engage" | "community" => v != null,
+          ),
+      ),
+    )
+    if (objectivesDb.length === 0) {
+      setSubmitError("Selecione pelo menos um objetivo na etapa Objetivo.")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const result = await createBrand({
+        name,
+        description: state.description.trim(),
+        website_url: state.sourceUrl || null,
+        instagram_handle: state.instagramHandle || null,
+        target_audience: state.idealCustomer.trim() || "",
+        tone_of_voice: state.tones.join(", "),
+        visual_style: "",
+        main_objective: objectivesDb.join(","),
+        brand_colors: [state.primaryColor, state.secondaryColor, state.accentColor],
+        logo_url: state.logoUrl ?? state.detectedLogoUrl ?? null,
+      })
+
+      if (!result.ok) {
+        setSubmitting(false)
+        setSubmitError(result.error)
+        return
+      }
+
+      clearOnboardingStorage()
+      // Navegação completa em vez de router.push + router.refresh: o refresh
+      // logo após o push cancelava a navegação pendente do client router — a
+      // marca era criada, mas o usuário ficava preso nessa tela sem feedback
+      // (e clicava de novo, duplicando a marca). window.location garante que
+      // o dashboard carrega do zero. `submitting` fica true até a página
+      // trocar, mantendo o botão desabilitado.
+      window.location.assign(`/dashboard?brandCreated=${result.brandId}`)
+    } catch (err) {
+      // Server action pode lançar (rede, payload da logo acima do limite,
+      // etc.) — sem esse catch a falha era 100% silenciosa.
+      setSubmitting(false)
+      setSubmitError(
+        err instanceof Error && err.message
+          ? `Não foi possível salvar a marca: ${err.message}`
+          : "Não foi possível salvar a marca. Verifique sua conexão e tente novamente.",
+      )
+    }
   }
 
   return (

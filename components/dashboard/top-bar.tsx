@@ -1,5 +1,6 @@
-﻿"use client"
+"use client"
 
+import Link from "next/link"
 import { Search, Bell, HelpCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -9,10 +10,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function DashboardTopBar() {
+interface DashboardTopBarProps {
+  /** Slot do menu mobile (hamburger) — renderizado antes da busca, só < md. */
+  mobileNav?: React.ReactNode
+}
+
+export function DashboardTopBar({ mobileNav }: DashboardTopBarProps) {
   return (
     <header
-      className="h-[60px] px-6 flex items-center justify-between sticky top-0 z-10"
+      className="h-[60px] px-4 sm:px-6 flex items-center justify-between gap-3 sticky top-0 z-10"
       style={{
         background:
           "linear-gradient(180deg, var(--background) 0%, transparent 100%)",
@@ -20,6 +26,8 @@ export function DashboardTopBar() {
         WebkitBackdropFilter: "blur(20px)",
       }}
     >
+      {mobileNav}
+
       {/* Search */}
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
@@ -33,25 +41,26 @@ export function DashboardTopBar() {
       </div>
 
       {/* Right side icons */}
-      <div className="flex items-center gap-2 ml-4">
+      <div className="flex items-center gap-2 ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full shadow-glow-sm" />
-              <span className="sr-only">Notificacoes</span>
+              <span className="sr-only">Notificações</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <div className="p-4 text-center text-sm text-muted-foreground">
-              Nenhuma notificacao nova
+              Nenhuma notificação nova
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="ghost" size="icon">
-          <HelpCircle className="w-5 h-5" />
-          <span className="sr-only">Ajuda</span>
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/dashboard/suporte">
+            <HelpCircle className="w-5 h-5" />
+            <span className="sr-only">Ajuda e suporte</span>
+          </Link>
         </Button>
       </div>
     </header>

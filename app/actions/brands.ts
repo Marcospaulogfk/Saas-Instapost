@@ -17,7 +17,12 @@ export interface BrandInput {
   target_audience: string
   tone_of_voice: string
   visual_style: string
-  main_objective: "sell" | "inform" | "engage" | "community"
+  /**
+   * Objetivo(s) da marca. Multi-select do onboarding chega como valores
+   * separados por vírgula (ex: "sell,engage") — o primeiro é o principal.
+   * A coluna no banco é text.
+   */
+  main_objective: string
   brand_colors: string[]
   logo_url?: string | null
 }
@@ -29,42 +34,77 @@ export type CreateBrandResult =
 export async function createBrand(
   input: BrandInput,
 ): Promise<CreateBrandResult> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return {
+        ok: false,
+        error: "Voce precisa estar logado pra cadastrar uma marca.",
+      }
+    }
+
+    // Guard idempotente: cliques repetidos no "Finalizar" não devem duplicar
+    // a marca. Se já existe uma com o mesmo nome pro mesmo usuário criada nos
+    // últimos 2 minutos, reaproveita em vez de inserir de novo.
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+    const { data: recent } = await supabase
+      .from("brands")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("name", input.name)
+      .gte("created_at", twoMinutesAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (recent) {
+      await writeActiveBrandCookie(recent.id)
+      revalidatePath("/dashboard")
+      return { ok: true, brandId: recent.id }
+    }
+
+    const { data, error } = await supabase
+      .from("brands")
+      .insert({
+        user_id: user.id,
+        name: input.name,
+        description: input.description || null,
+        website_url: input.website_url || null,
+        instagram_handle: input.instagram_handle || null,
+        target_audience: input.target_audience || null,
+        tone_of_voice: input.tone_of_voice || null,
+        visual_style: input.visual_style || null,
+        main_objective: input.main_objective,
+        brand_colors: input.brand_colors,
+        logo_url: input.logo_url || null,
+        default_font: "inter",
+        default_template: "cinematic",
+      })
+      .select("id")
+      .single()
+
+    if (error) {
+      return { ok: false, error: error.message }
+    }
+
+    // A marca recém-criada vira a marca ativa (senão o dashboard podia cair
+    // no fallback de outra marca da lista).
+    await writeActiveBrandCookie(data.id)
+    revalidatePath("/dashboard")
+
+    return { ok: true, brandId: data.id }
+  } catch (err) {
     return {
       ok: false,
-      error: "Voce precisa estar logado pra cadastrar uma marca.",
+      error:
+        err instanceof Error && err.message
+          ? err.message
+          : "Erro inesperado ao salvar a marca. Tente novamente.",
     }
   }
-
-  const { data, error } = await supabase
-    .from("brands")
-    .insert({
-      user_id: user.id,
-      name: input.name,
-      description: input.description || null,
-      website_url: input.website_url || null,
-      instagram_handle: input.instagram_handle || null,
-      target_audience: input.target_audience || null,
-      tone_of_voice: input.tone_of_voice || null,
-      visual_style: input.visual_style || null,
-      main_objective: input.main_objective,
-      brand_colors: input.brand_colors,
-      logo_url: input.logo_url || null,
-      default_font: "inter",
-      default_template: "cinematic",
-    })
-    .select("id")
-    .single()
-
-  if (error) {
-    return { ok: false, error: error.message }
-  }
-
-  return { ok: true, brandId: data.id }
 }
 
 export interface BrandUpdate {
@@ -185,6 +225,11 @@ export interface ActiveBrandLite {
   name: string
   brand_colors: string[]
   instagram_handle: string | null
+  // Campos usados pelo wizard pra recomendação/personalização (podem vir null).
+  main_objective: string | null
+  tone_of_voice: string | null
+  target_audience: string | null
+  description: string | null
 }
 
 export async function getActiveBrandLite(): Promise<ActiveBrandLite | null> {
@@ -195,6 +240,10 @@ export async function getActiveBrandLite(): Promise<ActiveBrandLite | null> {
     name: brand.name,
     brand_colors: brand.brand_colors ?? [],
     instagram_handle: brand.instagram_handle ?? null,
+    main_objective: brand.main_objective ?? null,
+    tone_of_voice: brand.tone_of_voice ?? null,
+    target_audience: brand.target_audience ?? null,
+    description: brand.description ?? null,
   }
 }
 

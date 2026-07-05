@@ -17,7 +17,10 @@ export interface OnboardingState {
   extractedColors: string[]
 
   // Passo 1
+  /** Legado (single-select). Mantido pra migrar localStorage antigo. */
   objective: Objective | null
+  /** Multi-select: o primeiro é o objetivo principal. */
+  objectives: Objective[]
 
   // Passo 2
   brandName: string
@@ -32,7 +35,6 @@ export interface OnboardingState {
 
   // Passo 4
   tones: string[]
-  archetype: string | null
   visualStyle: string
 
   // Passo 5
@@ -51,6 +53,7 @@ export const DEFAULT_STATE: OnboardingState = {
   detectedLogoUrl: null,
   extractedColors: [],
   objective: null,
+  objectives: [],
   brandName: "",
   country: "BR",
   countryName: "Brasil",
@@ -59,7 +62,6 @@ export const DEFAULT_STATE: OnboardingState = {
   pains: "",
   desires: "",
   tones: [],
-  archetype: null,
   visualStyle: "",
   logoUrl: null,
   logoFileName: null,

@@ -138,6 +138,16 @@ BOM:  "Você manda 27 propostas e fecha 3" / "Esse jeito de vender morreu em 201
 
 **2. Uma ideia por slide.** Subtitle tensiona o título — não repete. Body aprofunda — não enfeita.
 
+**2b. SUBTITLE — proibido suspense vazio.** Subtitle de "mistério genérico" é a maior bandeira vermelha de IA. NUNCA use (nem variações): "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo", "Você não está pronto pra isso", "A verdade que escondem de você". Teste: se o subtitle serve pra QUALQUER título de QUALQUER nicho, ele é ruim — reescreva.
+RUIM: title "Seu site tá falando mal de você" + subtitle "E você nem percebeu ainda." (vago, encaixa em tudo)
+BOM:  title "Seu site tá falando mal de você" + subtitle "O visitante decide em 5 segundos se confia." (concreto, adiciona informação)
+BOM:  title "Você posta e ninguém curte" + subtitle "→ 3 erros de estrutura que matam o alcance" (promessa específica)
+Dentro do MESMO carrossel, nenhum subtitle pode repetir estrutura ou abertura de outro ("E você...", "E o pior..." duas vezes = rejeitado).
+
+**2c. TITLE — precisa sustentar sozinho.** O título tem que fazer sentido lido isolado, sem o subtitle. Se precisa do subtitle pra ser entendido, é fraco. Prefira tensão concreta (dado, consequência, contradição) a frase de efeito vazia.
+RUIM: "A virada silenciosa" (bonito, mas não diz nada)
+BOM:  "Seu concorrente responde em 5 minutos, você em 2 dias"
+
 **3. Frases curtas, com ritmo.** Title 6-9 palavras. Body 1-2 frases (max 25 palavras totais).
 
 **4. Verbos vivos, sem clichê.**
@@ -147,7 +157,11 @@ PROIBIDO (bandeira vermelha de IA, NUNCA usar): "Descubra", "Conheça", "Saiba m
 
 **6. PT-BR coloquial culto.** Sem gerundismo, sem "podemos te ajudar".
 
-**7. Pontuação natural.** Encadeia ideias com vírgula — NÃO quebra toda oração numa frase separada terminada em ponto. Evita o staccato robótico: "Não é nicho. É três em cada quatro." soa de IA — prefira "Não é nicho — já são três em cada quatro." ou "Não é nicho: três em cada quatro." Ponto final separa ideias DIFERENTES, não pedaços da mesma frase.
+**7. Pontuação natural.** Encadeia ideias com vírgula — NÃO quebra toda oração numa frase separada terminada em ponto. Evita o staccato robótico: "Não é nicho. É três em cada quatro." soa de IA — prefira "Não é nicho — já são três em cada quatro." ou "Não é nicho: três em cada quatro." Ponto final separa ideias DIFERENTES, não pedaços da mesma frase. Antes de entregar, RELEIA cada body: se duas "frases" vizinhas compartilham o mesmo sujeito ou completam a mesma ideia, junte com vírgula ou travessão.
+RUIM: "A audiência chegou. O site espantou. É assim que oportunidade vira estatística." (staccato, 3 pontos na mesma ideia)
+BOM:  "A audiência chegou, o site espantou — e a oportunidade virou estatística de rejeição."
+
+**7b. BODY carrega informação, não decoração.** Cada body precisa de pelo menos 1 elemento concreto: dado do briefing, exemplo, consequência prática ou mecanismo ("como/por quê"). Body que só reescreve o título com outras palavras = rejeitado.
 
 **8. Não invente nada fora do briefing.** PROIBIDO introduzir números, datas, nomes ou jargão de negócio (ex: "freemium", "growth hacking", "MRR", "churn", "TAM") que NÃO estejam no tema nem sejam parte óbvia do assunto. Se o briefing não dá um dado, não cria um. Fica NO tema — não desvia pra outro assunto pra parecer esperto.
 
@@ -606,7 +620,13 @@ export async function generateEditorialPlan(
   input: EditorialPlanInput,
 ): Promise<{ data: EditorialPlanResponse; metrics: ClaudeMetrics }> {
   const client = getClient()
-  const objetivo = OBJECTIVE_LABELS[input.mainObjective] ?? input.mainObjective
+  // main_objective pode ter múltiplos valores separados por vírgula
+  // (ex: "sell,engage") — traduz cada um pro rótulo.
+  const objetivo = input.mainObjective
+    .split(",")
+    .map((o) => OBJECTIVE_LABELS[o.trim()] ?? o.trim())
+    .filter(Boolean)
+    .join(", ")
 
   const datasTxt =
     input.relevantDates && input.relevantDates.length

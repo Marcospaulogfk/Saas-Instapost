@@ -7,6 +7,7 @@ import {
   Pill,
   type SlideAttribution,
 } from "./editorial-shared"
+import { readableAccent, isLightColor } from "@/lib/color-contrast"
 import {
   CoverWesleyGemini,
   CoverWesleyInternet,
@@ -105,7 +106,12 @@ export function SlidePreview({
   darkBg = "#0A0A0A",
   format = "feed",
 }: SlidePreviewProps) {
-  const accent = brandColors[0] || "#FBBF24"
+  // REGRA GLOBAL: o accent (cor das palavras destacadas) precisa ser legível
+  // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
+  // escolhiam preto como destaque e ele sumia em fundos escuros/fotos.
+  const accentCandidates = brandColors.length > 0 ? brandColors : ["#FBBF24"]
+  const accentOnDark = readableAccent(accentCandidates, darkBg, "#FFFFFF")
+  const accentOnLight = readableAccent(accentCandidates, lightBg, "#0A0A0F")
   const dark = brandColors[1] || "#1A1A1A"
   const light = brandColors[2] || "#FAF8F5"
 
@@ -114,7 +120,8 @@ export function SlidePreview({
       <EditorialSlideRouter
         slide={slide}
         totalSlides={totalSlides}
-        accent={accent}
+        accentOnDark={accentOnDark}
+        accentOnLight={accentOnLight}
         dark={dark}
         light={light}
         fontClass={fontClass}
@@ -130,14 +137,14 @@ export function SlidePreview({
       <HybridSlide
         slide={slide}
         totalSlides={totalSlides}
-        accent={accent}
+        accent={accentOnDark}
         fontClass={fontClass}
       />
     ) : (
       <CinematicSlide
         slide={slide}
         totalSlides={totalSlides}
-        accent={accent}
+        accent={accentOnDark}
         fontClass={fontClass}
       />
     )
@@ -248,7 +255,10 @@ function resolveImageSlot(slot: SplitImageSlot, imgCount: number): SplitImageSlo
 interface RouterProps {
   slide: PreviewSlide
   totalSlides: number
-  accent: string
+  /** Accent legível sobre fundo escuro/foto (já validado por contraste). */
+  accentOnDark: string
+  /** Accent legível sobre fundo claro (já validado por contraste). */
+  accentOnLight: string
   dark: string
   light: string
   fontClass: string
@@ -265,7 +275,8 @@ function EditorialSlideRouter(props: RouterProps) {
   const {
     slide,
     totalSlides,
-    accent,
+    accentOnDark,
+    accentOnLight,
     dark,
     light,
     fontClass,
@@ -288,10 +299,18 @@ function EditorialSlideRouter(props: RouterProps) {
   // Quantas imagens DISTINTAS o slide realmente tem (decidido pela IA).
   const imgCount = splitData.images.filter((im) => im.url).length
 
-  const baseProps = {
+  // Capas são todas sobre foto/fundo escuro (exceto minimal, branca); cada
+  // split tem fundo fixo conhecido — o accent certo é escolhido por fundo.
+  const basePropsDark = {
     totalSlides,
     orderIndex: slide.order_index,
-    accent,
+    accent: accentOnDark,
+    fontClass,
+  }
+  const basePropsLight = {
+    totalSlides,
+    orderIndex: slide.order_index,
+    accent: accentOnLight,
     fontClass,
   }
 
@@ -309,12 +328,12 @@ function EditorialSlideRouter(props: RouterProps) {
     if (isCover) {
       const tag = (slide.cta_badge || "").toLowerCase()
       if (tag.includes("passo") || tag.includes("tutorial") || tag.includes("como"))
-        return <CoverWesleyGemini slide={coverData} {...baseProps} />
+        return <CoverWesleyGemini slide={coverData} {...basePropsDark} />
       if (tag.includes("benefício") || tag.includes("ideia") || tag.includes("dica"))
-        return <CoverWesleyLabios slide={coverData} {...baseProps} />
+        return <CoverWesleyLabios slide={coverData} {...basePropsDark} />
       if (tag.includes("erro") || tag.includes("pare") || tag.includes("não"))
-        return <CoverWesleyChurrasco slide={coverData} {...baseProps} />
-      return <CoverWesleyInternet slide={coverData} {...baseProps} />
+        return <CoverWesleyChurrasco slide={coverData} {...basePropsDark} />
+      return <CoverWesleyInternet slide={coverData} {...basePropsDark} />
     }
     const rawSlot: SplitImageSlot = isLast
       ? "single-bottom"
@@ -326,19 +345,19 @@ function EditorialSlideRouter(props: RouterProps) {
             ? "comparison-bottom"
             : "none"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitWesleyDark slide={splitData} {...baseProps} imageSlot={slot} />
+    return <SplitWesleyDark slide={splitData} {...basePropsDark} imageSlot={slot} />
   }
 
   // ===== STYLE: BRANDSDECODED =====
   if (editorialStyle === "brandsdecoded") {
     if (isCover) {
-      return <CoverBrandsdecodedMassive slide={coverData} {...baseProps} />
+      return <CoverBrandsdecodedMassive slide={coverData} {...basePropsDark} />
     }
     if (isMidBreak) {
       return (
         <SplitBrandsdecodedDarkSerif
           slide={splitData}
-          {...baseProps}
+          {...basePropsDark}
           imageSlot="single-bottom"
         />
       )
@@ -353,7 +372,7 @@ function EditorialSlideRouter(props: RouterProps) {
     return (
       <SplitBrandsdecodedLight
         slide={splitData}
-        {...baseProps}
+        {...basePropsLight}
         imageSlot={slot}
         titleSize="large"
       />
@@ -363,12 +382,12 @@ function EditorialSlideRouter(props: RouterProps) {
   // ===== STYLE: BOLO =====
   if (editorialStyle === "bolo") {
     if (isCover) {
-      return <CoverWesleyLabios slide={coverData} {...baseProps} />
+      return <CoverWesleyLabios slide={coverData} {...basePropsDark} />
     }
     return (
       <SplitBoloCream
         slide={splitData}
-        {...baseProps}
+        {...basePropsLight}
         imageSlot={imgCount >= 1 ? "bottom-card" : "none"}
       />
     )
@@ -377,13 +396,13 @@ function EditorialSlideRouter(props: RouterProps) {
   // ===== STYLE: MYPOSTFLOW =====
   if (editorialStyle === "mypostflow") {
     if (isCover) {
-      return <CoverWesleyChurrasco slide={coverData} {...baseProps} />
+      return <CoverWesleyChurrasco slide={coverData} {...basePropsDark} />
     }
     if (isLast) {
       return (
         <SplitMyPostFlowCta
           slide={splitData}
-          {...baseProps}
+          {...basePropsLight}
           imageSlot="bottom-large"
         />
       )
@@ -394,41 +413,41 @@ function EditorialSlideRouter(props: RouterProps) {
         ? "single-bottom"
         : "none"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitWesleyDark slide={splitData} {...baseProps} imageSlot={slot} />
+    return <SplitWesleyDark slide={splitData} {...basePropsDark} imageSlot={slot} />
   }
 
   // ===== STYLE: GRADIENT (dark vibrante + glow) =====
   if (editorialStyle === "gradient") {
     if (isCover) {
-      return <CoverGradientGlow slide={coverData} {...baseProps} />
+      return <CoverGradientGlow slide={coverData} {...basePropsDark} />
     }
     // Imagem SEMPRE embaixo do texto em todo slide de conteúdo — nunca deixa
     // slide vazio (antes alternava e o slide 3 ficava sem imagem).
     const rawSlot: SplitImageSlot = isMidBreak ? "composition-top" : "single-bottom"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitGradientDark slide={splitData} {...baseProps} imageSlot={slot} />
+    return <SplitGradientDark slide={splitData} {...basePropsDark} imageSlot={slot} />
   }
 
   // ===== STYLE: MINIMAL (branco suíço) =====
   if (editorialStyle === "minimal") {
     if (isCover) {
-      return <CoverMinimalClean slide={coverData} {...baseProps} />
+      return <CoverMinimalClean slide={coverData} {...basePropsLight} />
     }
     // Imagem SEMPRE embaixo do texto, em TODO slide de conteúdo (nunca acima
     // da descrição, nunca slide sem foto).
     const slot = resolveImageSlot("single-bottom", imgCount)
-    return <SplitMinimalClean slide={splitData} {...baseProps} imageSlot={slot} />
+    return <SplitMinimalClean slide={splitData} {...basePropsLight} imageSlot={slot} />
   }
 
   // ===== STYLE: SEAMLESS (panorâmico — linha contínua) =====
   if (editorialStyle === "seamless") {
     if (isCover) {
-      return <CoverSeamlessFlow slide={coverData} {...baseProps} />
+      return <CoverSeamlessFlow slide={coverData} {...basePropsDark} />
     }
     // Faixa de imagem em TODO slide de conteúdo — a banda panorâmica embaixo
     // reforça a continuidade e preenche o vazio dos slides sem foto.
     const slot = resolveImageSlot("single-bottom", imgCount)
-    return <SplitSeamlessFlow slide={splitData} {...baseProps} imageSlot={slot} />
+    return <SplitSeamlessFlow slide={splitData} {...basePropsDark} imageSlot={slot} />
   }
 
   // ===== STYLE: AUTO (legacy) =====
@@ -436,7 +455,8 @@ function EditorialSlideRouter(props: RouterProps) {
     <LegacyEditorialSlide
       slide={slide}
       totalSlides={totalSlides}
-      accent={accent}
+      accentOnDark={accentOnDark}
+      accentOnLight={accentOnLight}
       dark={dark}
       light={light}
       fontClass={fontClass}
@@ -464,7 +484,8 @@ function pickLegacyVariant(orderIndex: number, totalSlides: number): LegacyVaria
 function LegacyEditorialSlide({
   slide,
   totalSlides,
-  accent,
+  accentOnDark,
+  accentOnLight,
   dark,
   light,
   fontClass,
@@ -475,7 +496,8 @@ function LegacyEditorialSlide({
 }: {
   slide: PreviewSlide
   totalSlides: number
-  accent: string
+  accentOnDark: string
+  accentOnLight: string
   dark: string
   light: string
   fontClass: string
@@ -496,6 +518,7 @@ function LegacyEditorialSlide({
   // marca fica só no destaque (accent) — usar brandColors[1] como texto deixava
   // o título inteiro colorido quando a 2ª cor da marca não era um preto neutro.
   const splitText = isDarkSplit ? "#FFFFFF" : "#0A0A0F"
+  const splitAccent = isDarkSplit ? accentOnDark : accentOnLight
   const splitTextMuted = isDarkSplit
     ? "rgba(255,255,255,0.85)"
     : "rgba(10,10,15,0.72)"
@@ -548,7 +571,7 @@ function LegacyEditorialSlide({
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
-              color={accent}
+              color={accentOnDark}
             />
           </h1>
           {slide.subtitle && <p className="text-sm text-white/85">{slide.subtitle}</p>}
@@ -595,7 +618,7 @@ function LegacyEditorialSlide({
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
-              color={accent}
+              color={accentOnDark}
             />
           </h1>
           {slide.subtitle && <p className="text-xs text-white/85">{slide.subtitle}</p>}
@@ -652,7 +675,7 @@ function LegacyEditorialSlide({
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
-              color={accent}
+              color={splitAccent}
             />
           </h1>
           {slide.subtitle && (
@@ -763,7 +786,10 @@ function CinematicSlide({
       {slide.cta_badge && (
         <div
           className="absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold z-10"
-          style={{ backgroundColor: accent, color: "#000" }}
+          style={{
+            backgroundColor: accent,
+            color: isLightColor(accent) ? "#000000" : "#FFFFFF",
+          }}
         >
           {slide.cta_badge}
         </div>
