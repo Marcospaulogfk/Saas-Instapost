@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Globe, Instagram, Pencil, ArrowRight, Loader2 } from "lucide-react"
+import { Globe, Pencil, ArrowRight, Loader2 } from "lucide-react"
 import { OnboardingHeader } from "@/components/onboarding-v2/header"
 import { useOnboardingState } from "@/lib/onboarding/store"
 
@@ -12,10 +12,6 @@ export default function OnboardingEntryPage() {
   const { state, update } = useOnboardingState()
   const [websiteOpen, setWebsiteOpen] = useState(false)
   const [websiteUrl, setWebsiteUrl] = useState(state.sourceUrl ?? "")
-  const [instagramHandle, setInstagramHandle] = useState(
-    state.instagramHandle ?? "",
-  )
-  const [instagramOpen, setInstagramOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const handleWebsite = async () => {
@@ -23,18 +19,6 @@ export default function OnboardingEntryPage() {
     if (!url) return
     setSubmitting(true)
     update({ entryMethod: "website", sourceUrl: url, instagramHandle: null })
-    router.push("/onboarding/analyze")
-  }
-
-  const handleInstagram = () => {
-    const handle = instagramHandle.trim().replace(/^@/, "")
-    if (!handle) return
-    setSubmitting(true)
-    update({
-      entryMethod: "instagram",
-      instagramHandle: handle,
-      sourceUrl: null,
-    })
     router.push("/onboarding/analyze")
   }
 
@@ -97,10 +81,7 @@ export default function OnboardingEntryPage() {
             <div className="onb-card-selectable" data-selected={websiteOpen}>
               <button
                 type="button"
-                onClick={() => {
-                  setWebsiteOpen((v) => !v)
-                  setInstagramOpen(false)
-                }}
+                onClick={() => setWebsiteOpen((v) => !v)}
                 className="flex w-full items-center gap-4 text-left"
               >
                 <div
@@ -155,85 +136,6 @@ export default function OnboardingEntryPage() {
                     className="onb-btn-primary self-end"
                     disabled={!websiteUrl.trim() || submitting}
                     onClick={handleWebsite}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        Analisando...
-                      </>
-                    ) : (
-                      <>
-                        Analisar
-                        <ArrowRight size={14} />
-                      </>
-                    )}
-                  </button>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Opção 2: Instagram */}
-            <div className="onb-card-selectable" data-selected={instagramOpen}>
-              <button
-                type="button"
-                onClick={() => {
-                  setInstagramOpen((v) => !v)
-                  setWebsiteOpen(false)
-                }}
-                className="flex w-full items-center gap-4 text-left"
-              >
-                <div
-                  className="flex items-center justify-center rounded-xl"
-                  style={{
-                    width: 44,
-                    height: 44,
-                    background:
-                      "linear-gradient(135deg, #f9ce34 0%, #ee2a7b 50%, #6228d7 100%)",
-                  }}
-                >
-                  <Instagram size={20} color="white" />
-                </div>
-                <div className="flex-1">
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "var(--onb-text-primary)",
-                    }}
-                  >
-                    Tenho Instagram
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--onb-text-secondary)",
-                      marginTop: 2,
-                    }}
-                  >
-                    Conecte sua conta Business para importar dados
-                  </div>
-                </div>
-              </button>
-              {instagramOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  transition={{ duration: 0.2 }}
-                  className="mt-4 flex flex-col gap-3 overflow-hidden"
-                >
-                  <input
-                    type="text"
-                    className="onb-input"
-                    placeholder="@suamarca"
-                    value={instagramHandle}
-                    onChange={(e) => setInstagramHandle(e.target.value)}
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    className="onb-btn-primary self-end"
-                    disabled={!instagramHandle.trim() || submitting}
-                    onClick={handleInstagram}
                   >
                     {submitting ? (
                       <>
