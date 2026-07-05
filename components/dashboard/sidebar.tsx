@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   House,
-  SquarePen,
   Library,
   Store,
   LayoutTemplate,
@@ -55,7 +54,6 @@ interface DashboardSidebarProps {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: House },
-  { name: "Criar", href: "/dashboard/criar", icon: SquarePen, badge: "Novo" },
   { name: "Inspirações", href: "/dashboard/inspiracoes", icon: Lightbulb },
   { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
   { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
