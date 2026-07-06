@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import { getUserPlan } from "@/lib/generation/image"
+import { debitTokens, tokenCostForImage, TOKEN_COST } from "@/lib/tokens"
 import { getTemplate } from "@/lib/single-posts/catalog"
 import { generatePostContent, pickBestTemplate } from "@/lib/single-posts/generate"
 import type { PostBrand, PostCategory } from "@/lib/single-posts/types"
@@ -48,12 +51,34 @@ export async function POST(req: Request) {
     )
   }
 
+  // Auth OPCIONAL: deriva o plano se houver sessão, senão "trial" (Flux).
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const plan = await getUserPlan(supabase)
+
   try {
     const result = await generatePostContent(
       body.brand,
       template,
       body.rawContent.trim(),
+      plan,
     )
+
+    // Débito best-effort por qualidade real (só se logado). Nunca bloqueia.
+    if (user) {
+      try {
+        const imageTokens =
+          result.image_counts.normal * tokenCostForImage("normal") +
+          result.image_counts.pro * tokenCostForImage("pro")
+        const tokensToDebit = TOKEN_COST.textOnly + imageTokens
+        await debitTokens(supabase, user.id, tokensToDebit)
+      } catch {
+        // ignorado — tokens nunca quebram geração
+      }
+    }
+
     return NextResponse.json({
       content: result.content,
       photo_url: result.photo_url,

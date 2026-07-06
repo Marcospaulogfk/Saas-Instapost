@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { generateImage } from "@/lib/generation/fal"
+import { generateBrandImage } from "@/lib/generation/image"
+import type { Plan } from "@/lib/tokens"
 import { searchWikimedia } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import type { PostBrand } from "./types"
@@ -172,25 +173,27 @@ interface SkeletonResponse {
 async function resolvePhotoUrl(
   entity: string | null | undefined,
   photoPrompt: string | null | undefined,
-): Promise<{ url: string | null; costUsd: number }> {
+  plan: Plan = "trial",
+): Promise<{ url: string | null; costUsd: number; quality: "normal" | "pro" | null }> {
   const e = (entity ?? "").trim()
   if (e) {
     try {
       const real = await searchWikimedia(e)
-      if (real?.url) return { url: real.url, costUsd: 0 }
+      // Foto real (Wikimedia) não gera imagem por IA → não custa token.
+      if (real?.url) return { url: real.url, costUsd: 0, quality: null }
     } catch {
       // segue pro fallback de IA
     }
   }
   if (photoPrompt) {
     try {
-      const img = await generateImage(photoPrompt)
-      return { url: img.url, costUsd: img.costUsd }
+      const img = await generateBrandImage(photoPrompt, plan)
+      return { url: img.url, costUsd: img.costUsd, quality: img.quality }
     } catch (err) {
-      console.warn("[free-generate] Flux falhou:", err)
+      console.warn("[free-generate] geração de imagem falhou:", err)
     }
   }
-  return { url: null, costUsd: 0 }
+  return { url: null, costUsd: 0, quality: null }
 }
 
 function getClient(): Anthropic {
@@ -228,6 +231,8 @@ interface GenerateOpts {
   forceSkeletonId?: string | null
   /** IDs de skeletons que NÃO devem ser escolhidos (variação entre regenerações) */
   excludeSkeletonIds?: string[]
+  /** Plano do user → decide Nano Banana Pro (Pro/Studio) vs Flux. Default trial. */
+  plan?: Plan
 }
 
 export interface FreeGenerateResult {
@@ -237,6 +242,11 @@ export interface FreeGenerateResult {
   /** Legenda do post pro Instagram (gancho + valor + CTA + hashtags). */
   caption: string
   photo_url: string | null
+  /**
+   * Qualidade da imagem IA gerada (pro=Nano Banana Pro, normal=Flux) ou null
+   * se a foto veio da Wikimedia / não houve imagem. Pro débito de tokens.
+   */
+  image_quality: "normal" | "pro" | null
   metrics: GenerateMetrics & { totalCostUsd: number }
 }
 
@@ -275,6 +285,8 @@ interface ApprovedOpts {
   photoPrompt?: string | null
   /** Entidade real preservada da etapa de texto — vira foto real (Wikipedia). */
   photoEntity?: string | null
+  /** Plano do user → decide Nano Banana Pro (Pro/Studio) vs Flux. Default trial. */
+  plan?: Plan
 }
 
 /**
@@ -345,6 +357,7 @@ export async function generateFreeSpec({
   briefing,
   forceSkeletonId,
   excludeSkeletonIds,
+  plan = "trial",
 }: GenerateOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
@@ -360,8 +373,8 @@ export async function generateFreeSpec({
     throw new Error(`Skeleton "${parsed.skeleton_id}" não existe`)
   }
 
-  // Foto real (Wikipedia) se a IA marcou uma entidade real; senão IA (Flux).
-  const resolved = await resolvePhotoUrl(parsed.image_entity, parsed.photo_prompt)
+  // Foto real (Wikipedia) se a IA marcou entidade real; senão IA (Pro/Flux).
+  const resolved = await resolvePhotoUrl(parsed.image_entity, parsed.photo_prompt, plan)
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 
@@ -379,6 +392,7 @@ export async function generateFreeSpec({
     skeleton_id: parsed.skeleton_id,
     caption: parsed.caption ?? "",
     photo_url: photoUrl,
+    image_quality: resolved.quality,
     metrics: {
       ms,
       inputTokens: usage.input_tokens,
@@ -445,14 +459,15 @@ export async function buildApprovedSpec({
   content,
   photoPrompt,
   photoEntity,
+  plan = "trial",
 }: ApprovedOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
   const skeleton = getSkeleton(skeletonId)
   if (!skeleton) throw new Error(`Skeleton "${skeletonId}" não existe`)
 
-  // Foto real (Wikipedia) se há entidade real; senão IA (Flux).
-  const resolved = await resolvePhotoUrl(photoEntity, photoPrompt)
+  // Foto real (Wikipedia) se há entidade real; senão IA (Pro/Flux).
+  const resolved = await resolvePhotoUrl(photoEntity, photoPrompt, plan)
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 
@@ -465,6 +480,7 @@ export async function buildApprovedSpec({
     skeleton_id: skeletonId,
     caption: "",
     photo_url: photoUrl,
+    image_quality: resolved.quality,
     metrics: {
       ms,
       inputTokens: 0,

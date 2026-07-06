@@ -83,6 +83,30 @@ export function resolveImageQuality(
   return "normal"
 }
 
+/**
+ * Deriva o plano a partir do perfil (`public.users`).
+ *
+ * NÃO existe coluna de plano explícita no schema — o plano é inferido de:
+ *  - `subscription_status`: só "active" é pago; qualquer outro (trial,
+ *    past_due, canceled, incomplete, null) cai para "trial".
+ *  - `plan_credits_monthly`: o grant mensal de tokens mapeia o tier:
+ *    3000+ → studio · 1000+ → pro · 300+ → starter · resto → trial.
+ *
+ * Seguro por padrão: qualquer estado inesperado retorna "trial" (Flux normal).
+ */
+export function planFromProfile(p: {
+  subscription_status?: string | null
+  plan_credits_monthly?: number | null
+}): Plan {
+  const status = p.subscription_status ?? "trial"
+  if (status !== "active") return "trial" // só ativo é pago
+  const m = p.plan_credits_monthly ?? 0
+  if (m >= 3000) return "studio"
+  if (m >= 1000) return "pro"
+  if (m >= 300) return "starter"
+  return "trial"
+}
+
 // ---------------------------------------------------------------------
 // Mapa plano → tokens usado pelo webhook da Cakto (§8.6 do doc) para
 // creditar o grant mensal quando uma compra/renovação é aprovada.

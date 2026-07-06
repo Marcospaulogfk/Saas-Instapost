@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { generateContent, type ClaudeSlide } from "@/lib/generation/claude"
-import { generateImage } from "@/lib/generation/fal"
+import { generateBrandImage, getUserPlan } from "@/lib/generation/image"
 import { searchUnsplash } from "@/lib/generation/unsplash"
-import { debitTokens, TOKEN_COST } from "@/lib/tokens"
+import { debitTokens, tokenCostForImage, TOKEN_COST, type Plan } from "@/lib/tokens"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -26,6 +26,8 @@ interface SlideImage {
   prompt: string | null
   ms: number
   costUsd: number
+  /** Qualidade EFETIVA quando source="ai" (pro=Nano Banana Pro, normal=Flux). */
+  quality: "normal" | "pro"
   error: string | null
 }
 
@@ -45,12 +47,13 @@ function resolveSource(
 async function fetchImage(
   slide: ClaudeSlide,
   source: "ai" | "unsplash",
+  plan: Plan,
 ): Promise<SlideImage> {
   try {
     if (source === "unsplash") {
       const query = slide.unsplash_query || slide.image_keywords.join(" ")
       if (!process.env.UNSPLASH_ACCESS_KEY) {
-        const r = await generateImage(slide.image_prompt)
+        const r = await generateBrandImage(slide.image_prompt, plan)
         return {
           url: r.url,
           source: "ai",
@@ -59,6 +62,7 @@ async function fetchImage(
           prompt: slide.image_prompt,
           ms: r.ms,
           costUsd: r.costUsd,
+          quality: r.quality,
           error: "Unsplash key ausente — fallback IA",
         }
       }
@@ -71,10 +75,11 @@ async function fetchImage(
         prompt: null,
         ms: r.ms,
         costUsd: 0,
+        quality: "normal",
         error: null,
       }
     }
-    const r = await generateImage(slide.image_prompt)
+    const r = await generateBrandImage(slide.image_prompt, plan)
     return {
       url: r.url,
       source: "ai",
@@ -83,6 +88,7 @@ async function fetchImage(
       prompt: slide.image_prompt,
       ms: r.ms,
       costUsd: r.costUsd,
+      quality: r.quality,
       error: null,
     }
   } catch (err) {
@@ -95,6 +101,7 @@ async function fetchImage(
       prompt: source === "ai" ? slide.image_prompt : null,
       ms: 0,
       costUsd: 0,
+      quality: "normal",
       error: msg,
     }
   }
@@ -125,6 +132,9 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Nao autenticado" }, { status: 401 })
   }
+
+  // Plano do user → decide Nano Banana Pro (Pro/Studio) vs Flux (resto).
+  const plan = await getUserPlan(supabase)
 
   const { data: brand, error: brandErr } = await supabase
     .from("brands")
@@ -174,7 +184,7 @@ export async function POST(req: Request) {
 
   const enriched = await Promise.all(
     slidesWithSource.map(async ({ slide, source }) => {
-      const image = await fetchImage(slide, source)
+      const image = await fetchImage(slide, source, plan)
       console.log(
         `[projects/generate] slide ${slide.order_index} ${image.source ?? "FAIL"}: ${image.ms.toFixed(0)}ms`,
       )
@@ -245,17 +255,17 @@ export async function POST(req: Request) {
 
   // -------------------------------------------------------------------
   // Débito de tokens (BEST-EFFORT, não bloqueia geração).
-  // Custo = texto do carrossel (1) + imagens NORMAIS geradas por IA (5 cada).
-  // Imagens vindas do Unsplash não custam token. Nano Banana Pro (20) ainda
-  // não é usado neste endpoint (só Flux normal) — quando for, usar
-  // resolveImageQuality(plan, requested) + tokenCostForImage(quality).
-  // Qualquer falha aqui é engolida: geração legada nunca quebra por causa
-  // do sistema de tokens.
+  // Custo = texto do carrossel (1) + cada imagem gerada por IA conforme a
+  // qualidade REAL: Nano Banana Pro (20) em Pro/Studio, Flux normal (5) no
+  // resto. Imagens vindas do Unsplash não custam token.
+  // Qualquer falha aqui é engolida: geração nunca quebra por causa do
+  // sistema de tokens.
   // -------------------------------------------------------------------
   try {
-    const aiImages = enriched.filter(({ image }) => image.source === "ai").length
-    const tokensToDebit =
-      TOKEN_COST.textOnly + aiImages * TOKEN_COST.imageNormal
+    const imageTokens = enriched
+      .filter(({ image }) => image.source === "ai")
+      .reduce((sum, { image }) => sum + tokenCostForImage(image.quality), 0)
+    const tokensToDebit = TOKEN_COST.textOnly + imageTokens
     const debit = await debitTokens(supabase, user.id, tokensToDebit)
     if (!debit.ok) {
       console.warn(

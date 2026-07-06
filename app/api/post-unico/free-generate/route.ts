@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
+import { getUserPlan } from "@/lib/generation/image"
+import { debitTokens, tokenCostForImage } from "@/lib/tokens"
 import {
   generateFreeSpec,
   generateFreeText,
@@ -9,6 +12,24 @@ import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
+
+/**
+ * Débito best-effort de UMA imagem IA conforme a qualidade real.
+ * Só debita se houver user logado e a imagem tiver sido gerada por IA
+ * (quality != null). Nunca lança — tokens não quebram geração.
+ */
+async function debitImageBestEffort(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | undefined,
+  quality: "normal" | "pro" | null,
+): Promise<void> {
+  if (!userId || !quality) return
+  try {
+    await debitTokens(supabase, userId, tokenCostForImage(quality))
+  } catch {
+    // ignorado — tokens nunca quebram geração
+  }
+}
 
 interface RequestBody {
   brand: PostBrand
@@ -41,6 +62,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "brand obrigatória" }, { status: 400 })
   }
 
+  // Auth OPCIONAL: deriva o plano se houver sessão, senão "trial" (Flux).
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const plan = await getUserPlan(supabase)
+
   // ---- Modo: conteúdo já aprovado → só monta design + foto (sem regenerar texto)
   if (body.approved_content) {
     if (!body.skeleton_id) {
@@ -56,7 +84,9 @@ export async function POST(req: Request) {
         content: body.approved_content,
         photoPrompt: body.photo_prompt ?? null,
         photoEntity: body.image_entity ?? null,
+        plan,
       })
+      await debitImageBestEffort(supabase, user?.id, result.image_quality)
       return NextResponse.json({
         spec: result.spec,
         rationale: result.rationale,
@@ -112,7 +142,9 @@ export async function POST(req: Request) {
       briefing: body.briefing.trim(),
       forceSkeletonId: body.skeleton_id ?? null,
       excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
+      plan,
     })
+    await debitImageBestEffort(supabase, user?.id, result.image_quality)
     return NextResponse.json({
       spec: result.spec,
       rationale: result.rationale,

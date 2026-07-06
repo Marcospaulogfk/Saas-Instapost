@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { generateImage } from "@/lib/generation/fal"
+import { generateBrandImage } from "@/lib/generation/image"
+import type { Plan } from "@/lib/tokens"
 import { POST_TEMPLATES, getTemplate } from "./catalog"
 import type {
   PostBrand,
@@ -221,10 +222,13 @@ export async function generatePostContent(
   brand: PostBrand,
   template: PostTemplateMeta,
   rawContent: string,
+  plan: Plan = "trial",
 ): Promise<{
   content: PostContent
   metrics: GenerateMetrics & { totalCostUsd: number }
   photo_url: string | null
+  /** Qtd de imagens IA geradas por qualidade — pro débito de tokens. */
+  image_counts: { normal: number; pro: number }
 }> {
   const client = getClient()
   const t0 = performance.now()
@@ -251,6 +255,7 @@ export async function generatePostContent(
   // Slots distintos (image_url + image_2_url + ...) recebem imagens DIFERENTES — mesma vibe, prompt+seed varia.
   let photoUrl: string | null = null
   let imageCost = 0
+  const imageCounts = { normal: 0, pro: 0 }
   const imageSlots = detectImageSlots(template)
   // Slots considerados "principais" (recebem cópia da 1ª imagem) vs slots "extras" (precisam variação)
   const PRIMARY_SLOTS = new Set([
@@ -263,9 +268,10 @@ export async function generatePostContent(
   const extraSlots = imageSlots.filter((s) => !PRIMARY_SLOTS.has(s as string))
   if (template.needs_photo && photoPrompt && imageSlots.length > 0) {
     try {
-      const img = await generateImage(photoPrompt)
+      const img = await generateBrandImage(photoPrompt, plan)
       photoUrl = img.url
       imageCost += img.costUsd
+      imageCounts[img.quality]++
       for (const slot of primarySlots) {
         ;(content as Record<string, unknown>)[slot] = photoUrl
       }
@@ -273,17 +279,18 @@ export async function generatePostContent(
       for (let i = 0; i < extraSlots.length; i++) {
         try {
           const variantPrompt = `${photoPrompt}, alternate angle, different composition`
-          const variant = await generateImage(variantPrompt)
+          const variant = await generateBrandImage(variantPrompt, plan)
           imageCost += variant.costUsd
+          imageCounts[variant.quality]++
           ;(content as Record<string, unknown>)[extraSlots[i]] = variant.url
         } catch (err) {
-          console.warn("[generate] Flux variante falhou:", err)
+          console.warn("[generate] imagem variante falhou:", err)
           // fallback: usa a 1ª imagem mesmo
           ;(content as Record<string, unknown>)[extraSlots[i]] = photoUrl
         }
       }
     } catch (err) {
-      console.warn("[generate] Flux falhou:", err)
+      console.warn("[generate] geração de imagem falhou:", err)
     }
   }
 
@@ -291,6 +298,7 @@ export async function generatePostContent(
   return {
     content: content as PostContent,
     photo_url: photoUrl,
+    image_counts: imageCounts,
     metrics: {
       ms,
       inputTokens: usage.input_tokens,

@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server"
-import { generateImage } from "@/lib/generation/fal"
+import { createClient } from "@/lib/supabase/server"
+import { generateBrandImage, getUserPlan } from "@/lib/generation/image"
 import { searchUnsplash } from "@/lib/generation/unsplash"
 import { searchWikimedia } from "@/lib/generation/wikimedia"
+import { debitTokens, tokenCostForImage } from "@/lib/tokens"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
 
-// TODO(tokens): débito best-effort de tokens. Quando plugar auth aqui:
-//   import { createClient } from "@/lib/supabase/server"
-//   import { debitTokens, tokenCostForImage, resolveImageQuality } from "@/lib/tokens"
-//   const supabase = await createClient()
-//   const { data: { user } } = await supabase.auth.getUser()
-//   // 1) ler plano do perfil (subscription_status / plano) do user
-//   // 2) quality = resolveImageQuality(plano, requestedQuality)  ← GATE Nano Banana Pro
-//   // 3) gerar imagem com essa quality
-//   // 4) após sucesso: try { await debitTokens(supabase, user.id, tokenCostForImage(quality)) } catch {}
-//   //    (NUNCA bloquear geração se o débito falhar)
+// Geração "ai" respeita o plano: Pro/Studio → Nano Banana Pro (com fallback
+// Flux); trial/starter → Flux normal. Endpoint continua PÚBLICO: sem sessão,
+// o plano vira "trial" (Flux) e nada quebra.
 
 interface RequestBody {
   mode: "ai" | "unsplash" | "wikimedia"
@@ -48,7 +43,25 @@ export async function POST(req: Request) {
           { status: 400 },
         )
       }
-      const result = await generateImage(prompt)
+      // Auth OPCIONAL (endpoint público): deriva o plano se houver sessão,
+      // senão "trial" (Flux). Nunca bloqueia a geração.
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      const plan = await getUserPlan(supabase)
+
+      const result = await generateBrandImage(prompt, plan)
+
+      // Débito best-effort (só se logado). Nunca bloqueia a geração.
+      if (user) {
+        try {
+          await debitTokens(supabase, user.id, tokenCostForImage(result.quality))
+        } catch {
+          // ignorado — tokens nunca quebram geração
+        }
+      }
+
       return NextResponse.json({
         url: result.url,
         source: "ai",
