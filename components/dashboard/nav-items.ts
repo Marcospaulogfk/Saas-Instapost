@@ -2,7 +2,6 @@ import {
   House,
   Library,
   Store,
-  LayoutTemplate,
   Settings,
   Lightbulb,
   CalendarDays,
@@ -24,6 +23,5 @@ export const NAV_ITEMS: NavItem[] = [
   { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
   { name: "Calendário", href: "/dashboard/calendario", icon: CalendarDays },
   { name: "Marcas", href: "/dashboard/marcas", icon: Store },
-  { name: "Templates", href: "/dashboard/templates", icon: LayoutTemplate },
   { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
