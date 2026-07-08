@@ -143,7 +143,7 @@ export function SectionTag({
 }) {
   return (
     <h2
-      className={`text-[1.5rem] uppercase tracking-tight ${fontClass}`}
+      className={`text-[1.5rem] uppercase tracking-tight line-clamp-4 ${fontClass}`}
       style={{ color: textColor, fontWeight: 800, lineHeight: 1.05 }}
     >
       {prefix && <span style={{ color: prefixColor }}>{prefix} </span>}

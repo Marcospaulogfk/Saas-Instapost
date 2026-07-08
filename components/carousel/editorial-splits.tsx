@@ -58,8 +58,19 @@ interface SplitProps {
 }
 
 // ============================================================================
-// Sub-componentes de imagem reutilizáveis
+// REGRA GLOBAL — "template como água":
+//   TEXTO é SÓLIDO  → zona flex-shrink-0; título/corpo com line-clamp (corte
+//                     sempre em limite de LINHA, nunca no meio em pixel).
+//   IMAGEM é ÁGUA   → zona flex-1 min-h-0 SEM aspect-ratio fixo; a foto
+//                     preenche exatamente o espaço que SOBRA (object-cover),
+//                     com min-height de segurança. Nunca invade o texto.
+// O padrão de preenchimento (container dimensionado pelo flex + <img>
+// absoluta inset-0) é o mesmo das capas — exporta correto no html-to-image
+// (altura em % quebrava; container flex + absolute não).
 // ============================================================================
+
+/** Altura mínima da zona de imagem fluida — a foto nunca vira um fiapo. */
+const IMG_MIN = "min-h-[96px]"
 
 function SingleImageBox({
   imageUrl,
@@ -67,13 +78,37 @@ function SingleImageBox({
   className = "",
   aspect = "16/9",
   rounded = "rounded-2xl",
+  fill = false,
 }: {
   imageUrl: string | null | undefined
   error: string | null | undefined
   className?: string
   aspect?: string
   rounded?: string
+  /** true = preenche o container pai (zona fluida), sem aspect fixo. */
+  fill?: boolean
 }) {
+  if (fill) {
+    return (
+      <div
+        className={`relative overflow-hidden ${rounded} h-full w-full ${className}`}
+        style={{ boxShadow: "0 6px 18px rgba(0,0,0,0.18)" }}
+      >
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-zinc-800/30 flex items-center justify-center text-[10px] opacity-60 text-center px-2">
+            {error || "sem imagem"}
+          </div>
+        )}
+      </div>
+    )
+  }
   return (
     <div
       className={`overflow-hidden ${rounded} ${className}`}
@@ -91,9 +126,15 @@ function SingleImageBox({
   )
 }
 
-function ComparisonImages({ images }: { images: SplitSlideData["images"] }) {
+function ComparisonImages({
+  images,
+  fill = false,
+}: {
+  images: SplitSlideData["images"]
+  fill?: boolean
+}) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={`grid grid-cols-2 gap-3 ${fill ? "h-full" : ""}`}>
       {images.slice(0, 2).map((img, i) => (
         <SingleImageBox
           key={i}
@@ -101,41 +142,56 @@ function ComparisonImages({ images }: { images: SplitSlideData["images"] }) {
           error={img.error}
           aspect="3/4"
           rounded="rounded-xl"
+          fill={fill}
         />
       ))}
     </div>
   )
 }
 
-function CompositionImages({ images }: { images: SplitSlideData["images"] }) {
+function CompositionImages({
+  images,
+  fill = false,
+}: {
+  images: SplitSlideData["images"]
+  fill?: boolean
+}) {
   return (
-    <div className="flex gap-2">
-      <div className="w-2/5">
+    <div className={`flex gap-2 ${fill ? "h-full" : ""}`}>
+      <div className={fill ? "w-2/5 h-full" : "w-2/5"}>
         <SingleImageBox
           imageUrl={images[0]?.url}
           error={images[0]?.error}
           aspect="4/3"
           rounded="rounded-lg"
+          fill={fill}
         />
       </div>
-      <div className="w-3/5">
+      <div className={fill ? "w-3/5 h-full" : "w-3/5"}>
         <SingleImageBox
           imageUrl={images[1]?.url}
           error={images[1]?.error}
           aspect="4/3"
           rounded="rounded-lg"
+          fill={fill}
         />
       </div>
     </div>
   )
 }
 
-function BottomCardGrid({ images }: { images: SplitSlideData["images"] }) {
+function BottomCardGrid({
+  images,
+  fill = false,
+}: {
+  images: SplitSlideData["images"]
+  fill?: boolean
+}) {
   const real = images.filter((img) => img.url).slice(0, 3)
   const cols = Math.max(1, real.length)
   return (
     <div
-      className="grid gap-3"
+      className={`grid gap-3 ${fill ? "h-full" : ""}`}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {real.map((img, i) => (
@@ -145,10 +201,18 @@ function BottomCardGrid({ images }: { images: SplitSlideData["images"] }) {
           error={img.error}
           aspect="3/4"
           rounded="rounded-xl"
+          fill={fill}
         />
       ))}
     </div>
   )
+}
+
+/** Título menor quando o texto é longo — o layout se adapta, não o contrário. */
+function fitTitle(title: string, base: string, mid: string, small: string) {
+  if (title.length > 88) return small
+  if (title.length > 56) return mid
+  return base
 }
 
 // ============================================================================
@@ -162,26 +226,28 @@ export function SplitWesleyDark({
   imageSlot = "none",
   titleSize = "large",
 }: SplitProps) {
-  const titleSizeClass =
+  const base =
     titleSize === "massive"
       ? "text-[2.8rem]"
       : titleSize === "medium"
         ? "text-[2rem]"
         : "text-[2.5rem]"
+  const titleSizeClass = fitTitle(slide.title, base, "text-[2rem]", "text-[1.6rem]")
   const titleWeight = titleSize === "massive" ? 900 : 800
+  const hasBottomImage =
+    imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
 
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black p-6 flex flex-col">
-      {/* Composition top — imagem antes do header */}
+      {/* Composition top — zona de imagem FLUIDA acima do texto */}
       {imageSlot === "composition-top" && (
-        <div className="mb-6 flex-shrink-0">
-          <CompositionImages images={slide.images} />
+        <div className={`flex-1 ${IMG_MIN} min-h-0 mb-5`}>
+          <CompositionImages images={slide.images} fill />
         </div>
       )}
 
-      {/* ZONA DE TEXTO — flex-1, recorta se longo (nunca invade a imagem) */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
-        {/* Avatar */}
+      {/* ZONA DE TEXTO — SÓLIDA (nunca cortada em pixel; clamps por linha) */}
+      <div className={hasBottomImage || imageSlot === "composition-top" ? "flex-shrink-0" : "flex-1 min-h-0"}>
         <div className="mb-3">
           <AvatarPill
             avatar={slide.handle_avatar}
@@ -190,9 +256,8 @@ export function SplitWesleyDark({
           />
         </div>
 
-        {/* Título */}
         <h2
-          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
+          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white line-clamp-4 ${fontClass}`}
           style={{ fontWeight: titleWeight }}
         >
           <HighlightedText
@@ -202,33 +267,27 @@ export function SplitWesleyDark({
           />
         </h2>
 
-        {/* Body */}
         {slide.body && (
-          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-6">
+          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-4">
             {parseBoldInline(slide.body)}
           </p>
         )}
-
-        <div
-          className="pointer-events-none absolute bottom-0 inset-x-0 h-8"
-          style={{ backgroundImage: "linear-gradient(180deg, transparent, #000)" }}
-        />
       </div>
 
-      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto */}
+      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, sempre ABAIXO do texto */}
       {imageSlot === "single-bottom" && (
-        <div className="flex-shrink-0 pt-3">
+        <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
           <SingleImageBox
             imageUrl={slide.images[0]?.url}
             error={slide.images[0]?.error}
-            aspect="16/9"
             rounded="rounded-2xl"
+            fill
           />
         </div>
       )}
       {imageSlot === "comparison-bottom" && (
-        <div className="flex-shrink-0 pt-3">
-          <ComparisonImages images={slide.images} />
+        <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+          <ComparisonImages images={slide.images} fill />
         </div>
       )}
 
@@ -250,12 +309,14 @@ export function SplitBrandsdecodedLight({
   imageSlot = "single-bottom",
   titleSize = "large",
 }: SplitProps) {
-  const titleSizeClass =
+  const base =
     titleSize === "massive"
       ? "text-[3rem]"
       : titleSize === "medium"
         ? "text-[2rem]"
         : "text-[2.5rem]"
+  const titleSizeClass = fitTitle(slide.title, base, "text-[2rem]", "text-[1.6rem]")
+  const bodyParts = (slide.body || "").split("\n\n")
 
   return (
     <div
@@ -269,9 +330,10 @@ export function SplitBrandsdecodedLight({
         textColor="rgba(0,0,0,0.5)"
       />
 
-      <div className="flex-1 px-5 pt-3 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 px-5 pt-3 pb-2 flex flex-col min-h-0">
+        {/* TÍTULO — sólido */}
         <h2
-          className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
+          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.92 }}
         >
           <HighlightedText
@@ -281,71 +343,93 @@ export function SplitBrandsdecodedLight({
           />
         </h2>
 
-        {slide.body && imageSlot !== "single-middle" && (
-          <p className="mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-4">
-            {parseBoldInline(slide.body)}
-          </p>
+        {imageSlot === "single-bottom" && (
+          <>
+            {slide.body && (
+              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-4">
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+            {slide.images[0] && (
+              <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+                <SingleImageBox
+                  imageUrl={slide.images[0].url}
+                  error={slide.images[0].error}
+                  rounded="rounded-2xl"
+                  fill
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Slot de imagem */}
-        {imageSlot === "single-bottom" && slide.images[0] && (
-          <div className="mt-4">
-            <SingleImageBox
-              imageUrl={slide.images[0].url}
-              error={slide.images[0].error}
-              aspect="4/3"
-              rounded="rounded-2xl"
-            />
-          </div>
-        )}
-        {imageSlot === "single-top" && slide.images[0] && (
+        {imageSlot === "single-top" && (
           <>
-            <div className="mt-4">
-              <SingleImageBox
-                imageUrl={slide.images[0].url}
-                error={slide.images[0].error}
-                aspect="16/10"
-                rounded="rounded-2xl"
-              />
-            </div>
+            {slide.images[0] && (
+              <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+                <SingleImageBox
+                  imageUrl={slide.images[0].url}
+                  error={slide.images[0].error}
+                  rounded="rounded-2xl"
+                  fill
+                />
+              </div>
+            )}
             {slide.body && (
-              <p className="mt-3 text-sm text-black/75 leading-[1.5] line-clamp-3">
+              <p className="flex-shrink-0 mt-3 text-sm text-black/75 leading-[1.5] line-clamp-3">
                 {parseBoldInline(slide.body)}
               </p>
             )}
           </>
         )}
-        {imageSlot === "single-middle" && slide.body && (
+
+        {imageSlot === "single-middle" && (
           <>
-            <p className="mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
-              {parseBoldInline(slide.body.split("\n\n")[0] || slide.body)}
-            </p>
+            {bodyParts[0] && (
+              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
+                {parseBoldInline(bodyParts[0])}
+              </p>
+            )}
             {slide.images[0] && (
-              <div className="mt-3">
+              <div className={`flex-1 ${IMG_MIN} min-h-0 mt-3`}>
                 <SingleImageBox
                   imageUrl={slide.images[0].url}
                   error={slide.images[0].error}
-                  aspect="16/9"
                   rounded="rounded-xl"
+                  fill
                 />
               </div>
             )}
-            {slide.body.split("\n\n")[1] && (
-              <p className="mt-3 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
-                {parseBoldInline(slide.body.split("\n\n")[1])}
+            {bodyParts[1] && (
+              <p className="flex-shrink-0 mt-3 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
+                {parseBoldInline(bodyParts[1])}
               </p>
             )}
           </>
         )}
+
         {imageSlot === "bottom-card" && (
-          <div className="mt-4">
-            <BottomCardGrid images={slide.images} />
+          <>
+            {slide.body && (
+              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-4">
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+            <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+              <BottomCardGrid images={slide.images} fill />
+            </div>
             {slide.callout && (
-              <div className="mt-4 bg-black text-white px-4 py-2.5 rounded-md text-sm">
+              <div className="flex-shrink-0 mt-4 bg-black text-white px-4 py-2.5 rounded-md text-sm">
                 {slide.callout}
               </div>
             )}
-          </div>
+          </>
+        )}
+
+        {imageSlot === "none" && slide.body && (
+          <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-6">
+            {parseBoldInline(slide.body)}
+          </p>
         )}
       </div>
 
@@ -385,9 +469,10 @@ export function SplitBrandsdecodedDarkSerif({
         textColor="rgba(255,255,255,0.6)"
       />
 
-      <div className="flex-1 px-6 pt-4 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 px-6 pt-4 pb-4 flex flex-col min-h-0">
+        {/* TEXTO — sólido */}
         <h2
-          className="text-[1.7rem] tracking-tight text-white"
+          className="flex-shrink-0 text-[1.7rem] tracking-tight text-white line-clamp-4"
           style={{
             fontFamily: '"Playfair Display", Georgia, serif',
             fontWeight: 700,
@@ -399,27 +484,28 @@ export function SplitBrandsdecodedDarkSerif({
 
         {slide.subtitle && (
           <p
-            className="mt-4 text-base leading-[1.4]"
+            className="flex-shrink-0 mt-4 text-base leading-[1.4] line-clamp-3"
             style={{ color: "#FDE68A", fontWeight: 500 }}
           >
             {slide.subtitle}
           </p>
         )}
 
+        {/* IMAGEM — água */}
         {imageSlot === "single-bottom" && slide.images[0] && (
-          <div className="mt-4 pb-2">
+          <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
-              aspect="16/10"
               rounded="rounded-2xl"
+              fill
             />
           </div>
         )}
 
         {imageSlot === "none" && slide.body && (
           <p
-            className="mt-4 text-sm text-white/85 leading-[1.6]"
+            className="flex-shrink-0 mt-4 text-sm text-white/85 leading-[1.6] line-clamp-6"
             style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
           >
             {parseBoldInline(slide.body)}
@@ -449,40 +535,44 @@ export function SplitBoloCream({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
       style={{ backgroundColor: "#F5F2EC" }}
     >
-      <div className="px-4 pt-4 flex items-center justify-between">
+      <div className="px-4 pt-4 flex items-center justify-between flex-shrink-0">
         <Pill variant="light">{slide.handle || "@brand"}</Pill>
         <Pill variant="light">{slide.category || "Editorial"}</Pill>
       </div>
 
-      <div className="flex-1 px-4 pt-5 flex flex-col min-h-0 overflow-hidden">
-        <SectionTag
-          prefix={slide.section_prefix || "IDEIA"}
-          number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
-          suffix={slide.title}
-          prefixColor={accent}
-          textColor="#0A0A0F"
-          fontClass={fontClass}
-        />
+      <div className="flex-1 px-4 pt-5 pb-2 flex flex-col min-h-0">
+        {/* TEXTO — sólido */}
+        <div className="flex-shrink-0">
+          <SectionTag
+            prefix={slide.section_prefix || "IDEIA"}
+            number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
+            suffix={slide.title}
+            prefixColor={accent}
+            textColor="#0A0A0F"
+            fontClass={fontClass}
+          />
+        </div>
 
         {slide.body && (
-          <p className="mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-6 whitespace-pre-line">
+          <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-5 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
 
+        {/* IMAGEM — água */}
         {imageSlot === "bottom-card" && slide.images[0] && (
-          <div className="mt-4 pb-2">
+          <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
-              aspect="16/10"
               rounded="rounded-3xl"
+              fill
             />
           </div>
         )}
       </div>
 
-      <div className="px-4 pb-4 flex items-center justify-between">
+      <div className="px-4 pb-4 pt-2 flex items-center justify-between flex-shrink-0">
         <Pill variant="light">{slide.category || "Conteúdo"}</Pill>
         <PaginationDots total={totalSlides} active={orderIndex} color="#0A0A0F" />
         <Pill variant="light">{`arrasta →`}</Pill>
@@ -502,13 +592,14 @@ export function SplitMyPostFlowCta({
   fontClass,
   imageSlot = "bottom-large",
 }: SplitProps) {
+  const titleSizeClass = fitTitle(slide.title, "text-[2rem]", "text-[1.7rem]", "text-[1.45rem]")
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col p-6"
       style={{ backgroundColor: "#F5F2EC" }}
     >
       {/* Avatar pill — square icon (não circular) */}
-      <div className="inline-flex items-center gap-2 mb-4">
+      <div className="inline-flex items-center gap-2 mb-4 flex-shrink-0">
         <span
           className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
           style={{ backgroundColor: "#7C3AED", color: "#FFFFFF", fontSize: 11, fontWeight: 700 }}
@@ -525,42 +616,37 @@ export function SplitMyPostFlowCta({
         </span>
       </div>
 
-      {/* ZONA DE TEXTO — flex-1, recorta se longo (nunca invade a imagem) */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha, nunca corte em pixel) */}
+      <div className={imageSlot === "bottom-large" && slide.images[0] ? "flex-shrink-0" : "flex-1 min-h-0"}>
         <h2
-          className={`text-[2rem] uppercase tracking-tight text-black ${fontClass}`}
+          className={`${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
           style={{ fontWeight: 800, lineHeight: 1 }}
         >
           {slide.title}
         </h2>
 
         {slide.body && (
-          <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-6">
+          <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-5">
             {parseBoldInline(slide.body)}
           </p>
         )}
-
-        <div
-          className="pointer-events-none absolute bottom-0 inset-x-0 h-8"
-          style={{ backgroundImage: "linear-gradient(180deg, transparent, #F5F2EC)" }}
-        />
       </div>
 
-      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto */}
+      {/* ZONA DE IMAGEM — ÁGUA */}
       {imageSlot === "bottom-large" && slide.images[0] && (
         <div
-          className="flex-shrink-0 mt-4 rounded-2xl overflow-hidden"
-          style={{ aspectRatio: "16/10", boxShadow: "0 12px 32px rgba(0,0,0,0.15)" }}
+          className={`flex-1 ${IMG_MIN} min-h-0 mt-4 relative rounded-2xl overflow-hidden`}
+          style={{ boxShadow: "0 12px 32px rgba(0,0,0,0.15)" }}
         >
           {slide.images[0].url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={slide.images[0].url}
               alt=""
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-300 flex items-center justify-center text-[10px] opacity-60">
+            <div className="absolute inset-0 bg-zinc-300 flex items-center justify-center text-[10px] opacity-60">
               {slide.images[0].error || "sem imagem"}
             </div>
           )}
@@ -586,6 +672,7 @@ export function SplitGradientDark({
 }: SplitProps) {
   const hasBottomImage =
     imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
+  const titleSizeClass = fitTitle(slide.title, "text-[2.3rem]", "text-[1.9rem]", "text-[1.55rem]")
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
@@ -599,16 +686,21 @@ export function SplitGradientDark({
         }}
       />
 
-      {/* Composition top (imagem no topo — zona própria, flex-shrink-0) */}
+      {/* Composition top — zona de imagem FLUIDA acima do texto */}
       {imageSlot === "composition-top" && (
-        <div className="relative z-10 px-6 pt-6 flex-shrink-0">
-          <CompositionImages images={slide.images} />
+        <div className={`relative z-10 px-6 pt-6 flex-1 ${IMG_MIN} min-h-0`}>
+          <CompositionImages images={slide.images} fill />
         </div>
       )}
 
-      {/* ZONA DE TEXTO — flex-1, recorta se longo. Nunca compartilha espaço com
-          a imagem (que tem zona própria abaixo) → impossível sobrepor. */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-hidden px-6 pt-6">
+      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha; nunca corte em pixel) */}
+      <div
+        className={`relative z-10 px-6 pt-6 ${
+          hasBottomImage || imageSlot === "composition-top"
+            ? "flex-shrink-0"
+            : "flex-1 min-h-0"
+        }`}
+      >
         <div className="mb-5">
           <AvatarPill
             avatar={slide.handle_avatar}
@@ -618,7 +710,7 @@ export function SplitGradientDark({
         </div>
 
         <h2
-          className={`text-[2.3rem] uppercase leading-[1] tracking-tight text-white ${fontClass}`}
+          className={`${titleSizeClass} uppercase leading-[1] tracking-tight text-white line-clamp-4 ${fontClass}`}
           style={{ fontWeight: 800 }}
         >
           <HighlightedGradientText
@@ -629,28 +721,21 @@ export function SplitGradientDark({
         </h2>
 
         {slide.body && (
-          <p className="mt-6 text-base text-white/80 leading-[1.5] line-clamp-6">
+          <p className="mt-5 text-base text-white/80 leading-[1.5] line-clamp-4">
             {parseBoldInline(slide.body)}
           </p>
         )}
-
-        {/* Fade no rodapé da zona de texto — suaviza o corte quando longo */}
-        <div
-          className="pointer-events-none absolute bottom-0 inset-x-0 h-10"
-          style={{ backgroundImage: "linear-gradient(180deg, transparent, #08080D)" }}
-        />
       </div>
 
-      {/* ZONA DE IMAGEM — flex-shrink-0, sempre ABAIXO do texto, com aura */}
+      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, com aura do accent */}
       {hasBottomImage && (
-        <div className="relative z-10 px-6 pt-3 flex-shrink-0">
+        <div className={`relative z-10 px-6 pt-4 flex-1 ${IMG_MIN} min-h-0`}>
           {imageSlot === "comparison-bottom" ? (
-            <ComparisonImages images={slide.images} />
+            <ComparisonImages images={slide.images} fill />
           ) : (
             <div
-              className="rounded-2xl overflow-hidden"
+              className="relative h-full w-full rounded-2xl overflow-hidden"
               style={{
-                aspectRatio: "16/9",
                 boxShadow: `0 0 32px ${accent}47, 0 8px 22px rgba(0,0,0,0.5)`,
                 border: `1px solid ${accent}33`,
               }}
@@ -660,10 +745,10 @@ export function SplitGradientDark({
                 <img
                   src={slide.images[0].url}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
+                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
                   {slide.images[0]?.error || "sem imagem"}
                 </div>
               )}
@@ -706,6 +791,9 @@ export function SplitMinimalClean({
   imageSlot = "none",
 }: SplitProps) {
   const ghost = String(orderIndex + 1).padStart(2, "0")
+  const hasImage =
+    imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
+  const titleSizeClass = fitTitle(slide.title, "text-[2.2rem]", "text-[1.85rem]", "text-[1.5rem]")
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
@@ -720,13 +808,14 @@ export function SplitMinimalClean({
       </div>
 
       {/* Header texto puro */}
-      <div className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
+      <div className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45 flex-shrink-0">
         <span>{slide.handle || "@brand"}</span>
       </div>
 
-      {/* Zona de TEXTO — flex-1 e clipa se ficar muito longo. Separada da
-          imagem pra nunca haver sobreposição (título/descrição vs foto). */}
-      <div className="relative z-10 flex-1 px-6 pt-8 min-h-0 overflow-hidden">
+      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha) */}
+      <div
+        className={`relative z-10 px-6 pt-7 ${hasImage ? "flex-shrink-0" : "flex-1 min-h-0"}`}
+      >
         {/* Kicker accent */}
         <div
           className="text-[11px] uppercase tracking-[0.18em] font-bold mb-3"
@@ -736,7 +825,7 @@ export function SplitMinimalClean({
         </div>
 
         <h2
-          className={`text-[2.2rem] uppercase tracking-tight text-black ${fontClass}`}
+          className={`${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.95 }}
         >
           <HighlightedText
@@ -747,42 +836,32 @@ export function SplitMinimalClean({
         </h2>
 
         {slide.body && (
-          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-5 whitespace-pre-line">
+          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-4 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
-
-        {/* Fade no rodapé da zona de texto — suaviza o corte quando o texto é
-            longo (some quando o texto é curto, pois fica sobre o branco). */}
-        <div
-          className="pointer-events-none absolute bottom-0 inset-x-0 h-10"
-          style={{
-            backgroundImage: "linear-gradient(180deg, transparent, #FFFFFF)",
-          }}
-        />
       </div>
 
-      {/* Zona de IMAGEM — sempre ABAIXO do texto, altura própria (flex-shrink-0),
-          nunca invade a descrição. */}
-      {(imageSlot === "single-bottom" || imageSlot === "comparison-bottom") && (
-        <div className="relative z-10 px-6 pt-3 flex-shrink-0">
+      {/* ZONA DE IMAGEM — ÁGUA: sempre abaixo do texto, preenche o que sobra */}
+      {hasImage && (
+        <div className={`relative z-10 px-6 pt-4 flex-1 ${IMG_MIN} min-h-0`}>
           {imageSlot === "comparison-bottom" ? (
-            <ComparisonImages images={slide.images} />
+            <ComparisonImages images={slide.images} fill />
           ) : (
             slide.images[0] && (
               <div
-                className="rounded-lg overflow-hidden"
-                style={{ aspectRatio: "16/9", border: "1px solid rgba(0,0,0,0.12)" }}
+                className="relative h-full w-full rounded-lg overflow-hidden"
+                style={{ border: "1px solid rgba(0,0,0,0.12)" }}
               >
                 {slide.images[0].url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={slide.images[0].url}
                     alt=""
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
+                  <div className="absolute inset-0 bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
                     {slide.images[0].error || "sem imagem"}
                   </div>
                 )}
@@ -811,6 +890,7 @@ export function SplitMinimalClean({
 // ============================================================================
 // 8. split-seamless-flow — a linha contínua ENTRA pela esquerda e SAI pela
 //    direita (no último slide, termina num nó). Fundo panorâmico desloca.
+//    (Foto é FUNDO full-bleed com overlay — texto nunca colide com imagem.)
 // ============================================================================
 
 export function SplitSeamlessFlow({
@@ -821,6 +901,7 @@ export function SplitSeamlessFlow({
   fontClass,
   imageSlot = "none",
 }: SplitProps) {
+  void imageSlot
   const isLast = orderIndex === totalSlides - 1
   const ghost = String(orderIndex + 1).padStart(2, "0")
   const bgUrl = slide.images[0]?.url ?? null

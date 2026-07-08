@@ -654,11 +654,11 @@ function LegacyEditorialSlide({
         <Pill variant={pillVariant}>{categoryTag}</Pill>
       </div>
 
-      <div
-        className={`px-5 flex flex-col gap-3 min-h-0 ${
-          imageOnTop ? "justify-start" : "justify-end pb-1"
-        }`}
-      >
+      {/* REGRA GLOBAL "template como água": TEXTO é sólido (flex-shrink-0,
+          clamps por LINHA — nunca corte em pixel no meio da frase); a IMAGEM
+          é água (flex-1, preenche exatamente o que sobra, min-height de
+          segurança). Impossível uma invadir a outra. */}
+      <div className="px-5 flex flex-col gap-3 min-h-0">
         {imageOnTop && (
           <LegacySlideImage
             slide={slide}
@@ -667,9 +667,9 @@ function LegacyEditorialSlide({
           />
         )}
 
-        <div className="space-y-1.5 overflow-hidden">
+        <div className="space-y-1.5 flex-shrink-0">
           <h1
-            className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
+            className={`text-[1.7rem] leading-[1.1] tracking-tight line-clamp-4 ${fontClass}`}
             style={{ color: splitText }}
           >
             <HighlightedText
@@ -679,7 +679,10 @@ function LegacyEditorialSlide({
             />
           </h1>
           {slide.subtitle && (
-            <p className="text-xs" style={{ color: splitTextMuted, opacity: splitTextOpacity }}>
+            <p
+              className="text-xs line-clamp-2"
+              style={{ color: splitTextMuted, opacity: splitTextOpacity }}
+            >
               {slide.subtitle}
             </p>
           )}
@@ -722,26 +725,26 @@ function LegacySlideImage({
   placeholderBg: string
   placeholderText: string
 }) {
-  // aspect-ratio FIXO (não height em %) — assim a imagem tem a mesma proporção
-  // no preview e no PNG exportado (o % de altura era resolvido diferente pelo
-  // html-to-image e a imagem crescia, cortando o texto embaixo). object-cover
-  // preenche a caixa mantendo a proporção da foto.
+  // IMAGEM = ÁGUA: flex-1 preenche exatamente o espaço que SOBRA depois do
+  // texto (que é sólido/flex-shrink-0). Container dimensionado pelo flex +
+  // <img> absoluta object-cover — mesmo padrão das capas, exporta correto no
+  // html-to-image (altura em % quebrava; container flex + absolute não).
   if (slide.image.url) {
     return (
-      <div
-        className="w-full rounded-md overflow-hidden flex-shrink-0"
-        style={{ aspectRatio: "16 / 10" }}
-      >
+      <div className="w-full rounded-md overflow-hidden flex-1 min-h-[96px] relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={slide.image.url} alt="" className="w-full h-full object-cover" />
+        <img
+          src={slide.image.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       </div>
     )
   }
   return (
     <div
-      className="w-full rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-shrink-0"
+      className="w-full rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-1 min-h-[96px]"
       style={{
-        aspectRatio: "16 / 10",
         backgroundColor: placeholderBg,
         color: placeholderText,
         opacity: 0.4,
