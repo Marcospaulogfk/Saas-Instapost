@@ -70,7 +70,7 @@ interface SplitProps {
 // ============================================================================
 
 /** Altura mínima da zona de imagem fluida — a foto nunca vira um fiapo. */
-const IMG_MIN = "min-h-[96px]"
+const IMG_MIN = "min-h-[140px]"
 
 function SingleImageBox({
   imageUrl,
@@ -268,7 +268,7 @@ export function SplitWesleyDark({
         </h2>
 
         {slide.body && (
-          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-4">
+          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-5">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -346,7 +346,7 @@ export function SplitBrandsdecodedLight({
         {imageSlot === "single-bottom" && (
           <>
             {slide.body && (
-              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-4">
+              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-5">
                 {parseBoldInline(slide.body)}
               </p>
             )}
@@ -721,7 +721,7 @@ export function SplitGradientDark({
         </h2>
 
         {slide.body && (
-          <p className="mt-5 text-base text-white/80 leading-[1.5] line-clamp-4">
+          <p className="mt-5 text-base text-white/80 leading-[1.5] line-clamp-5">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -836,7 +836,7 @@ export function SplitMinimalClean({
         </h2>
 
         {slide.body && (
-          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-4 whitespace-pre-line">
+          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-5 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
