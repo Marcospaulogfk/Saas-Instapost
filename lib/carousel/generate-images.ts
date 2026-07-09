@@ -2,6 +2,28 @@ import type { ClaudeSlide } from "@/lib/generation/claude"
 import type { PreviewSlide } from "@/components/carousel/slide-preview"
 
 /**
+ * Carrega a imagem e devolve a proporção (largura/altura). Usada pra REJEITAR
+ * wordmarks/logos: eles são muito mais largos que altos. Erro/timeout → 99
+ * (tratado como "não usar"). Só roda no browser.
+ */
+function loadAspect(url: string): Promise<number> {
+  if (typeof window === "undefined") return Promise.resolve(1)
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    const done = (v: number) => resolve(v)
+    img.onload = () =>
+      done(img.naturalHeight ? img.naturalWidth / img.naturalHeight : 99)
+    img.onerror = () => done(99)
+    img.src = url
+    // rede lenta: não trava a geração
+    setTimeout(() => done(99), 6000)
+  })
+}
+
+/** Acima disto a imagem é "larga demais" — provável logo/wordmark. */
+const WORDMARK_ASPECT = 1.7
+
+/**
  * Recebe os slides text-only do roteiro (ClaudeSlide) e gera a imagem de cada um,
  * devolvendo PreviewSlide[] pronto pro editor/preview.
  *
@@ -65,7 +87,9 @@ export async function generateCarouselImages(
         base.extra_images = await Promise.all(extraPrompts.map((p) => genAiImage(p)))
       }
 
-      // 1) Entidade real → Wikimedia (logo/foto)
+      // 1) Entidade real → Wikimedia (foto). REGRA: JAMAIS usar wordmark/logo.
+      // Se o resultado for largo demais (logo de empresa), IGNORA e cai pra IA
+      // — que gera uma cena de verdade em vez de esticar um wordmark.
       if (entity) {
         try {
           const res = await fetch("/api/post-unico/image", {
@@ -75,9 +99,13 @@ export async function generateCarouselImages(
           })
           const data = await res.json()
           if (res.ok && data?.url) {
-            base.image.url = data.url
-            base.image.source = "wikimedia"
-            return base
+            const aspect = await loadAspect(data.url)
+            if (aspect < WORDMARK_ASPECT) {
+              base.image.url = data.url
+              base.image.source = "wikimedia"
+              return base
+            }
+            // largo = logo/wordmark → descarta e segue pro fallback de IA
           }
         } catch {
           // segue pro fallback de IA

@@ -8,6 +8,7 @@ import {
   GradientProgressBar,
   HighlightedGradientText,
   HighlightedText,
+  FitText,
   PaginationDots,
   SmartSlideImage,
   Pill,
@@ -256,16 +257,17 @@ export function SplitWesleyDark({
           />
         </div>
 
-        <h2
-          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
           style={{ fontWeight: titleWeight }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h2>
+        </FitText>
 
         {slide.body && (
           <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-5">
@@ -332,16 +334,17 @@ export function SplitBrandsdecodedLight({
 
       <div className="flex-1 px-5 pt-3 pb-2 flex flex-col min-h-0">
         {/* TÍTULO — sólido */}
-        <h2
-          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.92 }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h2>
+        </FitText>
 
         {imageSlot === "single-bottom" && (
           <>
@@ -471,16 +474,17 @@ export function SplitBrandsdecodedDarkSerif({
 
       <div className="flex-1 px-6 pt-4 pb-4 flex flex-col min-h-0">
         {/* TEXTO — sólido */}
-        <h2
-          className="flex-shrink-0 text-[1.7rem] tracking-tight text-white line-clamp-4"
+        <FitText
+          className="flex-shrink-0 text-[1.7rem] tracking-tight text-white"
           style={{
             fontFamily: '"Playfair Display", Georgia, serif',
             fontWeight: 700,
             lineHeight: 1.15,
           }}
+          maxLines={4}
         >
           {slide.title}
-        </h2>
+        </FitText>
 
         {slide.subtitle && (
           <p
@@ -618,12 +622,13 @@ export function SplitMyPostFlowCta({
 
       {/* ZONA DE TEXTO — SÓLIDA (clamps por linha, nunca corte em pixel) */}
       <div className={imageSlot === "bottom-large" && slide.images[0] ? "flex-shrink-0" : "flex-1 min-h-0"}>
-        <h2
-          className={`${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
           style={{ fontWeight: 800, lineHeight: 1 }}
+          maxLines={4}
         >
           {slide.title}
-        </h2>
+        </FitText>
 
         {slide.body && (
           <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-5">
@@ -708,16 +713,17 @@ export function SplitGradientDark({
           />
         </div>
 
-        <h2
-          className={`${titleSizeClass} uppercase leading-[1] tracking-tight text-white line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`${titleSizeClass} uppercase leading-[1] tracking-tight text-white ${fontClass}`}
           style={{ fontWeight: 800 }}
+          maxLines={4}
         >
           <HighlightedGradientText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h2>
+        </FitText>
 
         {slide.body && (
           <p className="mt-5 text-base text-white/80 leading-[1.5] line-clamp-5">
@@ -822,16 +828,17 @@ export function SplitMinimalClean({
           {slide.category || "Conteúdo"} · {ghost}
         </div>
 
-        <h2
-          className={`${titleSizeClass} uppercase tracking-tight text-black line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.95 }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h2>
+        </FitText>
 
         {slide.body && (
           <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-5 whitespace-pre-line">
@@ -952,20 +959,21 @@ export function SplitSeamlessFlow({
 
       {/* Conteúdo ancorado embaixo, sobre a foto */}
       <div className="mt-auto px-6 pb-6 z-10 space-y-4">
-        <h2
-          className={`text-[2rem] uppercase tracking-tight text-white line-clamp-3 ${fontClass}`}
+        <FitText
+          className={`text-[2rem] uppercase tracking-tight text-white ${fontClass}`}
           style={{
             fontWeight: 800,
             lineHeight: 0.98,
             textShadow: "0 2px 22px rgba(0,0,0,0.7)",
           }}
+          maxLines={3}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h2>
+        </FitText>
 
         {/* Linha de PROGRESSO — avança slide a slide */}
         <SeamlessProgressLine

@@ -79,7 +79,10 @@
   --muted: var(--background-tertiary);
   --muted-foreground: var(--text-muted);
   --accent: var(--brand-600);
-  --accent-foreground: #0e0e0e;
+  /* accent = brand-600 (roxo vivo #7320E6) → foreground BRANCO. Antes era
+     #0e0e0e (quase preto), o que deixava o texto dos botões ilegível no hover
+     (outline/ghost usam hover:bg-accent hover:text-accent-foreground). */
+  --accent-foreground: #FFFFFF;
   --destructive: var(--danger);
   --destructive-foreground: #FFFFFF;
   --border: var(--border-subtle);

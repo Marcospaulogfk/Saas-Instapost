@@ -5,6 +5,7 @@ import {
   Attribution,
   BrandsdecodedFooter,
   BrandsdecodedHeader,
+  FitText,
   GradientProgressBar,
   HighlightedGradientText,
   HighlightedText,
@@ -55,16 +56,17 @@ export function CoverWesleyGemini({
       </div>
 
       <div className="absolute top-[12%] left-6 right-6 z-10 space-y-3">
-        <h1
+        <FitText
           className={`text-[2.5rem] uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
           style={{ fontWeight: 800 }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p className="text-sm text-white/80">{slide.subtitle}</p>
         )}
@@ -131,19 +133,20 @@ export function CoverWesleyInternet({
       </div>
 
       <div className="absolute left-6 right-6 z-10 space-y-3" style={{ bottom: "8rem" }}>
-        <h1
+        <FitText
           className={`text-[2.2rem] uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
           style={{
             fontWeight: 800,
             textShadow: "0 2px 14px rgba(0,0,0,0.55)",
           }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
       </div>
 
       {slide.subtitle && (
@@ -205,16 +208,17 @@ export function CoverWesleyLabios({
           />
         </div>
         <div className="space-y-2.5">
-          <h1
+          <FitText
             className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
             style={{ fontWeight: 700 }}
+            maxLines={4}
           >
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words || []}
               color={accent}
             />
-          </h1>
+          </FitText>
           {slide.subtitle && (
             <p className="text-xs text-white/85">{slide.subtitle}</p>
           )}
@@ -261,19 +265,20 @@ export function CoverWesleyChurrasco({
       </div>
 
       <div className="absolute top-[42%] left-6 right-6 z-10 space-y-3">
-        <h1
+        <FitText
           className={`text-[2.3rem] uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
           style={{
             fontWeight: 800,
             textShadow: "0 2px 14px rgba(0,0,0,0.55)",
           }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p
             className="text-sm text-white/85"
@@ -330,20 +335,21 @@ export function CoverBrandsdecodedMassive({
       </div>
 
       <div className="absolute left-4 right-4 z-10 space-y-2" style={{ bottom: "5rem" }}>
-        <h1
+        <FitText
           className={`text-[3rem] uppercase tracking-tight text-white ${fontClass}`}
           style={{
             fontWeight: 900,
             lineHeight: 0.92,
             textShadow: "0 2px 14px rgba(0,0,0,0.55)",
           }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
       </div>
 
       {slide.subtitle && (
@@ -404,16 +410,17 @@ export function CoverBrandsdecodedPortrait({
       </div>
 
       <div className="absolute left-4 right-4 z-10" style={{ bottom: "5rem" }}>
-        <h1
+        <FitText
           className={`text-[1.6rem] tracking-tight text-white ${fontClass}`}
           style={{ fontWeight: 700, lineHeight: 1 }}
+          maxLines={5}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-10">
@@ -461,16 +468,17 @@ export function CoverGradientGlow({
 
       {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
       <div className="relative z-10 flex-1 min-h-0 overflow-hidden px-6 pt-11 space-y-6">
-        <h1
-          className={`text-[2.7rem] uppercase tracking-tight text-white line-clamp-5 ${fontClass}`}
+        <FitText
+          className={`text-[2.7rem] uppercase tracking-tight text-white ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.98 }}
+          maxLines={5}
         >
           <HighlightedGradientText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p className="text-sm text-white/75 leading-[1.55] line-clamp-3">
             {slide.subtitle}
@@ -547,16 +555,17 @@ export function CoverMinimalClean({
       {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
       <div className="relative flex-1 min-h-0 overflow-hidden px-6 pt-10 space-y-5">
         <div className="h-1 w-12" style={{ backgroundColor: accent }} />
-        <h1
-          className={`text-[2.9rem] uppercase tracking-tight text-black line-clamp-5 ${fontClass}`}
+        <FitText
+          className={`text-[2.9rem] uppercase tracking-tight text-black ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.93 }}
+          maxLines={5}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-3">
             {slide.subtitle}
@@ -660,20 +669,21 @@ export function CoverSeamlessFlow({
 
       {/* Conteúdo ancorado embaixo, sobre a foto */}
       <div className="mt-auto px-6 pb-6 z-10 space-y-4">
-        <h1
-          className={`text-[2.5rem] uppercase tracking-tight text-white line-clamp-4 ${fontClass}`}
+        <FitText
+          className={`text-[2.5rem] uppercase tracking-tight text-white ${fontClass}`}
           style={{
             fontWeight: 900,
             lineHeight: 0.95,
             textShadow: "0 2px 24px rgba(0,0,0,0.7)",
           }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words || []}
             color={accent}
           />
-        </h1>
+        </FitText>
 
         {/* Linha de PROGRESSO — avança slide a slide */}
         <SeamlessProgressLine

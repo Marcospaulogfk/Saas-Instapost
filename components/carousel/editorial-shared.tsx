@@ -1,6 +1,65 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react"
+
+// useLayoutEffect no cliente (mede antes de pintar, sem flicker); useEffect no
+// SSR pra não gerar warning.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect
+
+// ============================================================================
+// FitText — REGRA GLOBAL "enquadramento é a chave": o título NUNCA é cortado.
+// Se não couber em `maxLines`, a fonte DIMINUI (até minScale do tamanho base)
+// até caber. Substitui o line-clamp (que cortava a frase).
+// ============================================================================
+export function FitText({
+  children,
+  className = "",
+  style,
+  maxLines = 4,
+  minScale = 0.5,
+}: {
+  children: ReactNode
+  className?: string
+  style?: CSSProperties
+  /** Máximo de linhas antes de encolher a fonte. */
+  maxLines?: number
+  /** Fator mínimo do tamanho base (0.5 = metade). */
+  minScale?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useIsoLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.fontSize = "" // volta pro tamanho base (da classe)
+    const base = parseFloat(getComputedStyle(el).fontSize)
+    if (!base) return
+    const fits = () => {
+      const cs = getComputedStyle(el)
+      const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.1
+      return Math.round(el.scrollHeight / lh) <= maxLines
+    }
+    let size = base
+    let guard = 0
+    while (!fits() && size > base * minScale && guard < 40) {
+      size -= Math.max(1, base * 0.04)
+      el.style.fontSize = `${size}px`
+      guard++
+    }
+  })
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  )
+}
 
 // ============================================================================
 // REGRA GLOBAL — enquadramento da foto ("nunca corta a cabeça").
@@ -36,7 +95,13 @@ export const PHOTO_FOCUS = "50% 20%"
 // aplica o style inline ANTES do export, o html-to-image copia o computed
 // style — então a exportação sai igual ao preview.
 // ============================================================================
-const LOGO_RATIO = 1.7
+// Proporção (w/h) a partir da qual a imagem é "larga demais" pra um quadro
+// retrato. WORDMARK = logo/wordmark (jamais usar como imagem — some). WIDE =
+// foto panorâmica (ainda é foto real → contain, aparece inteira).
+const WIDE_RATIO = 1.7
+const WORDMARK_RATIO = 2.4
+
+type FitMode = "cover" | "contain" | "hidden"
 
 export function SmartSlideImage({
   src,
@@ -50,34 +115,48 @@ export function SmartSlideImage({
   className?: string
   /** object-position quando entra no modo cover (retratos). */
   focus?: string
-  /** Fundo atrás do logo no modo contain. */
+  /** Fundo atrás da imagem no modo contain. */
   containBg?: string
 }) {
-  const [wide, setWide] = useState(false)
+  const [mode, setMode] = useState<FitMode>("cover")
+  const decide = (w: number, h: number) => {
+    if (!w || !h) return
+    const r = w / h
+    // REGRA: JAMAIS usar wordmark/logo como imagem. Se a imagem for larga
+    // demais (proporção de wordmark), ela é ESCONDIDA — o slide fica só com o
+    // fundo (limpo) em vez de exibir a logo esticada/irreconhecível.
+    setMode(r > WORDMARK_RATIO ? "hidden" : r > WIDE_RATIO ? "contain" : "cover")
+  }
   const measure = (img: HTMLImageElement | null) => {
-    if (img?.complete && img.naturalWidth && img.naturalHeight) {
-      setWide(img.naturalWidth / img.naturalHeight > LOGO_RATIO)
-    }
+    if (img?.complete) decide(img.naturalWidth, img.naturalHeight)
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      ref={measure}
-      src={src}
-      alt=""
-      className={className}
-      onLoad={(e) => {
-        const img = e.currentTarget
-        if (img.naturalWidth && img.naturalHeight) {
-          setWide(img.naturalWidth / img.naturalHeight > LOGO_RATIO)
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={measure}
+        src={src}
+        alt=""
+        className={className}
+        onLoad={(e) => decide(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+        style={
+          mode === "contain"
+            ? { objectFit: "contain", objectPosition: "center", background: containBg }
+            : mode === "hidden"
+              ? { opacity: 0 } // wordmark: não mostra (mas carrega pra medir)
+              : { objectFit: "cover", objectPosition: focus }
         }
-      }}
-      style={
-        wide
-          ? { objectFit: "contain", objectPosition: "center", background: containBg }
-          : { objectFit: "cover", objectPosition: focus }
-      }
-    />
+      />
+      {mode === "hidden" && (
+        <div
+          className={className}
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 25%, rgba(115,32,230,0.16), rgba(10,10,15,0.85))",
+          }}
+        />
+      )}
+    </>
   )
 }
 
@@ -221,14 +300,15 @@ export function SectionTag({
   fontClass?: string
 }) {
   return (
-    <h2
-      className={`text-[1.5rem] uppercase tracking-tight line-clamp-4 ${fontClass}`}
+    <FitText
+      className={`text-[1.5rem] uppercase tracking-tight ${fontClass}`}
       style={{ color: textColor, fontWeight: 800, lineHeight: 1.05 }}
+      maxLines={5}
     >
       {prefix && <span style={{ color: prefixColor }}>{prefix} </span>}
       {number && <span style={{ color: prefixColor }}>{number} </span>}
       <span>{suffix}</span>
-    </h2>
+    </FitText>
   )
 }
 

@@ -610,13 +610,13 @@ export function CarouselEditor({
                   value={imageQuery}
                   onChange={(e) => setImageQuery(e.target.value)}
                   rows={2}
-                  placeholder="Prompt (IA), busca (Unsplash) ou nome da empresa/pessoa (Foto real)"
+                  placeholder="Prompt (IA) ou nome da pessoa (Foto real)"
                   className="text-xs resize-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -637,24 +637,9 @@ export function CarouselEditor({
                 variant="outline"
                 size="sm"
                 className="text-xs"
-                onClick={() => generateImage("unsplash")}
-                disabled={imgBusy !== null}
-              >
-                {imgBusy === "unsplash" ? (
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                ) : (
-                  <ImageIcon className="w-3 h-3 mr-1" />
-                )}
-                Unsplash
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs"
                 onClick={() => generateImage("wikimedia")}
                 disabled={imgBusy !== null}
-                title="Foto/logo real de empresa ou pessoa (Wikipedia)"
+                title="Foto real de uma pessoa (Wikipedia)"
               >
                 {imgBusy === "wikimedia" ? (
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
