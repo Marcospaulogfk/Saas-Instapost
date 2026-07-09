@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
-import { generateEditorialImage } from '@/lib/editorial/ai-images'
+import { createClient } from '@/lib/supabase/server'
+import { generateEditorialImageForPlan } from '@/lib/editorial/ai-images'
+import { getUserPlan } from '@/lib/generation/image'
+import { debitTokens, tokenCostForImage } from '@/lib/tokens'
 
+export const runtime = 'nodejs'
 export const maxDuration = 120
 
 /**
- * Endpoint atômico de geração de imagem editorial.
+ * Endpoint atômico de geração de imagem editorial (carrossel).
  *
- * Pode ser usado pela UI (regenerar uma imagem só) ou como webhook
- * por integrações externas (ex: o Claude pode ser instruído a
- * chamar este endpoint slide-a-slide).
+ * Respeita o PLANO (igual ao post único): Pro/Studio geram com Nano Banana
+ * Pro (fallback Flux Pro); trial/starter usam Flux Pro. Debita tokens por
+ * imagem conforme a qualidade EFETIVA (pro=20, normal=5) — best-effort, só
+ * se houver sessão. Endpoint segue PÚBLICO: sem login o plano vira "trial"
+ * (Flux) e nada quebra nem debita.
  *
  * Body:
  * {
@@ -18,7 +24,7 @@ export const maxDuration = 120
  * }
  *
  * Resposta:
- * { success: true, url: string, ms: number }
+ * { success: true, url: string, ms: number, quality: 'normal' | 'pro' }
  * { success: false, error: string }
  */
 export async function POST(request: Request) {
@@ -45,9 +51,29 @@ export async function POST(request: Request) {
       | '9:16'
       | undefined
 
-    const url = await generateEditorialImage({ prompt, style, aspectRatio })
+    // Auth OPCIONAL: deriva o plano se houver sessão, senão "trial" (Flux).
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    const plan = await getUserPlan(supabase)
+
+    const { url, quality } = await generateEditorialImageForPlan(
+      { prompt, style, aspectRatio },
+      plan,
+    )
+
+    // Débito best-effort (só se logado). Nunca bloqueia a geração.
+    if (user) {
+      try {
+        await debitTokens(supabase, user.id, tokenCostForImage(quality))
+      } catch {
+        // ignorado — tokens nunca quebram geração
+      }
+    }
+
     const ms = Math.round(performance.now() - start)
-    return NextResponse.json({ success: true, url, ms })
+    return NextResponse.json({ success: true, url, ms, quality })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'erro desconhecido'
     return NextResponse.json({ success: false, error: message }, { status: 500 })

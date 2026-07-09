@@ -1,5 +1,7 @@
 import { fal } from '@fal-ai/client'
 import type { EditorialSlide } from '@/components/templates/editorial/editorial.types'
+import { generateNanoBanana } from '@/lib/generation/nano-banana'
+import { canUseNanoBananaPro } from '@/lib/tokens'
 
 let configured = false
 
@@ -89,7 +91,58 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
   throw new Error(`Fal.ai falhou após ${MAX_RETRIES} tentativas: ${final}`)
 }
 
-export async function generateImagesForSlide(slide: EditorialSlide): Promise<string[]> {
+/** Qualidade EFETIVA gerada — usada pra debitar tokens (pro=20, normal=5). */
+export type EditorialImageQuality = 'normal' | 'pro'
+
+export interface EditorialImageForPlanResult {
+  url: string
+  quality: EditorialImageQuality
+}
+
+/**
+ * Gera a imagem editorial respeitando o PLANO do usuário (mesma regra do
+ * post único, ESTRATEGIA-MONETIZACAO.md §5):
+ *   - Pro / Studio  → Nano Banana Pro (fallback Flux Pro se falhar) → quality "pro"
+ *   - trial/starter → Flux Pro v1.1 atual (inalterado)              → quality "normal"
+ *
+ * ADITIVO e NÃO-QUEBRANTE: se o Nano Banana Pro falhar, CAI pro Flux Pro —
+ * a geração nunca quebra por causa do modelo premium. O caller usa `quality`
+ * pra debitar os tokens certos.
+ */
+export async function generateEditorialImageForPlan(
+  params: GenerateImageParams,
+  plan: string | null | undefined,
+): Promise<EditorialImageForPlanResult> {
+  if (canUseNanoBananaPro(plan)) {
+    try {
+      // Mantém a mesma orientação de estilo do pipeline Flux, pro look ficar
+      // coerente entre os modelos.
+      const style = params.style || 'cinematic'
+      const enhanced = `${params.prompt}, ${STYLE_PROMPTS[style]}, high quality, 4k`
+      const r = await generateNanoBanana(enhanced, 'pro')
+      return { url: r.url, quality: 'pro' }
+    } catch (err) {
+      console.warn(
+        '[editorial] Nano Banana Pro falhou, fallback Flux Pro:',
+        err instanceof Error ? err.message : err,
+      )
+      // segue pro Flux Pro abaixo
+    }
+  }
+  const url = await generateEditorialImage(params)
+  return { url, quality: 'normal' }
+}
+
+/**
+ * Gera todas as imagens de um slide respeitando o PLANO (Pro/Studio → Nano
+ * Banana Pro; demais → Flux Pro). Retorna as URLs e a qualidade EFETIVA de
+ * cada uma (pra o caller debitar tokens). Se `plan` for omitido, cai no
+ * comportamento normal (Flux Pro, quality "normal").
+ */
+export async function generateImagesForSlide(
+  slide: EditorialSlide,
+  plan?: string | null,
+): Promise<EditorialImageForPlanResult[]> {
   if (!slide.imagePrompts?.length) return []
 
   // Style baseado no layoutType.
@@ -113,7 +166,7 @@ export async function generateImagesForSlide(slide: EditorialSlide): Promise<str
 
   // Geração paralela (todas as imagens do slide ao mesmo tempo)
   const imagePromises = slide.imagePrompts.map((prompt) =>
-    generateEditorialImage({ prompt, style, aspectRatio }),
+    generateEditorialImageForPlan({ prompt, style, aspectRatio }, plan),
   )
 
   return await Promise.all(imagePromises)

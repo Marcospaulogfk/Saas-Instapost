@@ -64,7 +64,10 @@ export async function generateCompleteCarousel(
         `🎨 [Editorial] Slide ${i + 1} (${slide.layoutType}): gerando ${slide.imagePrompts.length} imagem(ns)`,
       )
       try {
-        const images = await generateImagesForSlide(slide)
+        // Fluxo legado (/test-editorial): sem plano → Flux Pro, quality normal.
+        // O débito de tokens fica no fluxo principal (endpoint generate-image).
+        const results = await generateImagesForSlide(slide)
+        const images = results.map((r) => r.url)
         slide.images = images
         generatedImages += images.length
         console.log(`✅ [Editorial] Slide ${i + 1}: ${images.length} imagem(ns) OK`)
