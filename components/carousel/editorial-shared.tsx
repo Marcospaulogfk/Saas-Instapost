@@ -3,6 +3,25 @@
 import type { ReactNode } from "react"
 
 // ============================================================================
+// REGRA GLOBAL — enquadramento da foto ("nunca corta a cabeça").
+//
+// Fotos de conteúdo em caixa (Revista/Gradiente/Minimal/MyPostFlow/Bolo…) são
+// recortadas com object-cover. O padrão do CSS é object-position: center, que
+// num container mais largo/baixo que a foto CORTA O TOPO — e retratos têm o
+// rosto no terço SUPERIOR, então a cabeça some (bug do slide do Dario Amodei).
+//
+// A regra: todo object-cover de foto de CONTEÚDO usa PHOTO_FOCUS, deslocando o
+// recorte pro alto (mostra a cabeça, sacrifica o rodapé da foto — que quase
+// nunca importa). Estilos full-bleed 4:5 (Seamless / capas) NÃO usam isto —
+// como a caixa já é retrato, o center enquadra certo (por isso o Seamless
+// ficou bom). Avatares também não (são círculos pequenos).
+//
+// Heurística (não é detecção de rosto): assume sujeito no topo, o caso comum
+// em editorial. Tunável num único lugar aqui.
+// ============================================================================
+export const PHOTO_FOCUS = "50% 20%"
+
+// ============================================================================
 // Pill — bolha arredondada com bg translúcido
 // ============================================================================
 

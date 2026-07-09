@@ -4,6 +4,7 @@ import {
   Attribution,
   HighlightedText,
   PaginationDots,
+  PHOTO_FOCUS,
   Pill,
   type SlideAttribution,
 } from "./editorial-shared"
@@ -737,6 +738,7 @@ function LegacySlideImage({
           src={slide.image.url}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: PHOTO_FOCUS }}
         />
       </div>
     )

@@ -9,6 +9,7 @@ import {
   HighlightedGradientText,
   HighlightedText,
   PaginationDots,
+  PHOTO_FOCUS,
   Pill,
   SectionTag,
   SeamlessProgressLine,
@@ -100,6 +101,7 @@ function SingleImageBox({
             src={imageUrl}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: PHOTO_FOCUS }}
           />
         ) : (
           <div className="absolute inset-0 bg-zinc-800/30 flex items-center justify-center text-[10px] opacity-60 text-center px-2">
@@ -116,7 +118,12 @@ function SingleImageBox({
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+        <img
+          src={imageUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ objectPosition: PHOTO_FOCUS }}
+        />
       ) : (
         <div className="w-full h-full bg-zinc-800/30 flex items-center justify-center text-[10px] opacity-60 text-center px-2">
           {error || "sem imagem"}
@@ -644,6 +651,7 @@ export function SplitMyPostFlowCta({
               src={slide.images[0].url}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: PHOTO_FOCUS }}
             />
           ) : (
             <div className="absolute inset-0 bg-zinc-300 flex items-center justify-center text-[10px] opacity-60">
@@ -746,6 +754,7 @@ export function SplitGradientDark({
                   src={slide.images[0].url}
                   alt=""
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: PHOTO_FOCUS }}
                 />
               ) : (
                 <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
@@ -859,6 +868,7 @@ export function SplitMinimalClean({
                     src={slide.images[0].url}
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover"
+                    style={{ objectPosition: PHOTO_FOCUS }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
