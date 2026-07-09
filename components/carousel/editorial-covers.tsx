@@ -11,6 +11,7 @@ import {
   PaginationDots,
   Pill,
   SeamlessProgressLine,
+  SmartSlideImage,
   mixWithWhite,
   type SlideAttribution,
 } from "./editorial-shared"
@@ -77,11 +78,9 @@ export function CoverWesleyGemini({
         }}
       >
         {slide.image.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartSlideImage
             src={slide.image.url}
-            alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full"
           />
         ) : (
           <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
@@ -115,11 +114,9 @@ export function CoverWesleyInternet({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -183,11 +180,9 @@ export function CoverWesleyLabios({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -249,11 +244,9 @@ export function CoverWesleyChurrasco({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -316,11 +309,9 @@ export function CoverBrandsdecodedMassive({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col">
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -392,11 +383,9 @@ export function CoverBrandsdecodedPortrait({
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col">
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -500,11 +489,9 @@ export function CoverGradientGlow({
           }}
         >
           {slide.image.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <SmartSlideImage
               src={slide.image.url}
-              alt=""
-              className="w-full h-full object-cover"
+              className="w-full h-full"
             />
           ) : (
             <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
@@ -584,11 +571,9 @@ export function CoverMinimalClean({
           style={{ aspectRatio: "16/10", border: "1px solid rgba(0,0,0,0.12)" }}
         >
           {slide.image.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <SmartSlideImage
               src={slide.image.url}
-              alt=""
-              className="w-full h-full object-cover"
+              className="w-full h-full"
             />
           ) : (
             <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
@@ -634,11 +619,9 @@ export function CoverSeamlessFlow({
     >
       {/* FOTO como fundo full-bleed (preenche o slide inteiro) */}
       {slide.image.url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full"
         />
       ) : (
         <div

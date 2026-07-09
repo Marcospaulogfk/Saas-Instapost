@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 // ============================================================================
 // REGRA GLOBAL — enquadramento da foto ("nunca corta a cabeça").
@@ -20,6 +20,66 @@ import type { ReactNode } from "react"
 // em editorial. Tunável num único lugar aqui.
 // ============================================================================
 export const PHOTO_FOCUS = "50% 20%"
+
+// ============================================================================
+// SmartSlideImage — imagem de slide com ENCAIXE inteligente pela proporção.
+//
+// Extensão da REGRA de enquadramento pra cobrir também LOGOS/WORDMARKS/banners
+// (ex.: logo da Anthropic 1280×144). Numa caixa retrato com object-cover, uma
+// imagem muito LARGA vira um borrão irreconhecível (bug da capa). A regra:
+//   - imagem larga demais (proporção > LOGO_RATIO) → object-contain (mostra
+//     inteira, centralizada, sobre um fundo sutil) — logo fica legível.
+//   - retrato / foto normal → object-cover + PHOTO_FOCUS (viés pro topo,
+//     nunca corta a cabeça).
+//
+// A decisão é feita ao carregar a imagem (naturalWidth/Height). Como o React
+// aplica o style inline ANTES do export, o html-to-image copia o computed
+// style — então a exportação sai igual ao preview.
+// ============================================================================
+const LOGO_RATIO = 1.7
+
+export function SmartSlideImage({
+  src,
+  className = "",
+  focus = PHOTO_FOCUS,
+  containBg = "rgba(0,0,0,0.28)",
+}: {
+  /** URL da imagem (já garantida != null pelo caller). */
+  src: string
+  /** Classes de TAMANHO/posição (sem object-fit — ele é setado via style). */
+  className?: string
+  /** object-position quando entra no modo cover (retratos). */
+  focus?: string
+  /** Fundo atrás do logo no modo contain. */
+  containBg?: string
+}) {
+  const [wide, setWide] = useState(false)
+  const measure = (img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth && img.naturalHeight) {
+      setWide(img.naturalWidth / img.naturalHeight > LOGO_RATIO)
+    }
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      ref={measure}
+      src={src}
+      alt=""
+      className={className}
+      onLoad={(e) => {
+        const img = e.currentTarget
+        if (img.naturalWidth && img.naturalHeight) {
+          setWide(img.naturalWidth / img.naturalHeight > LOGO_RATIO)
+        }
+      }}
+      style={
+        wide
+          ? { objectFit: "contain", objectPosition: "center", background: containBg }
+          : { objectFit: "cover", objectPosition: focus }
+      }
+    />
+  )
+}
 
 // ============================================================================
 // Pill — bolha arredondada com bg translúcido

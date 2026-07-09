@@ -4,7 +4,7 @@ import {
   Attribution,
   HighlightedText,
   PaginationDots,
-  PHOTO_FOCUS,
+  SmartSlideImage,
   Pill,
   type SlideAttribution,
 } from "./editorial-shared"
@@ -536,11 +536,9 @@ function LegacyEditorialSlide({
     return (
       <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
         {slide.image.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartSlideImage
             src={slide.image.url}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -593,11 +591,9 @@ function LegacyEditorialSlide({
     return (
       <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
         {slide.image.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SmartSlideImage
             src={slide.image.url}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
@@ -733,12 +729,9 @@ function LegacySlideImage({
   if (slide.image.url) {
     return (
       <div className="w-full rounded-md overflow-hidden flex-1 min-h-[96px] relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <SmartSlideImage
           src={slide.image.url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: PHOTO_FOCUS }}
+          className="absolute inset-0 w-full h-full"
         />
       </div>
     )
