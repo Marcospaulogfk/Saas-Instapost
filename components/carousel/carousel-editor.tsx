@@ -329,8 +329,10 @@ export function CarouselEditor({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Topbar */}
-      <div className="border-b border-border px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+      {/* Topbar — FIXA no topo (sticky) pra os botões de ação (Salvar, Baixar
+          ZIP, Exportar) nunca sumirem ao rolar a página. Em telas estreitas os
+          botões quebram linha (flex-wrap) em vez de transbordar pra fora. */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <Input
             value={title}
@@ -342,7 +344,7 @@ export function CarouselEditor({
             · {brandName} · {slides.length} slides
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <Button
             type="button"
             variant={saveOk ? "outline" : "default"}
