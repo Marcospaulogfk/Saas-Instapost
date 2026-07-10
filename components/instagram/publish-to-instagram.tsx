@@ -1,16 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Instagram, Check, X, Link2 } from "lucide-react"
+import { Loader2, Instagram, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  type InstagramConnection,
-  getInstagramConnection,
-  connectInstagramMock,
-  disconnectInstagram,
-  publishToInstagramMock,
-} from "@/lib/instagram/publish"
 
 interface Props {
   /** URLs públicas das imagens dos slides (na ordem). */
@@ -18,44 +10,78 @@ interface Props {
   caption: string
 }
 
+interface Status {
+  connected: boolean
+  username: string | null
+  configured: boolean
+}
+
 /**
  * Botão "Publicar no Instagram" + modal de conexão/publicação.
- * ESQUELETO: conexão e publicação são mockadas (ver lib/instagram/publish.ts).
+ * REAL: usa os endpoints /api/instagram/* (OAuth Instagram Login + publish).
+ * Se o app da Meta ainda não está configurado (env ausente), mostra estado
+ * honesto de "em configuração" em vez de simular.
  */
 export function PublishToInstagram({ imageUrls, caption }: Props) {
   const [open, setOpen] = useState(false)
-  const [conn, setConn] = useState<InstagramConnection | null>(null)
-  const [handle, setHandle] = useState("")
-  const [busy, setBusy] = useState<"connect" | "publish" | null>(null)
+  const [status, setStatus] = useState<Status | null>(null)
+  const [busy, setBusy] = useState<"publish" | "disconnect" | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Mostra resultado do OAuth (redirect ?ig=ok|erro) ao voltar.
   useEffect(() => {
-    setConn(getInstagramConnection())
-  }, [open])
-
-  async function handleConnect() {
-    if (handle.trim().length < 2) {
-      setError("Digite o @ da conta")
-      return
+    if (typeof window === "undefined") return
+    const p = new URLSearchParams(window.location.search)
+    const ig = p.get("ig")
+    if (ig === "ok") {
+      setOpen(true)
+    } else if (ig === "erro") {
+      setOpen(true)
+      setError("Não deu pra conectar o Instagram. Tente de novo.")
     }
-    setBusy("connect")
-    setError(null)
-    const c = await connectInstagramMock(handle)
-    setConn(c)
-    setBusy(null)
-  }
+    if (ig) {
+      p.delete("ig")
+      const qs = p.toString()
+      window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    fetch("/api/instagram/status")
+      .then((r) => r.json())
+      .then(setStatus)
+      .catch(() => setStatus({ connected: false, username: null, configured: false }))
+  }, [open])
 
   async function handlePublish() {
     setBusy("publish")
     setError(null)
-    const res = await publishToInstagramMock({ imageUrls, caption })
-    setBusy(null)
-    if (!res.ok) {
-      setError(res.error)
-      return
+    try {
+      const res = await fetch("/api/instagram/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrls, caption }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Falha ao publicar.")
+        return
+      }
+      setDone(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro de rede.")
+    } finally {
+      setBusy(null)
     }
-    setDone(true)
+  }
+
+  async function handleDisconnect() {
+    setBusy("disconnect")
+    await fetch("/api/instagram/status", { method: "DELETE" }).catch(() => {})
+    setStatus({ connected: false, username: null, configured: status?.configured ?? true })
+    setBusy(null)
   }
 
   function reset() {
@@ -66,12 +92,7 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
 
   return (
     <>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
         <Instagram className="w-3.5 h-3.5 mr-1.5" />
         Publicar no Instagram
       </Button>
@@ -105,53 +126,50 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                   <Check className="w-6 h-6 text-emerald-400" />
                 </div>
                 <p className="text-sm text-text-primary font-medium">
-                  Publicação simulada com sucesso ✅
+                  Publicado no Instagram ✅
                 </p>
                 <p className="text-xs text-text-secondary">
-                  A publicação real será ativada quando o app da Meta for
-                  aprovado. Por enquanto, o fluxo está validado de ponta a ponta.
+                  O carrossel foi enviado pra sua conta. Pode levar alguns
+                  segundos pra aparecer no feed.
                 </p>
                 <Button type="button" className="w-full" onClick={reset}>
                   Entendi
                 </Button>
               </div>
-            ) : !conn ? (
-              // --- Conectar conta (mock) ---
+            ) : !status ? (
+              <div className="py-6 flex justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-text-muted" />
+              </div>
+            ) : !status.configured ? (
+              <div className="space-y-2 py-2">
+                <p className="text-sm text-text-primary">
+                  Publicação direta em configuração 🛠️
+                </p>
+                <p className="text-xs text-text-secondary">
+                  Estamos finalizando a integração oficial com a Meta. Por
+                  enquanto, use <strong>Baixar carrossel (ZIP)</strong> e poste
+                  pelo app do Instagram — em breve dá pra publicar direto daqui.
+                </p>
+              </div>
+            ) : !status.connected ? (
               <div className="space-y-3">
                 <p className="text-xs text-text-secondary">
-                  Conecte a conta do Instagram pra publicar direto daqui. (Conta
-                  Business/Creator vinculada a uma Página do Facebook.)
+                  Conecte sua conta do Instagram (Business ou Creator) pra
+                  publicar direto daqui.
                 </p>
-                <div className="flex gap-2">
-                  <div className="flex-1 flex items-center rounded-md border border-border-subtle bg-background-tertiary/40 px-2">
-                    <span className="text-text-muted text-sm">@</span>
-                    <Input
-                      value={handle}
-                      onChange={(e) => setHandle(e.target.value)}
-                      placeholder="suaconta"
-                      className="border-0 bg-transparent h-9 px-1 focus-visible:ring-0"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleConnect}
-                    disabled={busy !== null}
-                  >
-                    {busy === "connect" ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Link2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-[10px] text-text-muted">
-                  ⚠️ Conexão mockada (esqueleto). O login real via Meta entra
-                  quando o app for aprovado.
-                </p>
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={() => {
+                    window.location.href = "/api/instagram/connect"
+                  }}
+                >
+                  <Instagram className="w-4 h-4 mr-1.5" />
+                  Conectar Instagram
+                </Button>
                 {error && <p className="text-xs text-destructive">{error}</p>}
               </div>
             ) : (
-              // --- Conectado → publicar ---
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-background-tertiary/30 p-3">
                   <div className="flex items-center gap-2">
@@ -160,21 +178,15 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-text-primary">
-                        @{conn.username}
+                        @{status.username || "conta"}
                       </p>
-                      <p className="text-[10px] text-text-muted">
-                        {conn.pendingMetaReview
-                          ? "Aguardando aprovação da Meta"
-                          : "Conectado"}
-                      </p>
+                      <p className="text-[10px] text-emerald-400">Conectado</p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      disconnectInstagram()
-                      setConn(null)
-                    }}
+                    onClick={handleDisconnect}
+                    disabled={busy !== null}
                     className="text-[10px] text-text-muted hover:text-destructive"
                   >
                     Desconectar
@@ -189,7 +201,7 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                   type="button"
                   className="w-full"
                   onClick={handlePublish}
-                  disabled={busy !== null}
+                  disabled={busy !== null || imageUrls.length === 0}
                 >
                   {busy === "publish" ? (
                     <>
@@ -203,10 +215,6 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                     </>
                   )}
                 </Button>
-                <p className="text-[10px] text-text-muted">
-                  ⚠️ Publicação simulada por ora — vira real após o App Review da
-                  Meta.
-                </p>
                 {error && <p className="text-xs text-destructive">{error}</p>}
               </div>
             )}
