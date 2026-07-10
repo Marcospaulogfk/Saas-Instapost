@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Save,
   Check,
+  Undo2,
+  Redo2,
 } from "lucide-react"
 import { saveCarouselV2 } from "@/app/actions/carousel"
 import { Button } from "@/components/ui/button"
@@ -146,6 +148,90 @@ export function CarouselEditor({
   }, [slides, title, caption, brandName, handle, colors, template, style])
 
   const slide = slides[selected]
+
+  // ── HISTÓRICO DE EDIÇÃO (undo/redo) ────────────────────────────────────
+  // Snapshot do conteúdo editável (slides/título/estilo/formato). Cada mudança
+  // empurra um estado na pilha; Desfazer/Refazer navegam por ela. `traveling`
+  // evita que aplicar um snapshot (setState) gere um novo push (loop).
+  type Snapshot = {
+    slides: PreviewSlide[]
+    title: string
+    style: EditorialStyle
+    format: "feed" | "stories"
+  }
+  const historyRef = useRef<Snapshot[]>([])
+  const histIndexRef = useRef(-1)
+  const travelingRef = useRef(false)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  useEffect(() => {
+    if (travelingRef.current) {
+      travelingRef.current = false
+      return
+    }
+    const snap: Snapshot = { slides, title, style, format }
+    if (histIndexRef.current === -1) {
+      historyRef.current = [snap]
+      histIndexRef.current = 0
+    } else {
+      // corta a "cauda" de refazer e empurra o novo estado
+      historyRef.current = historyRef.current.slice(0, histIndexRef.current + 1)
+      historyRef.current.push(snap)
+      histIndexRef.current = historyRef.current.length - 1
+      // limita a pilha (memória)
+      if (historyRef.current.length > 120) {
+        historyRef.current.shift()
+        histIndexRef.current--
+      }
+    }
+    setCanUndo(histIndexRef.current > 0)
+    setCanRedo(histIndexRef.current < historyRef.current.length - 1)
+  }, [slides, title, style, format])
+
+  function applySnapshot(s: Snapshot) {
+    travelingRef.current = true
+    setSlides(s.slides)
+    setTitle(s.title)
+    setStyle(s.style)
+    setFormat(s.format)
+    setSelected((sel) => Math.min(sel, s.slides.length - 1))
+  }
+
+  function undo() {
+    if (histIndexRef.current <= 0) return
+    histIndexRef.current--
+    applySnapshot(historyRef.current[histIndexRef.current])
+    setCanUndo(histIndexRef.current > 0)
+    setCanRedo(true)
+  }
+
+  function redo() {
+    if (histIndexRef.current >= historyRef.current.length - 1) return
+    histIndexRef.current++
+    applySnapshot(historyRef.current[histIndexRef.current])
+    setCanUndo(true)
+    setCanRedo(histIndexRef.current < historyRef.current.length - 1)
+  }
+
+  // Atalhos: Ctrl/Cmd+Z = desfazer · Ctrl/Cmd+Shift+Z (ou Ctrl+Y) = refazer.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey
+      if (!mod) return
+      const k = e.key.toLowerCase()
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function patchSlide(patch: Partial<PreviewSlide>) {
     setSlides((prev) =>
@@ -345,6 +431,29 @@ export function CarouselEditor({
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Histórico de edição: Desfazer / Refazer (Ctrl+Z / Ctrl+Shift+Z) */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={undo}
+            disabled={!canUndo}
+            title="Desfazer (Ctrl+Z)"
+            aria-label="Desfazer"
+          >
+            <Undo2 className="w-4 h-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={redo}
+            disabled={!canRedo}
+            title="Refazer (Ctrl+Shift+Z)"
+            aria-label="Refazer"
+          >
+            <Redo2 className="w-4 h-4" />
+          </Button>
           <Button
             type="button"
             variant={saveOk ? "outline" : "default"}
