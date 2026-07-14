@@ -17,6 +17,8 @@ interface PendingGeneration {
   caption?: string
   colors?: string[]
   brandName?: string
+  /** Handle do Instagram da marca (vem do wizard). Ex: "culturizesebrasil". */
+  handle?: string
 }
 
 function handleFromBrand(name?: string): string {
@@ -27,6 +29,12 @@ function handleFromBrand(name?: string): string {
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "")
   return slug ? `@${slug}` : "@brand"
+}
+
+/** Normaliza o handle vindo do cadastro da marca ("culturizesebrasil" → "@culturizesebrasil"). */
+function normalizeHandle(raw?: string | null): string | null {
+  const h = (raw ?? "").trim().replace(/^@+/, "")
+  return h ? `@${h}` : null
 }
 
 export default function CarrosselEditorPage() {
@@ -153,7 +161,8 @@ export default function CarrosselEditorPage() {
         Array.isArray(payload.colors) && payload.colors.length
           ? payload.colors
           : ["#7C3AED", "#0A0A0F", "#FAF8F5"],
-      handle: handleFromBrand(payload.brandName),
+      handle:
+        normalizeHandle(payload.handle) ?? handleFromBrand(payload.brandName),
     })
     setProgress(`Gerando ${claudeSlides.length} imagens…`)
 
@@ -196,10 +205,18 @@ export default function CarrosselEditorPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-6">
         <p className="text-destructive">{errorMsg ?? "Erro ao montar o carrossel."}</p>
-        <Button variant="outline" onClick={() => router.push("/dashboard/criar")}>
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          Voltar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/dashboard/projetos")}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Ir pra biblioteca
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/dashboard/criar")}>
+            Criar novo
+          </Button>
+        </div>
       </div>
     )
   }

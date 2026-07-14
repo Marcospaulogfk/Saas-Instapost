@@ -80,13 +80,16 @@ export async function loadCarouselV2(
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Não autenticado.' }
 
+  // maybeSingle: carrossel excluído/inexistente NÃO pode vazar erro cru do
+  // PostgREST ("Cannot coerce the result to a single JSON object") pro usuário.
   const { data, error } = await supabase
     .from('editorial_carousels')
     .select('carousel_data')
     .eq('id', id)
     .eq('user_id', user.id)
-    .single()
-  if (error || !data) return { ok: false, error: error?.message || 'Não encontrado.' }
+    .maybeSingle()
+  if (error) return { ok: false, error: 'Não foi possível carregar o carrossel. Tente de novo.' }
+  if (!data) return { ok: false, error: 'Este carrossel não existe mais — ele pode ter sido excluído.' }
   return { ok: true, data: data.carousel_data as CarouselV2Data }
 }
 

@@ -251,12 +251,21 @@ Regras: cada prompt é uma CENA DIFERENTE da principal (NUNCA repita o mesmo ass
 
 # CAPTION (legenda do Instagram — OBRIGATÓRIA, campo "caption")
 
-Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa cola embaixo do carrossel no Instagram. Regras:
-- Começa com um gancho forte na 1ª linha (NÃO repete o título da capa literalmente).
-- Desenvolve a ideia em 2-4 frases com pelo menos 1 informação concreta e termina com um convite/CTA natural (salvar, comentar, mandar pra alguém).
+Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa cola embaixo do carrossel no Instagram. A legenda NÃO é um resumo tímido — ela precisa funcionar SOZINHA pra quem não abre o carrossel, dando contexto completo e desenvolvendo o raciocínio. Regras:
+- Começa com um gancho forte na 1ª linha (NÃO repete o título da capa literalmente) — é o que aparece antes do "...mais".
+- Desenvolve em 3-5 parágrafos curtos (2-3 frases cada, separados por \\n\\n): contexto do assunto (por que isso importa AGORA), o argumento central com pelo menos 2 informações concretas do briefing, e uma implicação prática pro leitor (o que fazer com isso).
+- A legenda pode (e deve) trazer 1 camada a mais que os slides — um detalhe, nuance ou exemplo que NÃO coube nos cards. Quem lê os dois não pode sentir repetição.
+- Fecha com um convite/CTA natural e específico (salvar pra consultar, comentar com a experiência própria, mandar pra alguém que precisa).
 - Última linha: 3 a 5 hashtags relevantes, em uma única linha, sem exageros.
 - Mesmos princípios anti-clichê da copy: PROIBIDO "Descubra", "Confira", "Saiba mais", "Não perca", "Vem com a gente" etc. PT-BR coloquial culto.
-- Pode usar \\n pra separar parágrafos e a linha de hashtags.
+
+# PROFUNDIDADE EDITORIAL (anti-superficialidade)
+
+Conteúdo raso é a segunda maior bandeira de IA (depois do clichê). Em CADA carrossel:
+- Vá além do óbvio: explique o MECANISMO (como/por que acontece), não só o fenômeno. "Postar todo dia não adianta" é raso; "o algoritmo pontua retenção por impressão — 10 posts medianos derrubam a média que 2 bons construíram" tem mecanismo.
+- Traga pelo menos 1 consequência de segunda ordem, trade-off ou contraponto honesto ("isso funciona, MAS custa X"). Opinião com nuance > lista de obviedades.
+- Cada slide intermediário AVANÇA o raciocínio — reformular o mesmo ponto com outras palavras em 2 slides é rejeitado.
+- Teste final: um especialista do nicho salvaria esse carrossel? Se a resposta é "não, ele já sabe tudo isso", aprofunde o ângulo antes de entregar.
 
 # REGRAS GERAIS
 
@@ -326,6 +335,37 @@ export interface GenerationInput {
   visualStyle: string
   brandColors: string[]
   nSlides: number
+  /**
+   * Abordagem escolhida no wizard (viral, educativo, dados, storytelling,
+   * comunidade, oferta). Muda ESTRUTURA e REGISTRO do texto — ver
+   * ABORDAGEM_BRIEF. Opcional (fluxos antigos não mandam).
+   */
+  abordagem?: string
+  /**
+   * Títulos do roteiro anterior REJEITADO (fluxo "gerar novo roteiro").
+   * Quando presente, o novo roteiro deve ser substancialmente diferente.
+   */
+  avoidTitles?: string[]
+}
+
+/**
+ * Registro/estrutura por abordagem — injetado no user message pra IA
+ * realmente diferenciar (antes a abordagem nem chegava no prompt e os
+ * roteiros saíam todos parecidos).
+ */
+const ABORDAGEM_BRIEF: Record<string, string> = {
+  viral:
+    "VIRAL: gancho agressivo na capa (contraste, quebra de expectativa ou afirmação polêmica defensável), frases curtas de impacto, tensão crescente slide a slide, CTA de compartilhamento. Otimize pra parar o dedo — sem clickbait vazio: a promessa da capa é paga nos slides.",
+  educativo:
+    "EDUCATIVO: didático e sequencial — conceito → como fazer → exemplo prático → erro comum → recap. Cada slide ensina UMA coisa aplicável hoje. Tom professor experiente, zero pressa de vender.",
+  dados:
+    "DADOS & PROVAS: cada slide ancorado num número, fato ou comparação do briefing. Nunca jogue o dado solto — diga o que ele SIGNIFICA (contexto, comparação, consequência). Tom analítico de relatório editorial.",
+  storytelling:
+    "STORYTELLING: narrativa com arco — situação, tensão, virada, lição. Cenas concretas (quem, onde, o que aconteceu), menos bullets e mais fio condutor: cada slide termina puxando o próximo.",
+  comunidade:
+    "COMUNIDADE: vulnerabilidade real, linguagem de pertencimento ('a gente', 'quem vive isso sabe'), convite à conversa. Menos autoridade, mais identificação. CTA de comentário/DM genuíno.",
+  oferta:
+    "OFERTA DIRETA: benefício concreto e específico logo na capa, mecanismo (como funciona), prova (resultado/depoimento do briefing), quebra de objeção e CTA direto sem vergonha. Urgência só se houver motivo real.",
 }
 
 export interface ClaudeSlide {
@@ -483,6 +523,20 @@ export async function generateContent(
   const client = getClient()
   const objective = OBJECTIVE_LABELS[input.objective] ?? input.objective
 
+  const abordagemBrief = input.abordagem
+    ? ABORDAGEM_BRIEF[input.abordagem]
+    : null
+
+  const avoidBlock =
+    input.avoidTitles && input.avoidTitles.length
+      ? `
+
+ROTEIRO ANTERIOR REJEITADO PELO USUÁRIO — os títulos foram:
+${input.avoidTitles.map((t) => `- "${t}"`).join("\n")}
+
+Gere uma versão SUBSTANCIALMENTE diferente: outro gancho de capa, outra estrutura de arco, outros exemplos e ângulos. NÃO reutilize nem parafraseie nenhum desses títulos — se o novo roteiro parecer uma variação cosmética do anterior, ele será rejeitado de novo.`
+      : ""
+
   const userMessage = `Gere o JSON do carrossel.
 
 CONTEXTO:
@@ -494,12 +548,20 @@ CONTEXTO:
 - Público-alvo: ${input.targetAudience}
 - Estilo visual: ${input.visualStyle}
 - Cores da marca: ${input.brandColors.join(", ")}
-- Número de slides: ${input.nSlides}`
+- Número de slides: ${input.nSlides}${
+    abordagemBrief
+      ? `
+
+ABORDAGEM ESCOLHIDA PELO USUÁRIO — ela define a ESTRUTURA e o REGISTRO do texto (dois carrosséis sobre o mesmo tema com abordagens diferentes precisam ficar claramente diferentes):
+${abordagemBrief}`
+      : ""
+  }${avoidBlock}`
 
   const start = performance.now()
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 8192,
+    // Escala com o número de slides — 20 slides não cabem em 8192.
+    max_tokens: Math.min(32000, 8192 + Math.max(0, input.nSlides - 7) * 1200),
     thinking: { type: "disabled" },
     output_config: {
       effort: "low",
@@ -686,6 +748,129 @@ Devolva o JSON do plano editorial com as ideias distribuídas nas datas.`
 
   const raw = extractText(response.content)
   const data = parseJson<EditorialPlanResponse>(raw)
+
+  return {
+    data,
+    metrics: {
+      ms,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      cacheCreationInputTokens:
+        response.usage.cache_creation_input_tokens ?? 0,
+      cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+      costUsd: computeCost(response.usage),
+    },
+  }
+}
+
+// =============================================================================
+// planejarChatTurn — turno do chat conversacional da aba Planejar
+// =============================================================================
+
+const PLANEJAR_CHAT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["action", "message", "brief"],
+  properties: {
+    action: { type: "string", enum: ["ask", "generate"] },
+    message: { type: "string" },
+    brief: { type: "string" },
+    horizonDays: { type: "integer" },
+    count: { type: "integer" },
+  },
+} as const
+
+const PLANEJAR_CHAT_SYSTEM_PROMPT = `Você é um(a) estrategista de conteúdo que conversa com o dono da marca pra montar o briefing de um cronograma de posts do Instagram. Fala como gente — PT-BR coloquial culto, direto, caloroso sem ser bajulador. NUNCA soa como formulário.
+
+# COMO CONDUZIR
+
+- Você recebe o contexto da marca + o histórico da conversa. RESPONDA AO QUE A PESSOA DISSE — comente, reaja, aproveite o que ela deu. Nada de ignorar a resposta e cuspir a próxima pergunta de um script.
+- Pergunte APENAS o que ainda falta pra montar um bom plano: objetivo do período, recorte de público (se não estiver claro no cadastro), temas/lançamentos/datas a destacar, ritmo (posts por semana) e horizonte (semana, quinzena, mês).
+- UMA pergunta por vez (no máximo duas curtas juntas). Se a pessoa já respondeu algo em outra mensagem, NÃO pergunte de novo.
+- Se a pessoa pedir algo específico ("foca em reels", "sem posts de venda", "só terças e quintas"), ACEITE e registre no brief.
+- Se a pessoa disser "deixa com você", "tanto faz" ou similar, decida você e siga em frente.
+- Em NO MÁXIMO 4 perguntas você deve ter o suficiente. Aí action = "generate".
+
+# SAÍDA (JSON)
+
+- action "ask": ainda falta informação essencial. "message" = sua próxima fala (reação + pergunta). "brief" = resumo parcial do que já sabe.
+- action "generate": briefing suficiente. "message" = frase curta confirmando que vai montar o plano (mencione 1 detalhe concreto da conversa pra mostrar que ouviu). "brief" = briefing COMPLETO e estruturado pro gerador de cronograma (objetivo do cliente, público/recorte, temas e datas a destacar, restrições/pedidos específicos, ritmo). "horizonDays" = dias do plano (7, 14 ou 30 conforme a conversa; default 7). "count" = quantidade de posts coerente com o ritmo pedido e o horizonte (ex: 3/semana em 14 dias = 6).
+
+- PROIBIDO clichê de IA ("Perfeito!", "Ótima escolha!", "Com certeza!" em toda mensagem). Varie o registro.
+- NÃO use aspas duplas dentro das strings.`
+
+export interface PlanejarChatInput {
+  brandName: string
+  description: string
+  targetAudience: string
+  toneOfVoice: string
+  mainObjective: string
+  /** Histórico da conversa: role user/assistant + texto. */
+  messages: Array<{ role: "user" | "assistant"; text: string }>
+}
+
+export interface PlanejarChatTurn {
+  action: "ask" | "generate"
+  message: string
+  brief: string
+  horizonDays?: number
+  count?: number
+}
+
+export async function planejarChatTurn(
+  input: PlanejarChatInput,
+): Promise<{ data: PlanejarChatTurn; metrics: ClaudeMetrics }> {
+  const client = getClient()
+
+  const contexto = `CONTEXTO DA MARCA:
+- Nome: ${input.brandName}
+- Descrição: ${input.description || "(não informada)"}
+- Público-alvo cadastrado: ${input.targetAudience || "(não informado)"}
+- Tom de voz: ${input.toneOfVoice || "(não informado)"}
+- Objetivo principal: ${input.mainObjective || "(não informado)"}`
+
+  // Converte o histórico pro formato de messages da API (contexto vai na
+  // primeira mensagem de user pra manter o system prompt cacheável).
+  const history = input.messages.slice(-20)
+  const apiMessages: Anthropic.Messages.MessageParam[] = []
+  history.forEach((m, i) => {
+    const text = i === 0 ? `${contexto}\n\n---\n\n${m.text}` : m.text
+    apiMessages.push({ role: m.role, content: text })
+  })
+  if (apiMessages.length === 0) {
+    apiMessages.push({ role: "user", content: `${contexto}\n\n---\n\n(início da conversa — abra você)` })
+  }
+  // A API exige terminar em user — se o último é assistant, pede continuação.
+  if (apiMessages[apiMessages.length - 1].role === "assistant") {
+    apiMessages.push({ role: "user", content: "(continue)" })
+  }
+
+  const start = performance.now()
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1200,
+    thinking: { type: "disabled" },
+    output_config: {
+      effort: "low",
+      format: { type: "json_schema", schema: PLANEJAR_CHAT_SCHEMA },
+    },
+    system: [
+      {
+        type: "text",
+        text: PLANEJAR_CHAT_SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
+    messages: apiMessages,
+  } as Anthropic.Messages.MessageCreateParamsNonStreaming)
+  const ms = performance.now() - start
+
+  if (response.stop_reason === "refusal") {
+    throw new Error("Claude recusou o turno do chat de planejamento.")
+  }
+
+  const raw = extractText(response.content)
+  const data = parseJson<PlanejarChatTurn>(raw)
 
   return {
     data,

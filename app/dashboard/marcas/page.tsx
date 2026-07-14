@@ -2,10 +2,28 @@ import Link from "next/link"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { listBrands } from "@/lib/data/queries"
+import { listCarouselsV2 } from "@/app/actions/carousel"
+import { listSinglePosts } from "@/lib/single-posts/queries"
 import { getBrandGradient } from "@/lib/brand-colors"
 
 export default async function MarcasPage() {
-  const brands = await listBrands()
+  const [brands, carousels, singlePosts] = await Promise.all([
+    listBrands(),
+    listCarouselsV2(),
+    listSinglePosts(),
+  ])
+
+  // Conta TODO conteúdo da marca: projetos antigos (project_count) +
+  // carrosséis do editor novo (guardados por NOME da marca) + posts únicos
+  // (brand_id). Antes só projetos contavam → marca mostrava "0 criados".
+  function contentCount(brand: { id: string; name: string; project_count: number }) {
+    const name = brand.name.trim().toLowerCase()
+    const nCarousels = carousels.filter(
+      (c) => (c.brand_name ?? "").trim().toLowerCase() === name,
+    ).length
+    const nSingles = singlePosts.filter((p) => p.brand_id === brand.id).length
+    return brand.project_count + nCarousels + nSingles
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -71,10 +89,10 @@ export default async function MarcasPage() {
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground pt-1">
-                  {brand.project_count}{" "}
-                  {brand.project_count === 1
-                    ? "carrossel criado"
-                    : "carrosseis criados"}
+                  {contentCount(brand)}{" "}
+                  {contentCount(brand) === 1
+                    ? "conteúdo criado"
+                    : "conteúdos criados"}
                 </p>
               </div>
             </Link>

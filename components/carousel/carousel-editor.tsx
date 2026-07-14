@@ -16,6 +16,7 @@ import {
   Check,
   Undo2,
   Redo2,
+  ArrowLeft,
 } from "lucide-react"
 import { saveCarouselV2 } from "@/app/actions/carousel"
 import { Button } from "@/components/ui/button"
@@ -96,6 +97,9 @@ export function CarouselEditor({
   const [title, setTitle] = useState(initialTitle)
   const [style, setStyle] = useState<EditorialStyle>(editorialStyle)
   const [format, setFormat] = useState<"feed" | "stories">(initialFormat)
+  // Handle editável — o @ que aparece nos slides. Vem do cadastro da marca
+  // (instagram_handle) via props, mas o usuário pode corrigir aqui.
+  const [handleValue, setHandleValue] = useState(handle)
 
   // Salvar na biblioteca (Supabase). savedId liga o próximo save a um update.
   const [savedId, setSavedId] = useState<string | undefined>(initialCarouselId)
@@ -135,7 +139,7 @@ export function CarouselEditor({
           title,
           caption,
           brandName,
-          handle,
+          handle: handleValue,
           colors,
           template,
           editorialStyle: style,
@@ -145,7 +149,7 @@ export function CarouselEditor({
     } catch {
       // localStorage cheio/indisponível — ignora
     }
-  }, [slides, title, caption, brandName, handle, colors, template, style])
+  }, [slides, title, caption, brandName, handleValue, colors, template, style])
 
   const slide = slides[selected]
 
@@ -324,7 +328,7 @@ export function CarouselEditor({
           title,
           caption: caption ?? "",
           brandName,
-          handle,
+          handle: handleValue,
           colors,
           template,
           editorialStyle: style,
@@ -369,32 +373,59 @@ export function CarouselEditor({
     }
   }
 
+  /** Espera as <img> dentro do preview terminarem de carregar (até timeoutMs). */
+  async function waitPreviewImages(timeoutMs = 6000) {
+    const started = Date.now()
+    // primeiro dá um tick pro React renderizar o slide selecionado
+    await new Promise((r) => setTimeout(r, 120))
+    while (Date.now() - started < timeoutMs) {
+      const imgs = Array.from(
+        previewRef.current?.querySelectorAll("img") ?? [],
+      )
+      const pending = imgs.filter((im) => !im.complete)
+      if (pending.length === 0) return
+      await new Promise((r) => setTimeout(r, 150))
+    }
+  }
+
   // Exporta TODOS os slides num único .zip. Percorre os slides no preview
   // visível (cada um renderiza no previewRef) e captura o PNG de cada.
+  // Robusto: espera a imagem carregar de verdade (sem timer fixo) e um slide
+  // com erro NÃO derruba o zip inteiro — ele é pulado e reportado no final.
   async function handleExportAllZip() {
     if (!previewRef.current || slides.length === 0) return
     setZipBusy(true)
     setImgError(null)
     const prevSelected = selected
+    const failed: number[] = []
     try {
       const { toPng } = await import("html-to-image")
       const JSZip = (await import("jszip")).default
       const zip = new JSZip()
       for (let i = 0; i < slides.length; i++) {
         setSelected(i)
-        // espera o slide (e a imagem) renderizar antes de capturar
-        await new Promise((r) => setTimeout(r, 650))
+        await waitPreviewImages()
         if (!previewRef.current) continue
-        const dataUrl = await toPng(previewRef.current, {
-          cacheBust: true,
-          canvasWidth: 1080,
-          canvasHeight: format === "stories" ? 1920 : 1350,
-          pixelRatio: 1,
-        })
-        const base64 = dataUrl.split(",")[1]
-        zip.file(`${slideFileName(slides[i], i)}.png`, base64, {
-          base64: true,
-        })
+        try {
+          const dataUrl = await toPng(previewRef.current, {
+            cacheBust: true,
+            canvasWidth: 1080,
+            canvasHeight: format === "stories" ? 1920 : 1350,
+            pixelRatio: 1,
+          })
+          const base64 = dataUrl.split(",")[1]
+          zip.file(`${slideFileName(slides[i], i)}.png`, base64, {
+            base64: true,
+          })
+        } catch (slideErr) {
+          console.error(`[zip] slide ${i + 1} falhou`, slideErr)
+          failed.push(i + 1)
+        }
+      }
+      if (failed.length === slides.length) {
+        throw new Error(
+          "Nenhum slide pôde ser exportado. Recarregue a página e tente de novo.",
+        )
       }
       const blob = await zip.generateAsync({ type: "blob" })
       const url = URL.createObjectURL(blob)
@@ -405,6 +436,11 @@ export function CarouselEditor({
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      if (failed.length > 0) {
+        setImgError(
+          `ZIP gerado, mas ${failed.length} slide(s) falharam (${failed.join(", ")}). Exporte-os individualmente.`,
+        )
+      }
     } catch (err) {
       setImgError(err instanceof Error ? err.message : "erro no export do zip")
     } finally {
@@ -420,6 +456,18 @@ export function CarouselEditor({
           botões quebram linha (flex-wrap) em vez de transbordar pra fora. */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
+          <Button
+            asChild
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            title="Voltar pra biblioteca"
+            aria-label="Voltar pra biblioteca"
+          >
+            <a href="/dashboard/projetos">
+              <ArrowLeft className="w-4 h-4" />
+            </a>
+          </Button>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -552,7 +600,7 @@ export function CarouselEditor({
               brandColors={colors}
               fontClass={inter.className}
               editorialStyle={style}
-              handle={handle}
+              handle={handleValue}
               brandLabel={brandName}
               showDevBadges={false}
               format={format}
@@ -610,6 +658,23 @@ export function CarouselEditor({
             </Select>
             <p className="text-[10px] text-text-muted mt-1">
               Troca capa, tipografia e composição dos slides.
+            </p>
+          </div>
+
+          {/* Handle do Instagram — aparece nas pills de todos os slides */}
+          <div>
+            <Label className="text-xs">Handle do Instagram (@)</Label>
+            <Input
+              value={handleValue}
+              onChange={(e) => {
+                const v = e.target.value.trim()
+                setHandleValue(v ? (v.startsWith("@") ? v : `@${v}`) : "")
+              }}
+              placeholder="@suamarca"
+              className="h-9 mt-1.5"
+            />
+            <p className="text-[10px] text-text-muted mt-1">
+              O @ exibido nos slides. Vem do cadastro da marca — edite se precisar.
             </p>
           </div>
 
@@ -689,12 +754,18 @@ export function CarouselEditor({
                 />
               </div>
               <div>
-                <Label className="text-xs">Badge (tag)</Label>
+                <Label className="text-xs">
+                  Tag do slide (canto superior direito)
+                </Label>
                 <Input
                   value={slide.cta_badge || ""}
                   onChange={(e) => patchSlide({ cta_badge: e.target.value })}
-                  placeholder="ESTUDO 01, NOVO…"
+                  placeholder="ESTUDO 01, NOVO, EDITORIAL…"
                 />
+                <p className="text-[10px] text-text-muted mt-1">
+                  Texto curto exibido no topo do card. Deixe vazio pra usar o
+                  padrão.
+                </p>
               </div>
             </div>
           </div>

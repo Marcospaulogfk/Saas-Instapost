@@ -38,8 +38,9 @@
 
 **Taxas Cakto** (confiança ALTA): Pix **0% + R$2,49** · Cartão **3,89% + R$2,49** · Boleto 4,99% + R$2,49 · Saque R$4,59. Sem mensalidade. → **Empurrar Pix recorrente.**
 
-**Duas alavancas de redução de custo (futuro):**
-- Migrar Nano Banana Pro do **Fal.ai (US$0,15)** para a **API Gemini direta (US$0,039 em 1K)** = ~4× mais barato. Maior alavanca de COGS se o volume crescer.
+**Alavancas de redução de custo (corrigido em 14/07/2026 com preços oficiais):**
+- ⚠️ CORREÇÃO: a API Gemini direta pro **Nano Banana Pro (Gemini 3 Pro Image)** custa **US$0,134** (1K/2K), não US$0,039 — o 0,039 é o preço do 2.5 Flash. Migrar direto no MESMO modelo economiza só ~11%.
+- A alavanca real é **trocar o modelo premium pro Nano Banana 2 (Gemini 3.1 Flash Image)**: US$0,08 no Fal (via env `FAL_NANO_BANANA_PRO_MODEL=fal-ai/nano-banana-2`, zero código) ou US$0,067 na Gemini direta em 1K. Carrossel premium de 7 cai de R$5,46 → R$2,91 (Fal) / R$2,44 (direto). Ver ESTRATEGIA-POST-UNICO-V2.md §3.
 - **Prompt caching** no system prompt do Claude (o prompt é fixo entre gerações) corta ~90% do custo de input do texto.
 
 ---

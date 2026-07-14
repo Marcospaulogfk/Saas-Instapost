@@ -64,6 +64,22 @@ export async function listSinglePosts(): Promise<SinglePostRecord[]> {
   return (data as unknown as RawSinglePostRow[]).map(rowToRecord)
 }
 
+/** Posts únicos de UMA marca — usado na página da marca (aba Conteúdos). */
+export async function listSinglePostsByBrand(
+  brandId: string,
+): Promise<SinglePostRecord[]> {
+  const { supabase } = await requireUser()
+  const { data, error } = await supabase
+    .from("single_posts")
+    .select(
+      "id, brand_id, template_id, title, raw_brief, content, rendered_image_url, status, created_at, updated_at, brand:brands!inner(id, name)",
+    )
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false })
+  if (error || !data) return []
+  return (data as unknown as RawSinglePostRow[]).map(rowToRecord)
+}
+
 export async function getSinglePost(id: string): Promise<SinglePostRecord | null> {
   const { supabase } = await requireUser()
   const { data, error } = await supabase

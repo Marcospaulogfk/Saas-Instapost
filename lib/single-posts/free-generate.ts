@@ -106,11 +106,14 @@ PROIBIDO em todos os prompts: text, watermarks, logos, brand names, signs, billb
 # CAPTION (legenda do post — OBRIGATÓRIA)
 
 Além do texto que vai NA imagem, escreva a **legenda** (\`caption\`) que vai
-embaixo do post no Instagram. Regras:
-- 2 a 4 frases. Começa com um gancho forte (não repete o título literalmente).
-- Desenvolve a ideia com 1 informação concreta e termina com um convite/CTA natural.
+embaixo do post no Instagram. A legenda NÃO é um resumo tímido: a arte prende
+o olho, a legenda entrega o contexto e o argumento completos. Regras:
+- Começa com um gancho forte na 1ª linha (não repete o título literalmente) — é o que aparece antes do "...mais".
+- Desenvolve em 2-4 parágrafos curtos (separados por \\n\\n): por que o assunto importa agora, o argumento central com pelo menos 1-2 informações concretas do briefing, e o que o leitor faz com isso.
+- Traga 1 camada a mais que a arte — um detalhe, nuance ou exemplo que não coube na imagem.
+- Termina com um convite/CTA natural e específico (salvar, comentar, mandar pra alguém).
 - Voz humana, PT-BR coloquial culto. Os mesmos clichês proibidos da copy valem aqui.
-- Pode usar 1-2 quebras de linha (\\n). NÃO use hashtags no corpo.
+- NÃO use hashtags no corpo.
 - Feche com uma linha separada de 3-5 hashtags relevantes em minúsculo.
 
 # OUTPUT — APENAS JSON válido (sem fence \`\`\`):
@@ -130,7 +133,7 @@ embaixo do post no Instagram. Regras:
     "stat_label"?: string,
     "question_keyword"?: string
   },
-  "caption": "legenda do post pro Instagram (2-4 frases + linha de hashtags)",
+  "caption": "legenda completa do post (gancho + 2-4 parágrafos com contexto + CTA + linha de hashtags)",
   "photo_prompt"?: string,
   "image_entity"?: string,
   "rationale": "1 frase explicando a escolha de copy"

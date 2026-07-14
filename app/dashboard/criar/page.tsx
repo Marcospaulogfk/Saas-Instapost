@@ -90,11 +90,12 @@ type FormatKind = "post" | "story"
 
 /**
  * Monta o objeto de formato a partir da escolha do usuário:
- * feed vs stories + quantidade de slides (1 a 7). 1 slide = post único,
- * 2+ = carrossel. O restante do wizard consome esse objeto genericamente.
+ * feed vs stories + quantidade de slides (1 a 20 — limite do Instagram).
+ * 1 slide = post único, 2+ = carrossel. O restante do wizard consome esse
+ * objeto genericamente.
  */
 function buildFormato(format: FormatKind, slides: number): Formato {
-  const n = Math.min(7, Math.max(1, slides))
+  const n = Math.min(20, Math.max(1, slides))
   const isStory = format === "story"
   const pageMode = n <= 1 ? "post-unico" : "carrossel"
   const base = isStory ? "Stories" : "Feed"
@@ -582,17 +583,24 @@ function CriarWizard() {
     goToStep(5)
     try {
       const finalBriefing = await resolveBriefing(refined)
+      // Regeração ("gerar novo roteiro"): manda os títulos do roteiro atual
+      // pra IA produzir uma versão realmente diferente (não variação cosmética).
+      const avoidTitles = carouselDraft?.slides?.length
+        ? carouselDraft.slides.map((s) => s.title).filter(Boolean)
+        : undefined
       const res = await fetch("/api/editorial/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topic: finalBriefing,
           objective: OBJETIVO_TO_API[objetivo],
+          abordagem: abordagem ?? undefined,
           template: "editorial",
           brandName: wizardBrand.name,
           handle: wizardBrand.instagram_handle,
           colors: wizardBrand.brand_colors,
           desiredSlides: formato.slides ?? 7,
+          avoidTitles,
         }),
       })
       const data = await res.json()
@@ -947,13 +955,13 @@ function Step1({
         })}
       </div>
 
-      {/* Quantidade de slides: 1 a 7 */}
+      {/* Quantidade de slides: 1 a 20 (limite do Instagram) */}
       <div className="max-w-xl mx-auto mb-8">
         <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
           Quantos slides?
         </p>
         <div className="grid grid-cols-7 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20].map((n) => {
             const selected = chosen && slides === n
             return (
               <button
@@ -974,7 +982,7 @@ function Step1({
         <p className="text-[11px] text-text-muted mt-2 text-center">
           {slides <= 1
             ? "1 slide = post único."
-            : `${slides} slides = carrossel.`}
+            : `${slides} slides = carrossel. O Instagram aceita até 20.`}
         </p>
       </div>
 

@@ -18,6 +18,7 @@ import {
   Camera,
 } from "lucide-react"
 import { anton, playfair, inter, allura, bebas, montserrat, archivo, grotesk } from "./fonts"
+import { proxiedImageUrl } from "@/lib/proxy-image"
 import type {
   FreeBlock,
   FreeFontKey,
@@ -183,7 +184,7 @@ function renderImage(b: FreeImageBlock) {
   return (
     <img
       key={`img-${b.url.slice(-30)}-${JSON.stringify(b.position)}`}
-      src={b.url}
+      src={proxiedImageUrl(b.url)}
       alt=""
       style={{
         ...positionToStyle(b.position),
@@ -583,11 +584,12 @@ export function FreePostRenderer({
       onClick={editable ? () => onSelectBlock?.(null) : undefined}
     >
       {bg.kind === "photo" && bg.photo_url && (
+        // Proxy mesma-origem (lib/proxy-image): hosts sem CORS (fal.media)
+        // quebravam com crossOrigin="anonymous" e sujavam o canvas no export.
         <img
-          src={bg.photo_url}
+          src={proxiedImageUrl(bg.photo_url)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
-          crossOrigin="anonymous"
         />
       )}
       {bg.kind === "photo" && bg.photo_overlay && (

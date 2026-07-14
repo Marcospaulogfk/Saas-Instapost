@@ -69,9 +69,26 @@ interface Project {
   created_at: string
 }
 
+interface CarouselItem {
+  id: string
+  title: string
+  cover_url: string | null
+  slide_count: number
+  updated_at: string
+}
+
+interface SinglePostItem {
+  id: string
+  title: string
+  rendered_image_url: string | null
+  created_at: string
+}
+
 interface BrandDetailProps {
   brand: Brand
   projects: Project[]
+  carousels?: CarouselItem[]
+  singlePosts?: SinglePostItem[]
 }
 
 const OBJECTIVE_LABELS: Record<string, string> = {
@@ -105,7 +122,13 @@ function objectiveLabels(value: string | null): string {
   return labels.length > 0 ? labels.join(", ") : "—"
 }
 
-export function BrandDetail({ brand, projects }: BrandDetailProps) {
+export function BrandDetail({
+  brand,
+  projects,
+  carousels = [],
+  singlePosts = [],
+}: BrandDetailProps) {
+  const contentCount = projects.length + carousels.length + singlePosts.length
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -331,7 +354,7 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
         <TabsList className="bg-background-secondary/60 border border-border-subtle">
           <TabsTrigger value="identidade">Identidade</TabsTrigger>
           <TabsTrigger value="projetos">
-            Projetos {projects.length > 0 && `(${projects.length})`}
+            Conteúdos {contentCount > 0 && `(${contentCount})`}
           </TabsTrigger>
         </TabsList>
 
@@ -545,20 +568,85 @@ export function BrandDetail({ brand, projects }: BrandDetailProps) {
         </TabsContent>
 
         <TabsContent value="projetos" className="pt-6">
-          {projects.length === 0 ? (
+          {contentCount === 0 ? (
             <div className="rounded-xl border border-dashed border-border-medium bg-gradient-card backdrop-blur-xl p-12 text-center space-y-3">
               <p className="text-text-secondary">
-                Nenhum carrossel criado nesta marca ainda.
+                Nenhum conteúdo criado nesta marca ainda.
               </p>
               <Button asChild>
                 <Link href="/dashboard/criar">
                   <Plus className="w-4 h-4 mr-2" />
-                  Criar primeiro carrossel
+                  Criar primeiro conteúdo
                 </Link>
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Carrosséis (editor novo) */}
+              {carousels.map((carousel) => (
+                <Link
+                  key={`c-${carousel.id}`}
+                  href={`/dashboard/carrossel?id=${carousel.id}`}
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all bg-black"
+                >
+                  {carousel.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={carousel.cover_url}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
+                    />
+                  )}
+                  <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-white">
+                    {carousel.slide_count} slides
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4">
+                    <h3 className="font-display font-semibold text-white truncate">
+                      {carousel.title}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {formatRelativeDate(carousel.updated_at)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {/* Posts únicos */}
+              {singlePosts.map((post) => (
+                <Link
+                  key={`p-${post.id}`}
+                  href={`/dashboard/posts-unicos/${post.id}`}
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all bg-black"
+                >
+                  {post.rendered_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={post.rendered_image_url}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`absolute inset-0 ${getProjectGradient(post.id)}`}
+                    />
+                  )}
+                  <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm text-white">
+                    Post
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4">
+                    <h3 className="font-display font-semibold text-white truncate">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {formatRelativeDate(post.created_at)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {/* Projetos (fluxo antigo) */}
               {projects.map((project) => (
                 <Link
                   key={project.id}

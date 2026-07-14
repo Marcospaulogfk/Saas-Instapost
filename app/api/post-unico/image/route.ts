@@ -108,7 +108,19 @@ export async function POST(req: Request) {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"
-    console.error("[post-unico/image]", err)
+    const status = (err as { status?: number })?.status
+    console.error("[post-unico/image]", status, err)
+    // 401/403 do Fal.ai = problema de credencial/saldo do PROVEDOR, não do
+    // prompt do usuário. Mensagem crua "Forbidden" confundia o cliente.
+    if (status === 401 || status === 403 || /forbidden|unauthorized/i.test(message)) {
+      return NextResponse.json(
+        {
+          error:
+            "A geração de imagem por IA está temporariamente indisponível (falha no provedor). Enquanto isso, use 'Foto real' ou upload — e avise o suporte se persistir.",
+        },
+        { status: 503 },
+      )
+    }
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

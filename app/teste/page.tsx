@@ -21,7 +21,11 @@ import {
   Wand2,
   RefreshCw,
   Download,
+  ArrowLeft,
+  Save,
+  Check,
 } from "lucide-react"
+import { createSinglePost, updateSinglePost } from "@/app/actions/single-posts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -167,7 +171,7 @@ export default function TestePage() {
   const [lightBg, setLightBg] = useState<string>("#FAF8F5")
   const [darkBg, setDarkBg] = useState<string>("#0A0A0A")
   const [font, setFont] = useState<FontKey>(DEFAULTS.font)
-  const [nSlides, setNSlides] = useState<5 | 7 | 10>(DEFAULTS.nSlides)
+  const [nSlides, setNSlides] = useState<number>(DEFAULTS.nSlides)
   const [mode, setMode] = useState<typeof DEFAULTS.mode>(DEFAULTS.mode)
 
   const [loading, setLoading] = useState(false)
@@ -210,6 +214,10 @@ export default function TestePage() {
   const [singlePostFormat, setSinglePostFormat] = useState<"post" | "story">("post")
   const [singlePostSelectedPath, setSinglePostSelectedPath] = useState<string | null>(null)
   const [singlePostExporting, setSinglePostExporting] = useState(false)
+  // Salvar na biblioteca (single_posts). savedId liga saves seguintes a update.
+  const [singlePostSaving, setSinglePostSaving] = useState(false)
+  const [singlePostSavedId, setSinglePostSavedId] = useState<string | null>(null)
+  const [singlePostSaveOk, setSinglePostSaveOk] = useState(false)
   const singlePostPreviewRef = useRef<HTMLDivElement | null>(null)
   const lastAutoDetachedSpecRef = useRef<FreePostSpec | null>(null)
 
@@ -894,6 +902,132 @@ export default function TestePage() {
     }
   }
 
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  /** Primeiro texto do spec livre — vira o título do post na biblioteca. */
+  function titleFromSpec(spec: FreePostSpec | null): string {
+    if (!spec) return ""
+    const stack = [...spec.blocks]
+    while (stack.length) {
+      const b = stack.shift()!
+      if (b.type === "text" && b.text.trim()) return b.text.trim().slice(0, 80)
+      if (b.type === "card" || b.type === "stack") stack.push(...b.children)
+    }
+    return ""
+  }
+
+  /**
+   * Foto em data URL (upload local) → sobe pro Supabase Storage antes de
+   * persistir. Guardar base64 de até 5MB dentro do JSONB incharia o banco.
+   * Em falha, mantém a data URL (salvar nunca quebra por causa disso).
+   */
+  async function maybeUploadDataUrl(url: string): Promise<string> {
+    if (!url.startsWith("data:")) return url
+    try {
+      const blob = await (await fetch(url)).blob()
+      const fd = new FormData()
+      fd.append(
+        "file",
+        new File([blob], "upload.png", { type: blob.type || "image/png" }),
+      )
+      const res = await fetch("/api/editorial/upload-image", {
+        method: "POST",
+        body: fd,
+      })
+      const data = await res.json()
+      if (data?.success && typeof data.url === "string") return data.url
+    } catch {}
+    return url
+  }
+
+  /**
+   * Salva o post único na biblioteca (tabela single_posts).
+   * - Modo template: content estruturado (abre no editor completo depois).
+   * - Modo livre (skeleton/free-spec): guarda o spec inteiro em content
+   *   (template_id "free:<skeleton>") — a biblioteca renderiza pelo spec.
+   */
+  async function handleSinglePostSave() {
+    const brandId = singlePostBrand?.id
+    if (!brandId || !UUID_RE.test(brandId)) {
+      setSinglePostError(
+        "Pra salvar na biblioteca, gere o post a partir de uma marca sua (Dashboard → Criar conteúdo).",
+      )
+      return
+    }
+    const isTemplate = !!(singlePostTemplateId && singlePostTemplateContent)
+    if (!isTemplate && !singlePostSpec) {
+      setSinglePostError("Nada pra salvar ainda — gere um post primeiro.")
+      return
+    }
+    setSinglePostSaving(true)
+    setSinglePostError(null)
+    try {
+      const title =
+        (isTemplate
+          ? (singlePostTemplateContent?.title ?? "")
+          : titleFromSpec(singlePostSpec)) ||
+        singlePostBriefing.trim().slice(0, 60) ||
+        "Post único"
+      // Foto de fundo em data URL (upload local) → re-hospeda no Storage.
+      let specToSave = singlePostSpec
+      if (
+        !isTemplate &&
+        specToSave &&
+        specToSave.background.kind === "photo" &&
+        specToSave.background.photo_url?.startsWith("data:")
+      ) {
+        const hosted = await maybeUploadDataUrl(specToSave.background.photo_url)
+        specToSave = {
+          ...specToSave,
+          background: { ...specToSave.background, photo_url: hosted },
+        }
+      }
+      const content = isTemplate
+        ? (singlePostTemplateContent as PostContent)
+        : ({
+            _free_spec: specToSave,
+            _font_preset: singlePostFontPreset,
+            _format: singlePostFormat,
+            _photo_url: singlePostPhotoUrl,
+          } as unknown as PostContent)
+      const templateId = isTemplate
+        ? (singlePostTemplateId as string)
+        : `free:${singlePostSkeletonPicked ?? singlePostSkeleton ?? "auto"}`
+
+      if (singlePostSavedId) {
+        const res = await updateSinglePost(singlePostSavedId, {
+          title,
+          raw_brief: singlePostBriefing || null,
+          content,
+        })
+        if (!res.ok) {
+          setSinglePostError(res.error)
+          return
+        }
+      } else {
+        const res = await createSinglePost({
+          brand_id: brandId,
+          template_id: templateId,
+          title,
+          raw_brief: singlePostBriefing || null,
+          content,
+        })
+        if (!res.ok) {
+          setSinglePostError(res.error)
+          return
+        }
+        setSinglePostSavedId(res.postId)
+      }
+      setSinglePostSaveOk(true)
+      setTimeout(() => setSinglePostSaveOk(false), 2500)
+    } catch (err) {
+      setSinglePostError(err instanceof Error ? err.message : "erro ao salvar")
+    } finally {
+      setSinglePostSaving(false)
+    }
+  }
+
   interface GeneratePayload {
     topic: string
     objective: typeof DEFAULTS.objective
@@ -903,7 +1037,7 @@ export default function TestePage() {
     colors: string[]
     template: typeof DEFAULTS.template
     font: FontKey
-    nSlides: 5 | 7 | 10
+    nSlides: number
     mode: typeof DEFAULTS.mode
   }
 
@@ -1205,7 +1339,10 @@ export default function TestePage() {
         ? parsed.template
         : DEFAULTS.template,
       font: parsed.font in FONTS ? (parsed.font as FontKey) : DEFAULTS.font,
-      nSlides: [5, 7, 10].includes(parsed.nSlides) ? parsed.nSlides : DEFAULTS.nSlides,
+      nSlides:
+        Number.isInteger(parsed.nSlides) && parsed.nSlides >= 3 && parsed.nSlides <= 20
+          ? parsed.nSlides
+          : DEFAULTS.nSlides,
       mode: ["all_ai", "smart_mix", "all_unsplash"].includes(parsed.mode)
         ? parsed.mode
         : DEFAULTS.mode,
@@ -1236,7 +1373,21 @@ export default function TestePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b border-border px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <Button
+            asChild
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 shrink-0"
+            title="Voltar pro dashboard"
+            aria-label="Voltar pro dashboard"
+          >
+            <a href="/dashboard">
+              <ArrowLeft className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline text-xs">Dashboard</span>
+            </a>
+          </Button>
           <div className="min-w-0">
             <h1 className="text-sm sm:text-base lg:text-lg font-bold leading-tight truncate">
               <span className="hidden sm:inline">
@@ -1252,12 +1403,38 @@ export default function TestePage() {
               )}
             </h1>
             <p className="hidden sm:block text-[11px] text-muted-foreground">
-              Sandbox sem persistência. Mude a aba pra alternar entre os formatos.
+              Salve na biblioteca pra não perder o que criou.
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
         {pageMode === "post-unico" && (singlePostSpec || singlePostTemplateId) && (
+          <>
+          <Button
+            type="button"
+            onClick={handleSinglePostSave}
+            disabled={singlePostSaving}
+            size="sm"
+            variant={singlePostSaveOk ? "outline" : "default"}
+            className="h-8 shrink-0"
+          >
+            {singlePostSaving ? (
+              <Loader2 className="w-4 h-4 sm:mr-1.5 animate-spin" />
+            ) : singlePostSaveOk ? (
+              <Check className="w-4 h-4 sm:mr-1.5 text-emerald-500" />
+            ) : (
+              <Save className="w-4 h-4 sm:mr-1.5" />
+            )}
+            <span className="hidden sm:inline">
+              {singlePostSaving
+                ? "Salvando…"
+                : singlePostSaveOk
+                  ? "Salvo!"
+                  : singlePostSavedId
+                    ? "Salvar alterações"
+                    : "Salvar na biblioteca"}
+            </span>
+          </Button>
           <Button
             type="button"
             onClick={handleSinglePostExport}
@@ -1270,6 +1447,7 @@ export default function TestePage() {
               {singlePostExporting ? "Exportando..." : "Exportar PNG"}
             </span>
           </Button>
+          </>
         )}
         <div className="flex items-center gap-1 p-1 rounded-lg bg-background-secondary/60 border border-border-subtle">
           <button
@@ -1457,12 +1635,12 @@ export default function TestePage() {
 
           <div className="space-y-2">
             <Label>Número de slides</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {[5, 7, 10].map((n) => (
+            <div className="grid grid-cols-5 gap-2">
+              {[5, 7, 10, 15, 20].map((n) => (
                 <button
                   key={n}
                   type="button"
-                  onClick={() => setNSlides(n as 5 | 7 | 10)}
+                  onClick={() => setNSlides(n)}
                   className={`h-9 rounded-md border text-sm font-medium ${
                     n === nSlides
                       ? "border-primary bg-primary/10 text-primary"

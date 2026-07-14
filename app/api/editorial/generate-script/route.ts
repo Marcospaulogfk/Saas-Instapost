@@ -41,6 +41,10 @@ interface RequestBody {
   colors?: string[]
   template?: "editorial" | "cinematic" | "hybrid"
   desiredSlides?: number
+  /** Abordagem do wizard (viral, educativo, dados…) — muda o registro do texto. */
+  abordagem?: string
+  /** Títulos do roteiro anterior rejeitado — força variação real na regeração. */
+  avoidTitles?: string[]
 }
 
 export async function POST(req: Request) {
@@ -69,9 +73,10 @@ export async function POST(req: Request) {
   )
     ? (body.template as "editorial" | "cinematic" | "hybrid")
     : "editorial"
+  // Instagram permite até 20 slides por carrossel.
   const nSlides =
     typeof body.desiredSlides === "number" && body.desiredSlides >= 3
-      ? Math.min(body.desiredSlides, 10)
+      ? Math.min(body.desiredSlides, 20)
       : 7
 
   try {
@@ -93,6 +98,10 @@ export async function POST(req: Request) {
           ? body.colors
           : ["#7320E6", "#0A0A0F", "#FAF8F5"],
       nSlides,
+      abordagem: typeof body.abordagem === "string" ? body.abordagem : undefined,
+      avoidTitles: Array.isArray(body.avoidTitles)
+        ? body.avoidTitles.filter((t): t is string => typeof t === "string").slice(0, 30)
+        : undefined,
     })
 
     return NextResponse.json({

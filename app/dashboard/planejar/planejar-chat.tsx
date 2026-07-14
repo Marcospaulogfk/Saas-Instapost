@@ -33,57 +33,28 @@ interface ChatMessage {
   text: string
 }
 
-/** Roteiro humanizado da entrevista. Cada passo coleta uma resposta. */
-interface Step {
-  key: string
-  ask: (brand: BrandLite) => string
-  placeholder: string
+/** Resposta de um turno do chat IA (/api/planejar/chat). */
+interface ChatTurn {
+  action: "ask" | "generate"
+  message: string
+  brief: string
+  horizonDays?: number
+  count?: number
 }
 
-const STEPS: Step[] = [
-  {
-    key: "foco",
-    ask: (b) =>
-      `Oi! Sou seu parceiro de conteúdo da ${b.name}. Vou montar um cronograma de posts pensado pro seu negócio — mas antes quero te entender melhor.\n\nMe conta com suas palavras: o que você mais quer alcançar com o Instagram nas próximas semanas? (mais vendas, mais autoridade, atrair clientes novos...)`,
-    placeholder: "Ex: quero atrair clientes novos e mostrar autoridade no meu nicho",
-  },
-  {
-    key: "publico",
-    ask: (b) =>
-      b.target_audience
-        ? `Boa. Anotei que seu público é "${b.target_audience}". Tem algum recorte mais específico que você quer falar agora? (ex: um perfil de cliente, uma região, uma dor concreta) — se tiver, descreve; se não, escreve "tá certo".`
-        : `Pra quem você quer falar nesses próximos posts? Descreve o seu cliente ideal em 1-2 frases.`,
-    placeholder: "Ex: donas de pequenos negócios que vendem por DM e não têm tempo",
-  },
-  {
-    key: "tema",
-    ask: () =>
-      `Show. Tem algum assunto, lançamento, promoção ou data importante que você quer destacar nesse período? Se não tiver nada fixo, escreve "deixa com você".`,
-    placeholder: "Ex: vou lançar um serviço novo dia 20 / nada fixo, pode sugerir",
-  },
-  {
-    key: "frequencia",
-    ask: () =>
-      `Última: qual o ritmo que você consegue manter? Escolhe um botão aí embaixo ou me diz quantos posts por semana.`,
-    placeholder: "Ex: 3 posts por semana",
-  },
-]
-
-const HORIZON_OPTIONS = [
-  { label: "Esta semana", horizonDays: 7, count: 3 },
-  { label: "2 semanas", horizonDays: 14, count: 6 },
-  { label: "Mês inteiro", horizonDays: 30, count: 12 },
+const QUICK_REPLIES = [
+  "Esta semana, uns 3 posts",
+  "2 semanas, 3 posts por semana",
+  "Mês inteiro, 12 posts",
 ]
 
 export function PlanejarChat({ brand }: { brand: BrandLite }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [stepIndex, setStepIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
   const [input, setInput] = useState("")
   const [phase, setPhase] = useState<"interview" | "generating" | "review">(
     "interview",
   )
-  const [horizon, setHorizon] = useState(HORIZON_OPTIONS[0])
+  const [thinking, setThinking] = useState(false)
   const [plan, setPlan] = useState<{ resumo: string; ideias: PlanoIdeia[] } | null>(
     null,
   )
@@ -92,19 +63,34 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const startedRef = useRef(false)
 
-  // Inicia com a primeira pergunta.
+  // Abertura: a própria IA puxa a conversa (com fallback offline).
   useEffect(() => {
-    setMessages([{ role: "assistant", text: STEPS[0].ask(brand) }])
+    if (startedRef.current) return
+    startedRef.current = true
+    void (async () => {
+      setThinking(true)
+      try {
+        const turn = await chatTurn([])
+        setMessages([{ role: "assistant", text: turn.message }])
+      } catch {
+        setMessages([
+          {
+            role: "assistant",
+            text: `Oi! Sou seu parceiro de conteúdo da ${brand.name}. Me conta: o que você quer alcançar com o Instagram nas próximas semanas — e tem algum assunto ou data que precisa entrar no plano?`,
+          },
+        ])
+      } finally {
+        setThinking(false)
+      }
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-  }, [messages, phase])
-
-  const currentStep = STEPS[stepIndex]
-  const isLastStep = stepIndex === STEPS.length - 1
+  }, [messages, phase, thinking])
 
   function pushUser(text: string) {
     setMessages((m) => [...m, { role: "user", text }])
@@ -113,46 +99,56 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
     setMessages((m) => [...m, { role: "assistant", text }])
   }
 
-  function handleSend() {
-    const value = input.trim()
-    if (!value || phase !== "interview") return
-    pushUser(value)
-    const nextAnswers = { ...answers, [currentStep.key]: value }
-    setAnswers(nextAnswers)
-    setInput("")
-
-    if (!isLastStep) {
-      const next = STEPS[stepIndex + 1]
-      setStepIndex((i) => i + 1)
-      setTimeout(() => pushAssistant(next.ask(brand)), 250)
-    } else {
-      void generate(nextAnswers)
-    }
+  async function chatTurn(history: ChatMessage[]): Promise<ChatTurn> {
+    const res = await fetch("/api/planejar/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brandId: brand.id, messages: history }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error ?? "Falha no chat")
+    return json as ChatTurn
   }
 
-  async function generate(finalAnswers: Record<string, string>) {
+  function handleSend(textOverride?: string) {
+    const value = (textOverride ?? input).trim()
+    if (!value || phase !== "interview" || thinking) return
+    const history = [...messages, { role: "user" as const, text: value }]
+    pushUser(value)
+    setInput("")
+    setError(null)
+    void (async () => {
+      setThinking(true)
+      try {
+        const turn = await chatTurn(history)
+        pushAssistant(turn.message)
+        if (turn.action === "generate") {
+          await generate(turn)
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        setError(message)
+        pushAssistant(
+          "Ops, tive um problema aqui. Manda sua mensagem de novo que eu continuo de onde paramos.",
+        )
+      } finally {
+        setThinking(false)
+      }
+    })()
+  }
+
+  async function generate(turn: ChatTurn) {
     setPhase("generating")
     setError(null)
-    pushAssistant(
-      `Perfeito. Vou montar um cronograma de ${horizon.label.toLowerCase()} com a cara da ${brand.name}. Já volto...`,
-    )
-
-    const brief = [
-      `Objetivo do cliente: ${finalAnswers.foco ?? "-"}`,
-      `Público/recorte: ${finalAnswers.publico ?? "-"}`,
-      `Assunto/data destaque: ${finalAnswers.tema ?? "-"}`,
-      `Ritmo desejado: ${finalAnswers.frequencia ?? "-"}`,
-    ].join("\n")
-
     try {
       const res = await fetch("/api/planejar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brandId: brand.id,
-          conversationBrief: brief,
-          horizonDays: horizon.horizonDays,
-          count: horizon.count,
+          conversationBrief: turn.brief,
+          horizonDays: turn.horizonDays ?? 7,
+          count: turn.count ?? 5,
         }),
       })
       const json = await res.json()
@@ -172,7 +168,7 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
       setError(message)
       setPhase("interview")
       pushAssistant(
-        `Ops, deu ruim ao gerar (${message}). Quer tentar de novo? Clica em "Gerar plano".`,
+        `Ops, deu ruim ao gerar (${message}). Me manda um "gera de novo" que eu tento outra vez.`,
       )
     }
   }
@@ -205,9 +201,12 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
   }
 
   function restart() {
-    setMessages([{ role: "assistant", text: STEPS[0].ask(brand) }])
-    setStepIndex(0)
-    setAnswers({})
+    setMessages([
+      {
+        role: "assistant",
+        text: `Bora montar outro plano pra ${brand.name}. O que muda desta vez — objetivo, período ou temas?`,
+      },
+    ])
     setInput("")
     setPhase("interview")
     setPlan(null)
@@ -261,6 +260,15 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-background-tertiary/60 border border-border-subtle px-4 py-2.5 text-sm text-text-secondary">
               <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
               Montando o cronograma...
+            </div>
+          </div>
+        )}
+
+        {phase === "interview" && thinking && (
+          <div className="flex justify-start">
+            <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-background-tertiary/60 border border-border-subtle px-4 py-2.5 text-sm text-text-secondary">
+              <Loader2 className="w-4 h-4 animate-spin text-brand-400" />
+              Digitando…
             </div>
           </div>
         )}
@@ -328,24 +336,19 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
       <div className="mt-3">
         {phase === "interview" && (
           <>
-            {currentStep?.key === "frequencia" && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {HORIZON_OPTIONS.map((h) => (
-                  <button
-                    key={h.label}
-                    type="button"
-                    onClick={() => setHorizon(h)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      horizon.label === h.label
-                        ? "bg-brand-600 border-brand-600 text-white"
-                        : "border-border-subtle text-text-secondary hover:text-text-primary"
-                    }`}
-                  >
-                    {h.label} · {h.count} posts
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {QUICK_REPLIES.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => handleSend(q)}
+                  disabled={thinking}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border-subtle text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
             <div className="flex items-end gap-2">
               <textarea
                 value={input}
@@ -357,10 +360,14 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
                   }
                 }}
                 rows={1}
-                placeholder={currentStep?.placeholder ?? "Escreva sua resposta..."}
+                placeholder="Escreva sua resposta..."
                 className="flex-1 resize-none rounded-xl border border-border-subtle bg-background-tertiary/40 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-600/50 max-h-32"
               />
-              <Button onClick={handleSend} disabled={!input.trim()} className="h-11">
+              <Button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || thinking}
+                className="h-11"
+              >
                 <Send className="w-4 h-4" />
               </Button>
             </div>
@@ -408,12 +415,6 @@ export function PlanejarChat({ brand }: { brand: BrandLite }) {
           </div>
         )}
 
-        {phase === "interview" && error && (
-          <Button onClick={() => generate(answers)} className="mt-2">
-            <RotateCcw className="w-4 h-4 mr-1.5" />
-            Gerar plano
-          </Button>
-        )}
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
+import { proxiedImageUrl } from "@/lib/proxy-image"
 
 // useLayoutEffect no cliente (mede antes de pintar, sem flicker); useEffect no
 // SSR pra não gerar warning.
@@ -135,7 +136,9 @@ export function SmartSlideImage({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={measure}
-        src={src}
+        // Hosts externos (fal.media, Unsplash…) passam pelo /api/proxy-image:
+        // mesma origem → o html-to-image consegue capturar no export PNG/ZIP.
+        src={proxiedImageUrl(src)}
         alt=""
         className={className}
         onLoad={(e) => decide(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
@@ -240,7 +243,11 @@ export function AvatarPill({
       >
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatar} alt="" className="w-full h-full object-cover" />
+          <img
+            src={proxiedImageUrl(avatar)}
+            alt=""
+            className="w-full h-full object-cover"
+          />
         ) : (
           initials
         )}
