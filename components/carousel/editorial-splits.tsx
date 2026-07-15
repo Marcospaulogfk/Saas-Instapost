@@ -1146,12 +1146,17 @@ export function SplitCardsWhite({
   const Badge = (
     <div
       className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5"
-      style={{ backgroundColor: "#EDEFF2" }}
+      style={{
+        // Gradiente azul-lavanda → cinza-claro + brilho no topo (igual MyPostFlow).
+        backgroundImage:
+          "linear-gradient(105deg, #A7B3D0 0%, #C7CCD7 52%, #DDDFE4 100%)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
+      }}
     >
       <span style={{ color: accent, fontSize: 12 }}>✦</span>
       <span
         className="text-[11px] uppercase tracking-[0.14em] font-bold truncate"
-        style={{ color: "#4A5160" }}
+        style={{ color: "#3A4256" }}
       >
         {slide.category || "Conteúdo"}
       </span>

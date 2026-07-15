@@ -576,9 +576,12 @@ export function HighlightedGlass({
           <span
             key={i}
             style={{
-              backgroundColor: "rgba(255,255,255,0.18)",
+              // Bloco "vidro" com GRADIENTE (azul-lavanda claro → cinza
+              // translúcido), texto branco — igual à capa do MyPostFlow.
+              backgroundImage:
+                "linear-gradient(115deg, rgba(206,213,230,0.62) 0%, rgba(150,156,172,0.30) 55%, rgba(120,126,142,0.16) 100%)",
               boxShadow:
-                "0 0 0 1px rgba(255,255,255,0.22), 0 6px 18px rgba(0,0,0,0.25)",
+                "inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 18px rgba(0,0,0,0.22)",
               borderRadius: "0.12em",
               padding: "0 0.14em",
               // cada linha da palavra quebrada recebe seu próprio bloco
