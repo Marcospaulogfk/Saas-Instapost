@@ -1151,7 +1151,6 @@ export function SplitCardsWhite({
   slide,
   totalSlides,
   orderIndex,
-  accent,
   fontClass,
   imageSlot = "single-bottom",
   bgOverride,
@@ -1197,7 +1196,7 @@ export function SplitCardsWhite({
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
       }}
     >
-      <BadgeIcon size={13} strokeWidth={2.6} style={{ color: accent, flexShrink: 0 }} />
+      <BadgeIcon size={13} strokeWidth={2.6} style={{ color: "#3A4256", flexShrink: 0 }} />
       <span
         className="text-[11px] uppercase tracking-[0.14em] font-bold truncate"
         style={{ color: "#3A4256" }}
