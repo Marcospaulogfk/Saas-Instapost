@@ -21,6 +21,7 @@ import {
   HighlightedGradientText,
   HighlightedText,
   FitText,
+  ImagePlaceholder,
   PaginationDots,
   SmartSlideImage,
   Pill,
@@ -120,9 +121,7 @@ function SingleImageBox({
             className="absolute inset-0 w-full h-full"
           />
         ) : (
-          <div className="absolute inset-0 bg-zinc-800/30 flex items-center justify-center text-[10px] opacity-60 text-center px-2">
-            {error || "sem imagem"}
-          </div>
+          <ImagePlaceholder className="absolute inset-0" label={error} />
         )}
       </div>
     )
@@ -136,9 +135,7 @@ function SingleImageBox({
         // eslint-disable-next-line @next/next/no-img-element
         <SmartSlideImage src={imageUrl} className="w-full h-full" />
       ) : (
-        <div className="w-full h-full bg-zinc-800/30 flex items-center justify-center text-[10px] opacity-60 text-center px-2">
-          {error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="w-full h-full" label={error} />
       )}
     </div>
   )
@@ -720,9 +717,7 @@ export function SplitMyPostFlowCta({
               className="absolute inset-0 w-full h-full"
             />
           ) : (
-            <div className="absolute inset-0 bg-zinc-300 flex items-center justify-center text-[10px] opacity-60">
-              {slide.images[0].error || "sem imagem"}
-            </div>
+            <ImagePlaceholder className="absolute inset-0" label={slide.images[0].error} />
           )}
         </div>
       )}
@@ -831,9 +826,7 @@ export function SplitGradientDark({
                   className="absolute inset-0 w-full h-full"
                 />
               ) : (
-                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
-                  {slide.images[0]?.error || "sem imagem"}
-                </div>
+                <ImagePlaceholder className="absolute inset-0" label={slide.images[0]?.error} />
               )}
             </div>
           )}
@@ -961,9 +954,7 @@ export function SplitMinimalClean({
                     className="absolute inset-0 w-full h-full"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
-                    {slide.images[0].error || "sem imagem"}
-                  </div>
+                  <ImagePlaceholder className="absolute inset-0" label={slide.images[0].error} />
                 )}
               </div>
             )
@@ -1198,7 +1189,7 @@ export function SplitCardsWhite({
   const { Icon: BadgeIcon, label: badgeLabel } = slideBadge(slide, orderIndex)
   const Badge = (
     <div
-      className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5"
+      className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-1.5"
       style={{
         // Gradiente azul-lavanda → cinza-claro + brilho no topo (igual MyPostFlow).
         backgroundImage:
