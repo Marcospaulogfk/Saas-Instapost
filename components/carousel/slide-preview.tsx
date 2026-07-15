@@ -36,6 +36,7 @@ import {
   SplitMinimalClean,
   SplitSeamlessFlow,
   SplitCardsWhite,
+  SplitProfilePost,
   type SplitSlideData,
   type SplitImageSlot,
 } from "./editorial-splits"
@@ -81,6 +82,7 @@ export type EditorialStyle =
   | "minimal" // branco suíço: tipografia gigante + ghost numbers + hairlines
   | "seamless" // panorâmico: linha de progresso avança pelos slides (+completion)
   | "cards" // MyPostFlow: capa foto + título glass; conteúdo = card branco flutuante
+  | "perfil" // MyPostFlow "Profile": post de rede social (avatar + selo + texto + foto)
 
 interface SlidePreviewProps {
   slide: PreviewSlide
@@ -568,6 +570,20 @@ function EditorialSlideRouter(props: RouterProps) {
         accent={accentForBg(accentOnLight)}
         bgOverride={bgOverride}
         imageSlot={slot}
+      />
+    )
+  }
+
+  // ===== STYLE: PERFIL (MyPostFlow "Profile" — post de rede social) =====
+  if (editorialStyle === "perfil") {
+    // Mesmo layout em todos os slides (inclusive a capa) — imita print de post.
+    // accent legível sobre o fundo (escuro por padrão) via accentForBg.
+    return (
+      <SplitProfilePost
+        slide={splitData}
+        {...basePropsDark}
+        accent={accentForBg(accentOnDark)}
+        bgOverride={bgOverride}
       />
     )
   }

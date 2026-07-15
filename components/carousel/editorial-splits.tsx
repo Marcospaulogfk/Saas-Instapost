@@ -19,6 +19,7 @@ import {
   splitTheme,
   type SlideAttribution,
 } from "./editorial-shared"
+import { proxiedImageUrl } from "@/lib/proxy-image"
 
 export interface SplitSlideData {
   title: string
@@ -1215,6 +1216,138 @@ export function SplitCardsWhite({
       </div>
 
       <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
+    </div>
+  )
+}
+
+// ============================================================================
+// VerifiedBadge — selo azul verificado (estilo X/Twitter). SVG inline pra
+// exportar certo no html-to-image.
+// ============================================================================
+
+function VerifiedBadge({ size = 17 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 22 22"
+      style={{ flexShrink: 0, display: "inline-block" }}
+      aria-hidden
+    >
+      <path
+        fill="#1D9BF0"
+        d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.635.132 1.294.084 1.902-.14.27.586.7 1.084 1.24 1.44.541.356 1.167.554 1.814.57.646-.016 1.273-.213 1.813-.567s.969-.854 1.24-1.44c.604.239 1.266.303 1.909.185.643-.12 1.237-.416 1.71-.855.44-.472.739-1.056.859-1.688.12-.633.057-1.286-.18-1.883.588-.27 1.09-.7 1.448-1.24.36-.54.561-1.17.582-1.817zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"
+      />
+    </svg>
+  )
+}
+
+// ============================================================================
+// split-profile-post — estilo "Perfil" do MyPostFlow: post de rede social.
+// Fundo escuro full-bleed + header de perfil (avatar + nome com selo verificado
+// + @handle) + texto do post + caixa de imagem. Mesmo layout em TODOS os slides
+// (inclusive a capa) — imita print de tweet viral.
+// ============================================================================
+
+export function SplitProfilePost({
+  slide,
+  accent,
+  fontClass,
+  bgOverride,
+}: SplitProps) {
+  const th = splitTheme(bgOverride)
+  const bg = th?.bg ?? "#0A0A0F"
+  const text = th?.text ?? "#FFFFFF"
+  const body = th?.muted ?? "rgba(255,255,255,0.86)"
+  const faint = th?.faint ?? "rgba(255,255,255,0.5)"
+  const name = slide.brand_label || (slide.handle || "@perfil").replace(/^@/, "")
+  const initials = (slide.handle || slide.brand_label || "SP")
+    .replace(/^@/, "")
+    .slice(0, 2)
+    .toUpperCase()
+  const hasImg = !!slide.images[0]?.url
+
+  return (
+    <div
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col justify-center px-7"
+      style={{ backgroundColor: bg }}
+    >
+      {/* Header do perfil */}
+      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+        <div
+          className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(127,127,140,0.28)", color: text }}
+        >
+          {slide.handle_avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={proxiedImageUrl(slide.handle_avatar)}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-sm font-bold">{initials}</span>
+          )}
+        </div>
+        <div className="leading-tight min-w-0">
+          <div className="flex items-center gap-1">
+            <span
+              className="font-bold text-[15px] truncate"
+              style={{ color: text }}
+            >
+              {name}
+            </span>
+            <VerifiedBadge />
+          </div>
+          <div className="text-[13px]" style={{ color: faint }}>
+            {slide.handle || "@perfil"}
+          </div>
+        </div>
+      </div>
+
+      {/* Texto do post: título (destaque) + corpo */}
+      <div className="space-y-2 flex-shrink-0">
+        <FitText
+          className={`text-[1.5rem] leading-[1.28] tracking-tight ${fontClass}`}
+          style={{ fontWeight: 700, color: text }}
+          maxLines={4}
+        >
+          <HighlightedText
+            text={slide.title}
+            words={slide.highlight_words || []}
+            color={accent}
+          />
+        </FitText>
+        {slide.body && (
+          <p
+            className="text-[15px] leading-[1.5] line-clamp-5 whitespace-pre-line"
+            style={{ color: body }}
+          >
+            {parseBoldInline(slide.body)}
+          </p>
+        )}
+      </div>
+
+      {/* Mídia do post (só quando há foto) */}
+      {hasImg && (
+        <div
+          className="mt-4 rounded-2xl overflow-hidden relative flex-shrink-0"
+          style={{
+            aspectRatio: "16/11",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <SmartSlideImage
+            src={slide.images[0]!.url as string}
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+      )}
+
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={text}
+      />
     </div>
   )
 }

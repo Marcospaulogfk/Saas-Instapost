@@ -71,6 +71,7 @@ const STYLES: { style: EditorialStyle; name: string }[] = [
   { style: "bolo", name: "Bolo (lista cream)" },
   { style: "mypostflow", name: "MyPostFlow" },
   { style: "cards", name: "Cards (MyPostFlow novo)" },
+  { style: "perfil", name: "Perfil (post/tweet)" },
   { style: "auto", name: "Auto (alternado)" },
 ]
 
