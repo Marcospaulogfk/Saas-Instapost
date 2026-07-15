@@ -891,11 +891,15 @@ export function CarouselEditor({
             </div>
           </div>
 
-          {/* Render OCULTO em tamanho de design (420px) pro export/captura de capa. */}
+          {/* Render OCULTO em tamanho de design (420px) pro export/captura de capa.
+              `[&_.rounded-xl]:!rounded-none` zera o border-radius do slide SÓ neste
+              render de export → o PNG 1080×1350 sai retângulo cheio, sem os cantos
+              transparentes que viravam bordas brancas no Instagram. O filmstrip
+              visível continua com cantos arredondados (chrome do editor). */}
           <div
             ref={previewRef}
             aria-hidden
-            className="fixed -left-[9999px] top-0 w-[420px] pointer-events-none"
+            className="fixed -left-[9999px] top-0 w-[420px] pointer-events-none [&_.rounded-xl]:!rounded-none"
           >
             <SlidePreview
               slide={slide}
