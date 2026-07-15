@@ -43,12 +43,14 @@ Padrão: **CONTEXT** pra não tocar nos ~17 templates de capa/split.
 - `app/dashboard/carrossel/page.tsx` — load (lê tudo do carousel_data).
 
 ## Pendências / próximos passos
-- **Limpar rotas de debug**: `app/preview-editor`, `app/preview-cards`, `app/preview-cover`,
-  `app/preview-dashboard` (harness visual criado no caminho).
-- **Estender** fundo do slide (e checar tipografia) aos outros 7 estilos (hoje foco no "Auto").
-- **Commitar** o trabalho (nada foi commitado).
-- Ver editor no navegador: **usar Chrome MCP** — o `preview_screenshot` trava com muitos
-  SlidePreviews vivos (loop do FitText); pelo Chrome real funciona.
+- ~~**Limpar rotas de debug**~~ — FEITO (c124b0a): removidas `preview-editor/cards/cover/
+  dashboard`. `preview-estilos` mantido (agora com swatches de fundo pra validar override).
+- ~~**Estender** fundo do slide aos outros 7 estilos~~ — FEITO (c124b0a): `splitTheme(bg)` +
+  `bgOverride` nos 8 splits + accent recalculado no router. Tipografia já era global (nada a
+  fazer). Salvar na nuvem já funcionava (JSONB, sem migration).
+- ~~**Commitar**~~ — FEITO (6430443 + c124b0a).
+- Ver editor no navegador: `preview_screenshot` trava com muitos SlidePreviews vivos (loop do
+  FitText); usar `app/preview-estilos` (1 slide vivo) + `preview_eval`/inspect, ou Chrome MCP.
 
 ## Rodadas anteriores desta branch
 Ver `HANDOFF-DESIGN-AGENDAMENTO.md`, `DESIGN.md`, e a memória em `.claude`.
