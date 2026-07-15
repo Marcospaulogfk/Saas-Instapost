@@ -1268,7 +1268,7 @@ export function SplitProfilePost({
 
   return (
     <div
-      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col justify-center px-7"
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col justify-center px-7 text-left"
       style={{ backgroundColor: bg }}
     >
       {/* Header do perfil (avatar + nome + selo + @handle) */}
