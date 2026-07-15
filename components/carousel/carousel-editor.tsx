@@ -82,6 +82,7 @@ const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "gradient", label: "Gradiente (dark/vibrante)" },
   { value: "minimal", label: "Minimal (branco/clean)" },
   { value: "seamless", label: "Seamless (panorâmico)" },
+  { value: "cards", label: "Cards (MyPostFlow)" },
 ]
 
 /** Seção colapsável (accordion) do editor lateral. */

@@ -1096,3 +1096,125 @@ export function SplitSeamlessFlow({
     </div>
   )
 }
+
+// ============================================================================
+// split-cards-white — estilo MyPostFlow: canvas escuro + CARD BRANCO flutuante.
+// Card = badge pill (ícone + label) + título escuro + corpo cinza + image box.
+// A imagem alterna topo/baixo (imageSlot single-top vs single-bottom). Rodapé
+// marca/@handle + "arrasta →" fica no canvas escuro, ABAIXO do card.
+// ============================================================================
+
+export function SplitCardsWhite({
+  slide,
+  totalSlides,
+  orderIndex,
+  accent,
+  fontClass,
+  imageSlot = "single-bottom",
+  bgOverride,
+}: SplitProps) {
+  void totalSlides
+  const isLast = orderIndex === totalSlides - 1
+  const canvas = bgOverride || "#0E0E12"
+  // Cores do rodapé adaptam ao canvas (que o usuário pode trocar via "Fundo").
+  const ct = splitTheme(canvas)!
+  const brand = slide.brand_label || "SyncPost"
+  const titleSizeClass = fitTitle(
+    slide.title,
+    "text-[1.9rem]",
+    "text-[1.6rem]",
+    "text-[1.35rem]",
+  )
+  const bodyParts = (slide.body || "").split("\n\n").filter(Boolean)
+  // Só mostra o image box quando há foto de verdade (sem foto = card só texto,
+  // sem placeholder vazio no export).
+  const hasImage = !!slide.images[0]?.url
+  const imageTop =
+    hasImage &&
+    (imageSlot === "single-top" || imageSlot === "composition-top")
+
+  const ImageBox = (
+    <div className={`flex-1 ${IMG_MIN} min-h-0 rounded-2xl overflow-hidden relative bg-[#2A2E37]`}>
+      <SmartSlideImage
+        src={slide.images[0]!.url as string}
+        className="absolute inset-0 w-full h-full"
+      />
+    </div>
+  )
+
+  const Badge = (
+    <div
+      className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5"
+      style={{ backgroundColor: "#EDEFF2" }}
+    >
+      <span style={{ color: accent, fontSize: 12 }}>✦</span>
+      <span
+        className="text-[11px] uppercase tracking-[0.14em] font-bold truncate"
+        style={{ color: "#4A5160" }}
+      >
+        {slide.category || "Conteúdo"}
+      </span>
+    </div>
+  )
+
+  return (
+    <div
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col p-4"
+      style={{ backgroundColor: canvas }}
+    >
+      {/* CARD BRANCO flutuante */}
+      <div
+        className="flex-1 min-h-0 rounded-[20px] bg-white flex flex-col gap-4 p-6"
+        style={{ boxShadow: "0 18px 44px rgba(0,0,0,0.35)" }}
+      >
+        {imageTop && ImageBox}
+
+        {Badge}
+
+        <FitText
+          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+          style={{ fontWeight: 800, lineHeight: 1.02, color: "#15151A" }}
+          maxLines={4}
+        >
+          {slide.title}
+        </FitText>
+
+        {bodyParts.length > 0 && (
+          <div className="flex-shrink-0 space-y-2.5">
+            {bodyParts.slice(0, 2).map((p, i) => (
+              <p
+                key={i}
+                className="text-[14px] leading-[1.55] line-clamp-4"
+                style={{ color: "#5B6270" }}
+              >
+                {parseBoldInline(p)}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {!imageTop && hasImage && ImageBox}
+      </div>
+
+      {/* Rodapé no canvas, abaixo do card (cores adaptam ao canvas) */}
+      <div className="flex-shrink-0 flex items-end justify-between px-1 pt-3">
+        <div className="leading-tight">
+          <div className="text-[12px] font-bold" style={{ color: ct.text }}>
+            {brand}
+          </div>
+          <div className="text-[10px]" style={{ color: ct.faint }}>
+            {slide.handle || "@brand"}
+          </div>
+        </div>
+        <div
+          className="text-[10px] uppercase tracking-[0.14em] font-semibold"
+          style={{ color: ct.faint }}
+        >
+          {isLast ? "salva esse post" : "arrasta →"}
+        </div>
+      </div>
+
+      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
+    </div>
+  )
+}

@@ -548,6 +548,55 @@ export function HighlightedGradientText({
 }
 
 // ============================================================================
+// HighlightedGlass — destaca palavras com um "chip de vidro" (marca-texto)
+//
+// Assinatura da capa MyPostFlow: sobre a foto, as palavras-chave ganham um bloco
+// translúcido claro (frosted) atrás, texto branco. box-decoration-break: clone
+// faz cada linha ganhar seu próprio bloco quando a palavra quebra.
+// ============================================================================
+
+export function HighlightedGlass({
+  text,
+  words,
+}: {
+  text: string
+  words: string[]
+}) {
+  if (!words?.length) return <>{text}</>
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  const re = new RegExp(`(${escaped.join("|")})`, "gi")
+  const parts = text.split(re)
+  return (
+    <>
+      {parts.map((part, i) => {
+        const isHighlight = words.some(
+          (w) => w.toLowerCase() === part.toLowerCase(),
+        )
+        return isHighlight ? (
+          <span
+            key={i}
+            style={{
+              backgroundColor: "rgba(255,255,255,0.18)",
+              boxShadow:
+                "0 0 0 1px rgba(255,255,255,0.22), 0 6px 18px rgba(0,0,0,0.25)",
+              borderRadius: "0.12em",
+              padding: "0 0.14em",
+              // cada linha da palavra quebrada recebe seu próprio bloco
+              WebkitBoxDecorationBreak: "clone",
+              boxDecorationBreak: "clone",
+            }}
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      })}
+    </>
+  )
+}
+
+// ============================================================================
 // GradientProgressBar — barra de progresso do carrossel (substitui dots)
 // ============================================================================
 

@@ -7,6 +7,7 @@ import {
   BrandsdecodedHeader,
   FitText,
   GradientProgressBar,
+  HighlightedGlass,
   HighlightedGradientText,
   HighlightedText,
   PaginationDots,
@@ -706,6 +707,70 @@ export function CoverSeamlessFlow({
         >
           arrasta →
         </p>
+      </div>
+
+      <Attribution attribution={slide.image.attribution} textColor="#fff" />
+    </div>
+  )
+}
+
+// ============================================================================
+// cover-cards-glass — capa estilo MyPostFlow: foto full-bleed + título embaixo
+// à esquerda com "chips de vidro" (marca-texto) nas palavras-chave + rodapé
+// marca/@handle à esquerda e "arrasta →" à direita.
+// ============================================================================
+
+export function CoverCardsGlass({
+  slide,
+  fontClass,
+}: CoverProps) {
+  const brand = slide.brand_label || "SyncPost"
+  return (
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-[#0E0E12]">
+      {slide.image.url ? (
+        <SmartSlideImage
+          src={slide.image.url}
+          className="absolute inset-0 w-full h-full"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
+          {slide.image.error || "sem imagem"}
+        </div>
+      )}
+      {/* Scrim: escurece a base pro título ficar legível */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, rgba(10,10,15,0.15) 0%, rgba(10,10,15,0.05) 40%, rgba(10,10,15,0.78) 100%)",
+        }}
+      />
+
+      {/* Título ancorado embaixo à esquerda */}
+      <div className="absolute left-6 right-6 z-10" style={{ bottom: "4.5rem" }}>
+        <FitText
+          className={`text-[2.5rem] uppercase leading-[1.06] tracking-tight text-white ${fontClass}`}
+          style={{ fontWeight: 800 }}
+          maxLines={5}
+        >
+          <HighlightedGlass
+            text={slide.title}
+            words={slide.highlight_words || []}
+          />
+        </FitText>
+      </div>
+
+      {/* Rodapé: marca + @handle (esquerda) · arrasta (direita) */}
+      <div className="absolute bottom-4 left-6 right-6 z-10 flex items-end justify-between">
+        <div className="leading-tight">
+          <div className="text-[13px] font-bold text-white">{brand}</div>
+          <div className="text-[11px] text-white/70">
+            {slide.handle || "@brand"}
+          </div>
+        </div>
+        <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-white/70">
+          arrasta →
+        </div>
       </div>
 
       <Attribution attribution={slide.image.attribution} textColor="#fff" />

@@ -70,6 +70,7 @@ const STYLES: { style: EditorialStyle; name: string }[] = [
   { style: "brandsdecoded", name: "Revista (editorial)" },
   { style: "bolo", name: "Bolo (lista cream)" },
   { style: "mypostflow", name: "MyPostFlow" },
+  { style: "cards", name: "Cards (MyPostFlow novo)" },
   { style: "auto", name: "Auto (alternado)" },
 ]
 

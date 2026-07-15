@@ -23,6 +23,7 @@ import {
   CoverGradientGlow,
   CoverMinimalClean,
   CoverSeamlessFlow,
+  CoverCardsGlass,
   type CoverSlideData,
 } from "./editorial-covers"
 import {
@@ -34,6 +35,7 @@ import {
   SplitGradientDark,
   SplitMinimalClean,
   SplitSeamlessFlow,
+  SplitCardsWhite,
   type SplitSlideData,
   type SplitImageSlot,
 } from "./editorial-splits"
@@ -78,6 +80,7 @@ export type EditorialStyle =
   | "gradient" // dark vibrante com glow do accent + highlights em gradiente
   | "minimal" // branco suíço: tipografia gigante + ghost numbers + hairlines
   | "seamless" // panorâmico: linha de progresso avança pelos slides (+completion)
+  | "cards" // MyPostFlow: capa foto + título glass; conteúdo = card branco flutuante
 
 interface SlidePreviewProps {
   slide: PreviewSlide
@@ -542,6 +545,27 @@ function EditorialSlideRouter(props: RouterProps) {
       <SplitSeamlessFlow
         slide={splitData}
         {...basePropsDark}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
+  }
+
+  // ===== STYLE: CARDS (MyPostFlow — card branco flutuante) =====
+  if (editorialStyle === "cards") {
+    if (isCover) {
+      return <CoverCardsGlass slide={coverData} {...basePropsDark} />
+    }
+    // Imagem alterna topo/baixo pra dar ritmo (como no MyPostFlow). O card é
+    // branco → accent legível sobre claro (basePropsLight).
+    const rawSlot: SplitImageSlot =
+      slide.order_index % 2 === 1 ? "single-bottom" : "single-top"
+    const slot = resolveImageSlot(rawSlot, imgCount)
+    return (
+      <SplitCardsWhite
+        slide={splitData}
+        {...basePropsLight}
+        accent={accentForBg(accentOnLight)}
         bgOverride={bgOverride}
         imageSlot={slot}
       />
