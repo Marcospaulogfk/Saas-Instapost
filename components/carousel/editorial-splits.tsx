@@ -1251,14 +1251,13 @@ function VerifiedBadge({ size = 17 }: { size?: number }) {
 
 export function SplitProfilePost({
   slide,
-  accent,
-  fontClass,
   bgOverride,
 }: SplitProps) {
   const th = splitTheme(bgOverride)
   const bg = th?.bg ?? "#0A0A0F"
   const text = th?.text ?? "#FFFFFF"
-  const body = th?.muted ?? "rgba(255,255,255,0.86)"
+  // Texto do post: um cinza-claro uniforme (como o tweet do MyPostFlow).
+  const post = th?.muted ?? "rgba(255,255,255,0.9)"
   const faint = th?.faint ?? "rgba(255,255,255,0.5)"
   const name = slide.brand_label || (slide.handle || "@perfil").replace(/^@/, "")
   const initials = (slide.handle || slide.brand_label || "SP")
@@ -1272,10 +1271,10 @@ export function SplitProfilePost({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col justify-center px-7"
       style={{ backgroundColor: bg }}
     >
-      {/* Header do perfil */}
-      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+      {/* Header do perfil (avatar + nome + selo + @handle) */}
+      <div className="flex items-center gap-2.5 mb-3 flex-shrink-0">
         <div
-          className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
+          className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
           style={{ backgroundColor: "rgba(127,127,140,0.28)", color: text }}
         >
           {slide.handle_avatar ? (
@@ -1286,44 +1285,40 @@ export function SplitProfilePost({
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-sm font-bold">{initials}</span>
+            <span className="text-[11px] font-bold">{initials}</span>
           )}
         </div>
         <div className="leading-tight min-w-0">
           <div className="flex items-center gap-1">
             <span
-              className="font-bold text-[15px] truncate"
+              className="font-bold text-[14px] truncate"
               style={{ color: text }}
             >
               {name}
             </span>
-            <VerifiedBadge />
+            <VerifiedBadge size={15} />
           </div>
-          <div className="text-[13px]" style={{ color: faint }}>
+          <div className="text-[12px]" style={{ color: faint }}>
             {slide.handle || "@perfil"}
           </div>
         </div>
       </div>
 
-      {/* Texto do post: título (destaque) + corpo */}
-      <div className="space-y-2 flex-shrink-0">
-        <FitText
-          className={`text-[1.5rem] leading-[1.28] tracking-tight ${fontClass}`}
-          style={{ fontWeight: 700, color: text }}
-          maxLines={4}
+      {/* Texto do post — parágrafo UNIFORME (sem headline), como um tweet.
+          Fonte neutra (não usa fontClass de display) e peso regular. */}
+      <div className="flex-shrink-0 space-y-2.5">
+        <p
+          className="text-[15px] leading-[1.5]"
+          style={{ color: post, fontWeight: 400 }}
         >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </FitText>
-        {slide.body && (
+          {slide.title}
+        </p>
+        {(slide.body || slide.subtitle) && (
           <p
-            className="text-[15px] leading-[1.5] line-clamp-5 whitespace-pre-line"
-            style={{ color: body }}
+            className="text-[15px] leading-[1.5] line-clamp-6 whitespace-pre-line"
+            style={{ color: post, fontWeight: 400 }}
           >
-            {parseBoldInline(slide.body)}
+            {parseBoldInline(slide.body || slide.subtitle || "")}
           </p>
         )}
       </div>
@@ -1333,7 +1328,7 @@ export function SplitProfilePost({
         <div
           className="mt-4 rounded-2xl overflow-hidden relative flex-shrink-0"
           style={{
-            aspectRatio: "16/11",
+            aspectRatio: "16/10",
             border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
