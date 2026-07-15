@@ -134,14 +134,14 @@ telas/                        # PDFs/PNGs do BestContent AI (competitor, referê
 
 **Nome:** SyncPost (rename parcial — `package.json` e repo ainda "instapost"/"Saas-Instapost").
 
-**Paleta oficial** (NUNCA inventar outras cores):
-- Roxo: `#7C3AED`, `#A78BFA`, `#DDD6FE`
-- Preto profundo: `#0A0A0F`
-- Cinza/bege: `#F5F2EC`
+**Paleta oficial** (fonte da verdade: [`/DESIGN.md`](DESIGN.md) — NUNCA inventar outras cores):
+- Roxo (acento único): **`#7320E6`** (`--brand-600`), escala `--brand-50…950` em `app/globals.css`
+- Canvas/preto: `#0a0910` (dark/Linear) · `#0A0A0F` (base) — nunca `#000` puro
+- Superfícies dark: `#121118` → `#17161e` → `#1c1b24` → `#201f28`
 - Branco: `#FFFFFF`
-- Lime accent: `#D1FE17`
+- Sucesso: `#9B87FF` (roxo — sem verde por decisão de marca)
 
-❌ **Proibido:** rosa, blue, fuchsia, sépia, navy. O sistema de tokens em `app/globals.css` já cobre.
+❌ **Proibido:** verde/lime `#D1FE17` (rebrand lime→roxo já feito), rosa, blue, fuchsia, sépia, navy, glow/gradiente na UI do app. O sistema de tokens em `app/globals.css` + `DESIGN.md` já cobre.
 
 **Tom de copy** (Wieden+Kennedy / Pentagram):
 - Específico > genérico ("Você manda 27 propostas e fecha 3" > "Descubra como vender mais")

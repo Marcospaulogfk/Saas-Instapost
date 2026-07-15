@@ -1,11 +1,15 @@
 "use client"
 
+import { memo } from "react"
 import {
   Attribution,
   HighlightedText,
   PaginationDots,
   SmartSlideImage,
   Pill,
+  FitText,
+  ImageTransformContext,
+  TypographyContext,
   type SlideAttribution,
 } from "./editorial-shared"
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
@@ -41,11 +45,17 @@ export interface PreviewSlide {
   subtitle: string
   body?: string
   cta_badge?: string
+  /** Cor de fundo do slide (override). null/undefined = padrão do estilo. */
+  bg?: string
   image: {
     url: string | null
     source: "ai" | "unsplash" | "wikimedia" | null
     attribution: SlideAttribution | null
     error: string | null
+    /** Ajuste manual do enquadramento da foto (posição 0–100 + zoom %). */
+    posX?: number
+    posY?: number
+    zoom?: number
   }
   /** Imagens adicionais (cenas DIFERENTES) quando a IA decide que o slide
    *  mostra mais de uma coisa. Vazio na maioria. Usadas em layouts de
@@ -90,9 +100,24 @@ interface SlidePreviewProps {
   darkBg?: string
   /** Formato do frame: "feed" (4:5) ou "stories" (9:16). Default "feed". */
   format?: "feed" | "stories"
+  /** Tipografia: peso e escala do título (sobrepõem o padrão do template). */
+  titleWeight?: number
+  titleScale?: number
 }
 
-export function SlidePreview({
+/** Dados mínimos pra renderizar a CAPA (slide 1) ao vivo como thumbnail. */
+export interface CarouselCoverData {
+  slide: PreviewSlide
+  totalSlides: number
+  template: "editorial" | "cinematic" | "hybrid"
+  editorialStyle: EditorialStyle
+  colors: string[]
+  handle: string
+  brandName: string
+  format: "feed" | "stories"
+}
+
+function SlidePreviewImpl({
   slide,
   totalSlides,
   template,
@@ -106,7 +131,13 @@ export function SlidePreview({
   lightBg = "#FAF8F5",
   darkBg = "#0A0A0A",
   format = "feed",
+  titleWeight,
+  titleScale,
 }: SlidePreviewProps) {
+  const typo =
+    titleWeight != null || titleScale != null
+      ? { weight: titleWeight, scale: titleScale }
+      : null
   // REGRA GLOBAL: o accent (cor das palavras destacadas) precisa ser legível
   // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
   // escolhiam preto como destaque e ele sumia em fundos escuros/fotos.
@@ -150,8 +181,21 @@ export function SlidePreview({
       />
     )
 
+  const imgTransform =
+    slide.image.posX != null ||
+    slide.image.posY != null ||
+    slide.image.zoom != null
+      ? {
+          posX: slide.image.posX ?? 50,
+          posY: slide.image.posY ?? 20,
+          zoom: slide.image.zoom ?? 100,
+        }
+      : null
+
   return (
-    <div className="relative">
+    <TypographyContext.Provider value={typo}>
+    <ImageTransformContext.Provider value={imgTransform}>
+      <div className="relative">
       {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
       <div
         className={
@@ -175,9 +219,16 @@ export function SlidePreview({
               : "📷 UNSPLASH"}
         </div>
       )}
-    </div>
+      </div>
+    </ImageTransformContext.Provider>
+    </TypographyContext.Provider>
   )
 }
+
+/** SlidePreview MEMOIZADO: só re-renderiza quando os props mudam de verdade.
+ *  Sem isso, editar 1 slide re-renderizava TODOS os slides do filmstrip (cada
+ *  um rodando o FitText/layout pesado) → o editor travava 1–2s por ajuste. */
+export const SlidePreview = memo(SlidePreviewImpl)
 
 // ============================================================================
 // Adapter — converte PreviewSlide pra SlideData esperado pelos componentes
@@ -313,15 +364,6 @@ function EditorialSlideRouter(props: RouterProps) {
     orderIndex: slide.order_index,
     accent: accentOnLight,
     fontClass,
-  }
-
-  // Debug
-  if (typeof window !== "undefined") {
-    console.log(
-      `[SlidePreview] slide ${slide.order_index + 1}/${totalSlides} · style=${editorialStyle} · ${
-        isCover ? "COVER" : isMidBreak ? "MID-BREAK" : "SPLIT"
-      }`,
-    )
   }
 
   // ===== STYLE: WESLEY =====
@@ -514,16 +556,17 @@ function LegacyEditorialSlide({
   // Alterna bg dark/light entre splits ímpares e pares pra dar variedade
   // (sem isso ficavam todos no mesmo bg cream).
   const isDarkSplit = slide.order_index % 2 === 0 // par = dark, ímpar = light
-  const splitBg = isDarkSplit ? darkBg : lightBg
-  // Texto base é SEMPRE neutro (preto no claro, branco no escuro). A cor da
-  // marca fica só no destaque (accent) — usar brandColors[1] como texto deixava
-  // o título inteiro colorido quando a 2ª cor da marca não era um preto neutro.
-  const splitText = isDarkSplit ? "#FFFFFF" : "#0A0A0F"
-  const splitAccent = isDarkSplit ? accentOnDark : accentOnLight
-  const splitTextMuted = isDarkSplit
+  // Feature #3: cor de fundo por slide (slide.bg) sobrepõe o bg padrão do split.
+  const splitBg = slide.bg || (isDarkSplit ? darkBg : lightBg)
+  // Texto/accent adaptam à luminância do fundo EFETIVO (contraste garantido,
+  // inclusive quando o usuário escolhe uma cor de fundo custom).
+  const bgIsDark = !isLightColor(splitBg)
+  const splitText = bgIsDark ? "#FFFFFF" : "#0A0A0F"
+  const splitAccent = bgIsDark ? accentOnDark : accentOnLight
+  const splitTextMuted = bgIsDark
     ? "rgba(255,255,255,0.85)"
     : "rgba(10,10,15,0.72)"
-  const splitTextOpacity = isDarkSplit ? 0.85 : 0.7
+  const splitTextOpacity = bgIsDark ? 0.85 : 0.7
   // Título da capa adapta ao comprimento — evita ficar gigante em títulos longos.
   const coverTitleClass =
     slide.title.length > 58
@@ -563,16 +606,17 @@ function LegacyEditorialSlide({
                 "absolute inset-x-5 bottom-16 z-10 space-y-3"
           }
         >
-          <h1
+          <FitText
             className={`${isStories ? "text-[2rem]" : coverTitleClass} uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
             style={{ textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
+            maxLines={5}
           >
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
               color={accentOnDark}
             />
-          </h1>
+          </FitText>
           {slide.subtitle && <p className="text-sm text-white/85">{slide.subtitle}</p>}
         </div>
 
@@ -608,16 +652,17 @@ function LegacyEditorialSlide({
         </div>
 
         <div className="absolute bottom-20 left-5 right-5 z-10 space-y-2.5">
-          <h1
+          <FitText
             className={`text-[2rem] uppercase leading-[1.02] tracking-tight text-white ${fontClass}`}
             style={{ textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}
+            maxLines={5}
           >
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
               color={accentOnDark}
             />
-          </h1>
+          </FitText>
           {slide.subtitle && <p className="text-xs text-white/85">{slide.subtitle}</p>}
           {slide.body && (
             <p className="text-[11px] text-white/75 leading-relaxed line-clamp-3">
@@ -665,16 +710,17 @@ function LegacyEditorialSlide({
         )}
 
         <div className="space-y-1.5 flex-shrink-0">
-          <h1
-            className={`text-[1.7rem] leading-[1.1] tracking-tight line-clamp-4 ${fontClass}`}
+          <FitText
+            className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
             style={{ color: splitText }}
+            maxLines={4}
           >
             <HighlightedText
               text={slide.title}
               words={slide.highlight_words}
               color={splitAccent}
             />
-          </h1>
+          </FitText>
           {slide.subtitle && (
             <p
               className="text-xs line-clamp-2"
@@ -794,16 +840,17 @@ function CinematicSlide({
       )}
 
       <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 z-10">
-        <h1
+        <FitText
           className={`text-4xl uppercase leading-[0.95] text-white tracking-tight ${fontClass}`}
           style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
+          maxLines={5}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p className="text-xs text-white/85 mt-3 uppercase tracking-wider font-medium">
             {slide.subtitle}
@@ -892,16 +939,17 @@ function HybridSlide({
 
       {/* Título centralizado vertical */}
       <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-10">
-        <h1
+        <FitText
           className={`text-3xl uppercase leading-[0.95] text-white tracking-tight ${fontClass}`}
           style={{ textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}
+          maxLines={5}
         >
           <HighlightedText
             text={slide.title}
             words={slide.highlight_words}
             color={accent}
           />
-        </h1>
+        </FitText>
         {slide.subtitle && (
           <p className="text-sm text-white/90 mt-3">{slide.subtitle}</p>
         )}

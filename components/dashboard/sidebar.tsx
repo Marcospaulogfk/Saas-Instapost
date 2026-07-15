@@ -252,18 +252,11 @@ export function DashboardSidebar({
         )}
       </div>
 
-      {/* CTA Criar conteúdo (formato é escolhido no passo seguinte) */}
+      {/* CTA Criar conteúdo — flat, acento sólido (DESIGN.md §6: sem gradiente/glow) */}
       <div className="px-4 mt-3 mb-3">
         <Link
           href="/dashboard/criar"
-          className="group flex items-center justify-center gap-2 w-full h-10 rounded-lg text-sm font-semibold transition-all"
-          style={{
-            background:
-              "linear-gradient(180deg, #8A33EC 0%, #7320E6 50%, #5F14D6 100%)",
-            color: "#ffffff",
-            boxShadow:
-              "0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.2) inset, 0 4px 14px rgba(115, 32, 230,0.4)",
-          }}
+          className="group flex items-center justify-center gap-2 w-full h-10 rounded-lg text-[13px] font-semibold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] transition-colors"
         >
           <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
           Criar conteúdo
@@ -271,7 +264,12 @@ export function DashboardSidebar({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 pt-3 space-y-0.5 overflow-y-auto no-scrollbar">
+      <div className="px-4 pt-2 pb-1">
+        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-text-subtle">
+          Menu
+        </span>
+      </div>
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto no-scrollbar">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (

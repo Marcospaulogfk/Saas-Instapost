@@ -51,7 +51,7 @@ export function BrandsSection({ brands }: BrandsSectionProps) {
             <Link
               key={brand.id}
               href={`/dashboard/marcas/${brand.id}`}
-              className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl hover:border-brand-600/50 hover:shadow-glow-sm transition-all hover:-translate-y-1 overflow-hidden"
+              className="flex-shrink-0 w-[200px] h-[140px] rounded-xl border border-hairline bg-surface hover:border-border-accent transition-colors overflow-hidden"
             >
               <div
                 className={`h-20 ${getBrandGradient(brand.id)} flex items-center justify-center`}

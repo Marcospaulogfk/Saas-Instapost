@@ -54,10 +54,8 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-card border border-border-subtle backdrop-blur-xl"
+      className="relative overflow-hidden rounded-2xl bg-surface border border-hairline"
     >
-      <div className="absolute -top-20 -right-20 w-80 h-80 bg-brand-600/10 rounded-full blur-3xl pointer-events-none" />
-
       <div className="relative z-10 p-6 pb-2 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -78,7 +76,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
           </div>
           <div>
             <div className="flex items-center gap-1.5 justify-end text-xs text-text-muted mb-1">
-              <span className="w-2 h-2 rounded-full bg-lime shadow-[0_0_8px_rgba(115, 32, 230,0.6)]" />
+              <span className="w-2 h-2 rounded-full bg-brand-400" />
               Imagens
             </div>
             <div className="text-xl font-bold text-text-primary tabular-nums">{totalImagens}</div>

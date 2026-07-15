@@ -198,7 +198,7 @@ export function Wizard({ brands }: WizardProps) {
                 ? "Ex: Vagas abertas pra instrutor de muay thai, com 3 anos de experiência..."
                 : "Ex: queremos anunciar que abrimos uma nova unidade na Vila Madalena, com vibe sofisticada e foco em tratamentos premium..."
             }
-            className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 focus:shadow-glow-sm resize-none"
+            className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 resize-none"
           />
           <p className="text-[11px] text-text-muted">
             {mode === "template"

@@ -1,6 +1,8 @@
 "use client"
 
 import {
+  createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -8,6 +10,19 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react"
+
+// Transform da imagem de fundo (posição + zoom) editável pelo usuário. Fica num
+// CONTEXT provido pelo SlidePreview (por slide), então o SmartSlideImage aplica
+// sem precisar passar props por todos os ~17 templates de capa/split.
+export interface ImageTransform {
+  /** object-position horizontal 0–100 (%). */
+  posX: number
+  /** object-position vertical 0–100 (%). */
+  posY: number
+  /** zoom em % (100 = normal). */
+  zoom: number
+}
+export const ImageTransformContext = createContext<ImageTransform | null>(null)
 import { proxiedImageUrl } from "@/lib/proxy-image"
 
 // useLayoutEffect no cliente (mede antes de pintar, sem flicker); useEffect no
@@ -20,6 +35,17 @@ const useIsoLayoutEffect =
 // Se não couber em `maxLines`, a fonte DIMINUI (até minScale do tamanho base)
 // até caber. Substitui o line-clamp (que cortava a frase).
 // ============================================================================
+
+// Tipografia editável (peso + escala do título) via CONTEXT — o FitText aplica
+// em TODOS os templates sem passar props. A FAMÍLIA da fonte vem pelo fontClass.
+export interface TypographyOpts {
+  /** peso do título (sobrepõe o do template). */
+  weight?: number
+  /** escala do tamanho do título (1 = padrão do template). */
+  scale?: number
+}
+export const TypographyContext = createContext<TypographyOpts | null>(null)
+
 export function FitText({
   children,
   className = "",
@@ -36,21 +62,27 @@ export function FitText({
   minScale?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const typo = useContext(TypographyContext)
   useIsoLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    // peso do usuário sobrepõe o do template
+    if (typo?.weight) el.style.fontWeight = String(typo.weight)
     el.style.fontSize = "" // volta pro tamanho base (da classe)
     const base = parseFloat(getComputedStyle(el).fontSize)
     if (!base) return
+    const scale = typo?.scale ?? 1
+    const start = base * scale
     const fits = () => {
       const cs = getComputedStyle(el)
       const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.1
       return Math.round(el.scrollHeight / lh) <= maxLines
     }
-    let size = base
+    let size = start
+    el.style.fontSize = `${size}px`
     let guard = 0
-    while (!fits() && size > base * minScale && guard < 40) {
-      size -= Math.max(1, base * 0.04)
+    while (!fits() && size > start * minScale && guard < 40) {
+      size -= Math.max(1, start * 0.04)
       el.style.fontSize = `${size}px`
       guard++
     }
@@ -120,6 +152,8 @@ export function SmartSlideImage({
   containBg?: string
 }) {
   const [mode, setMode] = useState<FitMode>("cover")
+  // Transform editável (posição/zoom) do slide atual, se houver.
+  const t = useContext(ImageTransformContext)
   const decide = (w: number, h: number) => {
     if (!w || !h) return
     const r = w / h
@@ -147,7 +181,14 @@ export function SmartSlideImage({
             ? { objectFit: "contain", objectPosition: "center", background: containBg }
             : mode === "hidden"
               ? { opacity: 0 } // wordmark: não mostra (mas carrega pra medir)
-              : { objectFit: "cover", objectPosition: focus }
+              : {
+                  objectFit: "cover",
+                  // posição/zoom do usuário (se setados) sobrepõem o PHOTO_FOCUS
+                  objectPosition: t ? `${t.posX}% ${t.posY}%` : focus,
+                  transform:
+                    t && t.zoom !== 100 ? `scale(${t.zoom / 100})` : undefined,
+                  transformOrigin: "center",
+                }
         }
       />
       {mode === "hidden" && (

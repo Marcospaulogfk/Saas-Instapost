@@ -72,7 +72,7 @@ function recommendedTemplates(
 const WIZARD_BRAND = {
   id: "wizard-brand",
   name: "Marca Demo",
-  brand_colors: ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+  brand_colors: ["#7320E6", "#0A0A0F", "#FAF8F5"],
   instagram_handle: "marca",
 }
 
@@ -197,7 +197,7 @@ const ABORDAGEM_OPTIONS: {
   { id: "viral", label: "Viral", icon: Flame, color: "text-orange-400" },
   { id: "educativo", label: "Educativo", icon: GraduationCap, color: "text-blue-400" },
   { id: "comunidade", label: "Comunidade", icon: Users, color: "text-emerald-400" },
-  { id: "storytelling", label: "Storytelling", icon: BookOpen, color: "text-purple-400" },
+  { id: "storytelling", label: "Storytelling", icon: BookOpen, color: "text-brand-400" },
   { id: "dados", label: "Dados & provas", icon: BarChart3, color: "text-sky-400" },
   { id: "oferta", label: "Oferta direta", icon: Tag, color: "text-pink-400" },
 ]

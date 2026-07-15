@@ -143,7 +143,7 @@ export function Wizard({ brands }: WizardProps) {
     setLoading(true)
     setLoadingMessage("Preparando editor...")
 
-    const fallbackColors = ["#7C3AED", "#1A1A1A", "#FAF8F5"]
+    const fallbackColors = ["#7320E6", "#1A1A1A", "#FAF8F5"]
     const colors =
       activeBrand.brand_colors && activeBrand.brand_colors.length > 0
         ? activeBrand.brand_colors.slice(0, 3)
@@ -212,7 +212,7 @@ export function Wizard({ brands }: WizardProps) {
           onChange={(e) => setTopic(e.target.value)}
           rows={3}
           placeholder="Sobre o que vai ser o carrossel? (mín 10 caracteres)"
-          className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 focus:shadow-glow-sm resize-none"
+          className="bg-background-secondary/60 border-border-subtle focus:border-brand-600/50 resize-none"
         />
       </div>
 
@@ -272,7 +272,7 @@ export function Wizard({ brands }: WizardProps) {
               onClick={() => setNSlides(n as 5 | 7 | 10)}
               className={`h-11 rounded-lg border text-sm font-medium transition-all ${
                 n === nSlides
-                  ? "border-brand-600 bg-brand-600/10 text-brand-300 shadow-glow-sm"
+                  ? "border-brand-600 bg-brand-600/10 text-brand-300"
                   : "border-border-subtle bg-background-secondary/40 text-text-secondary hover:border-brand-600/40 hover:text-text-primary"
               }`}
             >
@@ -336,8 +336,8 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
       onClick={onSelect}
       className={`group relative text-left rounded-xl border overflow-hidden transition-all ${
         selected
-          ? "border-brand-600 shadow-glow ring-2 ring-brand-600/30"
-          : "border-border-subtle hover:border-brand-600/40 hover:shadow-glow-sm"
+          ? "border-brand-600 ring-2 ring-brand-600/30"
+          : "border-border-subtle hover:border-brand-600/40"
       }`}
     >
       {/* Preview area */}
@@ -401,7 +401,7 @@ function CinematicPreview() {
   return (
     <div className="absolute inset-0">
       {/* "Foto" simulada com gradient + textura */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-violet-900 to-zinc-950" />
+      <div className="absolute inset-0 bg-surface-2" />
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -487,7 +487,7 @@ function CardChoiceGroup<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`text-left p-3.5 rounded-lg border transition-all ${
               opt.value === value
-                ? "border-brand-600 bg-brand-600/10 shadow-glow-sm"
+                ? "border-brand-600 bg-brand-600/10"
                 : "border-border-subtle bg-background-secondary/40 hover:border-brand-600/40"
             }`}
           >

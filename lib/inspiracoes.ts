@@ -532,12 +532,28 @@ export function buildContextoMarca(brand: BrandContext): string {
 }
 
 /**
- * Catálogo genérico (sem marca): placeholders preenchidos com texto neutro.
+ * Catálogo genérico (sem marca): curado a um punhado — trends primeiro, com
+ * variedade de categoria — pra não jogar 30 cards genéricos na cara.
  */
-export function getInspiracoesGenericas(): Array<
-  Inspiracao & { personalizada: boolean }
-> {
-  return INSPIRACOES.map((i) => ({
+export function getInspiracoesGenericas(
+  limit = 9,
+): Array<Inspiracao & { personalizada: boolean }> {
+  // trends primeiro; depois preenche variando a categoria pra não repetir.
+  const trends = INSPIRACOES.filter((i) => i.trend)
+  const resto = INSPIRACOES.filter((i) => !i.trend)
+  const diversos: Inspiracao[] = []
+  const vistas = new Set<InspiracaoCategoria>()
+  for (const i of resto) {
+    if (!vistas.has(i.categoria)) {
+      diversos.push(i)
+      vistas.add(i.categoria)
+    }
+  }
+  const selecionadas = [...trends, ...diversos, ...resto]
+    .filter((i, idx, arr) => arr.findIndex((x) => x.id === i.id) === idx)
+    .slice(0, limit)
+
+  return selecionadas.map((i) => ({
     ...i,
     briefing: preencherBriefing(i.briefing),
     personalizada: false,
@@ -554,6 +570,7 @@ export function getInspiracoesGenericas(): Array<
  */
 export function getInspiracoesParaMarca(
   brand: BrandContext,
+  limit = 9,
 ): Array<Inspiracao & { briefing: string; personalizada: boolean }> {
   const nicho = inferNicho(brand)
   const categorias = objetivosToCategorias(brand.main_objective)
@@ -577,7 +594,9 @@ export function getInspiracoesParaMarca(
 
   const contexto = buildContextoMarca(brand)
 
-  return ordered.map((i) => ({
+  // CURADORIA: só as mais relevantes (nicho/objetivo no topo). Antes devolvia
+  // o catálogo inteiro (nicho + TODAS as gerais), o que floodava de genérico.
+  return ordered.slice(0, limit).map((i) => ({
     ...i,
     briefing: `${contexto}\n\n${preencherBriefing(i.briefing, brand.name, brand.target_audience)}`,
     personalizada: true,

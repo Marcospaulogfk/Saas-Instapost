@@ -1,8 +1,13 @@
 # SyncPost — Identidade Visual
 
+> ⚠️ **SUPERADO PELO `DESIGN.md` DA RAIZ.** A fonte da verdade de design agora é
+> [`/DESIGN.md`](../DESIGN.md) (padrão awesome-design-md). O **roxo oficial único é `#7320E6`**
+> (`--brand-600`), não `#7320E6`. Este doc foi alinhado a ele; se algo divergir, o `DESIGN.md`
+> vence. Mantido como referência da filosofia visual (as "5 regras do sal", micro-tipografia).
+>
 > **Direção:** tech premium (não tech cafona).
 > **Princípio:** o "tech" vem de **precisão e contenção**, nunca de efeito. Sem gradiente na interface, sem neon, sem glow. O caráter mora na tipografia, na micro-tipografia monoespaçada e no alto contraste.
-> **Como usar este doc:** é a fonte da verdade pra implementação. Os tokens abaixo entram em `globals.css` (Tailwind v4) e os componentes seguem as regras de cada seção. Não inventar cores, fontes ou efeitos fora daqui.
+> **Como usar este doc:** filosofia visual e regras de componente. Os **valores canônicos de token** vivem no `DESIGN.md` + `app/globals.css`. Não inventar cores, fontes ou efeitos fora daqui.
 
 ---
 
@@ -12,7 +17,7 @@ Esses cinco gestos são o que dá personalidade. Se um deles sumir, a marca vira
 
 1. **Monoespaçada em todo label, número e metadado.** Geist Mono, geralmente em CAIXA ALTA com `letter-spacing` aberto. Títulos de seção, créditos, métricas, tags, tempos, IDs.
 2. **Pistas de sistema vivo.** Bolinha de status `●`, tempo de geração (`4.2s`), e o **cursor em bloco roxo** (`▌`) ao fim de títulos ou em estados de geração. É o que faz parecer uma engine, não um site.
-3. **Hairlines + régua roxa de topo.** Bordas finas (`1px` com baixa opacidade) e uma régua sólida de `2px #7C5CFF` no topo de superfícies-chave (cards, painéis).
+3. **Hairlines + régua roxa de topo.** Bordas finas (`1px` com baixa opacidade) e uma régua sólida de `2px #7320E6` no topo de superfícies-chave (cards, painéis).
 4. **Alto contraste + respiro.** Texto quase branco sobre fundo quase preto, com bastante espaço negativo. Nada apertado, nada lotado.
 5. **Roxo sólido e estrutural.** O roxo é cor de ação e de estrutura, sempre chapado. **Gradiente só existe dentro do logo.** Sem verde. Rosa/magenta só dentro do gradiente do logo.
 
@@ -30,9 +35,9 @@ Esses cinco gestos são o que dá personalidade. Se um deles sumir, a marca vira
 ### Roxo (acento / estrutura)
 | Token | Hex | Uso |
 |---|---|---|
-| `--primary` | `#7C5CFF` | Botão primário, bordas-acento, status dot, cursor |
-| `--primary-vivid` | `#7C3AED` | Ênfase, hover de elementos roxos |
-| `--primary-text` | `#9B87FF` | Palavra/realce roxo **sobre fundo escuro** (mais legível que o `#7C5CFF`) |
+| `--primary` | `#7320E6` | Botão primário, bordas-acento, status dot, cursor |
+| `--primary-vivid` | `#5F14D6` | Ênfase, hover de elementos roxos |
+| `--primary-text` | `#9B87FF` | Palavra/realce roxo **sobre fundo escuro** (mais legível que o `#7320E6`) |
 | `--primary-soft` | `#A78BFA` | Estados sutis, ícones |
 
 ### Texto
@@ -46,8 +51,8 @@ Esses cinco gestos são o que dá personalidade. Se um deles sumir, a marca vira
 | Token | Valor | Uso |
 |---|---|---|
 | `--hairline` | `rgba(255,255,255,.07)` | Divisórias e bordas neutras |
-| `--border-accent` | `rgba(124,92,255,.22)` | Borda de cards/destaques |
-| `--rule-top` | `2px solid #7C5CFF` | Régua de topo em superfícies-chave |
+| `--border-accent` | `rgba(115,32,230,.22)` | Borda de cards/destaques |
+| `--rule-top` | `2px solid #7320E6` | Régua de topo em superfícies-chave |
 
 ### Estados funcionais (não são cores de marca)
 | Estado | Hex | Obs |
@@ -128,17 +133,17 @@ Ativo **fixo** — não redesenhar, não recolorir.
 ## 5. Componentes
 
 ### Botões
-- **Primário:** `bg #7C5CFF`, texto `#FFFFFF`, peso 600, raio `9px`, padding `10–12px / 18px`. Hover: `#7C3AED`.
+- **Primário:** `bg #7320E6`, texto `#FFFFFF`, peso 600, raio `9px`, padding `10–12px / 18px`. Hover: `#5F14D6`.
 - **Secundário (ghost):** fundo transparente, borda `1px var(--hairline-strong: rgba(255,255,255,.15))`, texto `#EEEEEE`, mesmo raio.
 
 ### Pill de créditos
-Mono, caixa alta. Borda `1px rgba(124,92,255,.3)`, raio `999px`, padding `7px 13px`. Começa com `●` em `#7C5CFF`. Ex.: `● 1.240 CRÉDITOS`.
+Mono, caixa alta. Borda `1px rgba(115,32,230,.3)`, raio `999px`, padding `7px 13px`. Começa com `●` em `#7320E6`. Ex.: `● 1.240 CRÉDITOS`.
 
 ### Badge
 Mono, caixa alta, borda `1px var(--hairline)`, raio `7px`, padding `6px 11px`. Ex.: `PRO`.
 
 ### Card
-- Fundo `#0C0A12`, borda `1px rgba(124,92,255,.2)`, **borda-topo `2px #7C5CFF`**, raio `12px`.
+- Fundo `#0C0A12`, borda `1px rgba(115,32,230,.2)`, **borda-topo `2px #7320E6`**, raio `12px`.
 - **Header:** label mono caixa alta (`--text-muted`) à esquerda + status `●` à direita (ex.: `● gerando` em roxo).
 - **Corpo:** título Geist 600.
 - **Footer:** metadados em mono (`4.2s · 8 SLIDES · 4:5`).
@@ -147,7 +152,7 @@ Mono, caixa alta, borda `1px var(--hairline)`, raio `7px`, padding `6px 11px`. E
 Fundo escuro, borda hairline, placeholder `--text-muted`. Atalho de teclado em mono (`⌘K`) à direita.
 
 ### Cursor (caret)
-Bloco sólido `#7C5CFF`, largura ~`0.5em`, altura da linha do texto, ao fim de títulos ou estados de geração. É um device de marca — usar com parcimônia (1 por tela).
+Bloco sólido `#7320E6`, largura ~`0.5em`, altura da linha do texto, ao fim de títulos ou estados de geração. É um device de marca — usar com parcimônia (1 por tela).
 
 ---
 
@@ -191,8 +196,8 @@ Pra a foto pertencer à marca e não parecer stock colada:
   --color-surface-2: #121019;
 
   /* roxo */
-  --color-primary: #7C5CFF;
-  --color-primary-vivid: #7C3AED;
+  --color-primary: #7320E6;
+  --color-primary-vivid: #5F14D6;
   --color-primary-text: #9B87FF;
   --color-primary-soft: #A78BFA;
 
@@ -220,8 +225,8 @@ Pra a foto pertencer à marca e não parecer stock colada:
 :root {
   --hairline: rgba(255,255,255,.07);
   --hairline-strong: rgba(255,255,255,.15);
-  --border-accent: rgba(124,92,255,.22);
-  --rule-top: 2px solid #7C5CFF;
+  --border-accent: rgba(115,32,230,.22);
+  --rule-top: 2px solid #7320E6;
   /* gradiente — SOMENTE no logo */
   --logo-gradient: linear-gradient(135deg,#C94CF1,#8B2BEB 55%,#580CE8);
 }

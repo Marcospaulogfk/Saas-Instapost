@@ -147,7 +147,7 @@ export function BrandDetail({
     tone_of_voice: brand.tone_of_voice ?? "",
     visual_style: brand.visual_style ?? "",
     main_objective: primaryObjective(brand.main_objective),
-    brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7C3AED"],
+    brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7320E6"],
   })
 
   function reset() {
@@ -160,7 +160,7 @@ export function BrandDetail({
       tone_of_voice: brand.tone_of_voice ?? "",
       visual_style: brand.visual_style ?? "",
       main_objective: primaryObjective(brand.main_objective),
-      brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7C3AED"],
+      brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7320E6"],
     })
     setError(null)
   }
@@ -242,11 +242,9 @@ export function BrandDetail({
 
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-card border border-border-subtle backdrop-blur-xl p-6">
-        <div className="absolute -top-20 -right-12 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10 flex items-start gap-4 flex-wrap">
           <div
-            className={`w-20 h-20 rounded-xl ${getBrandGradient(brand.id)} flex items-center justify-center flex-shrink-0 shadow-glow-sm`}
+            className={`w-20 h-20 rounded-xl ${getBrandGradient(brand.id)} flex items-center justify-center flex-shrink-0`}
           >
             <span className="text-4xl font-display font-bold text-white">
               {brand.name.charAt(0).toUpperCase()}
@@ -476,14 +474,14 @@ export function BrandDetail({
                         type="text"
                         value={color}
                         onChange={(e) => updateColor(i, e.target.value)}
-                        className="w-20 text-xs font-mono text-center text-text-secondary bg-background-secondary/60 border border-border-subtle rounded px-1 py-0.5 focus:border-purple-600/50 focus:outline-none"
+                        className="w-20 text-xs font-mono text-center text-text-secondary bg-background-secondary/60 border border-border-subtle rounded px-1 py-0.5 focus:border-brand-600/50 focus:outline-none"
                       />
                     </div>
                   ))}
                   <button
                     type="button"
                     onClick={addColor}
-                    className="w-16 h-16 rounded-lg border border-dashed border-border-medium hover:border-purple-600/60 hover:text-purple-300 text-text-muted flex items-center justify-center transition-colors"
+                    className="w-16 h-16 rounded-lg border border-dashed border-border-medium hover:border-border-accent hover:text-brand-300 text-text-muted flex items-center justify-center transition-colors"
                     aria-label="Adicionar cor"
                   >
                     <Plus className="w-5 h-5" />
@@ -545,7 +543,7 @@ export function BrandDetail({
                       href={brand.website_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-purple-400 hover:text-purple-300 transition-colors"
+                      className="text-brand-400 hover:text-brand-300 transition-colors"
                     >
                       {brand.website_url}
                     </a>
@@ -587,7 +585,7 @@ export function BrandDetail({
                 <Link
                   key={`c-${carousel.id}`}
                   href={`/dashboard/carrossel?id=${carousel.id}`}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all bg-black"
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-border-accent transition-all bg-black"
                 >
                   {carousel.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -619,7 +617,7 @@ export function BrandDetail({
                 <Link
                   key={`p-${post.id}`}
                   href={`/dashboard/posts-unicos/${post.id}`}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all bg-black"
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-border-accent transition-all bg-black"
                 >
                   {post.rendered_image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -651,7 +649,7 @@ export function BrandDetail({
                 <Link
                   key={project.id}
                   href={`/dashboard/projetos/${project.id}`}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-purple-600/50 hover:shadow-glow-sm transition-all"
+                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border-subtle hover:border-border-accent transition-all"
                 >
                   <div className={`absolute inset-0 ${getProjectGradient(project.id)}`} />
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
@@ -683,7 +681,7 @@ function FieldCard({ icon: Icon, title, children }: FieldCardProps) {
   return (
     <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-3">
       <div className="flex items-center gap-2">
-        {Icon && <Icon className="w-4 h-4 text-purple-400" />}
+        {Icon && <Icon className="w-4 h-4 text-brand-400" />}
         <h3 className="font-display font-semibold text-text-primary">{title}</h3>
       </div>
       {children}

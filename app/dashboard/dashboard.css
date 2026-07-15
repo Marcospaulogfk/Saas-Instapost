@@ -1,39 +1,62 @@
 /* =============================================================================
-   Dashboard — fundo preto #000 + gradiente Instagram "Rio de Janeiro"
-   (roxo → magenta → laranja), sidebar flutuante, tipografia leve e animação.
+   Dashboard — sistema Linear (voltagent/awesome-design-md · linear.app/DESIGN.md)
+   adaptado à marca SyncPost.
+
+   Filosofia Linear ("alisar tudo"): o canvas escuro É o espaço em branco.
+   Profundidade vem de uma ESCADA DE SUPERFÍCIES + bordas hairline — nunca de
+   sombras, glows, gradientes de brilho ou spotlights. Um único acento cromático
+   (roxo SyncPost #7320E6), reservado a marca / CTA / focus ring / link.
+
+   Regras aplicadas do DESIGN.md:
+   - canvas quase-preto (não #000 puro) como âncora
+   - máx. 4 níveis de superfície pra hierarquia
+   - acento só em marca, CTA primário, focus, link — nunca como fundo/preenchimento
+   - sem gradientes, sem spotlight, sem drop-shadow pra profundidade
+   - tracking negativo agressivo no display (peso 600) + body peso 400
+   - base de espaçamento 4px; botões raio 8px, cards 12px, painéis 16px
    Tudo escopado em .dashboard-root pra não vazar pro resto do app.
    ============================================================================= */
 
 .dashboard-root {
   color-scheme: dark;
 
-  /* Cria stacking context: faz a camada de ambient (-z-10) pintar ACIMA do
-     fundo preto e ABAIXO do conteúdo. Sem isso o glow some atrás do #000. */
-  isolation: isolate;
+  /* ---- Superfícies (dark premium: cards pretos flutuando no canvas charcoal) ---- */
+  /* canvas bem escuro; cards ainda mais pretos que ele + sombra pra destacar */
+  --canvas: #0c0b10;
+  --card-black: #070709;
+  --surface-1: #121118;
+  --surface-2: #1b1a22;
+  --surface-3: #211f2a;
+  --surface-4: #262430;
 
-  /* Superfícies pretas (independe do toggle de tema global) */
-  --background: #000000;
-  --background-secondary: #0a0a0c;
-  --background-tertiary: #0d0d11;
-  --background-quaternary: #131318;
-  --surface: #0a0a0c;
-  --card: #0a0a0c;
-  --popover: #0b0b0e;
+  /* Mapeia os tokens do app pra escada acima */
+  --background: var(--canvas);
+  --background-secondary: var(--surface-1);
+  --background-tertiary: var(--surface-2);
+  --background-quaternary: var(--surface-3);
+  --surface: var(--surface-1);
+  --surface-2: var(--surface-2);
+  --card: var(--surface-1);
+  --popover: var(--surface-2);
   --sidebar: transparent;
 
-  /* Gradiente Instagram "Rio": roxo → magenta → laranja pôr-do-sol */
-  --ig-rio: linear-gradient(
-    135deg,
-    #7a2e9e 0%,
-    #b12c7a 42%,
-    #e0556a 68%,
-    #f0844a 100%
-  );
+  /* ---- Tinta (hierarquia tipográfica Linear) ---- */
+  --text-primary: #f7f8f8;
+  --text-secondary: #c9ced7;
+  --text-muted: #8a8f98;
+  --text-subtle: #62666d;
 
-  background-color: #000000;
+  /* ---- Bordas hairline (progressão de ênfase, sem sombra) ---- */
+  --hairline: rgba(255, 255, 255, 0.06);
+  --hairline-strong: rgba(255, 255, 255, 0.11);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.11);
+  --border-accent: rgba(115, 32, 230, 0.4);
+
+  background-color: var(--canvas);
 }
 
-/* ===== Tipografia mais leve no dashboard inteiro ===== */
+/* ===== Tipografia: voz única e medida (Linear) ===== */
 .dashboard-root .font-bold {
   font-weight: 600;
 }
@@ -43,123 +66,30 @@
 .dashboard-root .font-medium {
   font-weight: 450;
 }
+/* tracking negativo agressivo no display, aliviando em direção ao body */
 .dashboard-root :is(h1, h2, h3) {
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.028em;
+}
+.dashboard-root h1 {
+  letter-spacing: -0.036em;
 }
 
-/* ===== Ambient: gradiente/sombra Rio dando vida ao fundo preto =====
-   (gradiente do Instagram fica SÓ no fundo — nunca em botões/UI) */
-
-/* Base: banda pôr-do-sol MUITO sutil sobre o preto (quase imperceptível,
-   só sugere a cor nos cantos — estilo da referência escura). */
-.dash-rio-base {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    90% 70% at 8% -8%,
-    rgba(110, 42, 150, 0.07),
-    transparent 55%
-  );
+/* ===== Acento único, sem gradiente =====
+   O DESIGN.md do Linear proíbe gradient em texto e segundo acento cromático.
+   Dentro do dashboard, .gradient-text vira cor sólida da marca. */
+.dashboard-root .gradient-text {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: var(--brand-400);
 }
 
-/* Vinheta: escurece as bordas pra dar profundidade/sombra */
-.dash-rio-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    120% 100% at 50% 38%,
-    transparent 42%,
-    rgba(0, 0, 0, 0.8) 100%
-  );
-}
-
-/* Glows de canto — sutis e escuros (como a referência), flutuando devagar */
-.dash-rio-glow {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(120px);
-  will-change: transform;
-}
-.dash-rio-1 {
-  width: 44vw;
-  height: 44vw;
-  max-width: 620px;
-  max-height: 620px;
-  top: -16vw;
-  left: -14vw;
-  opacity: 0.32;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(112, 40, 165, 0.55),
-    rgba(96, 36, 140, 0.2) 45%,
-    transparent 70%
-  );
-  animation: rioDrift1 24s ease-in-out infinite alternate;
-}
-.dash-rio-2 {
-  width: 46vw;
-  height: 46vw;
-  max-width: 660px;
-  max-height: 660px;
-  bottom: -16vw;
-  right: -14vw;
-  opacity: 0.5;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(196, 92, 48, 0.72),
-    rgba(180, 66, 70, 0.3) 45%,
-    transparent 70%
-  );
-  animation: rioDrift2 28s ease-in-out infinite alternate;
-}
-.dash-rio-3 {
-  width: 32vw;
-  height: 32vw;
-  max-width: 460px;
-  max-height: 460px;
-  top: -12vw;
-  right: -10vw;
-  opacity: 0.22;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(120, 44, 170, 0.5),
-    transparent 68%
-  );
-  animation: rioDrift3 32s ease-in-out infinite alternate;
-}
-@keyframes rioDrift1 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(6vw, 4vw, 0) scale(1.14);
-  }
-}
-@keyframes rioDrift2 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.06);
-  }
-  to {
-    transform: translate3d(-5vw, -3vw, 0) scale(1);
-  }
-}
-@keyframes rioDrift3 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.4;
-  }
-  to {
-    transform: translate3d(-4vw, 5vw, 0) scale(1.15);
-    opacity: 0.55;
-  }
-}
-
-/* ===== Animação de entrada do conteúdo ===== */
+/* ===== Entrada discreta (sem espetáculo) ===== */
 @keyframes dashFadeUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -167,104 +97,68 @@
   }
 }
 .dashboard-root main > * {
-  animation: dashFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: dashFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ===== Sidebar flutuante (efeito bolha de vidro) ===== */
+/* ===== Sidebar PRETA flutuante (sombra pra separar, sem linha) ===== */
 .dash-sidebar-float {
   margin: 12px;
   height: calc(100vh - 24px);
-  border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  box-shadow:
-    0 28px 70px -28px rgba(0, 0, 0, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background: #000;
+  box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.8);
   position: relative;
   z-index: 10;
   overflow: hidden;
 }
-/* brilho Rio sutil no topo da bolha */
-.dash-sidebar-float::before {
-  content: "";
-  position: absolute;
-  inset: -40% -40% auto -40%;
-  height: 60%;
-  background: radial-gradient(
-    ellipse at 50% 0%,
-    rgba(120, 44, 170, 0.16),
-    transparent 70%
-  );
-  pointer-events: none;
+
+/* ===== Card PRETO: sombra + hover animado (lift) — sem bordas/linhas ===== */
+.dashboard-root .card-black {
+  background: var(--card-black);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 24px -10px rgba(0, 0, 0, 0.75),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.24s ease;
+}
+.dashboard-root .card-black-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 22px 48px -14px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(115, 32, 230, 0.4);
 }
 
-/* ===== Cards premium ===== */
+/* ===== Cards: superfície chapada + hairline, profundidade por nível ===== */
+/* Linear: sem gradiente de brilho, sem drop-shadow, sem lift dramático.
+   Hover apenas clareia a borda (ênfase progressiva do hairline). */
 .dash-card {
   position: relative;
-  border-radius: 18px;
-  background:
-    radial-gradient(130% 130% at 0% 0%, rgba(139, 31, 234, 0.06), transparent 42%),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.045),
-      rgba(255, 255, 255, 0.012)
-    ),
-    #0b0b0e;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 24px 48px -28px rgba(0, 0, 0, 0.85);
-  transition:
-    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.28s ease,
-    box-shadow 0.28s ease;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 .dash-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(139, 31, 234, 0.32);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 30px 60px -26px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(139, 31, 234, 0.16);
+  border-color: var(--hairline-strong);
 }
 
-/* Cards de template — gradiente tom Rio em vez de caixa preta vazia */
-.dash-template-card {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background:
-    linear-gradient(150deg, rgba(139, 31, 234, 0.18), rgba(18, 18, 24, 0.55) 58%),
-    #0b0b0e;
-  transition:
-    transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.28s ease,
-    box-shadow 0.28s ease;
-}
-.dash-template-card:nth-child(2) {
-  background:
-    linear-gradient(150deg, rgba(120, 44, 170, 0.16), rgba(18, 18, 24, 0.55) 58%),
-    #0b0b0e;
-}
-.dash-template-card:nth-child(3) {
-  background:
-    linear-gradient(150deg, rgba(139, 31, 234, 0.14), rgba(18, 18, 24, 0.55) 58%),
-    #0b0b0e;
-}
+/* Cards de template — mesma superfície chapada; hover revela a borda-acento */
+.dash-template-card,
+.dash-template-card:nth-child(2),
+.dash-template-card:nth-child(3),
 .dash-template-card:nth-child(4) {
-  background:
-    linear-gradient(150deg, rgba(96, 36, 140, 0.18), rgba(18, 18, 24, 0.55) 58%),
-    #0b0b0e;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 .dash-template-card:hover {
-  border-color: rgba(139, 31, 234, 0.45);
-  box-shadow: 0 22px 44px -22px rgba(139, 31, 234, 0.4);
+  border-color: var(--border-accent);
+  background: var(--surface-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dash-rio-1,
-  .dash-rio-2,
-  .dash-rio-3,
   .dashboard-root main > * {
     animation: none;
   }

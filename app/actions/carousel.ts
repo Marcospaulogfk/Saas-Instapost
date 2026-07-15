@@ -2,7 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import type { PreviewSlide, EditorialStyle } from '@/components/carousel/slide-preview'
+import type {
+  PreviewSlide,
+  EditorialStyle,
+  CarouselCoverData,
+} from '@/components/carousel/slide-preview'
 
 // =====================================================================
 // Server actions do EDITOR NOVO de carrossel (carousel-editor.tsx).
@@ -24,6 +28,13 @@ export interface CarouselV2Data {
   template: 'editorial' | 'cinematic' | 'hybrid'
   editorialStyle: EditorialStyle
   format: 'feed' | 'stories'
+  /** Tipografia (id da fonte, peso e escala do título). Opcionais. */
+  font?: string
+  titleWeight?: number
+  titleScale?: number
+  /** Capa: PNG do slide 1 JÁ COMPOSTO (texto+marca), gerado no save. Usado como
+   *  thumbnail na Biblioteca/Dashboard. Fallback: foto de fundo do 1º slide. */
+  coverImageUrl?: string | null
 }
 
 export interface SaveCarouselInput {
@@ -97,7 +108,10 @@ export interface CarouselListItem {
   id: string
   title: string
   brand_name: string | null
+  /** Capa COMPOSTA salva (PNG do slide 1). null = renderizar ao vivo via `cover`. */
   cover_url: string | null
+  /** Dados pra renderizar a capa ao vivo quando não há PNG salvo. */
+  cover: CarouselCoverData | null
   slide_count: number
   updated_at: string
 }
@@ -122,12 +136,27 @@ export async function listCarouselsV2(): Promise<CarouselListItem[]> {
     .map((r) => {
       const cd = r.carousel_data as CarouselV2Data
       const slides = Array.isArray(cd.slides) ? cd.slides : []
-      const cover = slides.find((s) => s.image?.url)?.image.url ?? null
+      const first = slides[0] ?? null
+      // Capa: prefere o PNG composto salvo; se não houver (carrosséis antigos),
+      // devolve os dados pra renderizar o slide 1 ao vivo no card.
+      const coverData: CarouselCoverData | null = first
+        ? {
+            slide: first,
+            totalSlides: slides.length,
+            template: cd.template ?? 'editorial',
+            editorialStyle: cd.editorialStyle ?? 'auto',
+            colors: Array.isArray(cd.colors) ? cd.colors : [],
+            handle: cd.handle ?? '',
+            brandName: cd.brandName ?? '',
+            format: cd.format ?? 'feed',
+          }
+        : null
       return {
         id: r.id as string,
         title: (r.topic as string) || 'Carrossel',
         brand_name: (r.brand_name as string) || null,
-        cover_url: cover,
+        cover_url: cd.coverImageUrl ?? null,
+        cover: coverData,
         slide_count: slides.length,
         updated_at: r.updated_at as string,
       }

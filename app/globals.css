@@ -108,7 +108,10 @@
   --surface: var(--background-secondary);
   --surface-2: var(--background-tertiary);
 
-  /* === Template Editorial (canvas Konva — namespace isolado, dark-only) === */
+  /* === Template Editorial (canvas Konva — namespace isolado, dark-only) ===
+     EXCEÇÃO DECLARADA (DESIGN.md §7.4): estes tokens `editorial-*` são o acento de UM
+     template de post (verde-limão), NÃO a UI do app. Nunca use `--editorial-purple` fora
+     do canvas de template. A UI do app usa só o roxo `--brand-600 #7320E6`. */
   --editorial-bg-dark: #0e0e0e;
   --editorial-bg-darker: #050505;
   --editorial-bg-navy: #161616;

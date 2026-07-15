@@ -285,7 +285,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
               <FieldLabel>Cor de marca (highlight)</FieldLabel>
               <input
                 type="color"
-                value={slide.brandInfo.brandColor || '#7C3AED'}
+                value={slide.brandInfo.brandColor || '#7320E6'}
                 onChange={(e) =>
                   onUpdate({
                     brandInfo: { ...slide.brandInfo, brandColor: e.target.value },
@@ -294,7 +294,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                 className="w-full h-12 rounded cursor-pointer bg-transparent border border-border-medium"
               />
               <Input
-                value={slide.brandInfo.brandColor || '#7C3AED'}
+                value={slide.brandInfo.brandColor || '#7320E6'}
                 onChange={(e) =>
                   onUpdate({
                     brandInfo: { ...slide.brandInfo, brandColor: e.target.value },

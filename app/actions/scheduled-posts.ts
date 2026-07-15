@@ -65,13 +65,16 @@ export async function saveEditorialPlan(
   return { ok: true, data: { inserted: count ?? rows.length } }
 }
 
-/** Cria um item manual no calendário. */
+/** Cria um item manual no calendário (com hora e status opcionais). */
 export async function createScheduledPost(input: {
   brandId: string
   title: string
   scheduledDate: string
+  /** Hora opcional HH:MM. Vazio/undefined = só o dia. */
+  scheduledTime?: string | null
   format: PostFormato
   objective?: PostObjetivo
+  status?: PostStatus
 }): Promise<Result<{ id: string }>> {
   const { supabase, user } = await getUser()
   if (!user) return { ok: false, error: "Você precisa estar logado." }
@@ -93,7 +96,8 @@ export async function createScheduledPost(input: {
       format: input.format,
       objective: input.objective ?? "engage",
       scheduled_date: input.scheduledDate,
-      status: "ideia",
+      scheduled_time: input.scheduledTime?.trim() || null,
+      status: input.status ?? "agendado",
       source: "manual",
     })
     .select("id")
@@ -115,10 +119,11 @@ export async function listScheduledPosts(
   const { data, error } = await supabase
     .from("scheduled_posts")
     .select(
-      "id, brand_id, title, description, format, objective, scheduled_date, status, source, project_id, created_at",
+      "id, brand_id, title, description, format, objective, scheduled_date, scheduled_time, status, source, project_id, created_at",
     )
     .eq("brand_id", brandId)
     .order("scheduled_date", { ascending: true })
+    .order("scheduled_time", { ascending: true, nullsFirst: true })
 
   if (error || !data) return []
   return data as ScheduledPost[]

@@ -1,6 +1,6 @@
-﻿"use client"
+"use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -9,31 +9,28 @@ import {
   Sparkles,
   X,
   Trash2,
+  Info,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  loadPautas,
-  savePautas,
-  addPauta,
-  deletePauta,
-  gerarPautasIA,
-  statusColor,
-  statusLabel,
-  type Pauta,
-  type PautaStatus,
-} from "@/lib/pautas"
+import { gerarPautasIA } from "@/lib/pautas"
 import { getProximasDatas } from "@/lib/datas-comemorativas"
 import {
   listActiveScheduledPosts,
+  createScheduledPost,
+  saveEditorialPlan,
   deleteScheduledPost,
 } from "@/app/actions/scheduled-posts"
 import {
-  statusColor as spStatusColor,
-  statusLabel as spStatusLabel,
+  statusColor,
+  statusLabel,
   FORMATO_LABEL,
+  toISODate,
   type ScheduledPost,
+  type PostStatus,
+  type PostFormato,
+  type PlanoIdeia,
 } from "@/lib/planejar"
 import Link from "next/link"
 
@@ -53,42 +50,48 @@ const MESES_LONG = [
 ]
 const DIAS_SEMANA = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"]
 
-const STATUS_FILTERS: Array<{ id: "todos" | PautaStatus; label: string; color: string }> = [
+const STATUS_FILTERS: Array<{ id: "todos" | PostStatus; label: string; color: string }> = [
   { id: "todos", label: "Todos", color: "bg-text-secondary" },
-  { id: "ideia", label: "Ideias IA", color: "bg-brand-500" },
+  { id: "ideia", label: "Ideias", color: "bg-brand-500" },
   { id: "em_criacao", label: "Em criação", color: "bg-blue-500" },
   { id: "pronto", label: "Prontos", color: "bg-emerald-500" },
   { id: "agendado", label: "Agendados", color: "bg-orange-500" },
+  { id: "publicado", label: "Publicados", color: "bg-brand-600" },
 ]
+
+/** Mostra a hora HH:MM (ignora segundos) ou vazio. */
+function fmtHora(t: string | null): string {
+  if (!t) return ""
+  return t.slice(0, 5)
+}
 
 export default function CalendarioPage() {
   const [today] = useState(() => new Date())
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
-  const [pautas, setPautas] = useState<Pauta[]>([])
-  const [filterStatus, setFilterStatus] = useState<"todos" | PautaStatus>("todos")
+  const [filterStatus, setFilterStatus] = useState<"todos" | PostStatus>("todos")
   const [novaModal, setNovaModal] = useState<{ data: string } | null>(null)
   const [iaModalOpen, setIaModalOpen] = useState(false)
-  const [scheduled, setScheduled] = useState<ScheduledPost[]>([])
 
-  useEffect(() => {
-    setPautas(loadPautas())
-    // Carrega os posts pré-agendados (vindos do Planejador) da marca ativa.
-    listActiveScheduledPosts()
-      .then((res) => setScheduled(res.posts))
-      .catch(() => setScheduled([]))
+  // Fonte ÚNICA: scheduled_posts (banco). Cobre tanto ideias da IA
+  // (source='ia') quanto pautas manuais (source='manual').
+  const [scheduled, setScheduled] = useState<ScheduledPost[]>([])
+  const [brandId, setBrandId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  const refetch = useCallback(async () => {
+    const res = await listActiveScheduledPosts().catch(() => null)
+    if (res) {
+      setBrandId(res.brandId)
+      setScheduled(res.posts)
+    }
+    setLoading(false)
   }, [])
 
-  function scheduledNoDia(date: Date | null): ScheduledPost[] {
-    if (!date) return []
-    const iso = formatDate(date)
-    return scheduled.filter((s) => s.scheduled_date === iso)
-  }
-
-  async function handleDeleteScheduled(id: string) {
-    setScheduled((list) => list.filter((s) => s.id !== id))
-    await deleteScheduledPost(id)
-  }
+  useEffect(() => {
+    refetch()
+  }, [refetch])
 
   const grid = useMemo(() => buildMonthGrid(year, month), [year, month])
   const datasComemorativas = useMemo(() => {
@@ -99,23 +102,27 @@ export default function CalendarioPage() {
   }, [year, month])
 
   const filtered = useMemo(() => {
-    if (filterStatus === "todos") return pautas
-    return pautas.filter((p) => p.status === filterStatus)
-  }, [pautas, filterStatus])
+    if (filterStatus === "todos") return scheduled
+    return scheduled.filter((s) => s.status === filterStatus)
+  }, [scheduled, filterStatus])
 
   const counts = useMemo(() => {
-    return {
-      ideia: pautas.filter((p) => p.status === "ideia").length,
-      em_criacao: pautas.filter((p) => p.status === "em_criacao").length,
-      pronto: pautas.filter((p) => p.status === "pronto").length,
-      agendado: pautas.filter((p) => p.status === "agendado").length,
+    const base: Record<PostStatus, number> = {
+      ideia: 0,
+      em_criacao: 0,
+      pronto: 0,
+      agendado: 0,
+      publicado: 0,
+      falhou: 0,
     }
-  }, [pautas])
+    for (const s of scheduled) base[s.status]++
+    return base
+  }, [scheduled])
 
-  function pautasNoDia(date: Date | null): Pauta[] {
+  function itensNoDia(date: Date | null): ScheduledPost[] {
     if (!date) return []
-    const iso = formatDate(date)
-    return filtered.filter((p) => p.data === iso)
+    const iso = toISODate(date)
+    return filtered.filter((s) => s.scheduled_date === iso)
   }
 
   function dataComemorativaNoDia(date: Date | null) {
@@ -131,24 +138,79 @@ export default function CalendarioPage() {
     setMonth(d.getMonth())
   }
 
-  function handleNovaPauta(titulo: string, data: string, formato: Pauta["formato"]) {
-    const novo = addPauta({ titulo, data, status: "ideia", formato, rede: "instagram" })
-    setPautas((p) => [...p, novo])
+  async function handleNovaPauta(
+    titulo: string,
+    data: string,
+    hora: string,
+    formato: PostFormato,
+  ) {
+    if (!brandId) {
+      alert("Selecione ou crie uma marca antes de agendar.")
+      return
+    }
+    setSaving(true)
+    const res = await createScheduledPost({
+      brandId,
+      title: titulo,
+      scheduledDate: data,
+      scheduledTime: hora || null,
+      format: formato,
+      status: "agendado",
+    })
+    setSaving(false)
+    if (!res.ok) {
+      alert(res.error)
+      return
+    }
     setNovaModal(null)
+    await refetch()
   }
 
-  function handleDelete(id: string) {
-    deletePauta(id)
-    setPautas((list) => list.filter((p) => p.id !== id))
+  async function handleDelete(id: string) {
+    setScheduled((list) => list.filter((s) => s.id !== id))
+    await deleteScheduledPost(id)
   }
 
-  function handleRecomendarIA(qtd: number) {
-    const novas = gerarPautasIA(year, month, qtd)
-    const all = [...pautas, ...novas]
-    savePautas(all)
-    setPautas(all)
+  async function handleRecomendarIA(qtd: number) {
+    if (!brandId) {
+      alert("Selecione ou crie uma marca antes de gerar pautas.")
+      return
+    }
+    setSaving(true)
+    // Reusa o gerador de sementes e persiste no banco via saveEditorialPlan.
+    const seeds = gerarPautasIA(year, month, qtd)
+    const ideias: PlanoIdeia[] = seeds.map((p) => ({
+      titulo: p.titulo,
+      formato: p.formato as PostFormato,
+      objetivo: "engage",
+      data: p.data,
+      descricao: "",
+      motivo: "",
+    }))
+    const res = await saveEditorialPlan(brandId, ideias)
+    setSaving(false)
+    if (!res.ok) {
+      alert(res.error)
+      return
+    }
     setIaModalOpen(false)
+    await refetch()
   }
+
+  const monthList = useMemo(
+    () =>
+      filtered
+        .filter((s) => {
+          const d = new Date(s.scheduled_date + "T00:00:00")
+          return d.getMonth() === month && d.getFullYear() === year
+        })
+        .sort((a, b) => {
+          const byDate = a.scheduled_date.localeCompare(b.scheduled_date)
+          if (byDate !== 0) return byDate
+          return (a.scheduled_time ?? "").localeCompare(b.scheduled_time ?? "")
+        }),
+    [filtered, month, year],
+  )
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto pb-24 lg:pb-8">
@@ -156,20 +218,20 @@ export default function CalendarioPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-lg bg-brand-600/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-brand-600/15 flex items-center justify-center">
               <CalendarIcon className="w-5 h-5 text-brand-400" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">Calendário Editorial</h1>
           </div>
           <p className="text-sm text-text-secondary">
-            Planeje, vincule e agende seus conteúdos.
+            Planeje e organize seus conteúdos por dia e horário.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => navMonth(-1)}
-            className="w-9 h-9 rounded-lg border border-border-subtle hover:bg-background-tertiary flex items-center justify-center"
+            className="w-9 h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
             aria-label="Mês anterior"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -180,25 +242,32 @@ export default function CalendarioPage() {
           <button
             type="button"
             onClick={() => navMonth(1)}
-            className="w-9 h-9 rounded-lg border border-border-subtle hover:bg-background-tertiary flex items-center justify-center"
+            className="w-9 h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
             aria-label="Próximo mês"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <Button onClick={() => setNovaModal({ data: formatDate(today) })} className="ml-1">
+          <Button onClick={() => setNovaModal({ data: toISODate(today) })} className="ml-1">
             <Plus className="w-4 h-4 mr-1.5" />
             Nova Pauta
           </Button>
         </div>
       </div>
 
+      {/* Aviso honesto: agendar aqui é planejamento, não publica sozinho ainda. */}
+      <div className="flex items-start gap-2 mb-4 rounded-lg border border-border-subtle bg-background-secondary/40 px-3 py-2">
+        <Info className="w-4 h-4 text-text-muted flex-shrink-0 mt-0.5" />
+        <p className="text-[12px] text-text-muted leading-relaxed">
+          <span className="text-text-secondary font-medium">Agendado = planejado.</span>{" "}
+          Por enquanto o calendário organiza o que publicar e quando — a publicação
+          automática no Instagram ainda está em configuração.
+        </p>
+      </div>
+
       {/* Filtros + counts */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {STATUS_FILTERS.map((f) => {
-          const count =
-            f.id === "todos"
-              ? pautas.length
-              : counts[f.id as keyof typeof counts]
+          const count = f.id === "todos" ? scheduled.length : counts[f.id]
           return (
             <button
               key={f.id}
@@ -206,7 +275,7 @@ export default function CalendarioPage() {
               onClick={() => setFilterStatus(f.id)}
               className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${
                 filterStatus === f.id
-                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
+                  ? "bg-brand-600 border-brand-600 text-white"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -217,33 +286,31 @@ export default function CalendarioPage() {
         })}
       </div>
 
-      {/* Planejador IA banner — chat humanizado que monta o cronograma */}
+      {/* Planejador IA banner — superfície chapada + hairline (sem gradiente/glow, DESIGN.md §6) */}
       <Link
         href="/dashboard/planejar"
-        className="w-full mb-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white p-4 flex items-center gap-3 transition-all text-left shadow-lg shadow-brand-900/20"
+        className="w-full mb-4 rounded-xl border border-border-subtle bg-background-secondary/50 hover:border-border-accent text-text-primary p-4 flex items-center gap-3 transition-colors text-left"
       >
-        <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-5 h-5" />
+        <div className="w-10 h-10 rounded-lg bg-brand-600/15 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-5 h-5 text-brand-400" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold">Planejar com IA</p>
-          <p className="text-[11px] opacity-90">
+          <p className="text-[11px] text-text-muted">
             Um papo rápido e a IA monta seu cronograma da semana, baseado na sua marca
           </p>
         </div>
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-5 h-5 text-text-muted" />
       </Link>
 
       {/* Recomendações IA local (sementes rápidas, sem chamar API) */}
       <button
         type="button"
         onClick={() => setIaModalOpen(true)}
-        className="w-full mb-4 rounded-xl border border-border-subtle hover:bg-background-tertiary/40 text-text-secondary p-3 flex items-center gap-3 transition-all text-left"
+        className="w-full mb-4 rounded-xl border border-border-subtle hover:border-hairline-strong text-text-secondary p-3 flex items-center gap-3 transition-colors text-left"
       >
         <Sparkles className="w-4 h-4 text-brand-400 flex-shrink-0" />
-        <span className="text-[13px] flex-1">
-          Gerar pautas-semente rápidas (sem IA)
-        </span>
+        <span className="text-[13px] flex-1">Gerar pautas-semente rápidas (sem IA)</span>
         <ChevronRight className="w-4 h-4" />
       </button>
 
@@ -259,9 +326,7 @@ export default function CalendarioPage() {
         <div className="grid grid-cols-7">
           {grid.map((cell, i) => {
             const isToday = cell && cell.toDateString() === today.toDateString()
-            const dayPautas = pautasNoDia(cell)
-            const daySched = scheduledNoDia(cell)
-            const totalItems = dayPautas.length + daySched.length
+            const dayItems = itensNoDia(cell)
             const dataCom = dataComemorativaNoDia(cell)
             const isOtherMonth = cell && cell.getMonth() !== month
             return (
@@ -274,14 +339,14 @@ export default function CalendarioPage() {
                 {cell && (
                   <button
                     type="button"
-                    onClick={() => setNovaModal({ data: formatDate(cell) })}
+                    onClick={() => setNovaModal({ data: toISODate(cell) })}
                     className="w-full h-full flex flex-col gap-1 text-left hover:bg-background-tertiary/30 rounded transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <span
                         className={`text-[11px] font-semibold tabular-nums w-5 h-5 flex items-center justify-center rounded-full ${
                           isToday
-                            ? "bg-brand-600 text-[#0e0e0e]"
+                            ? "bg-brand-600 text-white"
                             : isOtherMonth
                               ? "text-text-muted"
                               : "text-text-primary"
@@ -299,32 +364,35 @@ export default function CalendarioPage() {
                       )}
                     </div>
                     <div className="flex-1 space-y-1 overflow-hidden">
-                      {daySched.slice(0, 3).map((s) => (
+                      {dayItems.slice(0, 3).map((s) => (
                         <div
                           key={s.id}
                           className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1"
-                          style={{ background: "rgba(115,32,230,0.12)" }}
-                          title={`${s.title} (Planejador IA)`}
+                          style={{
+                            background:
+                              s.source === "ia"
+                                ? "rgba(115,32,230,0.12)"
+                                : "rgba(255,255,255,0.04)",
+                          }}
+                          title={`${fmtHora(s.scheduled_time)} ${s.title}`.trim()}
                         >
-                          <Sparkles className="w-2.5 h-2.5 text-brand-300 flex-shrink-0" />
+                          {s.source === "ia" ? (
+                            <Sparkles className="w-2.5 h-2.5 text-brand-300 flex-shrink-0" />
+                          ) : (
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${statusColor(s.status)} flex-shrink-0`}
+                            />
+                          )}
+                          {s.scheduled_time && (
+                            <span className="text-text-muted tabular-nums flex-shrink-0">
+                              {fmtHora(s.scheduled_time)}
+                            </span>
+                          )}
                           <span className="text-text-primary truncate">{s.title}</span>
                         </div>
                       ))}
-                      {dayPautas.slice(0, Math.max(0, 3 - daySched.length)).map((p) => (
-                        <div
-                          key={p.id}
-                          className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1"
-                          style={{ background: "rgba(255,255,255,0.04)" }}
-                          title={p.titulo}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${statusColor(p.status)} flex-shrink-0`}
-                          />
-                          <span className="text-text-primary truncate">{p.titulo}</span>
-                        </div>
-                      ))}
-                      {totalItems > 3 && (
-                        <p className="text-[9px] text-text-muted">+{totalItems - 3} mais</p>
+                      {dayItems.length > 3 && (
+                        <p className="text-[9px] text-text-muted">+{dayItems.length - 3} mais</p>
                       )}
                     </div>
                   </button>
@@ -335,98 +403,58 @@ export default function CalendarioPage() {
         </div>
       </div>
 
-      {/* Posts pré-agendados pela IA (Planejador) no mês */}
-      {(() => {
-        const monthSched = scheduled
-          .filter((s) => {
-            const d = new Date(s.scheduled_date + "T00:00:00")
-            return d.getMonth() === month && d.getFullYear() === year
-          })
-          .sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date))
-        if (monthSched.length === 0) return null
-        return (
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-brand-400" />
-              Pré-agendados pela IA
-            </h3>
-            <div className="space-y-2">
-              {monthSched.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-brand-600/5 border border-brand-600/20"
-                >
-                  <span className={`w-2 h-2 rounded-full ${spStatusColor(s.status)} flex-shrink-0`} />
-                  <span className="text-[11px] tabular-nums text-text-muted w-14 flex-shrink-0">
-                    {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
-                  </span>
-                  <p className="text-sm font-medium text-text-primary flex-1 truncate">
-                    {s.title}
-                  </p>
-                  <span className="hidden sm:inline text-[10px] text-text-muted">
-                    {FORMATO_LABEL[s.format] ?? s.format}
-                  </span>
-                  <span className="hidden sm:inline text-[10px] text-text-muted">
-                    {spStatusLabel(s.status)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteScheduled(s.id)}
-                    className="text-text-muted hover:text-red-400 p-1"
-                    title="Remover do calendário"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Lista de pautas filtradas */}
-      {filtered.length > 0 && (
+      {/* Lista do mês (fonte única) */}
+      {loading ? (
+        <p className="mt-6 text-sm text-text-muted">Carregando…</p>
+      ) : monthList.length > 0 ? (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-text-primary mb-3">
-            Pautas {filterStatus === "todos" ? "do mês" : statusLabel(filterStatus as PautaStatus).toLowerCase()}
+            {filterStatus === "todos"
+              ? "Conteúdos do mês"
+              : statusLabel(filterStatus as PostStatus)}
           </h3>
           <div className="space-y-2">
-            {filtered
-              .filter((p) => {
-                const d = new Date(p.data)
-                return d.getMonth() === month && d.getFullYear() === year
-              })
-              .sort((a, b) => a.data.localeCompare(b.data))
-              .map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary/30 border border-border-subtle"
+            {monthList.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary/30 border border-border-subtle hover:border-hairline-strong transition-colors"
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${statusColor(s.status)} flex-shrink-0`}
+                />
+                <span className="text-[11px] tabular-nums text-text-muted w-20 flex-shrink-0">
+                  {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
+                  {s.scheduled_time ? ` ${fmtHora(s.scheduled_time)}` : ""}
+                </span>
+                <p className="text-sm font-medium text-text-primary flex-1 truncate">
+                  {s.title}
+                </p>
+                {s.source === "ia" && (
+                  <Sparkles className="hidden sm:inline w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
+                )}
+                <span className="hidden sm:inline text-[10px] text-text-muted">
+                  {FORMATO_LABEL[s.format] ?? s.format}
+                </span>
+                <span className="hidden sm:inline text-[10px] text-text-muted">
+                  {statusLabel(s.status)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(s.id)}
+                  className="text-text-muted hover:text-red-400 p-1"
+                  title="Remover do calendário"
                 >
-                  <span className={`w-2 h-2 rounded-full ${statusColor(p.status)} flex-shrink-0`} />
-                  <span className="text-[11px] tabular-nums text-text-muted w-14 flex-shrink-0">
-                    {p.data.split("-").reverse().slice(0, 2).join("/")}
-                  </span>
-                  <p className="text-sm font-medium text-text-primary flex-1 truncate">
-                    {p.titulo}
-                  </p>
-                  <span className="hidden sm:inline text-[10px] text-text-muted capitalize">
-                    {p.formato}
-                  </span>
-                  <span className="hidden sm:inline text-[10px] text-text-muted">
-                    {statusLabel(p.status)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(p.id)}
-                    className="text-text-muted hover:text-red-400 p-1"
-                    title="Excluir pauta"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
+      ) : (
+        <p className="mt-6 text-sm text-text-muted">
+          Nenhum conteúdo {filterStatus === "todos" ? "" : statusLabel(filterStatus as PostStatus).toLowerCase()}{" "}
+          neste mês. Clique num dia ou em “Nova Pauta” pra começar.
+        </p>
       )}
 
       {/* Modal: Nova Pauta */}
@@ -434,6 +462,7 @@ export default function CalendarioPage() {
         <Modal onClose={() => setNovaModal(null)} title="Nova Pauta">
           <NovaPautaForm
             initialData={novaModal.data}
+            saving={saving}
             onSave={handleNovaPauta}
             onCancel={() => setNovaModal(null)}
           />
@@ -444,6 +473,7 @@ export default function CalendarioPage() {
       {iaModalOpen && (
         <Modal onClose={() => setIaModalOpen(false)} title="Gerar Calendário com IA">
           <RecomendarIAForm
+            saving={saving}
             onGerar={handleRecomendarIA}
             onCancel={() => setIaModalOpen(false)}
           />
@@ -469,16 +499,12 @@ function buildMonthGrid(year: number, month: number): (Date | null)[] {
   }
   // padding depois pra completar 6 linhas (42 cells)
   while (cells.length < 42) {
-    const last = cells[cells.length - 1] as Date
-    const next = new Date(last)
+    const lastCell = cells[cells.length - 1] as Date
+    const next = new Date(lastCell)
     next.setDate(next.getDate() + 1)
     cells.push(next)
   }
   return cells
-}
-
-function formatDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
 function Modal({
@@ -513,23 +539,26 @@ function Modal({
 
 function NovaPautaForm({
   initialData,
+  saving,
   onSave,
   onCancel,
 }: {
   initialData: string
-  onSave: (titulo: string, data: string, formato: Pauta["formato"]) => void
+  saving: boolean
+  onSave: (titulo: string, data: string, hora: string, formato: PostFormato) => void
   onCancel: () => void
 }) {
   const [titulo, setTitulo] = useState("")
   const [data, setData] = useState(initialData)
-  const [formato, setFormato] = useState<Pauta["formato"]>("post")
+  const [hora, setHora] = useState("")
+  const [formato, setFormato] = useState<PostFormato>("post")
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
         if (!titulo.trim()) return
-        onSave(titulo.trim(), data, formato)
+        onSave(titulo.trim(), data, hora, formato)
       }}
       className="space-y-3"
     >
@@ -542,26 +571,37 @@ function NovaPautaForm({
           autoFocus
         />
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Data</Label>
-        <Input
-          type="date"
-          value={data}
-          onChange={(e) => setData(e.target.value)}
-          style={{ colorScheme: "dark" }}
-        />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Data</Label>
+          <Input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            style={{ colorScheme: "dark" }}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Hora (opcional)</Label>
+          <Input
+            type="time"
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            style={{ colorScheme: "dark" }}
+          />
+        </div>
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Formato</Label>
-        <div className="grid grid-cols-3 gap-1.5">
-          {(["post", "carrossel", "stories"] as const).map((f) => (
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["post", "carrossel", "stories", "reels"] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFormato(f)}
               className={`text-xs h-9 rounded border capitalize ${
                 formato === f
-                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
+                  ? "bg-brand-600 border-brand-600 text-white"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -574,8 +614,8 @@ function NovaPautaForm({
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button type="submit" disabled={!titulo.trim()} className="flex-1">
-          Salvar
+        <Button type="submit" disabled={!titulo.trim() || saving} className="flex-1">
+          {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
     </form>
@@ -583,9 +623,11 @@ function NovaPautaForm({
 }
 
 function RecomendarIAForm({
+  saving,
   onGerar,
   onCancel,
 }: {
+  saving: boolean
   onGerar: (qtd: number) => void
   onCancel: () => void
 }) {
@@ -606,7 +648,7 @@ function RecomendarIAForm({
               onClick={() => setQtd(q)}
               className={`text-xs h-9 rounded border ${
                 qtd === q
-                  ? "bg-brand-600 border-brand-600 text-[#0e0e0e]"
+                  ? "bg-brand-600 border-brand-600 text-white"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -619,9 +661,9 @@ function RecomendarIAForm({
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
           Cancelar
         </Button>
-        <Button type="button" onClick={() => onGerar(qtd)} className="flex-1">
+        <Button type="button" onClick={() => onGerar(qtd)} disabled={saving} className="flex-1">
           <Sparkles className="w-4 h-4 mr-1.5" />
-          Gerar {qtd}
+          {saving ? "Gerando…" : `Gerar ${qtd}`}
         </Button>
       </div>
     </div>

@@ -180,7 +180,7 @@ function CriarEditorialInner() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-brand shadow-glow-lg flex items-center justify-center"
+                className="w-16 h-16 mx-auto mb-6 rounded-full bg-brand-600/15 border border-border-subtle flex items-center justify-center"
               >
                 <Sparkles className="w-8 h-8 text-white" />
               </motion.div>

@@ -54,7 +54,7 @@ export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Ex: 5 erros que iniciantes cometem ao criar carrosséis no Instagram. Foco em design e copywriting."
-            className="w-full min-h-[120px] p-4 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary placeholder:text-text-muted focus:border-brand-600/50 focus:shadow-glow-sm focus:outline-none resize-none"
+            className="w-full min-h-[120px] p-4 rounded-lg bg-background-secondary/60 border border-border-subtle text-text-primary placeholder:text-text-muted focus:border-brand-600/50 focus:outline-none resize-none"
             maxLength={500}
             disabled={disabled}
           />

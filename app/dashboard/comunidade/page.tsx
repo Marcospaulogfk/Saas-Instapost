@@ -2,14 +2,14 @@
 
 // Posts mockados — quando tivermos o feature real, vem do banco
 const MOCK_POSTS = [
-  { autor: "Juliana G.", titulo: "Não Existe Loja Invisível", likes: 234, comentarios: 12, gradient: "from-brand-500 to-pink-500" },
-  { autor: "Prontozapy", titulo: "Você é Vendedor 24/7?", likes: 189, comentarios: 8, gradient: "from-blue-500 to-cyan-500" },
-  { autor: "Francieli", titulo: "5 Erros do Insta", likes: 412, comentarios: 24, gradient: "from-orange-500 to-red-500" },
-  { autor: "Prime Inv.", titulo: "Antes de Investir, Leia", likes: 156, comentarios: 6, gradient: "from-emerald-500 to-teal-500" },
-  { autor: "Hellen Mac.", titulo: "Estética Real", likes: 298, comentarios: 18, gradient: "from-pink-500 to-rose-500" },
-  { autor: "Marcos P.", titulo: "Site é Investimento", likes: 167, comentarios: 9, gradient: "from-violet-500 to-brand-500" },
-  { autor: "Studio Fit", titulo: "Você não Treina pra Estar em Forma", likes: 521, comentarios: 32, gradient: "from-lime-500 to-green-500" },
-  { autor: "Olha Aqui", titulo: "Carrossel que Salva o Algoritmo", likes: 378, comentarios: 21, gradient: "from-amber-500 to-orange-500" },
+  { autor: "Juliana G.", titulo: "Não Existe Loja Invisível", likes: 234, comentarios: 12, gradient: "from-brand-400 to-brand-600" },
+  { autor: "Prontozapy", titulo: "Você é Vendedor 24/7?", likes: 189, comentarios: 8, gradient: "from-brand-500 to-brand-800" },
+  { autor: "Francieli", titulo: "5 Erros do Insta", likes: 412, comentarios: 24, gradient: "from-brand-600 to-brand-800" },
+  { autor: "Prime Inv.", titulo: "Antes de Investir, Leia", likes: 156, comentarios: 6, gradient: "from-brand-400 to-brand-700" },
+  { autor: "Hellen Mac.", titulo: "Estética Real", likes: 298, comentarios: 18, gradient: "from-brand-500 to-brand-700" },
+  { autor: "Marcos P.", titulo: "Site é Investimento", likes: 167, comentarios: 9, gradient: "from-brand-500 to-brand-700" },
+  { autor: "Studio Fit", titulo: "Você não Treina pra Estar em Forma", likes: 521, comentarios: 32, gradient: "from-brand-600 to-brand-900" },
+  { autor: "Olha Aqui", titulo: "Carrossel que Salva o Algoritmo", likes: 378, comentarios: 21, gradient: "from-brand-400 to-brand-800" },
 ]
 
 export default function ComunidadePage() {

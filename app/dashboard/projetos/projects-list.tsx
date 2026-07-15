@@ -12,7 +12,6 @@ import {
   Download,
   Plus,
   Loader2,
-  Layers,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/select"
 import { getProjectGradient } from "@/lib/brand-colors"
 import { formatRelativeDate } from "@/lib/format-date"
+import { CarouselCover } from "@/components/carousel/carousel-cover"
 import { deleteCarouselV2, type CarouselListItem } from "@/app/actions/carousel"
 import { deleteSinglePost } from "@/app/actions/single-posts"
 
@@ -305,18 +305,13 @@ export function ProjectsList({
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover"
                     />
+                  ) : carousel.cover ? (
+                    <CarouselCover cover={carousel.cover} />
                   ) : (
                     <div
                       className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
                     />
                   )}
-                  <Badge
-                    variant="secondary"
-                    className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs flex items-center gap-1"
-                  >
-                    <Layers className="w-3 h-3" />
-                    {carousel.slide_count} slides
-                  </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -351,16 +346,6 @@ export function ProjectsList({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <h3 className="font-semibold text-white truncate">
-                      {carousel.title}
-                    </h3>
-                    <p className="text-sm text-white/60">
-                      {carousel.brand_name
-                        ? `${carousel.brand_name} · ${formatRelativeDate(carousel.updated_at)}`
-                        : formatRelativeDate(carousel.updated_at)}
-                    </p>
-                  </div>
                 </Link>
               ))}
               {filtered.map((project) => (

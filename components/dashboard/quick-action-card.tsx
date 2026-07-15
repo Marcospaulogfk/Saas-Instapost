@@ -11,12 +11,7 @@ export function QuickActionCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="dash-card relative overflow-hidden"
-      style={{ borderTop: "var(--rule-top)" }}
     >
-      {/* glow Rio difuso atrás do conteúdo pra dar profundidade ao hero */}
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[var(--brand-600)]/20 blur-[100px]" />
-      <div className="pointer-events-none absolute right-0 bottom-0 h-64 w-64 rounded-full bg-[#e0556a]/10 blur-[100px]" />
-
       <div className="relative z-10 p-7 md:p-9 grid md:grid-cols-[1fr_auto] gap-7 items-center">
         <div>
           <h2 className="text-[28px] md:text-[38px] font-display font-semibold text-text-primary leading-[1.08] tracking-tight mb-3">
@@ -43,7 +38,7 @@ export function QuickActionCard() {
             <Button
               asChild
               size="lg"
-              className="group/btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] font-semibold shadow-[0_8px_24px_-8px_rgba(115,32,230,0.6)]"
+              className="group/btn bg-[var(--brand-600)] text-white hover:bg-[var(--brand-700)] font-semibold rounded-lg"
             >
               <Link href="/dashboard/criar">
                 Começar agora

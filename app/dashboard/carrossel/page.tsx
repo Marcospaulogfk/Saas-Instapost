@@ -55,6 +55,13 @@ export default function CarrosselEditorPage() {
   const [savedStyle, setSavedStyle] = useState<EditorialStyle>("auto")
   const [savedFormat, setSavedFormat] = useState<"feed" | "stories">("feed")
   const [savedId, setSavedId] = useState<string | undefined>(undefined)
+  const [savedFont, setSavedFont] = useState<string | undefined>(undefined)
+  const [savedTitleWeight, setSavedTitleWeight] = useState<number | undefined>(
+    undefined,
+  )
+  const [savedTitleScale, setSavedTitleScale] = useState<number | undefined>(
+    undefined,
+  )
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [progress, setProgress] = useState("Gerando as imagens do carrossel…")
   const startedRef = useRef(false)
@@ -83,11 +90,14 @@ export default function CarrosselEditorPage() {
           colors:
             Array.isArray(d.colors) && d.colors.length
               ? d.colors
-              : ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+              : ["#7320E6", "#0A0A0F", "#FAF8F5"],
           handle: d.handle || handleFromBrand(d.brandName),
         })
         setSavedStyle(d.editorialStyle || "auto")
         setSavedFormat(d.format === "stories" ? "stories" : "feed")
+        setSavedFont(d.font)
+        setSavedTitleWeight(d.titleWeight)
+        setSavedTitleScale(d.titleScale)
         setSavedId(carouselId)
         setStatus("ready")
       })()
@@ -123,7 +133,7 @@ export default function CarrosselEditorPage() {
               colors:
                 Array.isArray(draft.colors) && draft.colors.length
                   ? draft.colors
-                  : ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+                  : ["#7320E6", "#0A0A0F", "#FAF8F5"],
               handle: draft.handle || handleFromBrand(draft.brandName),
             })
             setStatus("ready")
@@ -160,7 +170,7 @@ export default function CarrosselEditorPage() {
       colors:
         Array.isArray(payload.colors) && payload.colors.length
           ? payload.colors
-          : ["#7C3AED", "#0A0A0F", "#FAF8F5"],
+          : ["#7320E6", "#0A0A0F", "#FAF8F5"],
       handle:
         normalizeHandle(payload.handle) ?? handleFromBrand(payload.brandName),
     })
@@ -233,6 +243,9 @@ export default function CarrosselEditorPage() {
       editorialStyle={savedStyle}
       initialFormat={savedFormat}
       initialCarouselId={savedId}
+      initialFont={savedFont}
+      initialTitleWeight={savedTitleWeight}
+      initialTitleScale={savedTitleScale}
     />
   )
 }

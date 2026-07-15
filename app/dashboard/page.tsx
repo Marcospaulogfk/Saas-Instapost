@@ -1,15 +1,16 @@
-import { Sparkles } from "lucide-react"
 import { StatsGrid } from "@/components/dashboard/stats-grid"
-import { QuickActionCard } from "@/components/dashboard/quick-action-card"
-import { RecentProjects } from "@/components/dashboard/recent-projects"
+import { CreateLauncher } from "@/components/dashboard/create-launcher"
+import { WeekPlan } from "@/components/dashboard/week-plan"
+import { RecentProjects, type RecentItem } from "@/components/dashboard/recent-projects"
 import { BrandsSection } from "@/components/dashboard/brands-section"
-import { PopularTemplates } from "@/components/dashboard/popular-templates"
 import { ActivityChart } from "@/components/dashboard/activity-chart"
-import { ProximasDatasCard } from "@/components/dashboard/proximas-datas-card"
+import { listActiveScheduledPosts } from "@/app/actions/scheduled-posts"
+import { listCarouselsV2 } from "@/app/actions/carousel"
+import { listSinglePosts } from "@/lib/single-posts/queries"
 import {
   getProfile,
   listBrands,
-  listRecentProjects,
+  listAllProjects,
   getDashboardCounts,
 } from "@/lib/data/queries"
 
@@ -21,13 +22,61 @@ function getGreeting() {
   return "Boa noite"
 }
 
+const PLAN_LABEL: Record<string, string> = {
+  trial: "Trial",
+  active: "Pro",
+  past_due: "Atrasado",
+  canceled: "Cancelado",
+  incomplete: "Incompleto",
+}
+
 export default async function DashboardPage() {
-  const [{ user, profile }, brands, projects, counts] = await Promise.all([
-    getProfile(),
-    listBrands(),
-    listRecentProjects(6),
-    getDashboardCounts(),
-  ])
+  const [{ user, profile }, brands, projects, carousels, singlePosts, counts, sched] =
+    await Promise.all([
+      getProfile(),
+      listBrands(),
+      listAllProjects(),
+      listCarouselsV2().catch(() => []),
+      listSinglePosts().catch(() => []),
+      getDashboardCounts(),
+      listActiveScheduledPosts().catch(() => ({ posts: [] as never[] })),
+    ])
+
+  // Recentes = TODAS as fontes (carrossel + post + projeto legado), ordenadas
+  // por data. Antes o dashboard só lia `projects`, por isso ficava vazio.
+  const recentItems: RecentItem[] = [
+    ...carousels.map((c) => ({
+      id: c.id,
+      title: c.title,
+      href: `/dashboard/carrossel?id=${c.id}`,
+      image: c.cover_url,
+      cover: c.cover,
+      brand: c.brand_name,
+      created_at: c.updated_at,
+      kind: "Carrossel" as const,
+      slideCount: c.slide_count,
+    })),
+    ...singlePosts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      href: `/dashboard/posts-unicos/${p.id}`,
+      image: p.rendered_image_url,
+      brand: p.brand_name,
+      created_at: p.created_at,
+      kind: "Post" as const,
+    })),
+    ...projects.map((p) => ({
+      id: p.id,
+      title: p.title,
+      href: `/dashboard/projetos/${p.id}`,
+      image: null,
+      brand: p.brand.name,
+      created_at: p.created_at,
+      kind: "Projeto" as const,
+    })),
+  ]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 8)
 
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   const displayName =
@@ -38,33 +87,42 @@ export default async function DashboardPage() {
   const credits = profile?.credits ?? 0
   const creditsUsed = profile?.plan_credits_used_this_month ?? 0
   const greeting = getGreeting()
+  const planLabel = PLAN_LABEL[profile?.subscription_status ?? "trial"] ?? "Trial"
+
+  // Planejados dos próximos 7 dias (a partir de hoje).
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 7)
+  const weekPosts = (sched.posts ?? []).filter((p) => {
+    const d = new Date(p.scheduled_date + "T00:00:00")
+    return d >= start && d <= end
+  })
 
   return (
-    <div className="relative max-w-[1280px] mx-auto px-6 md:px-10 py-8 md:py-10 space-y-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-[34px] md:text-[44px] font-display font-bold leading-[1.05] tracking-tight text-text-primary">
-            {greeting},{" "}
-            <span className="gradient-text">{displayName}</span>.
-          </h1>
-          <p className="text-text-secondary">
-            {credits > 0
-              ? "Tudo pronto pra criar o próximo carrossel."
-              : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
-          </p>
+    <div className="relative max-w-[1180px] mx-auto px-6 md:px-10 py-8 md:py-10 space-y-8">
+      {/* Header — linha de sistema mono + saudação sóbria (Linear) */}
+      <header className="space-y-2.5">
+        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.16em] text-text-muted">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+          {credits} créditos
+          <span className="text-text-subtle">·</span>
+          plano {planLabel}
         </div>
+        <h1 className="text-[30px] md:text-[38px] font-display font-semibold leading-[1.05] tracking-tight text-text-primary">
+          {greeting}, {displayName}.
+        </h1>
+        <p className="text-[14px] text-text-secondary">
+          {credits > 0
+            ? "Escolha um formato e comece — a IA cuida do roteiro, das imagens e do design."
+            : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
+        </p>
       </header>
 
-      {/* Bloco principal: hero + atividade à esquerda, próximas datas no trilho */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
-        <div className="space-y-5">
-          <QuickActionCard />
-          <ActivityChart
-            projectsCount={counts.projectsCount}
-            creditsUsedThisMonth={creditsUsed}
-          />
-        </div>
-        <ProximasDatasCard />
+      {/* Lançador de criação + planejados da semana */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
+        <CreateLauncher />
+        <WeekPlan posts={weekPosts} />
       </div>
 
       <StatsGrid
@@ -74,9 +132,12 @@ export default async function DashboardPage() {
         subscriptionStatus={profile?.subscription_status ?? "trial"}
       />
 
-      <PopularTemplates />
+      <ActivityChart
+        projectsCount={counts.projectsCount}
+        creditsUsedThisMonth={creditsUsed}
+      />
 
-      <RecentProjects projects={projects} />
+      <RecentProjects items={recentItems} />
 
       <BrandsSection
         brands={brands.map((b) => ({

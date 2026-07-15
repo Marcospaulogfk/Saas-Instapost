@@ -7,7 +7,13 @@
 
 export type PostFormato = "post" | "carrossel" | "stories" | "reels"
 export type PostObjetivo = "sell" | "inform" | "engage" | "community"
-export type PostStatus = "ideia" | "em_criacao" | "pronto" | "agendado"
+export type PostStatus =
+  | "ideia"
+  | "em_criacao"
+  | "pronto"
+  | "agendado"
+  | "publicado"
+  | "falhou"
 
 /** Uma ideia de post no plano editorial gerado pela IA. */
 export interface PlanoIdeia {
@@ -36,6 +42,8 @@ export interface ScheduledPost {
   format: PostFormato
   objective: PostObjetivo
   scheduled_date: string
+  /** Hora opcional (HH:MM[:SS]) — null quando so tem dia. */
+  scheduled_time: string | null
   status: PostStatus
   source: "ia" | "manual"
   project_id: string | null
@@ -66,6 +74,10 @@ export function statusColor(s: PostStatus): string {
       return "bg-emerald-500"
     case "agendado":
       return "bg-orange-500"
+    case "publicado":
+      return "bg-brand-600"
+    case "falhou":
+      return "bg-red-500"
   }
 }
 
@@ -79,6 +91,10 @@ export function statusLabel(s: PostStatus): string {
       return "Pronto"
     case "agendado":
       return "Agendado"
+    case "publicado":
+      return "Publicado"
+    case "falhou":
+      return "Falhou"
   }
 }
 

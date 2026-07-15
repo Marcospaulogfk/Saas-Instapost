@@ -1,6 +1,12 @@
 ﻿/**
- * Pautas — agendamento de posts no calendário editorial.
- * Client-side via localStorage por enquanto. Migrar pra banco depois.
+ * Pautas — DEPRECADO (migrado pro banco em 0012_scheduled_posts_planning).
+ *
+ * O calendário agora usa uma fonte ÚNICA: `scheduled_posts` (via
+ * app/actions/scheduled-posts.ts). As funções de localStorage abaixo
+ * (load/save/add/update/delete/status*) NÃO são mais usadas e podem ser
+ * removidas numa limpeza futura. A única função ainda em uso é
+ * `gerarPautasIA()` — um gerador puro de sementes que o calendário mapeia
+ * pra `saveEditorialPlan()`. Não reintroduzir persistência em localStorage.
  */
 
 export type PautaStatus = "ideia" | "em_criacao" | "pronto" | "agendado"
