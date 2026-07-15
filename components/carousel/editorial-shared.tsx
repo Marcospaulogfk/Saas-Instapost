@@ -24,6 +24,44 @@ export interface ImageTransform {
 }
 export const ImageTransformContext = createContext<ImageTransform | null>(null)
 import { proxiedImageUrl } from "@/lib/proxy-image"
+import { isLightColor } from "@/lib/color-contrast"
+
+// ============================================================================
+// splitTheme — paleta de contraste derivada de um FUNDO custom (slide.bg).
+//
+// Feature "Fundo do Slide": nos slides de TEXTO, o usuário pode trocar a cor de
+// fundo. Cada estilo tem cores de texto fixas (casadas com seu bg padrão) — se
+// só trocássemos o bg, o texto sumiria. Este helper devolve uma paleta legível
+// pro fundo escolhido (texto/muted/faint/line adaptados à luminância).
+//
+// Retorna null quando não há override → o componente mantém seus literais
+// padrão INTACTOS (render idêntico ao de antes da feature). Só quando o usuário
+// escolhe uma cor é que a paleta derivada entra.
+// ============================================================================
+export interface SplitTheme {
+  bg: string
+  isDark: boolean
+  text: string
+  /** corpo / subtítulo. */
+  muted: string
+  /** headers, contadores, labels secundários. */
+  faint: string
+  /** hairlines / bordas. */
+  line: string
+}
+
+export function splitTheme(bg: string | undefined | null): SplitTheme | null {
+  if (!bg) return null
+  const dark = !isLightColor(bg)
+  return {
+    bg,
+    isDark: dark,
+    text: dark ? "#FFFFFF" : "#0A0A0F",
+    muted: dark ? "rgba(255,255,255,0.85)" : "rgba(10,10,15,0.78)",
+    faint: dark ? "rgba(255,255,255,0.6)" : "rgba(10,10,15,0.5)",
+    line: dark ? "rgba(255,255,255,0.2)" : "rgba(10,10,15,0.18)",
+  }
+}
 
 // useLayoutEffect no cliente (mede antes de pintar, sem flicker); useEffect no
 // SSR pra não gerar warning.

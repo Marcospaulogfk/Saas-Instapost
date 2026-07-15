@@ -304,8 +304,12 @@ export function CarouselEditor({
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Autosave do rascunho em localStorage — não perde o trabalho ao recarregar.
-  // (Persistência em nuvem/biblioteca depende de migration no Supabase — pendente de OK.)
+  // Autosave do rascunho em localStorage — backup local imediato pra não perder
+  // o trabalho ao recarregar. A persistência de VERDADE é na nuvem via
+  // saveCarouselV2 (auto ao gerar + botão "Salvar"), gravada em
+  // editorial_carousels.carousel_data (JSONB, migration 0006 — já em prod). Todo
+  // o estado editável (slides c/ bg/transform, cores, tipografia) vive nesse
+  // JSONB, então não precisa de migration nova.
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -1160,8 +1164,8 @@ export function CarouselEditor({
               />
             </div>
             <p className="text-[10px] text-text-muted">
-              Aplica em slides de texto (sem foto). O texto ajusta o contraste
-              sozinho.
+              Aplica nos slides de conteúdo (as capas mantêm a foto). O texto
+              ajusta o contraste sozinho.
             </p>
           </Section>
 

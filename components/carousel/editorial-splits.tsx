@@ -16,6 +16,7 @@ import {
   SeamlessProgressLine,
   mixWithWhite,
   parseBoldInline,
+  splitTheme,
   type SlideAttribution,
 } from "./editorial-shared"
 
@@ -57,6 +58,9 @@ interface SplitProps {
   fontClass: string
   imageSlot?: SplitImageSlot
   titleSize?: "medium" | "large" | "massive"
+  /** Cor de fundo custom (slide.bg). Quando definida, o slide troca o bg e
+   *  deriva texto/contraste legível; undefined = usa o padrão do estilo. */
+  bgOverride?: string
 }
 
 // ============================================================================
@@ -226,6 +230,7 @@ export function SplitWesleyDark({
   fontClass,
   imageSlot = "none",
   titleSize = "large",
+  bgOverride,
 }: SplitProps) {
   const base =
     titleSize === "massive"
@@ -237,9 +242,13 @@ export function SplitWesleyDark({
   const titleWeight = titleSize === "massive" ? 900 : 800
   const hasBottomImage =
     imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
+  const th = splitTheme(bgOverride)
 
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black p-6 flex flex-col">
+    <div
+      className="aspect-[4/5] w-full rounded-xl overflow-hidden relative p-6 flex flex-col"
+      style={{ backgroundColor: th?.bg ?? "#000000" }}
+    >
       {/* Composition top — zona de imagem FLUIDA acima do texto */}
       {imageSlot === "composition-top" && (
         <div className={`flex-1 ${IMG_MIN} min-h-0 mb-5`}>
@@ -258,8 +267,8 @@ export function SplitWesleyDark({
         </div>
 
         <FitText
-          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: titleWeight }}
+          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight ${fontClass}`}
+          style={{ fontWeight: titleWeight, color: th?.text ?? "#FFFFFF" }}
           maxLines={4}
         >
           <HighlightedText
@@ -270,7 +279,10 @@ export function SplitWesleyDark({
         </FitText>
 
         {slide.body && (
-          <p className="mt-4 text-base text-white/85 leading-[1.4] line-clamp-5">
+          <p
+            className="mt-4 text-base leading-[1.4] line-clamp-5"
+            style={{ color: th?.muted ?? "rgba(255,255,255,0.85)" }}
+          >
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -293,7 +305,10 @@ export function SplitWesleyDark({
         </div>
       )}
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={th?.text ?? "#fff"}
+      />
     </div>
   )
 }
@@ -310,6 +325,7 @@ export function SplitBrandsdecodedLight({
   fontClass,
   imageSlot = "single-bottom",
   titleSize = "large",
+  bgOverride,
 }: SplitProps) {
   const base =
     titleSize === "massive"
@@ -319,24 +335,30 @@ export function SplitBrandsdecodedLight({
         : "text-[2.5rem]"
   const titleSizeClass = fitTitle(slide.title, base, "text-[2rem]", "text-[1.6rem]")
   const bodyParts = (slide.body || "").split("\n\n")
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#F5F2EC"
+  const cText = th?.text ?? "#000000"
+  const cBody = th?.muted ?? "rgba(0,0,0,0.8)"
+  const cFaint = th?.faint ?? "rgba(0,0,0,0.5)"
+  const cLine = th?.line ?? "rgba(0,0,0,0.2)"
 
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#F5F2EC" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       <BrandsdecodedHeader
         left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
         right={slide.year_label || "2026 //"}
-        textColor="rgba(0,0,0,0.5)"
+        textColor={cFaint}
       />
 
       <div className="flex-1 px-5 pt-3 pb-2 flex flex-col min-h-0">
         {/* TÍTULO — sólido */}
         <FitText
-          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.92 }}
+          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+          style={{ fontWeight: 900, lineHeight: 0.92, color: cText }}
           maxLines={4}
         >
           <HighlightedText
@@ -349,7 +371,7 @@ export function SplitBrandsdecodedLight({
         {imageSlot === "single-bottom" && (
           <>
             {slide.body && (
-              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-5">
+              <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-5">
                 {parseBoldInline(slide.body)}
               </p>
             )}
@@ -379,7 +401,10 @@ export function SplitBrandsdecodedLight({
               </div>
             )}
             {slide.body && (
-              <p className="flex-shrink-0 mt-3 text-sm text-black/75 leading-[1.5] line-clamp-3">
+              <p
+                className="flex-shrink-0 mt-3 text-sm leading-[1.5] line-clamp-3"
+                style={{ opacity: 0.94 }}
+              >
                 {parseBoldInline(slide.body)}
               </p>
             )}
@@ -389,7 +414,7 @@ export function SplitBrandsdecodedLight({
         {imageSlot === "single-middle" && (
           <>
             {bodyParts[0] && (
-              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
+              <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-3">
                 {parseBoldInline(bodyParts[0])}
               </p>
             )}
@@ -404,7 +429,7 @@ export function SplitBrandsdecodedLight({
               </div>
             )}
             {bodyParts[1] && (
-              <p className="flex-shrink-0 mt-3 text-[15px] text-black/80 leading-[1.5] line-clamp-3">
+              <p className="flex-shrink-0 mt-3 text-[15px] leading-[1.5] line-clamp-3">
                 {parseBoldInline(bodyParts[1])}
               </p>
             )}
@@ -414,7 +439,7 @@ export function SplitBrandsdecodedLight({
         {imageSlot === "bottom-card" && (
           <>
             {slide.body && (
-              <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-4">
+              <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-4">
                 {parseBoldInline(slide.body)}
               </p>
             )}
@@ -422,7 +447,10 @@ export function SplitBrandsdecodedLight({
               <BottomCardGrid images={slide.images} fill />
             </div>
             {slide.callout && (
-              <div className="flex-shrink-0 mt-4 bg-black text-white px-4 py-2.5 rounded-md text-sm">
+              <div
+                className="flex-shrink-0 mt-4 px-4 py-2.5 rounded-md text-sm"
+                style={{ backgroundColor: cText, color: cBg }}
+              >
                 {slide.callout}
               </div>
             )}
@@ -430,7 +458,7 @@ export function SplitBrandsdecodedLight({
         )}
 
         {imageSlot === "none" && slide.body && (
-          <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-6">
+          <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-6">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -439,11 +467,14 @@ export function SplitBrandsdecodedLight({
       <BrandsdecodedFooter
         pageNumber={orderIndex + 1}
         totalPages={totalSlides}
-        textColor="rgba(0,0,0,0.5)"
-        lineColor="rgba(0,0,0,0.2)"
+        textColor={cFaint}
+        lineColor={cLine}
       />
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#000" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -457,29 +488,39 @@ export function SplitBrandsdecodedDarkSerif({
   totalSlides,
   orderIndex,
   imageSlot = "single-bottom",
+  bgOverride,
 }: SplitProps) {
   void totalSlides // não usa footer paginação
   void orderIndex
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#0F0F1F"
+  const cText = th?.text ?? "#FFFFFF"
+  const cBody = th?.muted ?? "rgba(255,255,255,0.85)"
+  const cFaint = th?.faint ?? "rgba(255,255,255,0.6)"
+  // Âmbar é a identidade do estilo; num fundo claro custom troca por um âmbar
+  // escuro pra manter contraste.
+  const cSub = th ? (th.isDark ? "#FDE68A" : "#92400E") : "#FDE68A"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#0F0F1F" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       <BrandsdecodedHeader
         left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
         right={slide.year_label || "2026 //"}
-        textColor="rgba(255,255,255,0.6)"
+        textColor={cFaint}
       />
 
       <div className="flex-1 px-6 pt-4 pb-4 flex flex-col min-h-0">
         {/* TEXTO — sólido */}
         <FitText
-          className="flex-shrink-0 text-[1.7rem] tracking-tight text-white"
+          className="flex-shrink-0 text-[1.7rem] tracking-tight"
           style={{
             fontFamily: '"Playfair Display", Georgia, serif',
             fontWeight: 700,
             lineHeight: 1.15,
+            color: cText,
           }}
           maxLines={4}
         >
@@ -489,7 +530,7 @@ export function SplitBrandsdecodedDarkSerif({
         {slide.subtitle && (
           <p
             className="flex-shrink-0 mt-4 text-base leading-[1.4] line-clamp-3"
-            style={{ color: "#FDE68A", fontWeight: 500 }}
+            style={{ color: cSub, fontWeight: 500 }}
           >
             {slide.subtitle}
           </p>
@@ -509,15 +550,18 @@ export function SplitBrandsdecodedDarkSerif({
 
         {imageSlot === "none" && slide.body && (
           <p
-            className="flex-shrink-0 mt-4 text-sm text-white/85 leading-[1.6] line-clamp-6"
-            style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
+            className="flex-shrink-0 mt-4 text-sm leading-[1.6] line-clamp-6"
+            style={{ fontFamily: '"Playfair Display", Georgia, serif', color: cBody }}
           >
             {parseBoldInline(slide.body)}
           </p>
         )}
       </div>
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -533,11 +577,16 @@ export function SplitBoloCream({
   accent,
   fontClass,
   imageSlot = "bottom-card",
+  bgOverride,
 }: SplitProps) {
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#F5F2EC"
+  const cText = th?.text ?? "#0A0A0F"
+  const cBody = th?.muted ?? "rgba(0,0,0,0.8)"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#F5F2EC" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       <div className="px-4 pt-4 flex items-center justify-between flex-shrink-0">
         <Pill variant="light">{slide.handle || "@brand"}</Pill>
@@ -552,13 +601,13 @@ export function SplitBoloCream({
             number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
             suffix={slide.title}
             prefixColor={accent}
-            textColor="#0A0A0F"
+            textColor={cText}
             fontClass={fontClass}
           />
         </div>
 
         {slide.body && (
-          <p className="flex-shrink-0 mt-4 text-[15px] text-black/80 leading-[1.5] line-clamp-5 whitespace-pre-line">
+          <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-5 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -578,11 +627,14 @@ export function SplitBoloCream({
 
       <div className="px-4 pb-4 pt-2 flex items-center justify-between flex-shrink-0">
         <Pill variant="light">{slide.category || "Conteúdo"}</Pill>
-        <PaginationDots total={totalSlides} active={orderIndex} color="#0A0A0F" />
+        <PaginationDots total={totalSlides} active={orderIndex} color={cText} />
         <Pill variant="light">{`arrasta →`}</Pill>
       </div>
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#000" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -595,12 +647,17 @@ export function SplitMyPostFlowCta({
   slide,
   fontClass,
   imageSlot = "bottom-large",
+  bgOverride,
 }: SplitProps) {
   const titleSizeClass = fitTitle(slide.title, "text-[2rem]", "text-[1.7rem]", "text-[1.45rem]")
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#F5F2EC"
+  const cText = th?.text ?? "#000000"
+  const cBody = th?.muted ?? "rgba(0,0,0,0.8)"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col p-6"
-      style={{ backgroundColor: "#F5F2EC" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       {/* Avatar pill — square icon (não circular) */}
       <div className="inline-flex items-center gap-2 mb-4 flex-shrink-0">
@@ -615,7 +672,7 @@ export function SplitMyPostFlowCta({
             slide.handle?.replace(/^@/, "").slice(0, 2).toUpperCase() || "MP"
           )}
         </span>
-        <span className="text-sm text-black/80 font-medium">
+        <span className="text-sm font-medium">
           {slide.handle || "@brand"}
         </span>
       </div>
@@ -623,15 +680,15 @@ export function SplitMyPostFlowCta({
       {/* ZONA DE TEXTO — SÓLIDA (clamps por linha, nunca corte em pixel) */}
       <div className={imageSlot === "bottom-large" && slide.images[0] ? "flex-shrink-0" : "flex-1 min-h-0"}>
         <FitText
-          className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
-          style={{ fontWeight: 800, lineHeight: 1 }}
+          className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+          style={{ fontWeight: 800, lineHeight: 1, color: cText }}
           maxLines={4}
         >
           {slide.title}
         </FitText>
 
         {slide.body && (
-          <p className="mt-5 text-[15px] text-black/75 leading-[1.5] whitespace-pre-line line-clamp-5">
+          <p className="mt-5 text-[15px] leading-[1.5] whitespace-pre-line line-clamp-5">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -657,7 +714,10 @@ export function SplitMyPostFlowCta({
         </div>
       )}
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#000" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -673,14 +733,20 @@ export function SplitGradientDark({
   accent,
   fontClass,
   imageSlot = "none",
+  bgOverride,
 }: SplitProps) {
   const hasBottomImage =
     imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
   const titleSizeClass = fitTitle(slide.title, "text-[2.3rem]", "text-[1.9rem]", "text-[1.55rem]")
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#08080D"
+  const cText = th?.text ?? "#FFFFFF"
+  const cBody = th?.muted ?? "rgba(255,255,255,0.8)"
+  const cFaint = th?.faint ?? "rgba(255,255,255,0.6)"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#08080D" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       {/* Glow radial sutil (menos intenso que a capa) */}
       <div
@@ -714,8 +780,8 @@ export function SplitGradientDark({
         </div>
 
         <FitText
-          className={`${titleSizeClass} uppercase leading-[1] tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 800 }}
+          className={`${titleSizeClass} uppercase leading-[1] tracking-tight ${fontClass}`}
+          style={{ fontWeight: 800, color: cText }}
           maxLines={4}
         >
           <HighlightedGradientText
@@ -726,7 +792,7 @@ export function SplitGradientDark({
         </FitText>
 
         {slide.body && (
-          <p className="mt-5 text-base text-white/80 leading-[1.5] line-clamp-5">
+          <p className="mt-5 text-base leading-[1.5] line-clamp-5">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -770,14 +836,20 @@ export function SplitGradientDark({
           >
             {String(orderIndex + 1).padStart(2, "0")} / {String(totalSlides).padStart(2, "0")}
           </span>
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold">
+          <span
+            className="text-[10px] uppercase tracking-[0.18em] font-semibold"
+            style={{ color: cFaint }}
+          >
             arrasta →
           </span>
         </div>
         <GradientProgressBar total={totalSlides} active={orderIndex} color={accent} />
       </div>
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#fff" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -793,26 +865,37 @@ export function SplitMinimalClean({
   accent,
   fontClass,
   imageSlot = "none",
+  bgOverride,
 }: SplitProps) {
   const ghost = String(orderIndex + 1).padStart(2, "0")
   const hasImage =
     imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
   const titleSizeClass = fitTitle(slide.title, "text-[2.2rem]", "text-[1.85rem]", "text-[1.5rem]")
+  const th = splitTheme(bgOverride)
+  const cBg = th?.bg ?? "#FFFFFF"
+  const cText = th?.text ?? "#000000"
+  const cBody = th?.muted ?? "rgba(0,0,0,0.7)"
+  const cFaint = th?.faint ?? "rgba(0,0,0,0.45)"
+  const cLine = th?.line ?? "rgba(0,0,0,0.1)"
+  const cGhost = th ? (th.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)") : "rgba(0,0,0,0.05)"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#FFFFFF" }}
+      style={{ backgroundColor: cBg, color: cBody }}
     >
       {/* Ghost number gigante */}
       <div
         className={`absolute top-1 right-4 text-[6.5rem] ${fontClass}`}
-        style={{ fontWeight: 900, color: "rgba(0,0,0,0.05)", lineHeight: 1 }}
+        style={{ fontWeight: 900, color: cGhost, lineHeight: 1 }}
       >
         {ghost}
       </div>
 
       {/* Header texto puro */}
-      <div className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45 flex-shrink-0">
+      <div
+        className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold flex-shrink-0"
+        style={{ color: cFaint }}
+      >
         <span>{slide.handle || "@brand"}</span>
       </div>
 
@@ -829,8 +912,8 @@ export function SplitMinimalClean({
         </div>
 
         <FitText
-          className={`${titleSizeClass} uppercase tracking-tight text-black ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.95 }}
+          className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+          style={{ fontWeight: 900, lineHeight: 0.95, color: cText }}
           maxLines={4}
         >
           <HighlightedText
@@ -841,7 +924,7 @@ export function SplitMinimalClean({
         </FitText>
 
         {slide.body && (
-          <p className="mt-4 text-[15px] text-black/70 leading-[1.55] line-clamp-5 whitespace-pre-line">
+          <p className="mt-4 text-[15px] leading-[1.55] line-clamp-5 whitespace-pre-line">
             {parseBoldInline(slide.body)}
           </p>
         )}
@@ -877,8 +960,11 @@ export function SplitMinimalClean({
 
       {/* Footer no FLUXO (flex-shrink-0): linha + contador + arrasta */}
       <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-5">
-        <div className="h-px w-full bg-black/10 mb-3" />
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
+        <div className="h-px w-full mb-3" style={{ backgroundColor: cLine }} />
+        <div
+          className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold"
+          style={{ color: cFaint }}
+        >
           <span className="tabular-nums">
             {ghost} / {String(totalSlides).padStart(2, "0")}
           </span>
@@ -886,7 +972,10 @@ export function SplitMinimalClean({
         </div>
       </div>
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#000" />
+      <Attribution
+        attribution={slide.images[0]?.attribution || null}
+        textColor={cText}
+      />
     </div>
   )
 }
@@ -904,15 +993,20 @@ export function SplitSeamlessFlow({
   accent,
   fontClass,
   imageSlot = "none",
+  bgOverride,
 }: SplitProps) {
   void imageSlot
   const isLast = orderIndex === totalSlides - 1
   const ghost = String(orderIndex + 1).padStart(2, "0")
   const bgUrl = slide.images[0]?.url ?? null
+  // Seamless é foto-full-bleed com overlay escuro + texto branco (identidade).
+  // O override de cor só troca a BASE (aparece nos slides sem foto); o overlay
+  // e o texto branco continuam pra não quebrar o estilo.
+  const cBase = bgOverride || "#0A0A12"
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#0A0A12" }}
+      style={{ backgroundColor: cBase }}
     >
       {/* FOTO como fundo full-bleed */}
       {bgUrl ? (
@@ -926,7 +1020,7 @@ export function SplitSeamlessFlow({
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `linear-gradient(150deg, #0A0A12 0%, ${accent}22 45%, #0A0A12 100%)`,
+            backgroundImage: `linear-gradient(150deg, ${cBase} 0%, ${accent}22 45%, ${cBase} 100%)`,
           }}
         />
       )}

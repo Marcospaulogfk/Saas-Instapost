@@ -19,7 +19,7 @@ const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 
 const IMG = (seed: string) => `https://picsum.photos/seed/${seed}/800/500`
 
-function mockSlide(i: number, total: number): PreviewSlide {
+function mockSlide(i: number, total: number, bg?: string): PreviewSlide {
   const titles = [
     "Tom Cruise está correndo pro Oscar de novo",
     "Você posta e ninguém vê o seu conteúdo",
@@ -41,6 +41,7 @@ function mockSlide(i: number, total: number): PreviewSlide {
           ? "Defina o gancho antes de tudo\nUse no máximo 20 palavras por slide\nFeche com CTA de salvar\nPoste no horário do seu público"
           : "O algoritmo premia quem prende atenção nos 3 primeiros segundos. Um bom gancho segura o dedo do usuário e faz ele arrastar pro próximo slide.",
     cta_badge: i === total - 1 ? "Salve este post" : "Conteúdo",
+    bg,
     image: {
       url: IMG(`syncpost-${i}`),
       source: "ai",
@@ -49,6 +50,17 @@ function mockSlide(i: number, total: number): PreviewSlide {
     },
   }
 }
+
+// Swatches pra testar o override "Fundo do Slide" (dev).
+const BG_SWATCHES: { label: string; value?: string }[] = [
+  { label: "Auto", value: undefined },
+  { label: "Roxo", value: "#7320E6" },
+  { label: "Preto", value: "#0A0A0F" },
+  { label: "Creme", value: "#F5F2EC" },
+  { label: "Branco", value: "#FFFFFF" },
+  { label: "Verde", value: "#0F5132" },
+  { label: "Rosa", value: "#FCE7F3" },
+]
 
 const STYLES: { style: EditorialStyle; name: string }[] = [
   { style: "gradient", name: "Gradiente (dark/vibrante)" },
@@ -66,6 +78,7 @@ const TOTAL = 5
 export default function PreviewEstilosPage() {
   const [styleIdx, setStyleIdx] = useState(0)
   const [slideIdx, setSlideIdx] = useState(0)
+  const [bg, setBg] = useState<string | undefined>(undefined)
   const { style, name } = STYLES[styleIdx]
 
   const go = (d: number) =>
@@ -95,6 +108,26 @@ export default function PreviewEstilosPage() {
         ))}
       </div>
 
+      {/* Override de fundo do slide (dev) */}
+      <div className="flex flex-wrap gap-2 justify-center items-center">
+        <span className="text-xs text-white/50 mr-1">Fundo:</span>
+        {BG_SWATCHES.map((s) => (
+          <button
+            key={s.label}
+            onClick={() => setBg(s.value)}
+            title={s.label}
+            style={s.value ? { backgroundColor: s.value } : undefined}
+            className={`w-7 h-7 rounded-md border text-[8px] flex items-center justify-center transition-all ${
+              bg === s.value
+                ? "ring-2 ring-white border-transparent"
+                : "border-white/25 hover:border-white/50"
+            } ${!s.value ? "bg-zinc-800 text-white/70" : ""}`}
+          >
+            {!s.value ? "A" : ""}
+          </button>
+        ))}
+      </div>
+
       {/* Navegação slide a slide */}
       <div className="flex items-center gap-4">
         <button
@@ -119,7 +152,7 @@ export default function PreviewEstilosPage() {
       {/* Slide grande */}
       <div className="w-full max-w-[440px]">
         <SlidePreview
-          slide={mockSlide(slideIdx, TOTAL)}
+          slide={mockSlide(slideIdx, TOTAL, bg)}
           totalSlides={TOTAL}
           template="editorial"
           brandColors={["#7320E6", "#1A1A1A", "#FAF8F5"]}

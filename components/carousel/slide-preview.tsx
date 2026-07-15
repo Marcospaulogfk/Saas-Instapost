@@ -366,6 +366,14 @@ function EditorialSlideRouter(props: RouterProps) {
     fontClass,
   }
 
+  // Feature "Fundo do Slide": nos slides de TEXTO (splits), o usuário pode trocar
+  // a cor de fundo. Quando há override, o accent precisa ser legível sobre ELE —
+  // escolhe accentOnLight/accentOnDark pela luminância da cor escolhida. Sem
+  // override, mantém o accent padrão do estilo (fallback).
+  const bgOverride = slide.bg
+  const accentForBg = (fallback: string) =>
+    bgOverride ? (isLightColor(bgOverride) ? accentOnLight : accentOnDark) : fallback
+
   // ===== STYLE: WESLEY =====
   if (editorialStyle === "wesley") {
     if (isCover) {
@@ -388,7 +396,15 @@ function EditorialSlideRouter(props: RouterProps) {
             ? "comparison-bottom"
             : "none"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitWesleyDark slide={splitData} {...basePropsDark} imageSlot={slot} />
+    return (
+      <SplitWesleyDark
+        slide={splitData}
+        {...basePropsDark}
+        accent={accentForBg(accentOnDark)}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
   }
 
   // ===== STYLE: BRANDSDECODED =====
@@ -401,6 +417,8 @@ function EditorialSlideRouter(props: RouterProps) {
         <SplitBrandsdecodedDarkSerif
           slide={splitData}
           {...basePropsDark}
+          accent={accentForBg(accentOnDark)}
+          bgOverride={bgOverride}
           imageSlot="single-bottom"
         />
       )
@@ -416,6 +434,8 @@ function EditorialSlideRouter(props: RouterProps) {
       <SplitBrandsdecodedLight
         slide={splitData}
         {...basePropsLight}
+        accent={accentForBg(accentOnLight)}
+        bgOverride={bgOverride}
         imageSlot={slot}
         titleSize="large"
       />
@@ -431,6 +451,8 @@ function EditorialSlideRouter(props: RouterProps) {
       <SplitBoloCream
         slide={splitData}
         {...basePropsLight}
+        accent={accentForBg(accentOnLight)}
+        bgOverride={bgOverride}
         imageSlot={imgCount >= 1 ? "bottom-card" : "none"}
       />
     )
@@ -446,6 +468,8 @@ function EditorialSlideRouter(props: RouterProps) {
         <SplitMyPostFlowCta
           slide={splitData}
           {...basePropsLight}
+          accent={accentForBg(accentOnLight)}
+          bgOverride={bgOverride}
           imageSlot="bottom-large"
         />
       )
@@ -456,7 +480,15 @@ function EditorialSlideRouter(props: RouterProps) {
         ? "single-bottom"
         : "none"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitWesleyDark slide={splitData} {...basePropsDark} imageSlot={slot} />
+    return (
+      <SplitWesleyDark
+        slide={splitData}
+        {...basePropsDark}
+        accent={accentForBg(accentOnDark)}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
   }
 
   // ===== STYLE: GRADIENT (dark vibrante + glow) =====
@@ -468,7 +500,15 @@ function EditorialSlideRouter(props: RouterProps) {
     // slide vazio (antes alternava e o slide 3 ficava sem imagem).
     const rawSlot: SplitImageSlot = isMidBreak ? "composition-top" : "single-bottom"
     const slot = resolveImageSlot(rawSlot, imgCount)
-    return <SplitGradientDark slide={splitData} {...basePropsDark} imageSlot={slot} />
+    return (
+      <SplitGradientDark
+        slide={splitData}
+        {...basePropsDark}
+        accent={accentForBg(accentOnDark)}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
   }
 
   // ===== STYLE: MINIMAL (branco suíço) =====
@@ -479,7 +519,15 @@ function EditorialSlideRouter(props: RouterProps) {
     // Imagem SEMPRE embaixo do texto, em TODO slide de conteúdo (nunca acima
     // da descrição, nunca slide sem foto).
     const slot = resolveImageSlot("single-bottom", imgCount)
-    return <SplitMinimalClean slide={splitData} {...basePropsLight} imageSlot={slot} />
+    return (
+      <SplitMinimalClean
+        slide={splitData}
+        {...basePropsLight}
+        accent={accentForBg(accentOnLight)}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
   }
 
   // ===== STYLE: SEAMLESS (panorâmico — linha contínua) =====
@@ -490,7 +538,14 @@ function EditorialSlideRouter(props: RouterProps) {
     // Faixa de imagem em TODO slide de conteúdo — a banda panorâmica embaixo
     // reforça a continuidade e preenche o vazio dos slides sem foto.
     const slot = resolveImageSlot("single-bottom", imgCount)
-    return <SplitSeamlessFlow slide={splitData} {...basePropsDark} imageSlot={slot} />
+    return (
+      <SplitSeamlessFlow
+        slide={splitData}
+        {...basePropsDark}
+        bgOverride={bgOverride}
+        imageSlot={slot}
+      />
+    )
   }
 
   // ===== STYLE: AUTO (legacy) =====
