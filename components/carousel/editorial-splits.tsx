@@ -1,6 +1,18 @@
 "use client"
 
 import {
+  Zap,
+  Target,
+  Lightbulb,
+  Rocket,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Flame,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react"
+import {
   AvatarPill,
   Attribution,
   BrandsdecodedFooter,
@@ -1099,6 +1111,45 @@ export function SplitSeamlessFlow({
 }
 
 // ============================================================================
+// Badge do estilo "cards" — ícone + label que CONDIZEM com o slide.
+//
+// O MyPostFlow varia o ícone (raio, alvo, lâmpada…) e o rótulo ("DELEGAÇÃO
+// INTELIGENTE", "INOVAÇÃO ACELERADA"…) por slide. Aqui: casa o texto do slide
+// com um tema por palavra-chave (ícone + rótulo). Se o slide já tem um cta_badge
+// ESPECÍFICO (não genérico), usa-o como rótulo, só derivando o ícone. Sem tema,
+// cai numa rotação padrão pelo índice — nunca "estrela + Conteúdo" em todos.
+// ============================================================================
+const BADGE_THEMES: { kw: string[]; Icon: LucideIcon; label: string }[] = [
+  { kw: ["rápid", "veloc", "ágil", "eficiên", "tempo", "automa", "produtiv", "delega"], Icon: Zap, label: "EFICIÊNCIA" },
+  { kw: ["estratég", "plano", "objetivo", "foco", "meta", "posiciona", "design"], Icon: Target, label: "ESTRATÉGIA" },
+  { kw: ["ideia", "insight", "criativ", "inova", "descob", "sacada", "aprend"], Icon: Lightbulb, label: "INSIGHT" },
+  { kw: ["cresc", "escala", "lança", "futuro", "avanç", "expand", "começ"], Icon: Rocket, label: "CRESCIMENTO" },
+  { kw: ["dado", "result", "número", "aumento", "métrica", "convers", "roi", "efici"], Icon: TrendingUp, label: "RESULTADO" },
+  { kw: ["erro", "evite", "cuidado", "pare", "risco", "problema", "ninguém"], Icon: AlertTriangle, label: "ATENÇÃO" },
+  { kw: ["dinheiro", "venda", "lucro", "fatur", "receita", "preço", "monetiz", "client"], Icon: DollarSign, label: "MONETIZAÇÃO" },
+  { kw: ["viral", "tendência", "engaj", "alcance", "audiência", "público", "gancho", "atenção"], Icon: Flame, label: "ALCANCE" },
+]
+const BADGE_DEFAULTS: { Icon: LucideIcon; label: string }[] = [
+  { Icon: Sparkles, label: "O PONTO" },
+  { Icon: Zap, label: "NA PRÁTICA" },
+  { Icon: Target, label: "A CHAVE" },
+  { Icon: Lightbulb, label: "REPARA NISSO" },
+]
+
+function slideBadge(
+  slide: SplitSlideData,
+  index: number,
+): { Icon: LucideIcon; label: string } {
+  const hay = `${slide.title} ${slide.body ?? ""} ${slide.category ?? ""}`.toLowerCase()
+  const theme = BADGE_THEMES.find((t) => t.kw.some((k) => hay.includes(k)))
+  const raw = (slide.category ?? "").trim()
+  // rótulos genéricos que NÃO dizem nada do slide → substituídos por um contextual
+  const generic = !raw || /^(conte[úu]do|editorial|slide|post|geral|dica)s?$/i.test(raw)
+  const pick = theme ?? BADGE_DEFAULTS[index % BADGE_DEFAULTS.length]
+  return { Icon: pick.Icon, label: generic ? pick.label : raw.toUpperCase() }
+}
+
+// ============================================================================
 // split-cards-white — estilo MyPostFlow: canvas escuro + CARD BRANCO flutuante.
 // Card = badge pill (ícone + label) + título escuro + corpo cinza + image box.
 // A imagem alterna topo/baixo (imageSlot single-top vs single-bottom). Rodapé
@@ -1143,6 +1194,8 @@ export function SplitCardsWhite({
     </div>
   )
 
+  // ícone + rótulo que condizem com o conteúdo do slide (não fixos)
+  const { Icon: BadgeIcon, label: badgeLabel } = slideBadge(slide, orderIndex)
   const Badge = (
     <div
       className="flex-shrink-0 flex items-center gap-2 rounded-full px-4 py-2.5"
@@ -1153,12 +1206,12 @@ export function SplitCardsWhite({
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
       }}
     >
-      <span style={{ color: accent, fontSize: 12 }}>✦</span>
+      <BadgeIcon size={13} strokeWidth={2.6} style={{ color: accent, flexShrink: 0 }} />
       <span
         className="text-[11px] uppercase tracking-[0.14em] font-bold truncate"
         style={{ color: "#3A4256" }}
       >
-        {slide.category || "Conteúdo"}
+        {badgeLabel}
       </span>
     </div>
   )
@@ -1184,6 +1237,14 @@ export function SplitCardsWhite({
         >
           {slide.title}
         </FitText>
+
+        {/* Hairline entre título e corpo (igual MyPostFlow) */}
+        {bodyParts.length > 0 && (
+          <div
+            className="flex-shrink-0 h-px -mt-1"
+            style={{ backgroundColor: "rgba(10,10,15,0.08)" }}
+          />
+        )}
 
         {bodyParts.length > 0 && (
           <div className="flex-shrink-0 space-y-2.5">
