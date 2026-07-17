@@ -116,6 +116,8 @@ export interface CarouselListItem {
   /** Dados pra renderizar a capa ao vivo quando não há PNG salvo. */
   cover: CarouselCoverData | null
   slide_count: number
+  /** Slides completos — permite preview navegável (cards estilo template). */
+  slides: PreviewSlide[]
   updated_at: string
 }
 
@@ -161,6 +163,7 @@ export async function listCarouselsV2(): Promise<CarouselListItem[]> {
         cover_url: cd.coverImageUrl ?? null,
         cover: coverData,
         slide_count: slides.length,
+        slides,
         updated_at: r.updated_at as string,
       }
     })
