@@ -24,6 +24,7 @@ import {
   Baseline,
   PaintBucket,
   Palette,
+  Move,
 } from "lucide-react"
 import { saveCarouselV2 } from "@/app/actions/carousel"
 import { Logo } from "@/components/brand/logo"
@@ -45,6 +46,16 @@ import {
   type PreviewSlide,
   type EditorialStyle,
 } from "@/components/carousel/slide-preview"
+import {
+  EditableSlideCanvas,
+  type EditorSelection,
+  type MenuAction,
+} from "@/components/carousel/editable-canvas"
+import {
+  EDITABLE_TYPE_LABEL,
+  type EditableType,
+  type ElementOverride,
+} from "@/components/carousel/editable-overrides"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 
 /** Nome de arquivo a partir do título do slide (NN- pra manter ordem no zip). */
@@ -86,21 +97,35 @@ const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "perfil", label: "Perfil (post/tweet)" },
 ]
 
-/** Seção colapsável (accordion) do editor lateral. */
+/** Seção colapsável (accordion) do editor lateral.
+ *  Aceita modo CONTROLADO (open/onToggle) — usado pela seleção no canvas pra
+ *  abrir a seção certa automaticamente — com fallback pro estado interno. */
 function Section({
   icon: Icon,
   title,
   defaultOpen = false,
+  open: openProp,
+  onToggle,
+  id,
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>
   title: string
   defaultOpen?: boolean
+  open?: boolean
+  onToggle?: () => void
+  id?: string
   children: React.ReactNode
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [internalOpen, setInternalOpen] = useState(defaultOpen)
+  const open = openProp ?? internalOpen
+  const setOpen = (fn: (v: boolean) => boolean) =>
+    onToggle ? onToggle() : setInternalOpen(fn)
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+    <div
+      id={id}
+      className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden"
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -452,6 +477,165 @@ export function CarouselEditor({
       ),
     )
   }
+
+  // ── EDITOR CANVA-LIKE: seleção no canvas + sections controladas ─────────
+  const [selection, setSelection] = useState<EditorSelection | null>(null)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    estilo: true,
+    conteudo: true,
+    imagem: true,
+  })
+  const toggleSection = (id: string) =>
+    setOpenSections((s) => ({ ...s, [id]: !s[id] }))
+  const openSection = (id: string) =>
+    setOpenSections((s) => (s[id] ? s : { ...s, [id]: true }))
+
+  const titleInputRef = useRef<HTMLInputElement>(null)
+  const subtitleInputRef = useRef<HTMLInputElement>(null)
+  const badgeInputRef = useRef<HTMLInputElement>(null)
+  const elementColorRef = useRef<HTMLInputElement>(null)
+
+  // "Copiar estilo" (Ctrl+Alt+C/V, padrão Canva): cor + escala do elemento.
+  const [styleClipboard, setStyleClipboard] = useState<ElementOverride | null>(
+    null,
+  )
+
+  // Troca de slide/estilo/formato invalida as chaves dos elementos → limpa.
+  useEffect(() => {
+    setSelection(null)
+  }, [selected, style, format])
+
+  function scrollToSection(id: string) {
+    // espera a section abrir (render) antes de rolar
+    window.setTimeout(() => {
+      document
+        .getElementById(`sec-${id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    }, 60)
+  }
+
+  /** Clique no canvas → seleciona e abre a section certa na sidebar. */
+  function handleCanvasSelect(sel: EditorSelection | null) {
+    setSelection(sel)
+    if (!sel) return
+    if (sel.type === "background") {
+      openSection("fundo")
+      scrollToSection("fundo")
+    } else if (sel.type === "image") {
+      openSection("imagem")
+      scrollToSection("imagem")
+    } else {
+      openSection("elemento")
+      openSection("conteudo")
+      scrollToSection("elemento")
+    }
+  }
+
+  /** Merge do override de UM elemento do slide atual (undefined limpa a chave). */
+  function patchElement(key: string, patch: ElementOverride) {
+    setSlides((prev) =>
+      prev.map((s, i) => {
+        if (i !== selected) return s
+        const cur = { ...(s.el?.[key] ?? {}), ...patch }
+        ;(Object.keys(cur) as (keyof ElementOverride)[]).forEach((k) => {
+          if (cur[k] === undefined) delete cur[k]
+        })
+        const el = { ...(s.el ?? {}) }
+        if (Object.keys(cur).length) el[key] = cur
+        else delete el[key]
+        return { ...s, el: Object.keys(el).length ? el : undefined }
+      }),
+    )
+  }
+
+  /** Ações do menu de botão direito do canvas. */
+  function handleMenuAction(action: MenuAction, sel: EditorSelection) {
+    switch (action) {
+      case "edit-text":
+        handleTextEdit(sel)
+        break
+      case "color":
+        openSection("elemento")
+        scrollToSection("elemento")
+        window.setTimeout(() => elementColorRef.current?.focus(), 140)
+        break
+      case "copy-style": {
+        const o = slide.el?.[sel.key]
+        setStyleClipboard({ color: o?.color, scale: o?.scale })
+        break
+      }
+      case "paste-style":
+        if (styleClipboard)
+          patchElement(sel.key, {
+            color: styleClipboard.color,
+            scale: styleClipboard.scale,
+          })
+        break
+      case "reset":
+        patchElement(sel.key, {
+          dx: undefined,
+          dy: undefined,
+          scale: undefined,
+          color: undefined,
+        })
+        break
+      case "image-replace":
+        fileInputRef.current?.click()
+        break
+      case "image-adjust":
+        openSection("imagem")
+        scrollToSection("imagem")
+        break
+      case "image-reset":
+        patchImage({ posX: undefined, posY: undefined, zoom: undefined })
+        break
+      case "image-remove":
+        patchImage({
+          url: null,
+          posX: undefined,
+          posY: undefined,
+          zoom: undefined,
+        })
+        break
+      case "palette":
+        void extractFromImage()
+        break
+      case "bg-color":
+        openSection("fundo")
+        scrollToSection("fundo")
+        break
+      case "bg-default":
+        patchSlide({ bg: undefined })
+        break
+      case "slide-duplicate":
+        duplicateSlide(selected)
+        break
+      case "slide-delete":
+        deleteSlide(selected)
+        break
+    }
+  }
+
+  /** Duplo clique em texto no canvas → foca o campo certo na sidebar. */
+  function handleTextEdit(sel: EditorSelection) {
+    openSection("conteudo")
+    scrollToSection("conteudo")
+    window.setTimeout(() => {
+      const ref =
+        sel.type === "title"
+          ? titleInputRef
+          : sel.type === "badge"
+            ? badgeInputRef
+            : subtitleInputRef
+      ref.current?.focus()
+      ref.current?.select()
+    }, 140)
+  }
+
+  const selectedOverride =
+    selection && selection.type !== "background" && selection.type !== "image"
+      ? (slide.el?.[selection.key] ?? {})
+      : null
 
   // Identidade Visual: editar uma cor da paleta ou extrair da imagem do slide.
   function setColor(i: number, val: string) {
@@ -882,6 +1066,40 @@ export function CarouselEditor({
             <div className="flex gap-5 items-center w-max">
               {slides.map((s, i) => (
                 <div key={s.order_index} className="relative group flex-shrink-0">
+                  {i === selected ? (
+                    /* Slide ATIVO = canvas interativo Canva-like: hover mostra
+                       os elementos, clique seleciona (e abre a section na
+                       sidebar), arrasta move com limites, foto tem pan/zoom,
+                       drop de arquivo troca a imagem. */
+                    <EditableSlideCanvas
+                      slide={s}
+                      total={slides.length}
+                      template={template}
+                      colors={colors}
+                      style={style}
+                      handle={handleValue}
+                      brandName={brandName}
+                      format={format}
+                      width={format === "stories" ? 340 : 420}
+                      fontClass={fontClassById(font)}
+                      titleWeight={titleWeight}
+                      titleScale={titleScale}
+                      bodyWeight={bodyWeight}
+                      bodyScale={bodyScale}
+                      selection={selection}
+                      onSelect={handleCanvasSelect}
+                      onOverride={patchElement}
+                      onImagePan={(posX, posY) => patchImage({ posX, posY })}
+                      onImageZoom={(zoom) =>
+                        patchImage({ zoom: zoom === 100 ? undefined : zoom })
+                      }
+                      onImageFile={handleUpload}
+                      onImagePick={() => fileInputRef.current?.click()}
+                      onTextEdit={handleTextEdit}
+                      onMenuAction={handleMenuAction}
+                      hasStyleClipboard={styleClipboard !== null}
+                    />
+                  ) : (
                   <button
                     type="button"
                     onClick={() => setSelected(i)}
@@ -898,7 +1116,7 @@ export function CarouselEditor({
                       brandName={brandName}
                       format={format}
                       width={format === "stories" ? 340 : 420}
-                      active={i === selected}
+                      active={false}
                       fontClass={fontClassById(font)}
                       titleWeight={titleWeight}
                       titleScale={titleScale}
@@ -906,6 +1124,7 @@ export function CarouselEditor({
                       bodyScale={bodyScale}
                     />
                   </button>
+                  )}
                   <span className="absolute top-2 left-2 z-10 w-6 h-6 rounded-md bg-black/60 text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
                     {i + 1}
                   </span>
@@ -1128,15 +1347,106 @@ export function CarouselEditor({
             </p>
           </Section>
 
+          {/* Elemento selecionado no canvas (título/texto/tag) — cor, tamanho,
+              posição fina e reset. Aparece só com algo selecionado. */}
+          {selection &&
+            selectedOverride !== null &&
+            selection.type !== "background" &&
+            selection.type !== "image" && (
+              <Section
+                icon={Move}
+                title={`Elemento — ${EDITABLE_TYPE_LABEL[selection.type as EditableType]}`}
+                id="sec-elemento"
+                open={!!openSections.elemento}
+                onToggle={() => toggleSection("elemento")}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={selectedOverride.color || "#ffffff"}
+                    onChange={(e) =>
+                      patchElement(selection.key, { color: e.target.value })
+                    }
+                    className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
+                    title="Cor do texto"
+                  />
+                  <Input
+                    ref={elementColorRef}
+                    value={selectedOverride.color || ""}
+                    onChange={(e) =>
+                      patchElement(selection.key, {
+                        color: e.target.value || undefined,
+                      })
+                    }
+                    placeholder="Cor padrão do estilo"
+                    className="h-8 flex-1 font-mono text-[11px]"
+                  />
+                </div>
+                <SliderRow
+                  label="Tamanho"
+                  min={50}
+                  max={180}
+                  value={Math.round((selectedOverride.scale ?? 1) * 100)}
+                  onChange={(v) =>
+                    patchElement(selection.key, {
+                      scale: v === 100 ? undefined : v / 100,
+                    })
+                  }
+                />
+                <SliderRow
+                  label="Posição ←→"
+                  min={-210}
+                  max={210}
+                  value={Math.round(selectedOverride.dx ?? 0)}
+                  onChange={(v) =>
+                    patchElement(selection.key, { dx: v === 0 ? undefined : v })
+                  }
+                />
+                <SliderRow
+                  label="Posição ↑↓"
+                  min={-260}
+                  max={260}
+                  value={Math.round(selectedOverride.dy ?? 0)}
+                  onChange={(v) =>
+                    patchElement(selection.key, { dy: v === 0 ? undefined : v })
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() =>
+                    patchElement(selection.key, {
+                      dx: undefined,
+                      dy: undefined,
+                      scale: undefined,
+                      color: undefined,
+                    })
+                  }
+                >
+                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />
+                  Restaurar padrão
+                </Button>
+                <p className="text-[10px] text-text-muted">
+                  Arraste o elemento direto no slide. O canto roxo redimensiona.
+                  Esc desseleciona.
+                </p>
+              </Section>
+            )}
+
           <Section
             icon={Type}
             title={`Conteúdo — Slide ${String(selected + 1).padStart(2, "0")}`}
-            defaultOpen
+            id="sec-conteudo"
+            open={!!openSections.conteudo}
+            onToggle={() => toggleSection("conteudo")}
           >
             <div className="space-y-3">
               <div>
                 <Label className="text-xs">Título</Label>
                 <Input
+                  ref={titleInputRef}
                   value={slide.title}
                   onChange={(e) => patchSlide({ title: e.target.value })}
                 />
@@ -1144,6 +1454,7 @@ export function CarouselEditor({
               <div>
                 <Label className="text-xs">Subtítulo</Label>
                 <Input
+                  ref={subtitleInputRef}
                   value={slide.subtitle}
                   onChange={(e) => patchSlide({ subtitle: e.target.value })}
                 />
@@ -1177,6 +1488,7 @@ export function CarouselEditor({
                   Tag do slide (canto superior direito)
                 </Label>
                 <Input
+                  ref={badgeInputRef}
                   value={slide.cta_badge || ""}
                   onChange={(e) => patchSlide({ cta_badge: e.target.value })}
                   placeholder="ESTUDO 01, NOVO, EDITORIAL…"
@@ -1204,7 +1516,13 @@ export function CarouselEditor({
             </div>
           </Section>
 
-          <Section icon={PaintBucket} title="Fundo do Slide">
+          <Section
+            icon={PaintBucket}
+            title="Fundo do Slide"
+            id="sec-fundo"
+            open={!!openSections.fundo}
+            onToggle={() => toggleSection("fundo")}
+          >
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1254,7 +1572,13 @@ export function CarouselEditor({
             </p>
           </Section>
 
-          <Section icon={ImageIcon} title="Imagem do Slide" defaultOpen>
+          <Section
+            icon={ImageIcon}
+            title="Imagem do Slide"
+            id="sec-imagem"
+            open={!!openSections.imagem}
+            onToggle={() => toggleSection("imagem")}
+          >
             <div className="space-y-3">
               <Label className="text-xs">Imagem do slide</Label>
             <div className="flex items-start gap-3">

@@ -126,7 +126,9 @@ export function FitText({
     }
   })
   return (
-    <div ref={ref} className={className} style={style}>
+    // data-edit: marca o título pro editor Canva-like (seleção/drag). Inerte
+    // fora do editor — nenhum estilo/comportamento muda sem override.
+    <div ref={ref} className={className} style={style} data-edit="title">
       {children}
     </div>
   )
@@ -267,6 +269,7 @@ export function SmartSlideImage({
         src={proxiedImageUrl(src)}
         alt=""
         className={className}
+        data-edit="image"
         onLoad={(e) => decide(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
         style={
           mode === "contain"
@@ -316,6 +319,7 @@ export function ImagePlaceholder({
   return (
     <div
       className={`flex items-center justify-center text-center px-3 ${className}`}
+      data-edit="image"
       style={{ backgroundColor: "#2b303b" }}
     >
       <span
@@ -347,6 +351,7 @@ export function Pill({
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold ${className}`}
+      data-edit="badge"
       style={{
         backgroundColor: isDark ? "#0A0A0F" : "#FFFFFF",
         color: isDark ? "#FFFFFF" : "#0A0A0F",

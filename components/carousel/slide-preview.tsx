@@ -15,6 +15,10 @@ import {
 } from "./editorial-shared"
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
 import {
+  applyElementOverrides,
+  type SlideElementOverrides,
+} from "./editable-overrides"
+import {
   CoverWesleyGemini,
   CoverWesleyInternet,
   CoverWesleyLabios,
@@ -56,6 +60,10 @@ export interface PreviewSlide {
   cta_badge?: string
   /** Cor de fundo do slide (override). null/undefined = padrão do estilo. */
   bg?: string
+  /** Overrides por elemento do editor Canva-like (mover/escalar/cor).
+   *  Chave = "<tipo>-<índice DOM>" (title-0, text-1...). Vazio = slide 100%
+   *  idêntico ao gerado — nada é aplicado. */
+  el?: SlideElementOverrides
   image: {
     url: string | null
     source: "ai" | "unsplash" | "wikimedia" | null
@@ -174,6 +182,11 @@ function SlidePreviewImpl({
         if (base) el.style.fontSize = `${base * bodyScale}px`
       }
     })
+    // Editor Canva-like: aplica mover/escalar/cor por elemento (slide.el).
+    // Sem overrides é no-op — o slide gerado permanece pixel-idêntico. Roda
+    // aqui (no renderizador) pra valer em TODO lugar: filmstrip, export
+    // PNG/ZIP, captura de capa e thumbnails.
+    applyElementOverrides(root, slide.el)
   })
   // REGRA GLOBAL: o accent (cor das palavras destacadas) precisa ser legível
   // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
