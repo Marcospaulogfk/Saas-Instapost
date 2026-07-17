@@ -10,6 +10,7 @@ import {
   HighlightedGlass,
   HighlightedGradientText,
   HighlightedText,
+  ImagePlaceholder,
   PaginationDots,
   Pill,
   SeamlessProgressLine,
@@ -86,9 +87,7 @@ export function CoverWesleyGemini({
             className="w-full h-full"
           />
         ) : (
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
-            {slide.image.error || "sem imagem"}
-          </div>
+          <ImagePlaceholder className="w-full h-full" label={slide.image.error} />
         )}
       </div>
 
@@ -122,9 +121,7 @@ export function CoverWesleyInternet({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/15" />
 
@@ -189,9 +186,7 @@ export function CoverWesleyLabios({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
 
@@ -254,9 +249,7 @@ export function CoverWesleyChurrasco({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30" />
 
@@ -320,9 +313,7 @@ export function CoverBrandsdecodedMassive({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
 
@@ -395,9 +386,7 @@ export function CoverBrandsdecodedPortrait({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40" />
 
@@ -467,12 +456,20 @@ export function CoverGradientGlow({
         <Pill>{slide.category || "Viral"}</Pill>
       </div>
 
-      {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-hidden px-6 pt-11 space-y-6">
+      {/* ZONA DE TÍTULO — SÓLIDA (altura natural; nunca é cortada nem invadida).
+          Tamanho adapta ao comprimento: títulos longos encolhem pra sobrar mais
+          espaço pra imagem embaixo (senão o título come o slide inteiro). */}
+      <div className="relative z-10 flex-shrink-0 px-6 pt-7 space-y-4">
         <FitText
-          className={`text-[2.7rem] uppercase tracking-tight text-white ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.98 }}
-          maxLines={5}
+          className={`${
+            slide.title.length > 46
+              ? "text-[2.1rem]"
+              : slide.title.length > 30
+                ? "text-[2.4rem]"
+                : "text-[2.7rem]"
+          } uppercase tracking-tight text-white ${fontClass}`}
+          style={{ fontWeight: 900, lineHeight: 1 }}
+          maxLines={4}
         >
           <HighlightedGradientText
             text={slide.title}
@@ -481,18 +478,17 @@ export function CoverGradientGlow({
           />
         </FitText>
         {slide.subtitle && (
-          <p className="text-sm text-white/75 leading-[1.55] line-clamp-3">
+          <p className="text-sm text-white/75 leading-[1.55] line-clamp-2">
             {slide.subtitle}
           </p>
         )}
       </div>
 
-      {/* ZONA DE IMAGEM — flex-shrink-0, sempre abaixo do título */}
-      <div className="relative z-10 flex-shrink-0 px-6 pt-4">
+      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, sempre ABAIXO do título */}
+      <div className="relative z-10 flex-1 min-h-0 px-6 pt-4">
         <div
-          className="rounded-2xl overflow-hidden"
+          className="relative h-full w-full rounded-2xl overflow-hidden"
           style={{
-            aspectRatio: "16/10",
             boxShadow: `0 0 44px ${accent}59, 0 10px 28px rgba(0,0,0,0.5)`,
             border: `1px solid ${accent}40`,
           }}
@@ -500,12 +496,10 @@ export function CoverGradientGlow({
           {slide.image.url ? (
             <SmartSlideImage
               src={slide.image.url}
-              className="w-full h-full"
+              className="absolute inset-0 w-full h-full"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-white/40 text-[10px] text-center px-4">
-              {slide.image.error || "sem imagem"}
-            </div>
+            <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
           )}
         </div>
       </div>
@@ -553,13 +547,21 @@ export function CoverMinimalClean({
         <span>{slide.category || "Editorial"}</span>
       </div>
 
-      {/* ZONA DE TÍTULO — flex-1, recorta se longo (nunca invade a imagem) */}
-      <div className="relative flex-1 min-h-0 overflow-hidden px-6 pt-10 space-y-5">
+      {/* ZONA DE TÍTULO — SÓLIDA (altura natural; nunca é cortada nem invadida).
+          Tamanho adapta ao comprimento: títulos longos encolhem pra sobrar mais
+          espaço pra imagem embaixo (senão o título come o slide inteiro). */}
+      <div className="relative flex-shrink-0 px-6 pt-7 space-y-4">
         <div className="h-1 w-12" style={{ backgroundColor: accent }} />
         <FitText
-          className={`text-[2.9rem] uppercase tracking-tight text-black ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.93 }}
-          maxLines={5}
+          className={`${
+            slide.title.length > 46
+              ? "text-[2.2rem]"
+              : slide.title.length > 30
+                ? "text-[2.5rem]"
+                : "text-[2.9rem]"
+          } uppercase tracking-tight text-black ${fontClass}`}
+          style={{ fontWeight: 900, lineHeight: 0.95 }}
+          maxLines={4}
         >
           <HighlightedText
             text={slide.title}
@@ -568,27 +570,25 @@ export function CoverMinimalClean({
           />
         </FitText>
         {slide.subtitle && (
-          <p className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-3">
+          <p className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-2">
             {slide.subtitle}
           </p>
         )}
       </div>
 
-      {/* ZONA DE IMAGEM — flex-shrink-0, sempre abaixo do título */}
-      <div className="flex-shrink-0 px-6 pt-3">
+      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, sempre ABAIXO do título */}
+      <div className="flex-1 min-h-0 px-6 pt-3">
         <div
-          className="rounded-lg overflow-hidden"
-          style={{ aspectRatio: "16/10", border: "1px solid rgba(0,0,0,0.12)" }}
+          className="relative h-full w-full rounded-lg overflow-hidden"
+          style={{ border: "1px solid rgba(0,0,0,0.12)" }}
         >
           {slide.image.url ? (
             <SmartSlideImage
               src={slide.image.url}
-              className="w-full h-full"
+              className="absolute inset-0 w-full h-full"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-100 flex items-center justify-center text-black/35 text-[10px] text-center px-4">
-              {slide.image.error || "sem imagem"}
-            </div>
+            <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
           )}
         </div>
       </div>
@@ -733,9 +733,7 @@ export function CoverCardsGlass({
           className="absolute inset-0 w-full h-full"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       {/* Scrim: escurece a base pro título ficar legível */}
       <div

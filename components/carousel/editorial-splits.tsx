@@ -21,6 +21,7 @@ import {
   HighlightedGradientText,
   HighlightedText,
   FitText,
+  ShrinkToFit,
   ImagePlaceholder,
   PaginationDots,
   SmartSlideImage,
@@ -266,41 +267,59 @@ export function SplitWesleyDark({
         </div>
       )}
 
-      {/* ZONA DE TEXTO — SÓLIDA (nunca cortada em pixel; clamps por linha) */}
-      <div className={hasBottomImage || imageSlot === "composition-top" ? "flex-shrink-0" : "flex-1 min-h-0"}>
-        <div className="mb-3">
-          <AvatarPill
-            avatar={slide.handle_avatar}
-            handle={slide.handle || "@brand"}
-            variant="transparent"
-          />
-        </div>
+      {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco ESCALA pra caber
+          (ShrinkToFit) — nunca corta nem sobrepõe a imagem (regra global). */}
+      {(() => {
+        const textBlock = (
+          <>
+            <div className="mb-3">
+              <AvatarPill
+                avatar={slide.handle_avatar}
+                handle={slide.handle || "@brand"}
+                variant="transparent"
+              />
+            </div>
 
-        <FitText
-          className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight ${fontClass}`}
-          style={{ fontWeight: titleWeight, color: th?.text ?? "#FFFFFF" }}
-          maxLines={4}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </FitText>
+            <FitText
+              className={`${titleSizeClass} uppercase leading-[0.95] tracking-tight ${fontClass}`}
+              style={{ fontWeight: titleWeight, color: th?.text ?? "#FFFFFF" }}
+              maxLines={4}
+            >
+              <HighlightedText
+                text={slide.title}
+                words={slide.highlight_words || []}
+                color={accent}
+              />
+            </FitText>
 
-        {slide.body && (
-          <p
-            className="mt-4 text-base leading-[1.4] line-clamp-5"
-            style={{ color: th?.muted ?? "rgba(255,255,255,0.85)" }}
+            {slide.body && (
+              <p
+                className="mt-4 text-base leading-[1.4] line-clamp-5"
+                style={{ color: th?.muted ?? "rgba(255,255,255,0.85)" }}
+              >
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+          </>
+        )
+        return imageSlot === "single-bottom" ? (
+          <ShrinkToFit className="flex-1">{textBlock}</ShrinkToFit>
+        ) : (
+          <div
+            className={
+              hasBottomImage || imageSlot === "composition-top"
+                ? "flex-shrink-0"
+                : "flex-1 min-h-0"
+            }
           >
-            {parseBoldInline(slide.body)}
-          </p>
-        )}
-      </div>
+            {textBlock}
+          </div>
+        )
+      })()}
 
-      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, sempre ABAIXO do texto */}
+      {/* ZONA DE IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
       {imageSlot === "single-bottom" && (
-        <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+        <div className="flex-[0_0_42%] min-h-0 mt-4">
           <SingleImageBox
             imageUrl={slide.images[0]?.url}
             error={slide.images[0]?.error}
@@ -523,32 +542,45 @@ export function SplitBrandsdecodedDarkSerif({
       />
 
       <div className="flex-1 px-6 pt-4 pb-4 flex flex-col min-h-0">
-        {/* TEXTO — sólido */}
-        <FitText
-          className="flex-shrink-0 text-[1.7rem] tracking-tight"
-          style={{
-            fontFamily: '"Playfair Display", Georgia, serif',
-            fontWeight: 700,
-            lineHeight: 1.15,
-            color: cText,
-          }}
-          maxLines={4}
-        >
-          {slide.title}
-        </FitText>
+        {/* Com imagem FIXA embaixo, o bloco ESCALA pra caber (ShrinkToFit) —
+            nunca corta nem sobrepõe a imagem (regra global). */}
+        {(() => {
+          const textBlock = (
+            <>
+              {/* TEXTO */}
+              <FitText
+                className="flex-shrink-0 text-[1.7rem] tracking-tight"
+                style={{
+                  fontFamily: '"Playfair Display", Georgia, serif',
+                  fontWeight: 700,
+                  lineHeight: 1.15,
+                  color: cText,
+                }}
+                maxLines={4}
+              >
+                {slide.title}
+              </FitText>
 
-        {slide.subtitle && (
-          <p
-            className="flex-shrink-0 mt-4 text-base leading-[1.4] line-clamp-3"
-            style={{ color: cSub, fontWeight: 500 }}
-          >
-            {slide.subtitle}
-          </p>
-        )}
+              {slide.subtitle && (
+                <p
+                  className="flex-shrink-0 mt-4 text-base leading-[1.4] line-clamp-3"
+                  style={{ color: cSub, fontWeight: 500 }}
+                >
+                  {slide.subtitle}
+                </p>
+              )}
+            </>
+          )
+          return imageSlot === "single-bottom" ? (
+            <ShrinkToFit className="flex-1">{textBlock}</ShrinkToFit>
+          ) : (
+            textBlock
+          )
+        })()}
 
-        {/* IMAGEM — água */}
+        {/* IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
         {imageSlot === "single-bottom" && slide.images[0] && (
-          <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+          <div className="flex-[0_0_42%] min-h-0 mt-4">
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
@@ -604,27 +636,40 @@ export function SplitBoloCream({
       </div>
 
       <div className="flex-1 px-4 pt-5 pb-2 flex flex-col min-h-0">
-        {/* TEXTO — sólido */}
-        <div className="flex-shrink-0">
-          <SectionTag
-            prefix={slide.section_prefix || "IDEIA"}
-            number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
-            suffix={slide.title}
-            prefixColor={accent}
-            textColor={cText}
-            fontClass={fontClass}
-          />
-        </div>
+        {/* Com imagem FIXA embaixo, o bloco ESCALA pra caber (ShrinkToFit) —
+            nunca corta nem sobrepõe a imagem (regra global). */}
+        {(() => {
+          const textBlock = (
+            <>
+              {/* TEXTO */}
+              <div className="flex-shrink-0">
+                <SectionTag
+                  prefix={slide.section_prefix || "IDEIA"}
+                  number={slide.section_number || `${String(orderIndex + 1).padStart(2, "0")}:`}
+                  suffix={slide.title}
+                  prefixColor={accent}
+                  textColor={cText}
+                  fontClass={fontClass}
+                />
+              </div>
 
-        {slide.body && (
-          <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-5 whitespace-pre-line">
-            {parseBoldInline(slide.body)}
-          </p>
-        )}
+              {slide.body && (
+                <p className="flex-shrink-0 mt-4 text-[15px] leading-[1.5] line-clamp-5 whitespace-pre-line">
+                  {parseBoldInline(slide.body)}
+                </p>
+              )}
+            </>
+          )
+          return imageSlot === "bottom-card" && slide.images[0] ? (
+            <ShrinkToFit className="flex-1">{textBlock}</ShrinkToFit>
+          ) : (
+            textBlock
+          )
+        })()}
 
-        {/* IMAGEM — água */}
+        {/* IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
         {imageSlot === "bottom-card" && slide.images[0] && (
-          <div className={`flex-1 ${IMG_MIN} min-h-0 mt-4`}>
+          <div className="flex-[0_0_42%] min-h-0 mt-4">
             <SingleImageBox
               imageUrl={slide.images[0].url}
               error={slide.images[0].error}
@@ -687,27 +732,37 @@ export function SplitMyPostFlowCta({
         </span>
       </div>
 
-      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha, nunca corte em pixel) */}
-      <div className={imageSlot === "bottom-large" && slide.images[0] ? "flex-shrink-0" : "flex-1 min-h-0"}>
-        <FitText
-          className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
-          style={{ fontWeight: 800, lineHeight: 1, color: cText }}
-          maxLines={4}
-        >
-          {slide.title}
-        </FitText>
+      {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco ESCALA pra caber
+          (ShrinkToFit) — nunca corta nem sobrepõe a imagem (regra global). */}
+      {(() => {
+        const textBlock = (
+          <>
+            <FitText
+              className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+              style={{ fontWeight: 800, lineHeight: 1, color: cText }}
+              maxLines={4}
+            >
+              {slide.title}
+            </FitText>
 
-        {slide.body && (
-          <p className="mt-5 text-[15px] leading-[1.5] whitespace-pre-line line-clamp-5">
-            {parseBoldInline(slide.body)}
-          </p>
-        )}
-      </div>
+            {slide.body && (
+              <p className="mt-5 text-[15px] leading-[1.5] whitespace-pre-line line-clamp-5">
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+          </>
+        )
+        return imageSlot === "bottom-large" && slide.images[0] ? (
+          <ShrinkToFit className="flex-1">{textBlock}</ShrinkToFit>
+        ) : (
+          <div className="flex-1 min-h-0">{textBlock}</div>
+        )
+      })()}
 
-      {/* ZONA DE IMAGEM — ÁGUA */}
+      {/* ZONA DE IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
       {imageSlot === "bottom-large" && slide.images[0] && (
         <div
-          className={`flex-1 ${IMG_MIN} min-h-0 mt-4 relative rounded-2xl overflow-hidden`}
+          className="flex-[0_0_42%] min-h-0 mt-4 relative rounded-2xl overflow-hidden"
           style={{ boxShadow: "0 12px 32px rgba(0,0,0,0.15)" }}
         >
           {slide.images[0].url ? (
@@ -771,44 +826,56 @@ export function SplitGradientDark({
         </div>
       )}
 
-      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha; nunca corte em pixel) */}
-      <div
-        className={`relative z-10 px-6 pt-6 ${
-          hasBottomImage || imageSlot === "composition-top"
-            ? "flex-shrink-0"
-            : "flex-1 min-h-0"
-        }`}
-      >
-        <div className="mb-5">
-          <AvatarPill
-            avatar={slide.handle_avatar}
-            handle={slide.handle || "@brand"}
-            variant="transparent"
-          />
-        </div>
+      {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco ESCALA pra caber
+          (ShrinkToFit) — nunca corta nem sobrepõe a imagem (regra global). */}
+      {(() => {
+        const textBlock = (
+          <>
+            <div className="mb-5">
+              <AvatarPill
+                avatar={slide.handle_avatar}
+                handle={slide.handle || "@brand"}
+                variant="transparent"
+              />
+            </div>
 
-        <FitText
-          className={`${titleSizeClass} uppercase leading-[1] tracking-tight ${fontClass}`}
-          style={{ fontWeight: 800, color: cText }}
-          maxLines={4}
-        >
-          <HighlightedGradientText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </FitText>
+            <FitText
+              className={`${titleSizeClass} uppercase leading-[1] tracking-tight ${fontClass}`}
+              style={{ fontWeight: 800, color: cText }}
+              maxLines={4}
+            >
+              <HighlightedGradientText
+                text={slide.title}
+                words={slide.highlight_words || []}
+                color={accent}
+              />
+            </FitText>
 
-        {slide.body && (
-          <p className="mt-5 text-base leading-[1.5] line-clamp-5">
-            {parseBoldInline(slide.body)}
-          </p>
-        )}
-      </div>
+            {slide.body && (
+              <p className="mt-5 text-base leading-[1.5] line-clamp-5">
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+          </>
+        )
+        return hasBottomImage ? (
+          <ShrinkToFit className="z-10 flex-1" innerClassName="px-6 pt-6">
+            {textBlock}
+          </ShrinkToFit>
+        ) : (
+          <div
+            className={`relative z-10 px-6 pt-6 min-h-0 ${
+              imageSlot === "composition-top" ? "flex-shrink-0" : "flex-1"
+            }`}
+          >
+            {textBlock}
+          </div>
+        )
+      })()}
 
-      {/* ZONA DE IMAGEM — ÁGUA: preenche o que sobra, com aura do accent */}
+      {/* ZONA DE IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
       {hasBottomImage && (
-        <div className={`relative z-10 px-6 pt-4 flex-1 ${IMG_MIN} min-h-0`}>
+        <div className="relative z-10 px-6 pt-4 flex-[0_0_42%] min-h-0">
           {imageSlot === "comparison-bottom" ? (
             <ComparisonImages images={slide.images} fill />
           ) : (
@@ -905,40 +972,50 @@ export function SplitMinimalClean({
         <span>{slide.handle || "@brand"}</span>
       </div>
 
-      {/* ZONA DE TEXTO — SÓLIDA (clamps por linha) */}
-      <div
-        className={`relative z-10 px-6 pt-7 ${hasImage ? "flex-shrink-0" : "flex-1 min-h-0"}`}
-      >
-        {/* Kicker accent */}
-        <div
-          className="text-[11px] uppercase tracking-[0.18em] font-bold mb-3"
-          style={{ color: accent }}
-        >
-          {slide.category || "Conteúdo"} · {ghost}
-        </div>
+      {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco inteiro ESCALA pra
+          caber (ShrinkToFit) — nunca corta nem sobrepõe a imagem (regra global). */}
+      {(() => {
+        const textBlock = (
+          <>
+            {/* Kicker accent */}
+            <div
+              className="text-[11px] uppercase tracking-[0.18em] font-bold mb-3"
+              style={{ color: accent }}
+            >
+              {slide.category || "Conteúdo"} · {ghost}
+            </div>
 
-        <FitText
-          className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.95, color: cText }}
-          maxLines={4}
-        >
-          <HighlightedText
-            text={slide.title}
-            words={slide.highlight_words || []}
-            color={accent}
-          />
-        </FitText>
+            <FitText
+              className={`${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+              style={{ fontWeight: 900, lineHeight: 0.95, color: cText }}
+              maxLines={4}
+            >
+              <HighlightedText
+                text={slide.title}
+                words={slide.highlight_words || []}
+                color={accent}
+              />
+            </FitText>
 
-        {slide.body && (
-          <p className="mt-4 text-[15px] leading-[1.55] line-clamp-5 whitespace-pre-line">
-            {parseBoldInline(slide.body)}
-          </p>
-        )}
-      </div>
+            {slide.body && (
+              <p className="mt-4 text-[15px] leading-[1.55] whitespace-pre-line line-clamp-5">
+                {parseBoldInline(slide.body)}
+              </p>
+            )}
+          </>
+        )
+        return hasImage ? (
+          <ShrinkToFit className="z-10 flex-1" innerClassName="px-6 pt-7">
+            {textBlock}
+          </ShrinkToFit>
+        ) : (
+          <div className="relative z-10 px-6 pt-7 flex-1 min-h-0">{textBlock}</div>
+        )
+      })()}
 
-      {/* ZONA DE IMAGEM — ÁGUA: sempre abaixo do texto, preenche o que sobra */}
+      {/* ZONA DE IMAGEM — TAMANHO FIXO (uniforme entre os slides); nunca varia. */}
       {hasImage && (
-        <div className={`relative z-10 px-6 pt-4 flex-1 ${IMG_MIN} min-h-0`}>
+        <div className="relative z-10 px-6 pt-4 flex-[0_0_42%] min-h-0">
           {imageSlot === "comparison-bottom" ? (
             <ComparisonImages images={slide.images} fill />
           ) : (
@@ -1176,7 +1253,7 @@ export function SplitCardsWhite({
     (imageSlot === "single-top" || imageSlot === "composition-top")
 
   const ImageBox = (
-    <div className={`flex-1 ${IMG_MIN} min-h-0 rounded-2xl overflow-hidden relative bg-[#2A2E37]`}>
+    <div className="flex-[0_0_42%] min-h-0 rounded-2xl overflow-hidden relative bg-[#2A2E37]">
       <SmartSlideImage
         src={slide.images[0]!.url as string}
         className="absolute inset-0 w-full h-full"
@@ -1218,37 +1295,52 @@ export function SplitCardsWhite({
       >
         {imageTop && ImageBox}
 
-        {Badge}
+        {/* TEXTO — com imagem FIXA, o bloco ESCALA pra caber (ShrinkToFit) —
+            nunca corta nem sobrepõe a imagem (regra global). */}
+        {(() => {
+          const textBlock = (
+            <>
+              {Badge}
 
-        <FitText
-          className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight ${fontClass}`}
-          style={{ fontWeight: 800, lineHeight: 1.02, color: "#15151A" }}
-          maxLines={4}
-        >
-          {slide.title}
-        </FitText>
-
-        {/* Hairline entre título e corpo (igual MyPostFlow) */}
-        {bodyParts.length > 0 && (
-          <div
-            className="flex-shrink-0 h-px -mt-1"
-            style={{ backgroundColor: "rgba(10,10,15,0.08)" }}
-          />
-        )}
-
-        {bodyParts.length > 0 && (
-          <div className="flex-shrink-0 space-y-2.5">
-            {bodyParts.slice(0, 2).map((p, i) => (
-              <p
-                key={i}
-                className="text-[14px] leading-[1.55] line-clamp-4"
-                style={{ color: "#5B6270" }}
+              <FitText
+                className={`flex-shrink-0 ${titleSizeClass} uppercase tracking-tight ${fontClass}`}
+                style={{ fontWeight: 800, lineHeight: 1.02, color: "#15151A" }}
+                maxLines={4}
               >
-                {parseBoldInline(p)}
-              </p>
-            ))}
-          </div>
-        )}
+                {slide.title}
+              </FitText>
+
+              {/* Hairline entre título e corpo (igual MyPostFlow) */}
+              {bodyParts.length > 0 && (
+                <div
+                  className="flex-shrink-0 h-px -mt-1"
+                  style={{ backgroundColor: "rgba(10,10,15,0.08)" }}
+                />
+              )}
+
+              {bodyParts.length > 0 && (
+                <div className="flex-shrink-0 space-y-2.5">
+                  {bodyParts.slice(0, 2).map((p, i) => (
+                    <p
+                      key={i}
+                      className="text-[14px] leading-[1.55] line-clamp-4"
+                      style={{ color: "#5B6270" }}
+                    >
+                      {parseBoldInline(p)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+          return hasImage ? (
+            <ShrinkToFit className="flex-1" innerClassName="flex flex-col gap-4">
+              {textBlock}
+            </ShrinkToFit>
+          ) : (
+            <div className="min-h-0 flex-1 flex flex-col gap-4">{textBlock}</div>
+          )
+        })()}
 
         {!imageTop && hasImage && ImageBox}
       </div>

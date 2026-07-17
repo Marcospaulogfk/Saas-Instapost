@@ -1635,8 +1635,8 @@ export default function TestePage() {
 
           <div className="space-y-2">
             <Label>Número de slides</Label>
-            <div className="grid grid-cols-5 gap-2">
-              {[5, 7, 10, 15, 20].map((n) => (
+            <div className="grid grid-cols-3 gap-2">
+              {[3, 5, 7].map((n) => (
                 <button
                   key={n}
                   type="button"

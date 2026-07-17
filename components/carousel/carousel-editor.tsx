@@ -170,6 +170,8 @@ const SlideCanvas = memo(function SlideCanvas({
   fontClass,
   titleWeight,
   titleScale,
+  bodyWeight,
+  bodyScale,
 }: {
   slide: PreviewSlide
   total: number
@@ -184,6 +186,8 @@ const SlideCanvas = memo(function SlideCanvas({
   fontClass: string
   titleWeight?: number
   titleScale?: number
+  bodyWeight?: number
+  bodyScale?: number
 }) {
   const REF_W = 420
   const s = width / REF_W
@@ -191,7 +195,7 @@ const SlideCanvas = memo(function SlideCanvas({
   return (
     <div
       style={{ width, height: h }}
-      className={`relative overflow-hidden rounded-xl bg-black transition-shadow ${
+      className={`relative overflow-hidden rounded-xl bg-black transition-shadow text-left ${
         active
           ? "ring-2 ring-brand-500 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.6)]"
           : "ring-1 ring-white/10 hover:ring-white/25"
@@ -217,6 +221,8 @@ const SlideCanvas = memo(function SlideCanvas({
           format={format}
           titleWeight={titleWeight}
           titleScale={titleScale}
+          bodyWeight={bodyWeight}
+          bodyScale={bodyScale}
         />
       </div>
     </div>
@@ -236,10 +242,12 @@ export interface CarouselEditorProps {
   initialFormat?: "feed" | "stories"
   /** ID do carrossel salvo (quando reaberto da biblioteca) — habilita update in-place. */
   initialCarouselId?: string
-  /** Tipografia salva (id da fonte, peso e escala do título). */
+  /** Tipografia salva (id da fonte, peso e escala do título e da descrição). */
   initialFont?: string
   initialTitleWeight?: number
   initialTitleScale?: number
+  initialBodyWeight?: number
+  initialBodyScale?: number
 }
 
 type ImageMode = "ai" | "unsplash" | "wikimedia"
@@ -258,6 +266,8 @@ export function CarouselEditor({
   initialFont,
   initialTitleWeight,
   initialTitleScale,
+  initialBodyWeight,
+  initialBodyScale,
 }: CarouselEditorProps) {
   const [slides, setSlides] = useState<PreviewSlide[]>(initialSlides)
   const [selected, setSelected] = useState(0)
@@ -271,6 +281,13 @@ export function CarouselEditor({
   )
   const [titleScale, setTitleScale] = useState<number | undefined>(
     initialTitleScale,
+  )
+  // Tipografia da descrição (subtítulo/corpo) — independente do título.
+  const [bodyWeight, setBodyWeight] = useState<number | undefined>(
+    initialBodyWeight,
+  )
+  const [bodyScale, setBodyScale] = useState<number | undefined>(
+    initialBodyScale,
   )
   // Identidade Visual — paleta editável da marca [acento, escuro, claro].
   const [colors, setColors] = useState<string[]>(initialColors)
@@ -605,6 +622,8 @@ export function CarouselEditor({
           font,
           titleWeight,
           titleScale,
+          bodyWeight,
+          bodyScale,
           coverImageUrl: coverImageUrl ?? undefined,
         },
       })
@@ -647,19 +666,40 @@ export function CarouselEditor({
     }
   }
 
-  /** Espera as <img> dentro do preview terminarem de carregar (até timeoutMs). */
-  async function waitPreviewImages(timeoutMs = 6000) {
-    const started = Date.now()
-    // primeiro dá um tick pro React renderizar o slide selecionado
-    await new Promise((r) => setTimeout(r, 120))
-    while (Date.now() - started < timeoutMs) {
-      const imgs = Array.from(
-        previewRef.current?.querySelectorAll("img") ?? [],
-      )
-      const pending = imgs.filter((im) => !im.complete)
-      if (pending.length === 0) return
-      await new Promise((r) => setTimeout(r, 150))
-    }
+  /**
+   * Espera as <img> do preview carregarem DE VERDADE antes do html-to-image.
+   * `img.complete` sozinho não basta: logo após trocar o `src` ele fica true
+   * apontando pro frame anterior, e o export saía com a imagem errada (a do
+   * slide 1 em todos). Aqui: (1) 2 frames pro React comitar o slide remontado,
+   * (2) espera load/error de cada <img>, (3) força o decode (bitmap pronto).
+   */
+  async function waitPreviewImages(timeoutMs = 8000) {
+    // 2 requestAnimationFrame: garante o commit do slide novo (remount via key).
+    await new Promise<void>((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r())),
+    )
+    const imgs = Array.from(previewRef.current?.querySelectorAll("img") ?? [])
+    await Promise.all(
+      imgs.map(
+        (im) =>
+          new Promise<void>((resolve) => {
+            if (im.complete && im.naturalWidth > 0) return resolve()
+            let settled = false
+            const done = () => {
+              if (settled) return
+              settled = true
+              resolve()
+            }
+            im.addEventListener("load", done, { once: true })
+            im.addEventListener("error", done, { once: true })
+            window.setTimeout(done, timeoutMs)
+          }),
+      ),
+    )
+    // Decode explícito: sem ele o html-to-image pode desenhar o frame anterior.
+    await Promise.all(
+      imgs.map((im) => (im.decode ? im.decode().catch(() => {}) : Promise.resolve())),
+    )
   }
 
   // Exporta TODOS os slides num único .zip. Percorre os slides no preview
@@ -845,7 +885,7 @@ export function CarouselEditor({
                   <button
                     type="button"
                     onClick={() => setSelected(i)}
-                    className="block"
+                    className="block text-left"
                     aria-label={`Selecionar slide ${i + 1}`}
                   >
                     <SlideCanvas
@@ -862,6 +902,8 @@ export function CarouselEditor({
                       fontClass={fontClassById(font)}
                       titleWeight={titleWeight}
                       titleScale={titleScale}
+                      bodyWeight={bodyWeight}
+                      bodyScale={bodyScale}
                     />
                   </button>
                   <span className="absolute top-2 left-2 z-10 w-6 h-6 rounded-md bg-black/60 text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
@@ -901,7 +943,13 @@ export function CarouselEditor({
             aria-hidden
             className="fixed -left-[9999px] top-0 w-[420px] pointer-events-none [&_.rounded-xl]:!rounded-none"
           >
+            {/* key={selected}: REMONTA o preview a cada slide selecionado. Sem
+                isso, o React reusava o mesmo <img> e ele guardava o BITMAP do
+                slide anterior — no export em ZIP, o html-to-image capturava a
+                imagem do slide 1 em todos (só o texto atualizava). Remontar
+                garante um <img> novo, que waitPreviewImages espera carregar. */}
             <SlidePreview
+              key={selected}
               slide={slide}
               totalSlides={slides.length}
               template={template}
@@ -914,6 +962,8 @@ export function CarouselEditor({
               format={format}
               titleWeight={titleWeight}
               titleScale={titleScale}
+              bodyWeight={bodyWeight}
+              bodyScale={bodyScale}
             />
           </div>
         </main>
@@ -980,7 +1030,7 @@ export function CarouselEditor({
               onChange={(v) => setTitleScale(v / 100)}
             />
             <div>
-              <Label className="text-xs mb-1.5 block">Peso da fonte</Label>
+              <Label className="text-xs mb-1.5 block">Peso do título</Label>
               <div className="grid grid-cols-4 gap-1.5">
                 {[300, 400, 500, 600, 700, 800, 900].map((w) => (
                   <button
@@ -989,6 +1039,35 @@ export function CarouselEditor({
                     onClick={() => setTitleWeight(w)}
                     className={`h-8 rounded text-xs transition-colors ${
                       titleWeight === w
+                        ? "bg-brand-600 text-white"
+                        : "border border-border-subtle text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Descrição (subtítulo + corpo) — independente do título. */}
+            <div className="pt-1 border-t border-border-subtle/60" />
+            <SliderRow
+              label="Tamanho da descrição"
+              min={70}
+              max={130}
+              value={Math.round((bodyScale ?? 1) * 100)}
+              onChange={(v) => setBodyScale(v / 100)}
+            />
+            <div>
+              <Label className="text-xs mb-1.5 block">Peso da descrição</Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[300, 400, 500, 600, 700, 800, 900].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => setBodyWeight(w)}
+                    className={`h-8 rounded text-xs transition-colors ${
+                      bodyWeight === w
                         ? "bg-brand-600 text-white"
                         : "border border-border-subtle text-text-secondary hover:text-text-primary"
                     }`}

@@ -32,6 +32,9 @@ export interface CarouselV2Data {
   font?: string
   titleWeight?: number
   titleScale?: number
+  /** Tipografia da descrição (subtítulo/corpo). */
+  bodyWeight?: number
+  bodyScale?: number
   /** Capa: PNG do slide 1 JÁ COMPOSTO (texto+marca), gerado no save. Usado como
    *  thumbnail na Biblioteca/Dashboard. Fallback: foto de fundo do 1º slide. */
   coverImageUrl?: string | null

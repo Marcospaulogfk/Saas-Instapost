@@ -164,7 +164,7 @@ export async function POST(req: Request) {
       brandColors: Array.isArray(brand.brand_colors)
         ? (brand.brand_colors as string[])
         : [],
-      nSlides: body.n_slides,
+      nSlides: Math.min(Math.max(body.n_slides, 1), 7),
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

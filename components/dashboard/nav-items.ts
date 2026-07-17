@@ -6,6 +6,7 @@ import {
   Lightbulb,
   CalendarDays,
   CalendarPlus,
+  LayoutTemplate,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -18,6 +19,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: House },
+  { name: "Templates", href: "/dashboard/templates", icon: LayoutTemplate },
   { name: "Sugestões", href: "/dashboard/inspiracoes", icon: Lightbulb },
   { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
   { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },

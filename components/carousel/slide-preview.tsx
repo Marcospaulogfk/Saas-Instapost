@@ -1,9 +1,10 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useEffect, useLayoutEffect, useRef } from "react"
 import {
   Attribution,
   HighlightedText,
+  ImagePlaceholder,
   PaginationDots,
   SmartSlideImage,
   Pill,
@@ -40,6 +41,11 @@ import {
   type SplitSlideData,
   type SplitImageSlot,
 } from "./editorial-splits"
+
+// useLayoutEffect no cliente (aplica antes de pintar, sem flicker); useEffect no
+// SSR pra não gerar warning.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect
 
 export interface PreviewSlide {
   order_index: number
@@ -108,6 +114,9 @@ interface SlidePreviewProps {
   /** Tipografia: peso e escala do título (sobrepõem o padrão do template). */
   titleWeight?: number
   titleScale?: number
+  /** Tipografia da DESCRIÇÃO (subtítulo/corpo): peso e escala. */
+  bodyWeight?: number
+  bodyScale?: number
 }
 
 /** Dados mínimos pra renderizar a CAPA (slide 1) ao vivo como thumbnail. */
@@ -138,11 +147,34 @@ function SlidePreviewImpl({
   format = "feed",
   titleWeight,
   titleScale,
+  bodyWeight,
+  bodyScale,
 }: SlidePreviewProps) {
   const typo =
     titleWeight != null || titleScale != null
       ? { weight: titleWeight, scale: titleScale }
       : null
+
+  // Tipografia da DESCRIÇÃO (subtítulo/corpo). Nos templates o texto descritivo
+  // é SEMPRE <p> (títulos são FitText/div, pills/tags são <span>), então aplicar
+  // aqui, num lugar só, vale pra todos os estilos — inclusive o legado (Auto).
+  // Reseta antes de medir pra ler o tamanho BASE da classe do template; assim é
+  // idempotente e a escala é sempre relativa ao padrão de cada estilo.
+  const rootRef = useRef<HTMLDivElement>(null)
+  useIsoLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    root.querySelectorAll("p").forEach((node) => {
+      const el = node as HTMLElement
+      el.style.fontSize = ""
+      el.style.fontWeight = ""
+      if (bodyWeight) el.style.fontWeight = String(bodyWeight)
+      if (bodyScale && bodyScale !== 1) {
+        const base = parseFloat(getComputedStyle(el).fontSize)
+        if (base) el.style.fontSize = `${base * bodyScale}px`
+      }
+    })
+  })
   // REGRA GLOBAL: o accent (cor das palavras destacadas) precisa ser legível
   // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
   // escolhiam preto como destaque e ele sumia em fundos escuros/fotos.
@@ -200,7 +232,7 @@ function SlidePreviewImpl({
   return (
     <TypographyContext.Provider value={typo}>
     <ImageTransformContext.Provider value={imgTransform}>
-      <div className="relative">
+      <div className="relative" ref={rootRef}>
       {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
       <div
         className={
@@ -679,9 +711,7 @@ function LegacyEditorialSlide({
             className="absolute inset-0 w-full h-full"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-            {slide.image.error || "sem imagem"}
-          </div>
+          <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/10" />
 
@@ -703,7 +733,7 @@ function LegacyEditorialSlide({
         >
           <FitText
             className={`${isStories ? "text-[2rem]" : coverTitleClass} uppercase leading-[0.98] tracking-tight text-white ${fontClass}`}
-            style={{ textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
+            style={{ fontWeight: 900, textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
             maxLines={5}
           >
             <HighlightedText
@@ -735,9 +765,7 @@ function LegacyEditorialSlide({
             className="absolute inset-0 w-full h-full"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-            {slide.image.error || "sem imagem"}
-          </div>
+          <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/15" />
 
@@ -749,7 +777,7 @@ function LegacyEditorialSlide({
         <div className="absolute bottom-20 left-5 right-5 z-10 space-y-2.5">
           <FitText
             className={`text-[2rem] uppercase leading-[1.02] tracking-tight text-white ${fontClass}`}
-            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}
+            style={{ fontWeight: 900, textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}
             maxLines={5}
           >
             <HighlightedText
@@ -797,17 +825,13 @@ function LegacyEditorialSlide({
           segurança). Impossível uma invadir a outra. */}
       <div className="px-5 flex flex-col gap-3 min-h-0">
         {imageOnTop && (
-          <LegacySlideImage
-            slide={slide}
-            placeholderBg={isDarkSplit ? "#FFFFFF" : dark}
-            placeholderText={isDarkSplit ? dark : light}
-          />
+          <LegacySlideImage slide={slide} />
         )}
 
         <div className="space-y-1.5 flex-shrink-0">
           <FitText
             className={`text-[1.7rem] leading-[1.1] tracking-tight ${fontClass}`}
-            style={{ color: splitText }}
+            style={{ fontWeight: 800, color: splitText }}
             maxLines={4}
           >
             <HighlightedText
@@ -835,11 +859,7 @@ function LegacyEditorialSlide({
         </div>
 
         {!imageOnTop && (
-          <LegacySlideImage
-            slide={slide}
-            placeholderBg={isDarkSplit ? "#FFFFFF" : dark}
-            placeholderText={isDarkSplit ? dark : light}
-          />
+          <LegacySlideImage slide={slide} />
         )}
       </div>
 
@@ -854,15 +874,7 @@ function LegacyEditorialSlide({
   )
 }
 
-function LegacySlideImage({
-  slide,
-  placeholderBg,
-  placeholderText,
-}: {
-  slide: PreviewSlide
-  placeholderBg: string
-  placeholderText: string
-}) {
+function LegacySlideImage({ slide }: { slide: PreviewSlide }) {
   // IMAGEM = ÁGUA: flex-1 preenche exatamente o espaço que SOBRA depois do
   // texto (que é sólido/flex-shrink-0). Container dimensionado pelo flex +
   // <img> absoluta object-cover — mesmo padrão das capas, exporta correto no
@@ -878,16 +890,10 @@ function LegacySlideImage({
     )
   }
   return (
-    <div
-      className="w-full rounded-md flex items-center justify-center text-[10px] px-2 text-center flex-1 min-h-[96px]"
-      style={{
-        backgroundColor: placeholderBg,
-        color: placeholderText,
-        opacity: 0.4,
-      }}
-    >
-      {slide.image.error || "sem imagem"}
-    </div>
+    <ImagePlaceholder
+      className="w-full rounded-md flex-1 min-h-[96px]"
+      label={slide.image.error}
+    />
   )
 }
 
@@ -916,9 +922,7 @@ function CinematicSlide({
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
 
@@ -937,7 +941,7 @@ function CinematicSlide({
       <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 z-10">
         <FitText
           className={`text-4xl uppercase leading-[0.95] text-white tracking-tight ${fontClass}`}
-          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
+          style={{ fontWeight: 900, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
           maxLines={5}
         >
           <HighlightedText
@@ -997,9 +1001,7 @@ function HybridSlide({
           className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[10px] px-4 text-center">
-          {slide.image.error || "sem imagem"}
-        </div>
+        <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
       )}
 
       {/* Story progress bar (Instagram-style) */}
@@ -1036,7 +1038,7 @@ function HybridSlide({
       <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-10">
         <FitText
           className={`text-3xl uppercase leading-[0.95] text-white tracking-tight ${fontClass}`}
-          style={{ textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}
+          style={{ fontWeight: 900, textShadow: "0 2px 12px rgba(0,0,0,0.6)" }}
           maxLines={5}
         >
           <HighlightedText

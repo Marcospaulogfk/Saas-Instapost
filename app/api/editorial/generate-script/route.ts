@@ -73,10 +73,10 @@ export async function POST(req: Request) {
   )
     ? (body.template as "editorial" | "cinematic" | "hybrid")
     : "editorial"
-  // Instagram permite até 20 slides por carrossel.
+  // Geração limitada a no máximo 7 slides por carrossel.
   const nSlides =
     typeof body.desiredSlides === "number" && body.desiredSlides >= 3
-      ? Math.min(body.desiredSlides, 20)
+      ? Math.min(body.desiredSlides, 7)
       : 7
 
   try {

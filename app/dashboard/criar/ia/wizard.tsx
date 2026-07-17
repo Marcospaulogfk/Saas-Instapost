@@ -118,7 +118,7 @@ export function Wizard({ brands }: WizardProps) {
   const [fontFamily, setFontFamily] = useState<FontKey>(
     mapBrandFont(activeBrand?.default_font),
   )
-  const [nSlides, setNSlides] = useState<5 | 7 | 10>(7)
+  const [nSlides, setNSlides] = useState<3 | 5 | 7>(7)
   const [mode, setMode] = useState<Mode>("all_ai")
 
   const [loading, setLoading] = useState(false)
@@ -265,11 +265,11 @@ export function Wizard({ brands }: WizardProps) {
       <div className="space-y-2">
         <Label className="text-sm text-text-secondary">Número de slides</Label>
         <div className="grid grid-cols-3 gap-2 max-w-xs">
-          {[5, 7, 10].map((n) => (
+          {[3, 5, 7].map((n) => (
             <button
               key={n}
               type="button"
-              onClick={() => setNSlides(n as 5 | 7 | 10)}
+              onClick={() => setNSlides(n as 3 | 5 | 7)}
               className={`h-11 rounded-lg border text-sm font-medium transition-all ${
                 n === nSlides
                   ? "border-brand-600 bg-brand-600/10 text-brand-300"

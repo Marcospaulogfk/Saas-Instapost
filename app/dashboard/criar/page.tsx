@@ -37,6 +37,11 @@ import type { ClaudeSlide } from "@/lib/generation/claude"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
 import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
+import {
+  CAROUSEL_STYLES,
+  CarouselStyleCard,
+} from "@/components/carousel/carousel-style-gallery"
+import type { EditorialStyle } from "@/components/carousel/slide-preview"
 
 type StepId = 1 | 2 | 3 | 4 | 5
 
@@ -90,12 +95,12 @@ type FormatKind = "post" | "story"
 
 /**
  * Monta o objeto de formato a partir da escolha do usuário:
- * feed vs stories + quantidade de slides (1 a 20 — limite do Instagram).
+ * feed vs stories + quantidade de slides (1 a 7 — máximo da geração).
  * 1 slide = post único, 2+ = carrossel. O restante do wizard consome esse
  * objeto genericamente.
  */
 function buildFormato(format: FormatKind, slides: number): Formato {
-  const n = Math.min(20, Math.max(1, slides))
+  const n = Math.min(7, Math.max(1, slides))
   const isStory = format === "story"
   const pageMode = n <= 1 ? "post-unico" : "carrossel"
   const base = isStory ? "Stories" : "Feed"
@@ -261,6 +266,8 @@ function CriarWizard() {
   const [briefing, setBriefing] = useState("")
   // Template escolhido na etapa nova ("auto" = deixa a IA escolher).
   const [templateId, setTemplateId] = useState<string>("auto")
+  // Estilo visual do carrossel (passo "Estilo" — só p/ carrossel, 2+ slides).
+  const [carouselStyle, setCarouselStyle] = useState<EditorialStyle>("minimal")
   const [promptRefinado, setPromptRefinado] = useState<string | null>(null)
   const [refinando, setRefinando] = useState(false)
   const [refineErr, setRefineErr] = useState<string | null>(null)
@@ -286,6 +293,10 @@ function CriarWizard() {
   // "Criar do Zero" pula a galeria de templates: vai direto pra Ideia e a
   // geração usa o modo free/skeleton (templateId fica "auto").
   const hasTemplateStep = isPostUnico && comoCriar !== "zero"
+  // Passo "Estilo" do carrossel (2+ slides): escolhe o estilo visual antes da
+  // ideia. Post único usa o passo de Template; carrossel usa o de Estilo.
+  const hasStyleStep = formato != null && !isPostUnico
+  const hasStep3 = hasTemplateStep || hasStyleStep
 
   // --- Sincronização do step com a URL (?step=N) ---
   // Avançar/voltar pelos botões faz push; back/forward do navegador é lido
@@ -310,7 +321,7 @@ function CriarWizard() {
     const allowed: StepId[] = [1]
     if (formato) allowed.push(2)
     if (formato && abordagem) {
-      if (hasTemplateStep) allowed.push(3)
+      if (hasStep3) allowed.push(3)
       allowed.push(4)
     }
     if (approvalDraft || carouselDraft || approvalLoading || carouselLoading) {
@@ -634,6 +645,10 @@ function CriarWizard() {
           caption: carouselDraft.caption,
           objective: OBJETIVO_TO_API[objetivo],
           template: "editorial",
+          // Estilo escolhido no passo "Estilo" + formato (feed/stories) — o
+          // editor do carrossel abre já aplicando ambos.
+          editorialStyle: carouselStyle,
+          format: formato.format,
           nSlides: carouselDraft.slides.length || (formato.slides ?? 7),
           colors: wizardBrand.brand_colors,
           brandName: wizardBrand.name,
@@ -698,9 +713,13 @@ function CriarWizard() {
   const steps: { id: StepId; label: string }[] = [
     { id: 1, label: "Formato" },
     { id: 2, label: "Modo" },
-    // Template só pra post-único E fora do "Criar do Zero" (que vai direto
-    // pra ideia e usa o modo free/skeleton). Carrossel também não tem catálogo.
-    ...(hasTemplateStep ? [{ id: 3 as StepId, label: "Template" }] : []),
+    // Passo 3: post-único (fora do "Criar do Zero") escolhe Template; carrossel
+    // (2+ slides) escolhe Estilo. "Criar do Zero" pula pra Ideia.
+    ...(hasTemplateStep
+      ? [{ id: 3 as StepId, label: "Template" }]
+      : hasStyleStep
+        ? [{ id: 3 as StepId, label: "Estilo" }]
+        : []),
     { id: 4, label: "Ideia" },
     // Etapa de aprovação existe pros dois fluxos (post-único e carrossel).
     ...(formato ? [{ id: 5 as StepId, label: "Aprovar" }] : []),
@@ -777,7 +796,7 @@ function CriarWizard() {
             if (v === "zero") setTemplateId("auto")
           }}
           onBack={() => goToStep(1)}
-          onNext={() => canAdvanceStep2() && goToStep(hasTemplateStep ? 3 : 4)}
+          onNext={() => canAdvanceStep2() && goToStep(hasStep3 ? 3 : 4)}
         />
       )}
 
@@ -787,6 +806,15 @@ function CriarWizard() {
           abordagem={abordagem}
           templateId={templateId}
           onSelect={setTemplateId}
+          onBack={() => goToStep(2)}
+          onNext={() => goToStep(4)}
+        />
+      )}
+
+      {step === 3 && formato && hasStyleStep && (
+        <StyleStep
+          selectedStyle={carouselStyle}
+          onSelect={setCarouselStyle}
           onBack={() => goToStep(2)}
           onNext={() => goToStep(4)}
         />
@@ -809,7 +837,7 @@ function CriarWizard() {
           linkUrl={linkUrl}
           setLinkUrl={setLinkUrl}
           linkErr={linkErr}
-          onBack={() => goToStep(hasTemplateStep ? 3 : 2)}
+          onBack={() => goToStep(hasStep3 ? 3 : 2)}
           onGerar={() => void handleGerar()}
           canFinish={canGerar()}
         />
@@ -955,13 +983,13 @@ function Step1({
         })}
       </div>
 
-      {/* Quantidade de slides: 1 a 20 (limite do Instagram) */}
+      {/* Quantidade de slides: 1 a 7 (máximo da geração) */}
       <div className="max-w-xl mx-auto mb-8">
         <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
           Quantos slides?
         </p>
         <div className="grid grid-cols-7 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20].map((n) => {
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
             const selected = chosen && slides === n
             return (
               <button
@@ -982,7 +1010,7 @@ function Step1({
         <p className="text-[11px] text-text-muted mt-2 text-center">
           {slides <= 1
             ? "1 slide = post único."
-            : `${slides} slides = carrossel. O Instagram aceita até 20.`}
+            : `${slides} slides = carrossel. Máximo de 7 por geração.`}
         </p>
       </div>
 
@@ -1551,6 +1579,58 @@ function TemplateStep({
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="flex justify-between gap-3">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Voltar
+        </Button>
+        <Button onClick={onNext}>
+          Continuar
+          <ArrowRight className="w-4 h-4 ml-1.5" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Passo "Estilo" do carrossel: galeria de estilos com preview + navegação. */
+function StyleStep({
+  selectedStyle,
+  onSelect,
+  onBack,
+  onNext,
+}: {
+  selectedStyle: EditorialStyle
+  onSelect: (style: EditorialStyle) => void
+  onBack: () => void
+  onNext: () => void
+}) {
+  return (
+    <div>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5 tracking-tight">
+          Escolha o estilo do carrossel
+        </h1>
+        <p className="text-sm text-text-secondary">
+          Capa, tipografia e composição prontas — passe pelos pontinhos pra ver
+          capa, conteúdo e CTA de cada estilo.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {CAROUSEL_STYLES.map((s) => (
+          <CarouselStyleCard
+            key={s.style}
+            style={s.style}
+            name={s.name}
+            desc={s.desc}
+            badge={s.badge}
+            selected={selectedStyle === s.style}
+            onSelect={onSelect}
+          />
+        ))}
       </div>
 
       <div className="flex justify-between gap-3">

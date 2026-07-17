@@ -133,6 +133,60 @@ export function FitText({
 }
 
 // ============================================================================
+// ShrinkToFit — REGRA GLOBAL "imagem nunca sobrepõe/corta o texto".
+//
+// Quando a imagem é de TAMANHO FIXO (uniforme entre slides), o texto pode não
+// caber no espaço que sobra. Em vez de CORTAR (overflow-hidden) ou SOBREPOR, o
+// bloco de texto inteiro é ESCALADO pra baixo até caber na altura disponível —
+// exatamente "diminui a fonte pra imagem não invadir".
+//
+// Truque: `transform: scale()` NÃO afeta `scrollHeight` (é só visual), então
+// medir a altura natural do conteúdo é estável e não gera loop.
+// ============================================================================
+
+export function ShrinkToFit({
+  children,
+  className = "",
+  innerClassName = "",
+  minScale = 0.55,
+}: {
+  children: ReactNode
+  /** Classes da ZONA (flex sizing) — ex.: "flex-1 z-10". */
+  className?: string
+  /** Classes do CONTEÚDO (padding, etc.) — ex.: "px-6 pt-6". */
+  innerClassName?: string
+  minScale?: number
+}) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  useIsoLayoutEffect(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    if (!outer || !inner) return
+    const avail = outer.clientHeight
+    const natural = inner.scrollHeight // não é afetado pelo transform
+    if (!avail || !natural) return
+    const next = natural > avail ? Math.max(minScale, (avail - 1) / natural) : 1
+    setScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : next))
+  })
+  return (
+    <div
+      ref={outerRef}
+      className={`relative min-h-0 overflow-hidden ${className}`}
+    >
+      <div
+        ref={innerRef}
+        className={`absolute inset-x-0 top-0 origin-top-left ${innerClassName}`}
+        style={{ transform: scale < 1 ? `scale(${scale})` : undefined }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // REGRA GLOBAL — enquadramento da foto ("nunca corta a cabeça").
 //
 // Fotos de conteúdo em caixa (Revista/Gradiente/Minimal/MyPostFlow/Bolo…) são
@@ -239,6 +293,38 @@ export function SmartSlideImage({
         />
       )}
     </>
+  )
+}
+
+// ============================================================================
+// ImagePlaceholder — caixa "IMAGEM" quando não há foto (wireframe).
+//
+// Substitui os antigos placeholders "sem imagem" por uma caixa slate sólida com
+// o rótulo "IMAGEM" centralizado — usada quando o slide não tem foto (galeria de
+// templates) ou quando a imagem real falha. Mesmo look em qualquer estilo.
+// O caller define o TAMANHO/posição via className ("absolute inset-0" ou
+// "w-full h-full"); aqui só entra a aparência.
+// ============================================================================
+
+export function ImagePlaceholder({
+  className = "",
+  label,
+}: {
+  className?: string
+  label?: string | null
+}) {
+  return (
+    <div
+      className={`flex items-center justify-center text-center px-3 ${className}`}
+      style={{ backgroundColor: "#2b303b" }}
+    >
+      <span
+        className="text-[10px] font-semibold uppercase"
+        style={{ color: "#656e7d", letterSpacing: "0.22em" }}
+      >
+        {label || "IMAGEM"}
+      </span>
+    </div>
   )
 }
 

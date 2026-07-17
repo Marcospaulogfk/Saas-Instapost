@@ -19,6 +19,10 @@ interface PendingGeneration {
   brandName?: string
   /** Handle do Instagram da marca (vem do wizard). Ex: "culturizesebrasil". */
   handle?: string
+  /** Estilo visual escolhido no passo "Estilo" do wizard. */
+  editorialStyle?: EditorialStyle
+  /** Formato do frame (feed/stories). Vem como "post"/"story" ou "feed"/"stories". */
+  format?: string
 }
 
 function handleFromBrand(name?: string): string {
@@ -62,6 +66,12 @@ export default function CarrosselEditorPage() {
   const [savedTitleScale, setSavedTitleScale] = useState<number | undefined>(
     undefined,
   )
+  const [savedBodyWeight, setSavedBodyWeight] = useState<number | undefined>(
+    undefined,
+  )
+  const [savedBodyScale, setSavedBodyScale] = useState<number | undefined>(
+    undefined,
+  )
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [progress, setProgress] = useState("Gerando as imagens do carrossel…")
   const startedRef = useRef(false)
@@ -98,6 +108,8 @@ export default function CarrosselEditorPage() {
         setSavedFont(d.font)
         setSavedTitleWeight(d.titleWeight)
         setSavedTitleScale(d.titleScale)
+        setSavedBodyWeight(d.bodyWeight)
+        setSavedBodyScale(d.bodyScale)
         setSavedId(carouselId)
         setStatus("ready")
       })()
@@ -162,6 +174,14 @@ export default function CarrosselEditorPage() {
       setStatus("empty")
       return
     }
+
+    // Estilo + formato escolhidos no wizard — o editor abre já aplicando ambos.
+    setSavedStyle(payload.editorialStyle || "auto")
+    setSavedFormat(
+      payload.format === "story" || payload.format === "stories"
+        ? "stories"
+        : "feed",
+    )
 
     setMeta({
       title: payload.projectTitle || "Carrossel",
@@ -246,6 +266,8 @@ export default function CarrosselEditorPage() {
       initialFont={savedFont}
       initialTitleWeight={savedTitleWeight}
       initialTitleScale={savedTitleScale}
+      initialBodyWeight={savedBodyWeight}
+      initialBodyScale={savedBodyScale}
     />
   )
 }
