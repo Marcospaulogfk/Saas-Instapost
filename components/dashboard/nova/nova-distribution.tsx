@@ -15,12 +15,12 @@ export function NovaDistribution({ slices }: { slices: DistSlice[] }) {
   const chartData = hasData ? slices.filter((s) => s.value > 0) : [{ name: "Sem dados", value: 1, color: "#26263a" }]
 
   return (
-    <div className="nv-card nv-fade p-5 flex flex-col">
+    <div className="nv-card nv-fade p-5 flex flex-col h-full">
       <h2 className="text-[15px] font-semibold mb-4" style={{ color: "var(--nv-text)" }}>
         Distribuição de conteúdo
       </h2>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-5 mb-5">
         <div className="relative w-[132px] h-[132px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -71,7 +71,7 @@ export function NovaDistribution({ slices }: { slices: DistSlice[] }) {
       </div>
 
       {/* Plataforma principal */}
-      <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--nv-border)" }}>
+      <div className="mt-auto pt-4" style={{ borderTop: "1px solid var(--nv-border)" }}>
         <p className="text-[11px] mb-2.5" style={{ color: "var(--nv-text-subtle)" }}>
           Plataforma principal
         </p>

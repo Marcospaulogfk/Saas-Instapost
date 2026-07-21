@@ -115,10 +115,6 @@ export default async function DashboardPage() {
     (typeof meta.name === "string" && meta.name.split(/\s+/)[0]) ||
     user.email?.split("@")[0] ||
     "você"
-  const credits = profile?.credits ?? 0
-  const creditsUsed = profile?.plan_credits_used_this_month ?? 0
-  const monthly = profile?.plan_credits_monthly ?? 0
-  const creditsTotal = monthly > 0 ? monthly : credits + creditsUsed || Math.max(credits, 1)
   const isPro = profile?.subscription_status === "active"
 
   // Stats
@@ -162,27 +158,25 @@ export default async function DashboardPage() {
         <NovaQuickActions />
       </div>
 
-      {/* Stats — linha cheia até o fim */}
-      <NovaStats
-        totalContent={totalContent}
-        carouselCount={carouselCount}
-        brandsCount={counts.brandsCount}
-        scheduledCount={scheduledPosts.length}
-        credits={credits}
-        creditsTotal={creditsTotal}
-        spark={spark}
-      />
+      {/* Métricas: 4 stat cards + Distribuição de conteúdo */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5 items-stretch">
+        <NovaStats
+          totalContent={totalContent}
+          carouselCount={carouselCount}
+          brandsCount={counts.brandsCount}
+          scheduledCount={scheduledPosts.length}
+          spark={spark}
+        />
+        <NovaDistribution slices={distSlices} />
+      </div>
 
-      {/* Projetos recentes — abaixo da linha de stats */}
+      {/* Projetos recentes */}
       <NovaRecent items={recentItems} />
 
-      {/* Performance + (Distribuição / Upgrade) */}
+      {/* Performance + Upgrade */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-start">
         <NovaPerformance data={perfData} />
-        <div className="space-y-5">
-          <NovaDistribution slices={distSlices} />
-          <NovaUpgradeCard isPro={isPro} />
-        </div>
+        <NovaUpgradeCard isPro={isPro} />
       </div>
     </div>
   )

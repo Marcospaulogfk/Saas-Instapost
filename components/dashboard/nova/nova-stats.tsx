@@ -9,8 +9,6 @@ interface NovaStatsProps {
   carouselCount: number
   brandsCount: number
   scheduledCount: number
-  credits: number
-  creditsTotal: number
   /** série de 7 pontos por card, derivada de dados reais, pra sparkline */
   spark: { total: number[]; carousel: number[]; brands: number[]; scheduled: number[] }
 }
@@ -29,8 +27,6 @@ export function NovaStats({
   carouselCount,
   brandsCount,
   scheduledCount,
-  credits,
-  creditsTotal,
   spark,
 }: NovaStatsProps) {
   const cards: {
@@ -81,11 +77,10 @@ export function NovaStats({
   ]
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-5 gap-3.5">
+    <div className="grid grid-cols-2 gap-3.5 h-full">
       {cards.map((c) => (
         <StatCard key={c.label} {...c} />
       ))}
-      <CreditsGauge credits={credits} total={creditsTotal} />
     </div>
   )
 }
@@ -151,54 +146,3 @@ function StatCard({
   )
 }
 
-function CreditsGauge({ credits, total }: { credits: number; total: number }) {
-  const safeTotal = Math.max(total, 1)
-  // Anel mostra o que RESTA (cheio = carteira cheia; esvazia conforme usa).
-  const remainingPct = Math.max(0, Math.min(100, Math.round((credits / safeTotal) * 100)))
-  const r = 26
-  const circ = 2 * Math.PI * r
-  const dash = (remainingPct / 100) * circ
-
-  return (
-    <div className="nv-card nv-card-hover nv-fade p-4 col-span-2 xl:col-span-1 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-[11.5px] mb-1" style={{ color: "var(--nv-text-muted)" }}>
-          Créditos restantes
-        </p>
-        <p className="text-[26px] font-bold leading-none tabular-nums tracking-tight" style={{ color: "var(--nv-text)" }}>
-          {credits.toLocaleString("pt-BR")}
-        </p>
-        <p className="text-[10.5px] mt-2" style={{ color: "var(--nv-text-subtle)" }}>
-          de {total.toLocaleString("pt-BR")}
-        </p>
-      </div>
-      <div className="relative w-[68px] h-[68px] shrink-0">
-        <svg width="68" height="68" viewBox="0 0 68 68" className="-rotate-90">
-          <circle cx="34" cy="34" r={r} fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="6" />
-          <circle
-            cx="34"
-            cy="34"
-            r={r}
-            fill="none"
-            stroke="url(#gaugeGrad)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circ}`}
-          />
-          <defs>
-            <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#7c3aed" />
-              <stop offset="100%" stopColor="#a855f7" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <span
-          className="absolute inset-0 flex items-center justify-center text-[13px] font-bold tabular-nums"
-          style={{ color: "var(--nv-text)" }}
-        >
-          {remainingPct}%
-        </span>
-      </div>
-    </div>
-  )
-}
