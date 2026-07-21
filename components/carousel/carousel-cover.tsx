@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react"
 import { Inter } from "next/font/google"
-import { SlidePreview, type CarouselCoverData } from "./slide-preview"
+import { SlidePreview, type CarouselCoverData, type PreviewSlide } from "./slide-preview"
 
 // Mesma fonte usada no editor (pesos display do template editorial).
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
@@ -19,7 +19,14 @@ const REF_W = 420
  * imagem) em tamanho de design e escala pra caber no card. Funciona pra todo
  * carrossel, sem precisar de render salvo nem re-salvar.
  */
-export function CarouselCover({ cover }: { cover: CarouselCoverData }) {
+export function CarouselCover({
+  cover,
+  slide,
+}: {
+  cover: CarouselCoverData
+  /** Slide a exibir (pra preview navegável). Default = capa (slide 1). */
+  slide?: PreviewSlide
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
 
@@ -47,7 +54,7 @@ export function CarouselCover({ cover }: { cover: CarouselCoverData }) {
         }}
       >
         <SlidePreview
-          slide={cover.slide}
+          slide={slide ?? cover.slide}
           totalSlides={cover.totalSlides}
           template={cover.template}
           brandColors={cover.colors}

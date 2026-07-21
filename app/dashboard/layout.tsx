@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation"
-import { DashboardSidebar } from "@/components/dashboard/sidebar"
-import { DashboardTopBar } from "@/components/dashboard/top-bar"
+import { NovaSidebar } from "@/components/dashboard/nova/nova-sidebar"
+import { NovaTopBar } from "@/components/dashboard/nova/nova-topbar"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
-import { DashboardAmbient } from "@/components/dashboard/dashboard-ambient"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
 import { getActiveBrandIdFromCookie } from "@/lib/active-brand"
 import "./dashboard.css"
+import "./nova.css"
 
 export default async function DashboardLayout({
   children,
@@ -43,16 +43,9 @@ export default async function DashboardLayout({
       }
     : null
 
-  const sidebarBrands = brands.map((b) => ({
-    id: b.id,
-    name: b.name,
-    logo_url: b.logo_url ?? null,
-  }))
-
   return (
-    <div className="dashboard-root dark flex h-screen bg-background relative overflow-hidden">
-      <DashboardAmbient />
-      <DashboardSidebar
+    <div className="dashboard-root nova-root dark flex h-screen relative overflow-hidden">
+      <NovaSidebar
         userName={displayName}
         userEmail={user.email ?? ""}
         userInitials={getInitials(displayName)}
@@ -61,11 +54,12 @@ export default async function DashboardLayout({
         subscriptionStatus={profile?.subscription_status ?? "trial"}
         planCreditsMonthly={profile?.plan_credits_monthly ?? 0}
         creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
-        activeBrand={activeBrand}
-        brands={sidebarBrands}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardTopBar
+        <NovaTopBar
+          userName={displayName}
+          userInitials={getInitials(displayName)}
+          userAvatarUrl={avatarUrl}
           mobileNav={
             <MobileNav
               activeBrandName={activeBrand?.name ?? null}
@@ -74,7 +68,7 @@ export default async function DashboardLayout({
             />
           }
         />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto nova-scroll">{children}</main>
       </div>
     </div>
   )

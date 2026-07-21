@@ -1,0 +1,356 @@
+/* ============================================================================
+   NOVA DASHBOARD — visual estilo "NovaAI" (glow + gradiente + multicolor).
+   ISOLADO por namespace .nova-root. NÃO segue o DESIGN.md (flat/Linear) — é uma
+   exceção declarada só pro dashboard. Não reaproveitar estes tokens fora daqui.
+   ============================================================================ */
+
+.nova-root {
+  --nv-bg: #08080e;
+  --nv-bg-2: #0b0b14;
+  --nv-sidebar: #040406;
+  --nv-card: #040406;
+  --nv-card-2: #040406;
+  --nv-card-hover: #0c0c14;
+  --nv-elev: #131320;
+  --nv-elev-2: #1a1a26;
+
+  --nv-border: rgba(255, 255, 255, 0.07);
+  --nv-border-strong: rgba(255, 255, 255, 0.13);
+
+  --nv-text: #f6f7fb;
+  --nv-text-muted: #9ba1b2;
+  --nv-text-subtle: #6b7180;
+
+  --nv-purple: #8b5cf6;
+  --nv-purple-2: #a855f7;
+  --nv-purple-deep: #7c3aed;
+  --nv-indigo: #6366f1;
+  --nv-blue: #3b82f6;
+  --nv-green: #22c55e;
+  --nv-green-bright: #4ade80;
+  --nv-orange: #f59e0b;
+  --nv-orange-2: #f97316;
+  --nv-pink: #ec4899;
+  --nv-cyan: #06b6d4;
+
+  --nv-grad-primary: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
+  --nv-grad-hero: linear-gradient(120deg, #17172b 0%, #14121f 55%, #0f0e18 100%);
+
+  background: var(--nv-bg);
+  color: var(--nv-text);
+  font-feature-settings: "cv11", "ss01";
+}
+
+.nova-root ::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+/* ============================================================================
+   REMAP DE TOKENS — migra TODAS as subpáginas do dashboard pro visual Nova.
+   As subpáginas antigas usam os tokens do dashboard.css (.dashboard-root:
+   --surface-*, --text-*, --hairline) e a escala de marca (--brand-*). Aqui
+   sobrescrevemos esses tokens com os valores Nova, então o conteúdo interno de
+   cada subpágina adota a paleta nova sem reescrever página por página.
+   Importado DEPOIS do dashboard.css (mesma especificidade → este vence).
+   ============================================================================ */
+.nova-root {
+  /* Superfícies → escada Nova (cards = cor do sidebar #040406) */
+  --canvas: #08080e;
+  --card-black: #040406;
+  --surface-1: #040406;
+  --surface-2: #0c0c14;
+  --surface-3: #131320;
+  --surface-4: #1a1a26;
+  --background: #08080e;
+  --background-secondary: #040406;
+  --background-tertiary: #0c0c14;
+  --background-quaternary: #131320;
+  --surface: #040406;
+  --card: #040406;
+  --popover: #0c0c14;
+
+  /* Tinta */
+  --text-primary: #f6f7fb;
+  --text-secondary: #c9ced7;
+  --text-muted: #9ba1b2;
+  --text-subtle: #6b7180;
+
+  /* Bordas → hairline Nova + acento roxo Nova */
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.13);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-medium: rgba(255, 255, 255, 0.13);
+  --border-accent: rgba(139, 92, 246, 0.45);
+
+  /* Escala de marca → roxo/violeta Nova (afeta bg-brand-*, text-brand-* etc.) */
+  --brand-300: #b79dfb;
+  --brand-400: #a855f7;
+  --brand-500: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  --brand-800: #5b21b6;
+  --accent: #7c3aed;
+  --border-accent: rgba(139, 92, 246, 0.45);
+}
+
+/* Cards das subpáginas: raio e hover no padrão Nova */
+.nova-root .dash-card {
+  border-radius: 16px;
+}
+.nova-root .card-black {
+  border-radius: 16px;
+  background: var(--nv-card);
+  border: 1px solid var(--nv-border);
+  box-shadow: none;
+}
+.nova-root .card-black-hover:hover {
+  transform: none;
+  border-color: var(--nv-border-strong);
+  background: var(--nv-card-hover);
+  box-shadow: none;
+}
+
+/* CTA primário das subpáginas (bg-brand-600) ganha gradiente + glow Nova */
+.nova-root .bg-brand-600 {
+  background: var(--nv-grad-primary) !important;
+  box-shadow: 0 6px 20px -6px rgba(124, 58, 237, 0.55);
+}
+
+/* ---- Scrollbar discreta ---- */
+.nova-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.nova-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+.nova-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.nova-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Card base ---- */
+.nv-card {
+  background: var(--nv-card);
+  border: 1px solid var(--nv-border);
+  border-radius: 16px;
+}
+.nv-card-hover {
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+.nv-card-hover:hover {
+  border-color: var(--nv-border-strong);
+  background: var(--nv-card-hover);
+}
+
+/* ---- Botão primário (gradiente + glow) ---- */
+.nv-btn-primary {
+  background: var(--nv-grad-primary);
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px -6px rgba(109, 40, 217, 0.7);
+  transition: box-shadow 0.2s ease, filter 0.2s ease, transform 0.12s ease;
+}
+.nv-btn-primary:hover {
+  box-shadow: 0 8px 30px -6px rgba(109, 40, 217, 0.9);
+  filter: brightness(1.08);
+}
+.nv-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.nv-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--nv-border);
+  color: var(--nv-text);
+  border-radius: 10px;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.nv-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--nv-border-strong);
+}
+
+/* ---- Hero glow ---- */
+.nv-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--nv-grad-hero);
+  border: 1px solid var(--nv-border);
+  border-radius: 20px;
+}
+.nv-hero::before {
+  content: "";
+  position: absolute;
+  right: -80px;
+  top: -120px;
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.28) 0%,
+    rgba(139, 92, 246, 0.08) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ---- Chip de delta (up/down) ---- */
+.nv-delta-up {
+  color: var(--nv-green-bright);
+  background: rgba(34, 197, 94, 0.12);
+}
+.nv-delta-down {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+}
+.nv-delta-flat {
+  color: var(--nv-text-muted);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- Ícone-tile colorido ---- */
+.nv-tile {
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nv-tile-purple { background: rgba(139, 92, 246, 0.16); color: #b79dfb; }
+.nv-tile-blue   { background: rgba(59, 130, 246, 0.16); color: #7cb0ff; }
+.nv-tile-green  { background: rgba(34, 197, 94, 0.16);  color: #62e29a; }
+.nv-tile-orange { background: rgba(245, 158, 11, 0.16); color: #f6c35a; }
+.nv-tile-pink   { background: rgba(236, 72, 153, 0.16); color: #f584bd; }
+
+/* ---- Barra de progresso ---- */
+.nv-progress-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.nv-progress-fill {
+  background: var(--nv-grad-primary);
+  border-radius: 999px;
+  height: 100%;
+}
+
+/* ---- Sidebar nav item ---- */
+.nv-nav-item {
+  color: var(--nv-text-muted);
+  border-radius: 10px;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+.nv-nav-item:hover {
+  color: var(--nv-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.nv-nav-item[data-active="true"] {
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.22) 0%,
+    rgba(139, 92, 246, 0.06) 100%
+  );
+}
+
+/* ---- Upgrade card (glow forte) ---- */
+.nv-upgrade {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  background: linear-gradient(150deg, rgba(124, 58, 237, 0.18) 0%, rgba(168, 85, 247, 0.06) 100%);
+}
+.nv-upgrade::after {
+  content: "";
+  position: absolute;
+  right: -40px;
+  bottom: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* ---- Input de busca ---- */
+.nv-search {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--nv-border);
+  border-radius: 12px;
+  color: var(--nv-text);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.nv-search::placeholder {
+  color: var(--nv-text-subtle);
+}
+.nv-search:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.55);
+  background: rgba(139, 92, 246, 0.06);
+}
+
+/* ---- Badge de status (tabela) ---- */
+.nv-badge {
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.nv-badge-progress { color: #f6c35a; background: rgba(245, 158, 11, 0.14); }
+.nv-badge-done     { color: #62e29a; background: rgba(34, 197, 94, 0.14); }
+.nv-badge-draft    { color: var(--nv-text-muted); background: rgba(255, 255, 255, 0.07); }
+
+/* ---- Ilustração do hero (cards flutuando + glow respirando) ---- */
+@keyframes nvHeroFloatFront {
+  0%, 100% { transform: translateY(0) rotate(0.6deg); }
+  50% { transform: translateY(-10px) rotate(-0.8deg); }
+}
+@keyframes nvHeroFloatBack {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(9px); }
+}
+@keyframes nvHeroGlow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.14); }
+}
+.nv-hero-front {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nvHeroFloatFront 5.5s ease-in-out infinite;
+}
+.nv-hero-back {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nvHeroFloatBack 7s ease-in-out infinite;
+}
+.nv-hero-glow {
+  transform-origin: center;
+  animation: nvHeroGlow 4.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv-hero-front,
+  .nv-hero-back,
+  .nv-hero-glow {
+    animation: none;
+  }
+}
+
+/* ---- Animação de entrada ---- */
+@keyframes nvFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.nv-fade {
+  animation: nvFadeUp 0.4s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nv-fade { animation: none; }
+}

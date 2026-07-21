@@ -1,9 +1,12 @@
-import { StatsGrid } from "@/components/dashboard/stats-grid"
-import { CreateLauncher } from "@/components/dashboard/create-launcher"
-import { WeekPlan } from "@/components/dashboard/week-plan"
-import { RecentProjects, type RecentItem } from "@/components/dashboard/recent-projects"
-import { BrandsSection } from "@/components/dashboard/brands-section"
-import { ActivityChart } from "@/components/dashboard/activity-chart"
+import { NovaHero } from "@/components/dashboard/nova/nova-hero"
+import { NovaStats } from "@/components/dashboard/nova/nova-stats"
+import { NovaPerformance, type PerfPoint } from "@/components/dashboard/nova/nova-performance"
+import { NovaDistribution, type DistSlice } from "@/components/dashboard/nova/nova-distribution"
+import { NovaRecent, type NovaRecentItem } from "@/components/dashboard/nova/nova-recent"
+import {
+  NovaQuickActions,
+  NovaUpgradeCard,
+} from "@/components/dashboard/nova/nova-side-widgets"
 import { listActiveScheduledPosts } from "@/app/actions/scheduled-posts"
 import { listCarouselsV2 } from "@/app/actions/carousel"
 import { listSinglePosts } from "@/lib/single-posts/queries"
@@ -22,12 +25,30 @@ function getGreeting() {
   return "Boa noite"
 }
 
-const PLAN_LABEL: Record<string, string> = {
-  trial: "Trial",
-  active: "Pro",
-  past_due: "Atrasado",
-  canceled: "Cancelado",
-  incomplete: "Incompleto",
+/** Chave YYYY-MM-DD (local) de uma data. */
+function dayKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+/** Conta ocorrências por dia numa janela de N dias terminando hoje. */
+function bucketByDay(dates: string[], days: number): number[] {
+  const counts = new Map<string, number>()
+  for (const iso of dates) {
+    if (!iso) continue
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) continue
+    const k = dayKey(d)
+    counts.set(k, (counts.get(k) ?? 0) + 1)
+  }
+  const out: number[] = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    out.push(counts.get(dayKey(d)) ?? 0)
+  }
+  return out
 }
 
 export default async function DashboardPage() {
@@ -42,26 +63,35 @@ export default async function DashboardPage() {
       listActiveScheduledPosts().catch(() => ({ posts: [] as never[] })),
     ])
 
-  // Recentes = TODAS as fontes (carrossel + post + projeto legado), ordenadas
-  // por data. Antes o dashboard só lia `projects`, por isso ficava vazio.
-  const recentItems: RecentItem[] = [
+  const scheduledPosts = (sched.posts ?? []) as { scheduled_date: string }[]
+
+  // Fontes com datas normalizadas
+  const carouselDates = carousels.map((c) => c.updated_at)
+  const postDates = singlePosts.map((p) => p.created_at)
+  const projectDates = projects.map((p) => p.created_at)
+  const brandDates = brands.map((b) => b.created_at)
+  const allContentDates = [...carouselDates, ...postDates, ...projectDates]
+  const scheduledDates = scheduledPosts.map((p) => `${p.scheduled_date}T12:00:00`)
+
+  // Recentes (todas as fontes)
+  const recentItems: NovaRecentItem[] = [
     ...carousels.map((c) => ({
       id: c.id,
       title: c.title,
       href: `/dashboard/carrossel?id=${c.id}`,
-      image: c.cover_url,
+      image: c.cover_url ?? null,
       cover: c.cover,
-      brand: c.brand_name,
+      slides: c.slides,
+      brand: c.brand_name ?? null,
       created_at: c.updated_at,
       kind: "Carrossel" as const,
-      slideCount: c.slide_count,
     })),
     ...singlePosts.map((p) => ({
       id: p.id,
       title: p.title,
       href: `/dashboard/posts-unicos/${p.id}`,
-      image: p.rendered_image_url,
-      brand: p.brand_name,
+      image: p.rendered_image_url ?? null,
+      brand: p.brand_name ?? null,
       created_at: p.created_at,
       kind: "Post" as const,
     })),
@@ -70,82 +100,90 @@ export default async function DashboardPage() {
       title: p.title,
       href: `/dashboard/projetos/${p.id}`,
       image: null,
-      brand: p.brand.name,
+      brand: p.brand.name ?? null,
       created_at: p.created_at,
       kind: "Projeto" as const,
     })),
   ]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 8)
+    .slice(0, 4)
 
+  // Perfil / saudação
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   const displayName =
     (typeof meta.full_name === "string" && meta.full_name.split(/\s+/)[0]) ||
     (typeof meta.name === "string" && meta.name.split(/\s+/)[0]) ||
     user.email?.split("@")[0] ||
-    "voce"
+    "você"
   const credits = profile?.credits ?? 0
   const creditsUsed = profile?.plan_credits_used_this_month ?? 0
-  const greeting = getGreeting()
-  const planLabel = PLAN_LABEL[profile?.subscription_status ?? "trial"] ?? "Trial"
+  const monthly = profile?.plan_credits_monthly ?? 0
+  const creditsTotal = monthly > 0 ? monthly : credits + creditsUsed || Math.max(credits, 1)
+  const isPro = profile?.subscription_status === "active"
 
-  // Planejados dos próximos 7 dias (a partir de hoje).
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 7)
-  const weekPosts = (sched.posts ?? []).filter((p) => {
-    const d = new Date(p.scheduled_date + "T00:00:00")
-    return d >= start && d <= end
+  // Stats
+  const totalContent = allContentDates.length
+  const carouselCount = carousels.length
+  const spark = {
+    total: bucketByDay(allContentDates, 7),
+    carousel: bucketByDay(carouselDates, 7),
+    brands: bucketByDay(brandDates, 7),
+    scheduled: bucketByDay(scheduledDates, 7),
+  }
+
+  // Performance (28 dias)
+  const criadosSeries = bucketByDay(allContentDates, 28)
+  const agendadosSeries = bucketByDay(scheduledDates, 28)
+  const today0 = new Date()
+  today0.setHours(0, 0, 0, 0)
+  const perfData: PerfPoint[] = criadosSeries.map((criados, idx) => {
+    const d = new Date(today0)
+    d.setDate(today0.getDate() - (27 - idx))
+    return {
+      label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+      criados,
+      agendados: agendadosSeries[idx] ?? 0,
+    }
   })
 
-  return (
-    <div className="relative max-w-[1180px] mx-auto px-6 md:px-10 py-8 md:py-10 space-y-8">
-      {/* Header — linha de sistema mono + saudação sóbria (Linear) */}
-      <header className="space-y-2.5">
-        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.16em] text-text-muted">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-          {credits} créditos
-          <span className="text-text-subtle">·</span>
-          plano {planLabel}
-        </div>
-        <h1 className="text-[30px] md:text-[38px] font-display font-semibold leading-[1.05] tracking-tight text-text-primary">
-          {greeting}, {displayName}.
-        </h1>
-        <p className="text-[14px] text-text-secondary">
-          {credits > 0
-            ? "Escolha um formato e comece — a IA cuida do roteiro, das imagens e do design."
-            : "Seus créditos acabaram. Faça upgrade pra continuar criando."}
-        </p>
-      </header>
+  // Distribuição por tipo
+  const distSlices: DistSlice[] = [
+    { name: "Carrosséis", value: carousels.length, color: "#8b5cf6" },
+    { name: "Posts únicos", value: singlePosts.length, color: "#3b82f6" },
+    { name: "Projetos", value: projects.length, color: "#f59e0b" },
+    { name: "Agendados", value: scheduledPosts.length, color: "#22c55e" },
+  ]
 
-      {/* Lançador de criação + planejados da semana */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
-        <CreateLauncher />
-        <WeekPlan posts={weekPosts} />
+  return (
+    <div className="max-w-[1440px] mx-auto px-5 md:px-8 py-6 md:py-8 space-y-5">
+      {/* Linha 1: hero + ações rápidas com a MESMA altura (grid items-stretch) */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-stretch">
+        <NovaHero greeting={getGreeting()} name={displayName} />
+        <NovaQuickActions />
       </div>
 
-      <StatsGrid
-        projectsCount={counts.projectsCount}
+      {/* Stats — linha cheia até o fim */}
+      <NovaStats
+        totalContent={totalContent}
+        carouselCount={carouselCount}
         brandsCount={counts.brandsCount}
-        creditsUsedThisMonth={creditsUsed}
-        subscriptionStatus={profile?.subscription_status ?? "trial"}
+        scheduledCount={scheduledPosts.length}
+        credits={credits}
+        creditsTotal={creditsTotal}
+        spark={spark}
       />
 
-      <ActivityChart
-        projectsCount={counts.projectsCount}
-        creditsUsedThisMonth={creditsUsed}
-      />
+      {/* Projetos recentes — abaixo da linha de stats */}
+      <NovaRecent items={recentItems} />
 
-      <RecentProjects items={recentItems} />
-
-      <BrandsSection
-        brands={brands.map((b) => ({
-          id: b.id,
-          name: b.name,
-          project_count: b.project_count,
-        }))}
-      />
+      {/* Performance + (Distribuição / Upgrade) */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-start">
+        <NovaPerformance data={perfData} />
+        <div className="space-y-5">
+          <NovaDistribution slices={distSlices} />
+          <NovaUpgradeCard isPro={isPro} />
+        </div>
+      </div>
     </div>
   )
 }
