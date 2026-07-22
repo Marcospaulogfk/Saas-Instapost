@@ -1,42 +1,12 @@
-"use client"
-
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { ChevronDown } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import Link from "next/link"
+import { Plus } from "lucide-react"
 
 interface NovaHeroProps {
   greeting: string
   name: string
 }
 
-const FORMATS = [
-  { label: "Post único", href: "/dashboard/criar/post-unico" },
-  { label: "Carrossel", href: "/dashboard/criar/editorial" },
-  { label: "Planejar com IA", href: "/dashboard/planejar" },
-]
-
-const TONES = ["Amigável", "Profissional", "Divertido", "Inspirador", "Direto"]
-
 export function NovaHero({ greeting, name }: NovaHeroProps) {
-  const router = useRouter()
-  const [format, setFormat] = useState(FORMATS[0])
-  const [tone, setTone] = useState(TONES[0])
-  const [idea, setIdea] = useState("")
-
-  function handleGenerate() {
-    const params = new URLSearchParams()
-    if (idea.trim()) params.set("ideia", idea.trim())
-    params.set("tom", tone)
-    const sep = format.href.includes("?") ? "&" : "?"
-    router.push(`${format.href}${params.toString() ? sep + params.toString() : ""}`)
-  }
-
   return (
     <section className="nv-hero nv-fade p-7 md:p-8">
       <div className="relative z-10 max-w-2xl">
@@ -53,60 +23,13 @@ export function NovaHero({ greeting, name }: NovaHeroProps) {
           Gere conteúdo de alta qualidade pra Instagram com o poder da IA.
         </p>
 
-        {/* Caixa de geração */}
-        <div
-          className="rounded-2xl p-4"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid var(--nv-border)" }}
+        <Link
+          href="/dashboard/criar"
+          className="nv-btn-primary inline-flex items-center gap-2 h-11 px-6 text-[14px]"
         >
-          <input
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-            placeholder="O que você quer criar hoje?"
-            className="w-full bg-transparent text-[14px] outline-none mb-4"
-            style={{ color: "var(--nv-text)" }}
-          />
-          <div className="flex flex-wrap items-center gap-2.5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="nv-btn-ghost flex items-center gap-2 h-9 px-3 text-[12.5px]">
-                  {format.label}
-                  <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44">
-                {FORMATS.map((f) => (
-                  <DropdownMenuItem key={f.label} onSelect={() => setFormat(f)}>
-                    {f.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="nv-btn-ghost flex items-center gap-2 h-9 px-3 text-[12.5px]">
-                  Tom: {tone}
-                  <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-40">
-                {TONES.map((t) => (
-                  <DropdownMenuItem key={t} onSelect={() => setTone(t)}>
-                    {t}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <button
-              onClick={handleGenerate}
-              className="nv-btn-primary ml-auto flex items-center gap-1.5 h-9 px-6 text-[13px]"
-            >
-              Gerar
-            </button>
-          </div>
-        </div>
+          <Plus className="w-4 h-4" />
+          Criar conteúdo
+        </Link>
       </div>
 
       {/* Ilustração IA */}

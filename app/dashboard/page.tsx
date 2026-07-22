@@ -158,25 +158,25 @@ export default async function DashboardPage() {
         <NovaQuickActions />
       </div>
 
-      {/* Métricas: 4 stat cards + Distribuição de conteúdo */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5 items-stretch">
-        <NovaStats
-          totalContent={totalContent}
-          carouselCount={carouselCount}
-          brandsCount={counts.brandsCount}
-          scheduledCount={scheduledPosts.length}
-          spark={spark}
-        />
-        <NovaDistribution slices={distSlices} />
-      </div>
+      {/* Stats — 1 linha de 4 colunas */}
+      <NovaStats
+        totalContent={totalContent}
+        carouselCount={carouselCount}
+        brandsCount={counts.brandsCount}
+        scheduledCount={scheduledPosts.length}
+        spark={spark}
+      />
 
       {/* Projetos recentes */}
       <NovaRecent items={recentItems} />
 
-      {/* Performance + Upgrade */}
+      {/* Performance + (Distribuição / Upgrade) */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-start">
         <NovaPerformance data={perfData} />
-        <NovaUpgradeCard isPro={isPro} />
+        <div className="space-y-5">
+          <NovaDistribution slices={distSlices} />
+          <NovaUpgradeCard isPro={isPro} />
+        </div>
       </div>
     </div>
   )

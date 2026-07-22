@@ -43,6 +43,12 @@ export default async function DashboardLayout({
       }
     : null
 
+  const sidebarBrands = brands.map((b) => ({
+    id: b.id,
+    name: b.name,
+    logo_url: b.logo_url ?? null,
+  }))
+
   return (
     <div className="dashboard-root nova-root dark flex h-screen relative overflow-hidden">
       <NovaSidebar
@@ -54,6 +60,8 @@ export default async function DashboardLayout({
         subscriptionStatus={profile?.subscription_status ?? "trial"}
         planCreditsMonthly={profile?.plan_credits_monthly ?? 0}
         creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
+        activeBrand={activeBrand}
+        brands={sidebarBrands}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <NovaTopBar

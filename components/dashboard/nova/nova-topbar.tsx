@@ -1,11 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Search, Bell, Plus, ChevronDown } from "lucide-react"
+import { Search, Bell, Plus } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -48,27 +47,14 @@ export function NovaTopBar({ mobileNav, userName, userInitials, userAvatarUrl }:
       </div>
 
       <div className="flex items-center gap-2.5 ml-auto">
-        {/* Criar novo */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="nv-btn-primary hidden sm:flex items-center gap-1.5 h-10 px-4 text-[13px]">
-              <Plus className="w-4 h-4" />
-              Criar novo
-              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/criar/post-unico">Post único</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/criar/editorial">Carrossel</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/planejar">Planejar com IA</Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Criar novo — vai direto pro fluxo de criação */}
+        <Link
+          href="/dashboard/criar"
+          className="nv-btn-primary hidden sm:flex items-center gap-1.5 h-10 px-4 text-[13px]"
+        >
+          <Plus className="w-4 h-4" />
+          Criar novo
+        </Link>
 
         {/* AI Assistant */}
         <Link

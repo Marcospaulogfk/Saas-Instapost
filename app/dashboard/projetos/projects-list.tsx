@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select"
 import { getProjectGradient } from "@/lib/brand-colors"
 import { formatRelativeDate } from "@/lib/format-date"
-import { CarouselCover } from "@/components/carousel/carousel-cover"
+import { CarouselNavPreview } from "@/components/carousel/carousel-nav-preview"
 import { deleteCarouselV2, type CarouselListItem } from "@/app/actions/carousel"
 import { deleteSinglePost } from "@/app/actions/single-posts"
 
@@ -298,15 +298,15 @@ export function ProjectsList({
                   href={`/dashboard/carrossel?id=${carousel.id}`}
                   className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02] bg-black"
                 >
-                  {carousel.cover_url ? (
+                  {carousel.cover ? (
+                    <CarouselNavPreview cover={carousel.cover} slides={carousel.slides} />
+                  ) : carousel.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={carousel.cover_url}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover"
                     />
-                  ) : carousel.cover ? (
-                    <CarouselCover cover={carousel.cover} />
                   ) : (
                     <div
                       className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
