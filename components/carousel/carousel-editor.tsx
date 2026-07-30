@@ -344,6 +344,8 @@ export function CarouselEditor({
   const [urlDraft, setUrlDraft] = useState("")
   const [exporting, setExporting] = useState(false)
   const [zipBusy, setZipBusy] = useState(false)
+  // Export pausado porque a aba foi pro segundo plano (ver whenVisible).
+  const [exportPaused, setExportPaused] = useState(false)
 
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -834,6 +836,8 @@ export function CarouselEditor({
     if (!previewRef.current) return
     setExporting(true)
     try {
+      // Mesmo motivo do ZIP: o toPng não resolve com a aba escondida.
+      await whenVisible()
       const { toPng } = await import("html-to-image")
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
@@ -856,6 +860,32 @@ export function CarouselEditor({
     } finally {
       setExporting(false)
     }
+  }
+
+  /**
+   * Espera a aba voltar a ficar visível.
+   *
+   * Necessário porque o próprio html-to-image depende de rAF: o createImage
+   * dele (node_modules/html-to-image/lib/util.js) faz
+   *   img.onload = () => img.decode().then(() => requestAnimationFrame(resolve))
+   * e o browser CONGELA requestAnimationFrame em aba de segundo plano. Ou seja,
+   * o toPng nunca resolve enquanto a aba está escondida — e isso não dá pra
+   * blindar por fora, só esperando. Sem isso, quem clicava em "Baixar Todos" e
+   * trocava de aba ficava presa em "Gerando…" pra sempre, sem erro nem arquivo.
+   * Agora o export só pausa: ao voltar pra aba, ele continua de onde parou.
+   */
+  function whenVisible(): Promise<void> {
+    if (!document.hidden) return Promise.resolve()
+    setExportPaused(true)
+    return new Promise((resolve) => {
+      const onChange = () => {
+        if (document.hidden) return
+        document.removeEventListener("visibilitychange", onChange)
+        setExportPaused(false)
+        resolve()
+      }
+      document.addEventListener("visibilitychange", onChange)
+    })
   }
 
   /**
@@ -929,6 +959,8 @@ export function CarouselEditor({
       const zip = new JSZip()
       for (let i = 0; i < slides.length; i++) {
         setSelected(i)
+        // O toPng não avança com a aba escondida (rAF congelado); pausa aqui.
+        await whenVisible()
         await waitPreviewImages()
         if (!previewRef.current) continue
         try {
@@ -972,6 +1004,7 @@ export function CarouselEditor({
     } finally {
       setSelected(prevSelected)
       setZipBusy(false)
+      setExportPaused(false)
     }
   }
 
@@ -1069,7 +1102,7 @@ export function CarouselEditor({
           ) : (
             <Download className="w-3.5 h-3.5 mr-1.5" />
           )}
-          {zipBusy ? "Gerando…" : "Baixar Todos"}
+          {zipBusy ? (exportPaused ? "Pausado" : "Gerando…") : "Baixar Todos"}
         </Button>
         <Button
           type="button"
@@ -1757,6 +1790,12 @@ export function CarouselEditor({
             )}
 
             {imgError && <p className="text-xs text-destructive">{imgError}</p>}
+            {exportPaused && (
+              <p className="text-xs text-muted-foreground">
+                Exportação pausada porque esta aba saiu de foco. Volte pra ela que ela
+                continua sozinha.
+              </p>
+            )}
 
             <input
               ref={fileInputRef}
