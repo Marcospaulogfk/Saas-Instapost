@@ -81,6 +81,11 @@ export default function PrivacidadePage() {
               criados na plataforma, armazenados para que você possa editar e exportar seus projetos.
             </li>
             <li>
+              <strong className="text-foreground">Dados de conexão com o Instagram:</strong> se você
+              conectar sua conta profissional do Instagram, guardamos o ID de usuário, o nome de usuário e
+              um token de acesso, usados apenas para publicar o conteúdo que você criar (ver seção 5).
+            </li>
+            <li>
               <strong className="text-foreground">Dados de uso e técnicos:</strong> registros de acesso,
               métricas de utilização e dados analíticos agregados, para segurança e melhoria do produto.
             </li>
@@ -136,7 +141,50 @@ export default function PrivacidadePage() {
           </p>
         </Section>
 
-        <Section title="5. Retenção e segurança">
+        <Section title="5. Conexão com o Instagram (Meta)">
+          <p>
+            O SyncPost permite que você conecte a sua conta profissional do Instagram (Comercial ou
+            Criador de Conteúdo) para publicar, diretamente da plataforma, o conteúdo que você mesmo criou
+            e revisou. Essa conexão é opcional e feita por você, via login oficial do Instagram (Meta).
+          </p>
+          <p>
+            <strong className="text-foreground">Dados do Instagram que tratamos:</strong> ao conectar, a
+            Meta nos fornece o identificador da sua conta (ID de usuário do Instagram), o seu nome de
+            usuário e um token de acesso. Guardamos esses dados de forma restrita e associada apenas à sua
+            conta SyncPost, para manter a conexão ativa e publicar quando você pedir. Não coletamos suas
+            credenciais (login/senha) do Instagram — a autenticação acontece nos servidores da Meta.
+          </p>
+          <p>
+            <strong className="text-foreground">Permissões solicitadas:</strong>{' '}
+            <code>instagram_business_basic</code> (ler o perfil básico da conta conectada) e{' '}
+            <code>instagram_business_content_publish</code> (publicar conteúdo em seu nome).
+            Só publicamos na <strong className="text-foreground">sua própria conta</strong>, apenas o
+            conteúdo que você criou, e somente após você clicar explicitamente em “Publicar agora”. Nunca
+            publicamos, curtimos, comentamos ou seguimos automaticamente.
+          </p>
+          <p>
+            <strong className="text-foreground">Como revogar o acesso:</strong> você pode desconectar o
+            Instagram a qualquer momento dentro do SyncPost (no botão “Desconectar” da tela de publicação),
+            o que remove o token armazenado. Você também pode revogar o acesso do lado do Instagram em{' '}
+            <em>Configurações → Apps e sites</em>. Ao desconectar, deixamos de ter qualquer acesso à sua
+            conta.
+          </p>
+          <p>
+            O uso dos dados do Instagram segue os{' '}
+            <a
+              href="https://developers.facebook.com/terms/"
+              className="text-primary hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Termos da Plataforma da Meta
+            </a>
+            . Não vendemos nem compartilhamos os dados do Instagram com terceiros, e não os usamos para
+            qualquer finalidade além de publicar o seu conteúdo a seu pedido.
+          </p>
+        </Section>
+
+        <Section title="6. Retenção e segurança">
           <p>
             Mantemos seus dados enquanto sua conta estiver ativa ou enquanto forem necessários para as
             finalidades descritas nesta política e para cumprimento de obrigações legais. Ao excluir sua
@@ -150,7 +198,7 @@ export default function PrivacidadePage() {
           </p>
         </Section>
 
-        <Section title="6. Cookies">
+        <Section title="7. Cookies">
           <p>
             Utilizamos cookies estritamente necessários para autenticação e funcionamento da plataforma,
             além de cookies analíticos para entender o uso do produto de forma agregada. Você pode
@@ -159,7 +207,7 @@ export default function PrivacidadePage() {
           </p>
         </Section>
 
-        <Section title="7. Seus direitos (LGPD)">
+        <Section title="8. Seus direitos (LGPD)">
           <p>Como titular de dados, você pode, a qualquer momento, solicitar:</p>
           <ul className="list-disc pl-5 space-y-2">
             <li>Confirmação da existência de tratamento e acesso aos seus dados;</li>
@@ -180,7 +228,7 @@ export default function PrivacidadePage() {
           </p>
         </Section>
 
-        <Section title="8. Alterações desta política">
+        <Section title="9. Alterações desta política">
           <p>
             Esta política pode ser atualizada para refletir mudanças no serviço ou na legislação.
             Alterações relevantes serão comunicadas por e-mail ou aviso na plataforma, sempre com a data de
@@ -188,7 +236,7 @@ export default function PrivacidadePage() {
           </p>
         </Section>
 
-        <Section title="9. Contato">
+        <Section title="10. Contato">
           <p>
             Encarregado pelo tratamento de dados (DPO): WebSync —{' '}
             <a href="mailto:contato@syncpost.com.br" className="text-primary hover:underline">
