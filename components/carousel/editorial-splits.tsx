@@ -722,7 +722,11 @@ export function SplitMyPostFlowCta({
         >
           {slide.handle_avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={slide.handle_avatar} alt="" className="w-full h-full object-cover" />
+            <img
+              src={proxiedImageUrl(slide.handle_avatar)}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             slide.handle?.replace(/^@/, "").slice(0, 2).toUpperCase() || "MP"
           )}
@@ -1093,7 +1097,9 @@ export function SplitSeamlessFlow({
       {bgUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={bgUrl}
+          // Proxy: sem ele o fundo do "Seamless" saía preto no PNG exportado,
+          // porque o fetch do html-to-image barra em host sem CORS.
+          src={proxiedImageUrl(bgUrl)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />

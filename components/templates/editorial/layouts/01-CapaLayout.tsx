@@ -13,6 +13,7 @@ import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { HandleBadge } from '../shared/HandleBadge'
+import { proxiedImageUrl } from '@/lib/proxy-image'
 
 interface CapaLayoutProps {
   slide: EditorialSlide
@@ -27,8 +28,16 @@ export function CapaLayout({ slide, scale = 1 }: CapaLayoutProps) {
     if (!photoUrl) return
     const img = new window.Image()
     img.crossOrigin = 'anonymous'
-    img.src = photoUrl
+    // Handlers ANTES do src: imagem em cache dispara load na hora e o listener
+    // atribuído depois perderia o evento.
     img.onload = () => setPhotoImage(img)
+    img.onerror = () => {
+      console.warn('[CapaLayout] falha ao carregar foto', photoUrl)
+      setPhotoImage(null)
+    }
+    // Via proxy: com crossOrigin='anonymous' num host sem CORS (fal.media) o
+    // load falha e o slide exportava sem foto nenhuma.
+    img.src = proxiedImageUrl(photoUrl)
   }, [photoUrl])
 
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary

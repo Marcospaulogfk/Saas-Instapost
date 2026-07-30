@@ -14,6 +14,7 @@ import {
   type SlideAttribution,
 } from "./editorial-shared"
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
+import { proxiedImageUrl } from "@/lib/proxy-image"
 import {
   applyElementOverrides,
   type SlideElementOverrides,
@@ -930,7 +931,7 @@ function CinematicSlide({
       {slide.image.url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={slide.image.url}
+          src={proxiedImageUrl(slide.image.url)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
@@ -1009,7 +1010,7 @@ function HybridSlide({
       {slide.image.url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={slide.image.url}
+          src={proxiedImageUrl(slide.image.url)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />

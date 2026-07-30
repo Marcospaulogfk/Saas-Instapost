@@ -8,6 +8,7 @@ import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { HighlightedBody } from '../shared/HighlightedBody'
+import { proxiedImageUrl } from '@/lib/proxy-image'
 
 interface DemoLayoutProps {
   slide: EditorialSlide
@@ -22,14 +23,22 @@ export function DemoLayout({ slide, scale = 1 }: DemoLayoutProps) {
     Promise.all(
       slide.images.map(
         (url) =>
-          new Promise<HTMLImageElement>((resolve) => {
+          // resolve(null) no erro: sem isso uma imagem que falha deixa o
+          // Promise.all pendente pra sempre e NENHUMA foto aparece, nem as que
+          // carregaram. As que falharem são filtradas e o layout cai numa
+          // variante menor (ele já ramifica por images.length).
+          new Promise<HTMLImageElement | null>((resolve) => {
             const img = new window.Image()
             img.crossOrigin = 'anonymous'
             img.onload = () => resolve(img)
-            img.src = url
+            img.onerror = () => {
+              console.warn('[DemoLayout] falha ao carregar foto', url)
+              resolve(null)
+            }
+            img.src = proxiedImageUrl(url)
           }),
       ),
-    ).then(setImages)
+    ).then((imgs) => setImages(imgs.filter((i): i is HTMLImageElement => i !== null)))
   }, [slide.images])
 
   const isLight = slide.background === 'cream' || slide.background === 'white'

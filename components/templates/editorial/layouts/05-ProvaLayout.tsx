@@ -14,6 +14,7 @@ import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { Tag } from '../shared/Tag'
 import { defaultPositionForLayout, getTitleY } from '../utils/title-position'
+import { proxiedImageUrl } from '@/lib/proxy-image'
 
 interface ProvaLayoutProps {
   slide: EditorialSlide
@@ -28,14 +29,20 @@ export function ProvaLayout({ slide, scale = 1 }: ProvaLayoutProps) {
     Promise.all(
       slide.images.map(
         (url) =>
-          new Promise<HTMLImageElement>((resolve) => {
+          // resolve(null) no erro: sem isso uma imagem que falha deixa o
+          // Promise.all pendente pra sempre e nenhuma foto aparece.
+          new Promise<HTMLImageElement | null>((resolve) => {
             const img = new window.Image()
             img.crossOrigin = 'anonymous'
             img.onload = () => resolve(img)
-            img.src = url
+            img.onerror = () => {
+              console.warn('[ProvaLayout] falha ao carregar foto', url)
+              resolve(null)
+            }
+            img.src = proxiedImageUrl(url)
           }),
       ),
-    ).then(setImages)
+    ).then((imgs) => setImages(imgs.filter((i): i is HTMLImageElement => i !== null)))
   }, [slide.images])
 
   // Default cream, mas dark/white permitidos. Sem navy/sepia.

@@ -8,6 +8,7 @@ import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedBody } from '../shared/HighlightedBody'
 import { defaultPositionForLayout, getTitleY } from '../utils/title-position'
+import { proxiedImageUrl } from '@/lib/proxy-image'
 
 interface TextoFotoLayoutProps {
   slide: EditorialSlide
@@ -22,8 +23,13 @@ export function TextoFotoLayout({ slide, scale = 1 }: TextoFotoLayoutProps) {
     if (!photoUrl) return
     const img = new window.Image()
     img.crossOrigin = 'anonymous'
-    img.src = photoUrl
+    // Handlers antes do src (cache dispara load na hora); proxy pro CORS.
     img.onload = () => setImage(img)
+    img.onerror = () => {
+      console.warn('[TextoFotoLayout] falha ao carregar foto', photoUrl)
+      setImage(null)
+    }
+    img.src = proxiedImageUrl(photoUrl)
   }, [photoUrl])
 
   const isLight = slide.background !== 'dark'

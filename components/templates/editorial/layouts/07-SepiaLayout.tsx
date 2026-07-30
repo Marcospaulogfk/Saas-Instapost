@@ -8,6 +8,7 @@ import { EditorialHeader } from '../shared/EditorialHeader'
 import { EditorialFooter } from '../shared/EditorialFooter'
 import { HighlightedTitle } from '../shared/HighlightedTitle'
 import { defaultPositionForLayout, getTitleY } from '../utils/title-position'
+import { proxiedImageUrl } from '@/lib/proxy-image'
 
 interface SepiaLayoutProps {
   slide: EditorialSlide
@@ -27,8 +28,13 @@ export function SepiaLayout({ slide, scale = 1 }: SepiaLayoutProps) {
     if (!photoUrl) return
     const img = new window.Image()
     img.crossOrigin = 'anonymous'
-    img.src = photoUrl
+    // Handlers antes do src (cache dispara load na hora); proxy pro CORS.
     img.onload = () => setPhotoImage(img)
+    img.onerror = () => {
+      console.warn('[SepiaLayout] falha ao carregar foto', photoUrl)
+      setPhotoImage(null)
+    }
+    img.src = proxiedImageUrl(photoUrl)
   }, [photoUrl])
 
   const brandColor = slide.brandInfo.brandColor || EDITORIAL_COLORS.brand.primary
