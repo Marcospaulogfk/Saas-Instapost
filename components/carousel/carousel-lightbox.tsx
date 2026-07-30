@@ -65,6 +65,7 @@ export function CarouselLightbox({
     try {
       const dataUrl = await toPng(slideRef.current, {
         cacheBust: true,
+        includeQueryParams: true,
         pixelRatio: 2.5,
         backgroundColor: "#000000",
         skipFonts: false,

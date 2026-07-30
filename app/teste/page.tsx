@@ -883,6 +883,7 @@ export default function TestePage() {
       const { toPng } = await import("html-to-image")
       const dataUrl = await toPng(singlePostPreviewRef.current, {
         cacheBust: true,
+        includeQueryParams: true,
         canvasWidth: 1080,
         canvasHeight: 1350,
         pixelRatio: 1,

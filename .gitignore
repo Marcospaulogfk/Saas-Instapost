@@ -8,7 +8,12 @@ __v0_jsx-dev-runtime.ts
 next.user-config.*
 
 # Environment variables
-.env*.local
+# Amplo de proposito: pega .env, .env.production, backups (.env.local.bak-*)
+# e qualquer variante futura. O .example fica de fora pra continuar versionado.
+.env
+.env.*
+!.env.example
+!.env.local.example
 
 # Common ignores
 node_modules

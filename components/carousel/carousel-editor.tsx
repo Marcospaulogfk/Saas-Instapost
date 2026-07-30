@@ -765,6 +765,10 @@ export function CarouselEditor({
       if (!previewRef.current) return null
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
+        // Sem isso a chave de cache do html-to-image ignora a query string, e
+        // TODA imagem proxiada (/api/proxy-image?url=…) colide numa chave só —
+        // o export repetia a 1a foto em todos os slides.
+        includeQueryParams: true,
         canvasWidth: 540,
         canvasHeight: format === "stories" ? 960 : 675,
         pixelRatio: 1,
@@ -833,6 +837,10 @@ export function CarouselEditor({
       const { toPng } = await import("html-to-image")
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
+        // Sem isso a chave de cache do html-to-image ignora a query string, e
+        // TODA imagem proxiada (/api/proxy-image?url=…) colide numa chave só —
+        // o export repetia a 1a foto em todos os slides.
+        includeQueryParams: true,
         canvasWidth: 1080,
         canvasHeight: format === "stories" ? 1920 : 1350,
         pixelRatio: 1,
@@ -859,9 +867,19 @@ export function CarouselEditor({
    */
   async function waitPreviewImages(timeoutMs = 8000) {
     // 2 requestAnimationFrame: garante o commit do slide novo (remount via key).
-    await new Promise<void>((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => r())),
-    )
+    // Fallback por timer: com a aba em segundo plano o browser CONGELA o rAF.
+    // Sem isso, trocar de aba durante o export travava o "Gerando…" pra sempre,
+    // sem erro e sem download. Com a aba visível o rAF (~32ms) sempre vence.
+    await new Promise<void>((r) => {
+      let settled = false
+      const done = () => {
+        if (settled) return
+        settled = true
+        r()
+      }
+      requestAnimationFrame(() => requestAnimationFrame(done))
+      window.setTimeout(done, 300)
+    })
     const imgs = Array.from(previewRef.current?.querySelectorAll("img") ?? [])
     await Promise.all(
       imgs.map(
@@ -881,8 +899,17 @@ export function CarouselEditor({
       ),
     )
     // Decode explícito: sem ele o html-to-image pode desenhar o frame anterior.
+    // Com corrida contra timer: em aba oculta o decode() pode nunca resolver, e
+    // sem o limite o export ficava preso aqui (mesmo problema do rAF acima).
     await Promise.all(
-      imgs.map((im) => (im.decode ? im.decode().catch(() => {}) : Promise.resolve())),
+      imgs.map((im) =>
+        im.decode
+          ? Promise.race([
+              im.decode().catch(() => {}),
+              new Promise<void>((r) => window.setTimeout(r, timeoutMs)),
+            ])
+          : Promise.resolve(),
+      ),
     )
   }
 
@@ -907,6 +934,7 @@ export function CarouselEditor({
         try {
           const dataUrl = await toPng(previewRef.current, {
             cacheBust: true,
+            includeQueryParams: true,
             canvasWidth: 1080,
             canvasHeight: format === "stories" ? 1920 : 1350,
             pixelRatio: 1,

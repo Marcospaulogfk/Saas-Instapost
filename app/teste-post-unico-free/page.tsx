@@ -89,6 +89,7 @@ export default function TestePostUnicoFreePage() {
       const { toPng } = await import("html-to-image")
       const dataUrl = await toPng(previewRef.current, {
         cacheBust: true,
+        includeQueryParams: true,
         canvasWidth: 1080,
         canvasHeight: 1350,
         pixelRatio: 1,
