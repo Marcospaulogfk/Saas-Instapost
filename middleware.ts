@@ -4,6 +4,16 @@ import { NextResponse, type NextRequest } from "next/server"
 const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/auth"]
 const PROTECTED_PREFIXES = ["/dashboard", "/editor", "/onboarding"]
 
+// /api inteiro exige login, MENOS o que está aqui. Antes o /api ficava de fora
+// do PROTECTED_PREFIXES e rotas caras de IA (generate-stream com maxDuration
+// 300, refine-prompt com web_search) respondiam a qualquer um — em GET, dava
+// pra queimar crédito Anthropic/Fal só com uma <img> apontando pra elas.
+// Allowlist em vez de denylist: rota nova nasce protegida.
+const PUBLIC_API_PREFIXES = [
+  "/api/webhooks", // chamado por provedor externo (Cakto); valida segredo próprio
+  "/api/proxy-image", // proxy de imagem, já limitado por allowlist de host
+]
+
 // === Split de domínio ===
 // Raiz (syncpost.com.br / www) = landing/marketing. app.syncpost.com.br = o app.
 const APEX_HOSTS = new Set(["syncpost.com.br", "www.syncpost.com.br"])
@@ -90,9 +100,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isProtected = matchesPrefix(path, PROTECTED_PREFIXES)
+  const isApi = path === "/api" || path.startsWith("/api/")
+  const isProtected =
+    matchesPrefix(path, PROTECTED_PREFIXES) ||
+    (isApi && !matchesPrefix(path, PUBLIC_API_PREFIXES))
 
   if (isProtected && !user) {
+    // API responde 401: redirecionar pro /login devolveria HTML pro fetch e o
+    // cliente trataria como sucesso.
+    if (isApi) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+    }
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     url.searchParams.set("redirect", path)
