@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useEffect, useLayoutEffect, useRef } from "react"
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import {
   Attribution,
   HighlightedText,
@@ -10,6 +10,7 @@ import {
   Pill,
   FitText,
   ImageTransformContext,
+  SlideChromeContext,
   TypographyContext,
   type SlideAttribution,
 } from "./editorial-shared"
@@ -112,6 +113,14 @@ interface SlidePreviewProps {
   handle?: string
   /** URL do avatar (foto) — opcional, usa iniciais como fallback. */
   handleAvatar?: string
+  /** Iniciais do avatar escritas à mão. Vazio = deriva do handle. */
+  handleInitials?: string
+  /** Enfeites fixos do slide — o usuário liga/desliga no editor. */
+  showDots?: boolean
+  showVerified?: boolean
+  showFooter?: boolean
+  /** Texto do canto direito do header/rodapé. "" = apaga. */
+  footerLabel?: string
   /** Brand label pros styles brandsdecoded. Default 'Content Machine'. */
   brandLabel?: string
   /** Cor do bg "claro" no auto-legacy. Default cream. */
@@ -126,6 +135,21 @@ interface SlidePreviewProps {
   /** Tipografia da DESCRIÇÃO (subtítulo/corpo): peso e escala. */
   bodyWeight?: number
   bodyScale?: number
+}
+
+/**
+ * Enfeites/identidade que valem pro CARROSSEL inteiro (não por slide) e que o
+ * usuário edita na sidebar. Vai junto num objeto só pra não virar 5 props
+ * repetidas em cada canvas (filmstrip, canvas editável e render de export).
+ */
+export interface CarouselChrome {
+  /** Foto do avatar (URL). Sem foto = usa as iniciais. */
+  handleAvatar?: string
+  showDots: boolean
+  showVerified: boolean
+  showFooter: boolean
+  /** Texto do canto direito do header ("2026 //"). "" = apaga. */
+  footerLabel?: string
 }
 
 /** Dados mínimos pra renderizar a CAPA (slide 1) ao vivo como thumbnail. */
@@ -150,6 +174,11 @@ function SlidePreviewImpl({
   editorialStyle = "auto",
   handle = "@brand",
   handleAvatar,
+  handleInitials,
+  showDots = true,
+  showVerified = true,
+  showFooter = true,
+  footerLabel,
   brandLabel = "",
   lightBg = "#FAF8F5",
   darkBg = "#0A0A0A",
@@ -211,6 +240,8 @@ function SlidePreviewImpl({
         editorialStyle={editorialStyle}
         handle={handle}
         handleAvatar={handleAvatar}
+        handleInitials={handleInitials}
+        footerLabel={footerLabel}
         brandLabel={brandLabel}
         lightBg={lightBg}
         darkBg={darkBg}
@@ -232,6 +263,13 @@ function SlidePreviewImpl({
       />
     )
 
+  // Memo: o value do context precisa ser estável, senão TODO slide re-renderiza
+  // a cada tecla digitada em qualquer campo do editor.
+  const chrome = useMemo(
+    () => ({ showDots, showVerified, showFooter }),
+    [showDots, showVerified, showFooter],
+  )
+
   const imgTransform =
     slide.image.posX != null ||
     slide.image.posY != null ||
@@ -245,6 +283,7 @@ function SlidePreviewImpl({
 
   return (
     <TypographyContext.Provider value={typo}>
+    <SlideChromeContext.Provider value={chrome}>
     <ImageTransformContext.Provider value={imgTransform}>
       <div className="relative" ref={rootRef}>
       {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
@@ -272,6 +311,7 @@ function SlidePreviewImpl({
       )}
       </div>
     </ImageTransformContext.Provider>
+    </SlideChromeContext.Provider>
     </TypographyContext.Provider>
   )
 }
@@ -287,7 +327,13 @@ export const SlidePreview = memo(SlidePreviewImpl)
 
 function toCoverSlideData(
   slide: PreviewSlide,
-  extras: { handle: string; handleAvatar?: string; brandLabel: string },
+  extras: {
+    handle: string
+    handleAvatar?: string
+    handleInitials?: string
+    footerLabel?: string
+    brandLabel: string
+  },
 ): CoverSlideData {
   return {
     title: slide.title,
@@ -300,15 +346,23 @@ function toCoverSlideData(
     },
     handle: extras.handle,
     handle_avatar: extras.handleAvatar,
+    handle_initials: extras.handleInitials,
     category: slide.cta_badge || "Editorial",
     brand_label: extras.brandLabel,
-    year_label: `${new Date().getFullYear()} //`,
+    // ?? (não ||): rodapé apagado de propósito ("") tem que ficar apagado.
+    year_label: extras.footerLabel ?? `${new Date().getFullYear()} //`,
   }
 }
 
 function toSplitSlideData(
   slide: PreviewSlide,
-  extras: { handle: string; handleAvatar?: string; brandLabel: string },
+  extras: {
+    handle: string
+    handleAvatar?: string
+    handleInitials?: string
+    footerLabel?: string
+    brandLabel: string
+  },
 ): SplitSlideData {
   return {
     title: slide.title,
@@ -330,9 +384,11 @@ function toSplitSlideData(
     ],
     handle: extras.handle,
     handle_avatar: extras.handleAvatar,
+    handle_initials: extras.handleInitials,
     category: slide.cta_badge || "Conteúdo",
     brand_label: extras.brandLabel,
-    year_label: `${new Date().getFullYear()} //`,
+    // ?? (não ||): rodapé apagado de propósito ("") tem que ficar apagado.
+    year_label: extras.footerLabel ?? `${new Date().getFullYear()} //`,
   }
 }
 
@@ -368,6 +424,8 @@ interface RouterProps {
   editorialStyle: EditorialStyle
   handle: string
   handleAvatar?: string
+  handleInitials?: string
+  footerLabel?: string
   brandLabel: string
   lightBg: string
   darkBg: string
@@ -386,6 +444,8 @@ function EditorialSlideRouter(props: RouterProps) {
     editorialStyle,
     handle,
     handleAvatar,
+    handleInitials,
+    footerLabel,
     brandLabel,
     lightBg,
     darkBg,
@@ -397,8 +457,9 @@ function EditorialSlideRouter(props: RouterProps) {
   const middleIdx = totalSlides >= 5 ? Math.floor(totalSlides / 2) : -1
   const isMidBreak = slide.order_index === middleIdx
 
-  const coverData = toCoverSlideData(slide, { handle, handleAvatar, brandLabel })
-  const splitData = toSplitSlideData(slide, { handle, handleAvatar, brandLabel })
+  const idExtras = { handle, handleAvatar, handleInitials, footerLabel, brandLabel }
+  const coverData = toCoverSlideData(slide, idExtras)
+  const splitData = toSplitSlideData(slide, idExtras)
   // Quantas imagens DISTINTAS o slide realmente tem (decidido pela IA).
   const imgCount = splitData.images.filter((im) => im.url).length
 

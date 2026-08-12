@@ -31,6 +31,7 @@ import {
 } from "react"
 import {
   SlidePreview,
+  type CarouselChrome,
   type PreviewSlide,
   type EditorialStyle,
 } from "./slide-preview"
@@ -109,6 +110,8 @@ export interface EditableSlideCanvasProps {
   style: EditorialStyle
   handle: string
   brandName: string
+  handleInitials?: string
+  chrome: CarouselChrome
   format: "feed" | "stories"
   width: number
   fontClass: string
@@ -697,6 +700,8 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
           fontClass={props.fontClass}
           editorialStyle={props.style}
           handle={props.handle}
+          handleInitials={props.handleInitials}
+          {...props.chrome}
           brandLabel={props.brandName}
           showDevBadges={false}
           format={format}

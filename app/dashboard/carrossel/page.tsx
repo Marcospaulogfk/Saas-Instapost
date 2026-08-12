@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button"
 import { CarouselEditor } from "@/components/carousel/carousel-editor"
 import { generateCarouselImages } from "@/lib/carousel/generate-images"
 import { loadCarouselV2 } from "@/app/actions/carousel"
-import type { PreviewSlide, EditorialStyle } from "@/components/carousel/slide-preview"
+import type {
+  PreviewSlide,
+  EditorialStyle,
+  CarouselChrome,
+} from "@/components/carousel/slide-preview"
 import type { ClaudeSlide } from "@/lib/generation/claude"
 
 interface PendingGeneration {
@@ -55,6 +59,10 @@ export default function CarrosselEditorPage() {
     brandName: string
     colors: string[]
     handle: string
+    /** Iniciais do avatar salvas pelo usuário. Vazio = deriva do @. */
+    avatarInitials: string
+    /** Enfeites salvos (foto do avatar, dots, selo, rodapé). */
+    chrome?: Partial<CarouselChrome>
   } | null>(null)
   const [savedStyle, setSavedStyle] = useState<EditorialStyle>("auto")
   const [savedFormat, setSavedFormat] = useState<"feed" | "stories">("feed")
@@ -102,6 +110,8 @@ export default function CarrosselEditorPage() {
               ? d.colors
               : ["#7320E6", "#0A0A0F", "#FAF8F5"],
           handle: d.handle || handleFromBrand(d.brandName),
+          avatarInitials: d.avatarInitials || "",
+          chrome: d.chrome,
         })
         setSavedStyle(d.editorialStyle || "auto")
         setSavedFormat(d.format === "stories" ? "stories" : "feed")
@@ -135,6 +145,8 @@ export default function CarrosselEditorPage() {
             brandName?: string
             colors?: string[]
             handle?: string
+            avatarInitials?: string
+            chrome?: Partial<CarouselChrome>
           }
           if (Array.isArray(draft.slides) && draft.slides.length) {
             setSlides(draft.slides)
@@ -147,6 +159,8 @@ export default function CarrosselEditorPage() {
                   ? draft.colors
                   : ["#7320E6", "#0A0A0F", "#FAF8F5"],
               handle: draft.handle || handleFromBrand(draft.brandName),
+              avatarInitials: draft.avatarInitials || "",
+              chrome: draft.chrome,
             })
             setStatus("ready")
             return
@@ -193,6 +207,7 @@ export default function CarrosselEditorPage() {
           : ["#7320E6", "#0A0A0F", "#FAF8F5"],
       handle:
         normalizeHandle(payload.handle) ?? handleFromBrand(payload.brandName),
+      avatarInitials: "",
     })
     setProgress(`Gerando ${claudeSlides.length} imagens…`)
 
@@ -258,6 +273,8 @@ export default function CarrosselEditorPage() {
       caption={meta.caption}
       brandName={meta.brandName}
       handle={meta.handle}
+      initialAvatarInitials={meta.avatarInitials}
+      initialChrome={meta.chrome}
       colors={meta.colors}
       template="editorial"
       editorialStyle={savedStyle}

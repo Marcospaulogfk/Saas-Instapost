@@ -1,5 +1,6 @@
 "use client"
 
+import { useContext } from "react"
 import {
   Zap,
   Target,
@@ -28,6 +29,7 @@ import {
   Pill,
   SectionTag,
   SeamlessProgressLine,
+  SlideChromeContext,
   mixWithWhite,
   parseBoldInline,
   splitTheme,
@@ -47,6 +49,8 @@ export interface SplitSlideData {
   }>
   handle?: string
   handle_avatar?: string
+  /** Iniciais do avatar quando não há foto. Vazio/undefined = deriva do handle. */
+  handle_initials?: string
   category?: string
   brand_label?: string
   year_label?: string
@@ -276,6 +280,7 @@ export function SplitWesleyDark({
               <AvatarPill
                 avatar={slide.handle_avatar}
                 handle={slide.handle || "@brand"}
+                initials={slide.handle_initials}
                 variant="transparent"
               />
             </div>
@@ -379,7 +384,7 @@ export function SplitBrandsdecodedLight({
       <BrandsdecodedHeader
         left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
-        right={slide.year_label || "2026 //"}
+        right={slide.year_label ?? "2026 //"}
         textColor={cFaint}
       />
 
@@ -537,7 +542,7 @@ export function SplitBrandsdecodedDarkSerif({
       <BrandsdecodedHeader
         left={slide.brand_label || slide.handle || ""}
         center={slide.handle}
-        right={slide.year_label || "2026 //"}
+        right={slide.year_label ?? "2026 //"}
         textColor={cFaint}
       />
 
@@ -728,7 +733,9 @@ export function SplitMyPostFlowCta({
               className="w-full h-full object-cover"
             />
           ) : (
-            slide.handle?.replace(/^@/, "").slice(0, 2).toUpperCase() || "MP"
+            slide.handle_initials?.trim() ||
+            slide.handle?.replace(/^@/, "").slice(0, 2).toUpperCase() ||
+            "MP"
           )}
         </span>
         <span className="text-sm font-medium">
@@ -839,6 +846,7 @@ export function SplitGradientDark({
               <AvatarPill
                 avatar={slide.handle_avatar}
                 handle={slide.handle || "@brand"}
+                initials={slide.handle_initials}
                 variant="transparent"
               />
             </div>
@@ -1380,6 +1388,8 @@ export function SplitCardsWhite({
 // ============================================================================
 
 function VerifiedBadge({ size = 17 }: { size?: number }) {
+  const { showVerified } = useContext(SlideChromeContext)
+  if (!showVerified) return null
   return (
     <svg
       width={size}
@@ -1414,10 +1424,12 @@ export function SplitProfilePost({
   const post = th?.muted ?? "rgba(255,255,255,0.9)"
   const faint = th?.faint ?? "rgba(255,255,255,0.5)"
   const name = slide.brand_label || (slide.handle || "@perfil").replace(/^@/, "")
-  const initials = (slide.handle || slide.brand_label || "SP")
-    .replace(/^@/, "")
-    .slice(0, 2)
-    .toUpperCase()
+  const initials =
+    slide.handle_initials?.trim() ||
+    (slide.handle || slide.brand_label || "SP")
+      .replace(/^@/, "")
+      .slice(0, 2)
+      .toUpperCase()
   const hasImg = !!slide.images[0]?.url
 
   return (

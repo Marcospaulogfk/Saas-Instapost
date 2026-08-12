@@ -24,6 +24,16 @@ export interface CarouselV2Data {
   caption: string
   brandName: string
   handle: string
+  /** Iniciais do avatar escritas à mão. Vazio = deriva das 2 letras do handle. */
+  avatarInitials?: string
+  /** Enfeites do carrossel: foto do avatar, dots, selo verificado e rodapé. */
+  chrome?: {
+    handleAvatar?: string
+    showDots?: boolean
+    showVerified?: boolean
+    showFooter?: boolean
+    footerLabel?: string
+  }
   colors: string[]
   template: 'editorial' | 'cinematic' | 'hybrid'
   editorialStyle: EditorialStyle

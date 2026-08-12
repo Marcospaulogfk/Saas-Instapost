@@ -26,6 +26,8 @@ export interface CoverSlideData {
   image: { url: string | null; attribution: SlideAttribution | null; error: string | null }
   handle?: string
   handle_avatar?: string
+  /** Iniciais do avatar quando não há foto. Vazio/undefined = deriva do handle. */
+  handle_initials?: string
   category?: string
   brand_label?: string
   year_label?: string
@@ -200,6 +202,7 @@ export function CoverWesleyLabios({
           <AvatarPill
             avatar={slide.handle_avatar}
             handle={slide.handle || "@brand"}
+            initials={slide.handle_initials}
             variant="light"
           />
         </div>
@@ -321,7 +324,7 @@ export function CoverBrandsdecodedMassive({
         <BrandsdecodedHeader
           left={slide.brand_label || ""}
           center={slide.handle}
-          right={slide.year_label || "2026 ®"}
+          right={slide.year_label ?? "2026 ®"}
           textColor="rgba(255,255,255,0.5)"
         />
       </div>
@@ -394,7 +397,7 @@ export function CoverBrandsdecodedPortrait({
         <BrandsdecodedHeader
           left={slide.brand_label || slide.handle || ""}
           center={slide.handle || "@brand"}
-          right={slide.year_label || "2026 //"}
+          right={slide.year_label ?? "2026 //"}
           textColor="rgba(255,255,255,0.6)"
         />
       </div>

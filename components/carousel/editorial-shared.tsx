@@ -23,6 +23,23 @@ export interface ImageTransform {
   zoom: number
 }
 export const ImageTransformContext = createContext<ImageTransform | null>(null)
+
+// "Cromo" do slide — os enfeites fixos que o usuário agora pode ligar/desligar
+// (dots de paginação e selo verificado). Vai por CONTEXT pelo mesmo motivo do
+// ImageTransform: esses elementos são desenhados em ~10 pontos espalhados pelos
+// templates de capa/split e pelo render legado, e passar prop por todos eles
+// significaria tocar cada template a cada enfeite novo.
+export interface SlideChrome {
+  showDots: boolean
+  showVerified: boolean
+  /** Rodapé "linha + 1/5" dos estilos Revista/Minimal. */
+  showFooter: boolean
+}
+export const SlideChromeContext = createContext<SlideChrome>({
+  showDots: true,
+  showVerified: true,
+  showFooter: true,
+})
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { isLightColor } from "@/lib/color-contrast"
 
@@ -372,11 +389,14 @@ export function Pill({
 export function AvatarPill({
   avatar,
   handle,
+  initials: initialsOverride,
   variant = "dark",
   className = "",
 }: {
   avatar?: string
   handle: string
+  /** Iniciais escritas à mão. Vazio = deriva das 2 primeiras letras do handle. */
+  initials?: string
   variant?: "dark" | "light" | "transparent"
   className?: string
 }) {
@@ -387,7 +407,8 @@ export function AvatarPill({
         ? { bg: "#FFFFFF", text: "#0A0A0F" }
         : { bg: "transparent", text: "#FFFFFF" }
 
-  const initials = handle.replace(/^@/, "").slice(0, 2).toUpperCase()
+  const initials =
+    initialsOverride?.trim() || handle.replace(/^@/, "").slice(0, 2).toUpperCase()
 
   const border =
     variant === "dark"
@@ -440,6 +461,8 @@ export function PaginationDots({
   active: number
   color: string
 }) {
+  const { showDots } = useContext(SlideChromeContext)
+  if (!showDots) return null
   return (
     <div className="flex items-center gap-1.5">
       {Array.from({ length: total }).map((_, i) => (
@@ -531,6 +554,8 @@ export function BrandsdecodedFooter({
   textColor?: string
   lineColor?: string
 }) {
+  const { showFooter } = useContext(SlideChromeContext)
+  if (!showFooter) return null
   return (
     <div className="flex items-center gap-3 px-5 pb-4">
       <div className="flex-1 h-px" style={{ backgroundColor: lineColor }} />

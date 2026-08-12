@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useEffect, useRef, useState } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import {
   Loader2,
   Download,
@@ -41,8 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { proxiedImageUrl } from "@/lib/proxy-image"
 import {
   SlidePreview,
+  type CarouselChrome,
   type PreviewSlide,
   type EditorialStyle,
 } from "@/components/carousel/slide-preview"
@@ -189,6 +191,8 @@ const SlideCanvas = memo(function SlideCanvas({
   style,
   handle,
   brandName,
+  handleInitials,
+  chrome,
   format,
   width,
   active,
@@ -205,6 +209,8 @@ const SlideCanvas = memo(function SlideCanvas({
   style: EditorialStyle
   handle: string
   brandName: string
+  handleInitials?: string
+  chrome: CarouselChrome
   format: "feed" | "stories"
   width: number
   active: boolean
@@ -241,6 +247,8 @@ const SlideCanvas = memo(function SlideCanvas({
           fontClass={fontClass}
           editorialStyle={style}
           handle={handle}
+          handleInitials={handleInitials}
+          {...chrome}
           brandLabel={brandName}
           showDevBadges={false}
           format={format}
@@ -260,6 +268,10 @@ export interface CarouselEditorProps {
   caption?: string
   brandName: string
   handle?: string
+  /** Iniciais do avatar salvas. Vazio = deriva do handle. */
+  initialAvatarInitials?: string
+  /** Enfeites do carrossel salvos (avatar, dots, selo, rodapé). */
+  initialChrome?: Partial<CarouselChrome>
   colors: string[]
   template?: "editorial" | "cinematic" | "hybrid"
   editorialStyle?: EditorialStyle
@@ -283,6 +295,8 @@ export function CarouselEditor({
   caption,
   brandName,
   handle = "@brand",
+  initialAvatarInitials,
+  initialChrome,
   colors: initialColors,
   template = "editorial",
   editorialStyle = "auto",
@@ -320,6 +334,40 @@ export function CarouselEditor({
   // Handle editável — o @ que aparece nos slides. Vem do cadastro da marca
   // (instagram_handle) via props, mas o usuário pode corrigir aqui.
   const [handleValue, setHandleValue] = useState(handle)
+  // Nome da marca e iniciais do avatar — editáveis. O nome aparece no estilo
+  // "Perfil" (post de rede social) e nos rodapés; as iniciais preenchem o
+  // círculo do avatar quando a marca não tem foto. Vazio = deriva do handle.
+  const [brandValue, setBrandValue] = useState(brandName)
+  const [avatarInitials, setAvatarInitials] = useState(
+    initialAvatarInitials ?? "",
+  )
+  // Enfeites do carrossel: foto do avatar, dots de paginação, selo verificado e
+  // rodapé. Tudo ligado por padrão — desligar é escolha do usuário.
+  const [avatarUrl, setAvatarUrl] = useState(initialChrome?.handleAvatar ?? "")
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [showDots, setShowDots] = useState(initialChrome?.showDots !== false)
+  const [showVerified, setShowVerified] = useState(
+    initialChrome?.showVerified !== false,
+  )
+  const [showFooter, setShowFooter] = useState(
+    initialChrome?.showFooter !== false,
+  )
+  const [footerLabel, setFooterLabel] = useState(
+    initialChrome?.footerLabel ?? "",
+  )
+  const chrome: CarouselChrome = useMemo(
+    () => ({
+      handleAvatar: avatarUrl || undefined,
+      showDots,
+      showVerified,
+      showFooter,
+      // Campo vazio = usa o padrão do template ("2026 //"). Pra sumir de vez
+      // com o rodapé existe o toggle — assim ninguém fica com campo em branco
+      // sem entender por que o texto continua lá.
+      footerLabel: footerLabel.trim() ? footerLabel : undefined,
+    }),
+    [avatarUrl, showDots, showVerified, showFooter, footerLabel],
+  )
 
   // Salvar na biblioteca (Supabase). savedId liga o próximo save a um update.
   const [savedId, setSavedId] = useState<string | undefined>(initialCarouselId)
@@ -349,6 +397,7 @@ export function CarouselEditor({
 
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // Autosave do rascunho em localStorage — backup local imediato pra não perder
   // o trabalho ao recarregar. A persistência de VERDADE é na nuvem via
@@ -364,8 +413,10 @@ export function CarouselEditor({
           slides,
           title,
           caption,
-          brandName,
+          brandName: brandValue,
           handle: handleValue,
+          avatarInitials,
+          chrome,
           colors,
           template,
           editorialStyle: style,
@@ -375,7 +426,18 @@ export function CarouselEditor({
     } catch {
       // localStorage cheio/indisponível — ignora
     }
-  }, [slides, title, caption, brandName, handleValue, colors, template, style])
+  }, [
+    slides,
+    title,
+    caption,
+    brandValue,
+    handleValue,
+    avatarInitials,
+    chrome,
+    colors,
+    template,
+    style,
+  ])
 
   const slide = slides[selected]
 
@@ -700,6 +762,29 @@ export function CarouselEditor({
     }
   }
 
+  /** Upload da foto do avatar — mesmo endpoint das fotos de slide. */
+  async function handleAvatarUpload(file: File) {
+    setAvatarBusy(true)
+    setImgError(null)
+    try {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/editorial/upload-image", {
+        method: "POST",
+        body: fd,
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || "erro no upload")
+      setAvatarUrl(data.url)
+    } catch (err) {
+      setImgError(
+        err instanceof Error ? err.message : "erro no upload do avatar",
+      )
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
   async function handleUpload(file: File) {
     setImgBusy("upload")
     setImgError(null)
@@ -803,8 +888,10 @@ export function CarouselEditor({
           slides,
           title,
           caption: caption ?? "",
-          brandName,
+          brandName: brandValue,
           handle: handleValue,
+          avatarInitials,
+          chrome,
           colors,
           template,
           editorialStyle: style,
@@ -1139,7 +1226,9 @@ export function CarouselEditor({
                       colors={colors}
                       style={style}
                       handle={handleValue}
-                      brandName={brandName}
+                      brandName={brandValue}
+                      handleInitials={avatarInitials}
+                      chrome={chrome}
                       format={format}
                       width={format === "stories" ? 340 : 420}
                       fontClass={fontClassById(font)}
@@ -1174,7 +1263,9 @@ export function CarouselEditor({
                       colors={colors}
                       style={style}
                       handle={handleValue}
-                      brandName={brandName}
+                      brandName={brandValue}
+                      handleInitials={avatarInitials}
+                      chrome={chrome}
                       format={format}
                       width={format === "stories" ? 340 : 420}
                       active={false}
@@ -1218,10 +1309,19 @@ export function CarouselEditor({
               render de export → o PNG 1080×1350 sai retângulo cheio, sem os cantos
               transparentes que viravam bordas brancas no Instagram. O filmstrip
               visível continua com cantos arredondados (chrome do editor). */}
+          {/* O offscreen fica no WRAPPER, nunca no nó capturado. O html-to-image
+              copia o computed style do nó raiz pro clone e joga esse clone dentro
+              de um <foreignObject>; se o raiz carregasse `position:fixed;
+              left:-9999px`, o conteúdo caía fora do viewBox do SVG e o PNG saía
+              1080×1350 100% TRANSPARENTE (todos os slides do ZIP iguais e vazios).
+              Com o ref num filho estático, o clone renderiza em 0,0. */}
+          <div
+            aria-hidden
+            className="fixed -left-[9999px] top-0 pointer-events-none"
+          >
           <div
             ref={previewRef}
-            aria-hidden
-            className="fixed -left-[9999px] top-0 w-[420px] pointer-events-none [&_.rounded-xl]:!rounded-none"
+            className="w-[420px] [&_.rounded-xl]:!rounded-none"
           >
             {/* key={selected}: REMONTA o preview a cada slide selecionado. Sem
                 isso, o React reusava o mesmo <img> e ele guardava o BITMAP do
@@ -1237,7 +1337,9 @@ export function CarouselEditor({
               fontClass={fontClassById(font)}
               editorialStyle={style}
               handle={handleValue}
-              brandLabel={brandName}
+              handleInitials={avatarInitials}
+              {...chrome}
+              brandLabel={brandValue}
               showDevBadges={false}
               format={format}
               titleWeight={titleWeight}
@@ -1245,6 +1347,7 @@ export function CarouselEditor({
               bodyWeight={bodyWeight}
               bodyScale={bodyScale}
             />
+          </div>
           </div>
         </main>
       </div>
@@ -1360,7 +1463,165 @@ export function CarouselEditor({
           </Section>
 
           <Section icon={Palette} title="Identidade Visual">
+            {/* Perfil da marca — o que aparece no pill/avatar dos slides.
+                Os três campos são independentes: o nome sai no estilo "Perfil"
+                e nos rodapés, o @ no pill, e as iniciais no círculo do avatar
+                (quando a marca não tem foto). Antes as iniciais eram sempre as
+                2 primeiras letras do @ e não davam pra corrigir. */}
             <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
+              Perfil da marca
+            </p>
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs">Nome da marca</Label>
+                <Input
+                  value={brandValue}
+                  onChange={(e) => setBrandValue(e.target.value)}
+                  placeholder="Sua Marca"
+                  className="h-9 mt-1.5"
+                />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 min-w-0">
+                  <Label className="text-xs">Instagram (@)</Label>
+                  <Input
+                    value={handleValue}
+                    onChange={(e) => {
+                      const v = e.target.value.trim()
+                      setHandleValue(v ? (v.startsWith("@") ? v : `@${v}`) : "")
+                    }}
+                    placeholder="@suamarca"
+                    className="h-9 mt-1.5"
+                  />
+                </div>
+                <div className="w-[92px] flex-shrink-0">
+                  <Label className="text-xs">Iniciais</Label>
+                  <Input
+                    value={avatarInitials}
+                    onChange={(e) =>
+                      setAvatarInitials(e.target.value.slice(0, 3).toUpperCase())
+                    }
+                    placeholder={
+                      handleValue.replace(/^@/, "").slice(0, 2).toUpperCase() ||
+                      "MA"
+                    }
+                    maxLength={3}
+                    className="h-9 mt-1.5 text-center uppercase"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-text-muted">
+                Iniciais vazias = usa as 2 primeiras letras do @.
+              </p>
+
+              {/* Foto do avatar — quando existe, substitui as iniciais em todos
+                  os pills/headers de perfil. */}
+              <div className="flex items-center gap-2 pt-1">
+                <span
+                  className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-white/10 text-[11px] font-bold text-white"
+                  aria-hidden
+                >
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={proxiedImageUrl(avatarUrl)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    avatarInitials ||
+                    handleValue.replace(/^@/, "").slice(0, 2).toUpperCase() ||
+                    "MA"
+                  )}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  disabled={avatarBusy}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  {avatarUrl ? "Trocar foto" : "Foto do avatar"}
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAvatarUrl("")}
+                    title="Remover foto (volta pras iniciais)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleAvatarUpload(file)
+                  e.target.value = ""
+                }}
+              />
+            </div>
+
+            {/* Enfeites do slide — o que antes era fixo no template. */}
+            <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted pt-1">
+              Enfeites do slide
+            </p>
+            <div className="space-y-2">
+              {(
+                [
+                  {
+                    label: "Dots de paginação",
+                    on: showDots,
+                    set: setShowDots,
+                  },
+                  {
+                    label: "Selo verificado",
+                    on: showVerified,
+                    set: setShowVerified,
+                  },
+                  { label: "Rodapé (1/5)", on: showFooter, set: setShowFooter },
+                ] as const
+              ).map(({ label, on, set }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => set(!on)}
+                  className="w-full flex items-center justify-between text-xs px-2.5 h-9 rounded-lg border border-border-subtle text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <span>{label}</span>
+                  <span
+                    className={`w-9 h-5 rounded-full flex items-center px-0.5 transition-colors ${
+                      on ? "bg-brand-600 justify-end" : "bg-white/15"
+                    }`}
+                  >
+                    <span className="w-4 h-4 rounded-full bg-white" />
+                  </span>
+                </button>
+              ))}
+              <div>
+                <Label className="text-xs">Texto do canto (ano)</Label>
+                <Input
+                  value={footerLabel}
+                  onChange={(e) => setFooterLabel(e.target.value)}
+                  placeholder={`${new Date().getFullYear()} //`}
+                  className="h-9 mt-1.5"
+                />
+              </div>
+            </div>
+
+            <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted pt-1">
               Cores da marca
             </p>
             <div className="space-y-2">
@@ -1560,20 +1821,8 @@ export function CarouselEditor({
                 </p>
               </div>
 
-              <div>
-                <Label className="text-xs">Instagram (@)</Label>
-                <Input
-                  value={handleValue}
-                  onChange={(e) => {
-                    const v = e.target.value.trim()
-                    setHandleValue(
-                      v ? (v.startsWith("@") ? v : `@${v}`) : "",
-                    )
-                  }}
-                  placeholder="@suamarca"
-                  className="h-9 mt-1.5"
-                />
-              </div>
+              {/* O @ (e agora nome + iniciais) mora em "Identidade Visual" —
+                  é config da MARCA, não do slide. Ficava aqui e ninguém achava. */}
             </div>
           </Section>
 
