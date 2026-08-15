@@ -15,9 +15,27 @@ const PUBLIC_API_PREFIXES = [
 ]
 
 // === Split de domínio ===
-// Raiz (syncpost.com.br / www) = landing/marketing. app.syncpost.com.br = o app.
-const APEX_HOSTS = new Set(["syncpost.com.br", "www.syncpost.com.br"])
-const APP_HOST = "app.syncpost.com.br"
+// Raiz (nexuscontentai.com.br / www) = landing/marketing.
+// app.nexuscontentai.com.br = o app. lp.* = landing pages avulsas (vazio ainda).
+const SITE_DOMAIN = "nexuscontentai.com.br"
+const APEX_HOSTS = new Set([SITE_DOMAIN, `www.${SITE_DOMAIN}`])
+const APP_HOST = `app.${SITE_DOMAIN}`
+const LP_HOST = `lp.${SITE_DOMAIN}`
+
+// Domínio anterior ao rebrand. Continua respondendo e manda todo mundo pro
+// novo com 301, MENOS /auth e /api: OAuth e webhooks têm a URL de callback
+// registrada na mão em cada provedor (Google, Supabase, Meta, Cakto) e um
+// redirect no meio do fluxo quebra a troca de code por sessão. Essas rotas só
+// saem daqui depois que TODOS os provedores estiverem apontando pro domínio
+// novo — aí este bloco inteiro pode virar um 301 sem exceção.
+const LEGACY_DOMAIN = "syncpost.com.br"
+const LEGACY_HOSTS = new Set([
+  LEGACY_DOMAIN,
+  `www.${LEGACY_DOMAIN}`,
+  `app.${LEGACY_DOMAIN}`,
+])
+const LEGACY_KEEP_PREFIXES = ["/auth", "/api"]
+
 // Caminhos que PERMANECEM no domínio raiz (landing). Todo o resto é do app.
 const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade"]
 // Arquivos/rotas que DEVEM ser servidos na raiz (SEO): o Google busca
@@ -47,6 +65,28 @@ const DEV_MODE_BYPASS =
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
   const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
+
+  // Domínio antigo: 301 pro equivalente no novo, preservando o subdomínio
+  // (app.antigo → app.novo) pra não jogar quem estava logado na landing.
+  if (LEGACY_HOSTS.has(host) && !matchesPrefix(path, LEGACY_KEEP_PREFIXES)) {
+    const destHost = host.startsWith("app.") ? APP_HOST : SITE_DOMAIN
+    const dest = new URL(
+      request.nextUrl.pathname + request.nextUrl.search,
+      `https://${destHost}`,
+    )
+    return NextResponse.redirect(dest, 301)
+  }
+
+  // lp.*: sem conteúdo ainda. Responde 200 com um placeholder em vez de deixar
+  // o proxy devolver 502 — o subdomínio já existe no DNS e no Coolify.
+  if (host === LP_HOST) {
+    return new NextResponse(
+      "<!doctype html><meta charset=utf-8><title>Nexus Content</title>" +
+        "<body style=\"margin:0;display:grid;place-items:center;height:100vh;" +
+        "background:#05070c;color:#f2f5fa;font:500 15px system-ui\">Em breve.</body>",
+      { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
+    )
+  }
 
   // Raiz: rotas do app (tudo que não é landing) vão pro subdomínio app.
   if (APEX_HOSTS.has(host) && !isMarketingPath(path)) {

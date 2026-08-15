@@ -18,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://syncpost.com.br/sitemap.xml',
+    sitemap: 'https://nexuscontentai.com.br/sitemap.xml',
   }
 }

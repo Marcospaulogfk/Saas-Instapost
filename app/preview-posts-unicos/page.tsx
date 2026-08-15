@@ -40,7 +40,7 @@ const BRAND_PRESETS: Record<string, PostBrand> = {
     brand_colors: ["#0A0A0A", "#1668E3", "#5595F1"],
     logo_url: null,
     phone: null,
-    website: "syncpost.com.br",
+    website: "nexuscontentai.com.br",
     instagram_handle: "syncpost",
     tagline: null,
   },

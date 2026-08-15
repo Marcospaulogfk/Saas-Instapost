@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://syncpost.com.br'
+const BASE_URL = 'https://nexuscontentai.com.br'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()

@@ -41,7 +41,7 @@ const FAQ = [
   },
   {
     q: 'Como falo com o suporte?',
-    a: 'O canal mais rápido é o WhatsApp, no botão abaixo — respondemos em horário comercial (seg–sex). Você também pode escrever para contato@syncpost.com.br descrevendo o problema; se puder, inclua um print da tela.',
+    a: 'O canal mais rápido é o WhatsApp, no botão abaixo — respondemos em horário comercial (seg–sex). Você também pode escrever para contato@nexuscontentai.com.br descrevendo o problema; se puder, inclua um print da tela.',
   },
 ]
 
@@ -100,8 +100,8 @@ export default function SuportePage() {
           <Mail className="w-4 h-4 shrink-0" />
           <span>
             Prefere e-mail?{' '}
-            <a href="mailto:contato@syncpost.com.br" className="text-primary hover:underline">
-              contato@syncpost.com.br
+            <a href="mailto:contato@nexuscontentai.com.br" className="text-primary hover:underline">
+              contato@nexuscontentai.com.br
             </a>
           </span>
         </div>

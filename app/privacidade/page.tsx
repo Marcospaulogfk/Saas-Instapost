@@ -220,8 +220,8 @@ export default function PrivacidadePage() {
           </ul>
           <p>
             Para exercer qualquer direito, escreva para{' '}
-            <a href="mailto:contato@syncpost.com.br" className="text-primary hover:underline">
-              contato@syncpost.com.br
+            <a href="mailto:contato@nexuscontentai.com.br" className="text-primary hover:underline">
+              contato@nexuscontentai.com.br
             </a>
             . Responderemos dentro dos prazos previstos na LGPD. Você também pode apresentar reclamação à
             Autoridade Nacional de Proteção de Dados (ANPD).
@@ -239,8 +239,8 @@ export default function PrivacidadePage() {
         <Section title="10. Contato">
           <p>
             Encarregado pelo tratamento de dados (DPO): WebSync —{' '}
-            <a href="mailto:contato@syncpost.com.br" className="text-primary hover:underline">
-              contato@syncpost.com.br
+            <a href="mailto:contato@nexuscontentai.com.br" className="text-primary hover:underline">
+              contato@nexuscontentai.com.br
             </a>
             .
           </p>

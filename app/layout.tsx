@@ -28,7 +28,7 @@ const anton = Anton({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://syncpost.com.br'),
+  metadataBase: new URL('https://nexuscontentai.com.br'),
   title: {
     default: 'Nexus Content — Conteúdo pra Instagram com IA',
     template: '%s | Nexus Content',
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://syncpost.com.br',
+    url: 'https://nexuscontentai.com.br',
     siteName: 'Nexus Content',
     title: 'Nexus Content — Conteúdo pra Instagram com IA',
     description:

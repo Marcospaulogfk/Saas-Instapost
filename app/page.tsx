@@ -50,7 +50,7 @@ const JSON_LD = {
     {
       "@type": "SoftwareApplication",
       name: "Nexus Content",
-      url: "https://syncpost.com.br",
+      url: "https://nexuscontentai.com.br",
       applicationCategory: "DesignApplication",
       operatingSystem: "Web",
       inLanguage: "pt-BR",

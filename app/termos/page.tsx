@@ -176,8 +176,8 @@ export default function TermosPage() {
         <Section title="10. Contato">
           <p>
             Dúvidas sobre estes Termos podem ser enviadas para{' '}
-            <a href="mailto:contato@syncpost.com.br" className="text-primary hover:underline">
-              contato@syncpost.com.br
+            <a href="mailto:contato@nexuscontentai.com.br" className="text-primary hover:underline">
+              contato@nexuscontentai.com.br
             </a>
             .
           </p>
