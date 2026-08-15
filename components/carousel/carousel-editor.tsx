@@ -77,8 +77,8 @@ function slideFileName(s: PreviewSlide, i: number): string {
 const BG_PRESETS: { label: string; value: string }[] = [
   { label: "Preto", value: "#0a0a0e" },
   { label: "Grafite", value: "#17161d" },
-  { label: "Roxo", value: "#7320E6" },
-  { label: "Índigo", value: "#1D0846" },
+  { label: "Roxo", value: "#1668E3" },
+  { label: "Índigo", value: "#0A1C3C" },
   { label: "Verde", value: "#0f2e26" },
   { label: "Vinho", value: "#3a0a1e" },
   { label: "Navy", value: "#0f1e3a" },
@@ -1355,7 +1355,7 @@ export function CarouselEditor({
       {/* Sidebar de edição — coluna cheia à ESQUERDA (do topo ao fim) */}
       <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto">
           <div className="px-1 pb-5">
-            <Logo size={28} />
+            <Logo size={28} variant="content" />
           </div>
           <a
             href="/dashboard/projetos"

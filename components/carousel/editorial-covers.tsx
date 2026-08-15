@@ -727,7 +727,7 @@ export function CoverCardsGlass({
   slide,
   fontClass,
 }: CoverProps) {
-  const brand = slide.brand_label || "SyncPost"
+  const brand = slide.brand_label || "Nexus Content"
   return (
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-[#0E0E12]">
       {slide.image.url ? (

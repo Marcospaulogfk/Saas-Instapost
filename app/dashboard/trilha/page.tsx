@@ -3,7 +3,7 @@
  * gate por allowlist de e-mail (TRILHA_EMAILS ou o default do dono); qualquer
  * outra conta (ou sem sessão) recebe 404 — pra cliente, não existe.
  *
- * Conteúdo: o papel do SyncPost no plano 12k (Desktop/PLANO-12K.md v3 +
+ * Conteúdo: o papel do Nexus Content no plano 12k (Desktop/PLANO-12K.md v3 +
  * ESTRATEGIA-OUTBOUND-FUNIL.md). Conteúdo de código: mudou o plano lá,
  * muda aqui no mesmo commit.
  */
@@ -40,7 +40,7 @@ function diasAte(data: string): number {
 const OBJETIVO =
   "Motor composto do plano 12k (R$12k/mês até 18/06/2027). Até outubro: dogfood + Culturizese + " +
   "destravar produto. Novembro em diante: outbound próprio (isca do carrossel personalizado). " +
-  "Alvo junho/2027: ~38 clientes, MRR ~R$2,9k só de SyncPost."
+  "Alvo junho/2027: ~38 clientes, MRR ~R$2,9k só de Nexus Content."
 
 const BLOQUEADORES = [
   { item: "Checkout Cakto operacional", nota: "Sem ele não existe conversão — o funil inteiro morre no fim", quando: "Out (S10)" },
@@ -53,7 +53,7 @@ const BLOQUEADORES = [
 
 type Mes = { id: string; rotulo: string; tema: string; clientes: string; marco: string }
 const MESES: Mes[] = [
-  { id: "2026-08", rotulo: "Ago/26", tema: "Dogfood", clientes: "0", marco: "Conteúdo da WebSync/EverReply feito no SyncPost · Culturizese (R$600 + 30% comissão)" },
+  { id: "2026-08", rotulo: "Ago/26", tema: "Dogfood", clientes: "0", marco: "Conteúdo da WebSync/EverReply feito no Nexus Content · Culturizese (R$600 + 30% comissão)" },
   { id: "2026-09", rotulo: "Set/26", tema: "Dogfood + vitrine", clientes: "0", marco: "@syncpost com feed feito no próprio produto (demo viva pro outbound de novembro)" },
   { id: "2026-10", rotulo: "Out/26", tema: "Produto destravado + relógios", clientes: "0", marco: "Bloqueadores fechados · lotes A/B extraídos (250 social media + 250 micro agência)" },
   { id: "2026-11", rotulo: "Nov/26", tema: "🚀 Outbound ativo (piloto)", clientes: "0–2", marco: "Cadência 14 dias · 15 iscas/dia · A/B social media × micro agência · trial assistido" },
@@ -63,7 +63,7 @@ const MESES: Mes[] = [
   { id: "2027-03", rotulo: "Mar/27", tema: "Lote 3 + paid teste", clientes: "17–24", marco: "Dentistas/nutris (blueprint Sorriai; sinergia com a prospecção de clínicas do EverReply)" },
   { id: "2027-04", rotulo: "Abr/27", tema: "Consolidação", clientes: "23–31", marco: "Ciclos anual −40% pra travar receita" },
   { id: "2027-05", rotulo: "Mai/27", tema: "Escala", clientes: "28–38", marco: "Churn precoce sob controle (<15% mês 1) · upsell Pro/Studio" },
-  { id: "2027-06", rotulo: "Jun/27", tema: "🎯 A meta", clientes: "33–44", marco: "MRR ~R$2,9k de SyncPost dentro dos R$12k/mês totais" },
+  { id: "2027-06", rotulo: "Jun/27", tema: "🎯 A meta", clientes: "33–44", marco: "MRR ~R$2,9k de Nexus Content dentro dos R$12k/mês totais" },
 ]
 
 const FUNIL = [
@@ -140,7 +140,7 @@ export default async function TrilhaPage() {
       {/* Rampa mensal */}
       <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6">
         <h2 className="mb-3 text-lg font-display font-semibold text-text-primary">
-          Rampa — clientes SyncPost até junho/2027
+          Rampa — clientes Nexus Content até junho/2027
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">

@@ -85,7 +85,7 @@ export const MISSOES: Missao[] = [
   {
     id: "indique-4-amigos",
     titulo: "Indique 4 amigos",
-    descricao: "Convide 4 amigos pro SyncPost",
+    descricao: "Convide 4 amigos pro Nexus Content",
     xp: 200,
     tipo: "mensal",
     meta: 4,

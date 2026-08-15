@@ -26,8 +26,8 @@ export function Sparkle({ className, size = 24, delay = 0, style }: SparkleProps
         />
         <defs>
           <linearGradient id="sparkle-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#A78BFA" />
-            <stop offset="100%" stopColor="#7C3AED" />
+            <stop offset="0%" stopColor="#8DB8F7" />
+            <stop offset="100%" stopColor="#1668E3" />
           </linearGradient>
         </defs>
       </svg>

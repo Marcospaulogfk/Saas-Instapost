@@ -5,7 +5,7 @@ import { planTokensFor, type Plan } from "@/lib/tokens"
 export const runtime = "nodejs"
 
 // =====================================================================
-// Webhook Cakto → SyncPost  (ESQUELETO — ver ESTRATEGIA-MONETIZACAO.md §8.6)
+// Webhook Cakto → Nexus Content  (ESQUELETO — ver ESTRATEGIA-MONETIZACAO.md §8.6)
 //
 // Recebe eventos da Cakto (compra aprovada / assinatura renovada /
 // cancelada / reembolso) e credita tokens / atualiza subscription_status.

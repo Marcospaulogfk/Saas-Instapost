@@ -10,8 +10,8 @@ export async function POST(request: Request) {
     const carousel = await generateCompleteCarousel({
       topic: body.topic || '5 erros que matam carrossel no Instagram',
       brandInfo: {
-        name: body.brandName || 'SYNCPOST',
-        handle: body.handle || '@SYNCPOST_',
+        name: body.brandName || 'NEXUS CONTENT',
+        handle: body.handle || '@NEXUSCONTENT',
       },
       tone: body.tone || 'direto',
       targetAudience: body.targetAudience || 'criadores de conteúdo',

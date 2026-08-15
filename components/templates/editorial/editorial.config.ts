@@ -71,8 +71,8 @@ export const EDITORIAL_COLORS = {
     sepia: '#0A0A0F',
   },
   brand: {
-    primary: '#7C3AED',
-    light: '#A78BFA',
+    primary: '#1668E3',
+    light: '#8DB8F7',
     pale: '#DDD6FE',
   },
   text: {

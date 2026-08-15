@@ -4,31 +4,36 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* === Brand (roxo SyncPost — extraído da logo oficial) ===
-     Gradiente da logo: magenta-violeta #D53FF4 → core #7320E6 → índigo #580CE8.
+  /* === Brand (azul Nexus Content — extraído do símbolo N da logo) ===
+     Gradiente da logo: ciano de ponta #12A5F5 → core #1668E3 → dobra #0E52BC.
      Escala calibrada a partir desses pixels reais (ver IDENTIDADE-VISUAL.md). */
-  --brand-50:  #F6F3FE;
-  --brand-100: #EBE3FD;
-  --brand-200: #D7C5FB;
-  --brand-300: #BD9BF7;
-  --brand-400: #9C5FF1;
-  --brand-500: #832FEC;
-  --brand-600: #7320E6; /* principal — tom central da logo */
-  --brand-700: #5F14D6;
-  --brand-800: #4D0FB4;
-  --brand-900: #320B74; /* sombra */
-  --brand-950: #1D0846;
+  --brand-50:  #EFF5FE;
+  --brand-100: #DCEAFD;
+  --brand-200: #B9D5FB;
+  --brand-300: #8DB8F7;
+  --brand-400: #5595F1;
+  --brand-500: #2A79EA;
+  --brand-600: #1668E3; /* principal — tom central da logo */
+  --brand-700: #0E52BC;
+  --brand-800: #0D4396;
+  --brand-900: #102F63; /* sombra */
+  --brand-950: #0A1C3C;
+
+  /* Ciano da ponta do símbolo — realce/dado, nunca fundo de texto longo. */
+  --brand-accent: #12A5F5;
 
   /* Acento (alias do brand principal — nome legado "lime" mantido por compat) */
-  --lime: #7320E6;
-  --lime-dim: rgba(115, 32, 230, 0.65);
+  --lime: #1668E3;
+  --lime-dim: rgba(22, 104, 227, 0.65);
 
   /* === Funcionais (idênticas em ambos modos) === */
-  /* Sucesso é roxo por decisão de marca (sem verde). Ver IDENTIDADE-VISUAL.md §2. */
-  --success: #9B87FF;
+  /* Sucesso volta a ser VERDE: o roxo-sucesso existia só pra não brigar com a
+     marca roxa antiga. Com a marca azul, verde não colide com nada e já é o que
+     o dashboard usa nos deltas (--nv-green). */
+  --success: #22C55E;
   --warning: #F59E0B;
   --danger: #EF4444;
-  --info: #3B82F6;
+  --info: #38BDF8; /* ciano — o azul #3B82F6 antigo colidia com a marca */
 
   /* ============================================================
      MODO CLARO (default — sem .dark no <html>)
@@ -46,17 +51,17 @@
 
   --border-subtle: rgba(14, 14, 14, 0.08);
   --border-medium: rgba(14, 14, 14, 0.16);
-  --border-strong: rgba(115, 32, 230, 0.35);
-  --border-glow: rgba(115, 32, 230, 0.6);
+  --border-strong: rgba(22, 104, 227, 0.35);
+  --border-glow: rgba(22, 104, 227, 0.6);
 
   /* === Identidade visual (ver IDENTIDADE-VISUAL.md) ===
      Hairlines adaptam por modo (apontam pros border-* acima).
      rule-top, border-accent e logo-gradient são constantes de marca. */
   --hairline: var(--border-subtle);
   --hairline-strong: var(--border-medium);
-  --border-accent: rgba(115, 32, 230, 0.22);
-  --rule-top: 2px solid #7320E6;
-  --logo-gradient: linear-gradient(135deg, #9C4DEF, #7320E6 55%, #580CE8);
+  --border-accent: rgba(22, 104, 227, 0.22);
+  --rule-top: 2px solid #1668E3;
+  --logo-gradient: linear-gradient(135deg, #12A5F5, #1668E3 55%, #0E52BC);
 
   /* Glass / gradient backgrounds (variáveis pra trocar por modo) */
   --glass-bg: rgba(255, 255, 255, 0.7);
@@ -79,7 +84,7 @@
   --muted: var(--background-tertiary);
   --muted-foreground: var(--text-muted);
   --accent: var(--brand-600);
-  /* accent = brand-600 (roxo vivo #7320E6) → foreground BRANCO. Antes era
+  /* accent = brand-600 (roxo vivo #1668E3) → foreground BRANCO. Antes era
      #0e0e0e (quase preto), o que deixava o texto dos botões ilegível no hover
      (outline/ghost usam hover:bg-accent hover:text-accent-foreground). */
   --accent-foreground: #FFFFFF;
@@ -111,7 +116,7 @@
   /* === Template Editorial (canvas Konva — namespace isolado, dark-only) ===
      EXCEÇÃO DECLARADA (DESIGN.md §7.4): estes tokens `editorial-*` são o acento de UM
      template de post (verde-limão), NÃO a UI do app. Nunca use `--editorial-purple` fora
-     do canvas de template. A UI do app usa só o roxo `--brand-600 #7320E6`. */
+     do canvas de template. A UI do app usa só o roxo `--brand-600 #1668E3`. */
   --editorial-bg-dark: #0e0e0e;
   --editorial-bg-darker: #050505;
   --editorial-bg-navy: #161616;
@@ -144,8 +149,8 @@
 
   --border-subtle: rgba(255, 255, 255, 0.03);
   --border-medium: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(115, 32, 230, 0.4);
-  --border-glow: rgba(115, 32, 230, 0.6);
+  --border-strong: rgba(22, 104, 227, 0.4);
+  --border-glow: rgba(22, 104, 227, 0.6);
 
   /* Identidade visual — hairlines do dark (alto contraste contido) */
   --hairline: rgba(255, 255, 255, 0.07);
@@ -369,23 +374,23 @@
   background: var(--background-secondary);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(115, 32, 230, 0.35);
+  background: rgba(22, 104, 227, 0.35);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(115, 32, 230, 0.6);
+  background: rgba(22, 104, 227, 0.6);
 }
 
 /* Selection */
 ::selection {
-  background: rgba(115, 32, 230, 0.3);
+  background: rgba(22, 104, 227, 0.3);
   color: var(--text-primary);
 }
 
 /* Focus visible */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(115, 32, 230, 0.5), 0 0 0 4px var(--background);
+  box-shadow: 0 0 0 2px rgba(22, 104, 227, 0.5), 0 0 0 4px var(--background);
 }
 
 @layer utilities {
@@ -420,22 +425,22 @@
   /* Aurora background */
   .aurora {
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(115, 32, 230, 0.22), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(115, 32, 230, 0.12), transparent),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(22, 104, 227, 0.22), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 80%, rgba(22, 104, 227, 0.12), transparent),
       radial-gradient(ellipse 60% 40% at 0% 50%, rgba(58, 42, 106, 0.5), transparent);
   }
 
   /* Grid background */
   .grid-bg {
     background-image:
-      linear-gradient(rgba(115, 32, 230, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(115, 32, 230, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(22, 104, 227, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 104, 227, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
   .grid-bg-fade {
     background-image:
-      linear-gradient(rgba(115, 32, 230, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(115, 32, 230, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(22, 104, 227, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 104, 227, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
     -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
             mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 40%, transparent 80%);
@@ -467,10 +472,10 @@
     background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
   }
   .bg-gradient-aura {
-    background-image: radial-gradient(circle, rgba(115, 32, 230, 0.15) 0%, transparent 70%);
+    background-image: radial-gradient(circle, rgba(22, 104, 227, 0.15) 0%, transparent 70%);
   }
   .bg-gradient-aura-strong {
-    background-image: radial-gradient(circle, rgba(115, 32, 230, 0.3) 0%, transparent 60%);
+    background-image: radial-gradient(circle, rgba(22, 104, 227, 0.3) 0%, transparent 60%);
   }
 
   /* Shadows shortcut */
@@ -507,23 +512,263 @@
     animation: lp-marquee 32s linear infinite;
   }
   .lp-text-gradient {
-    background-image: linear-gradient(100deg, #BD9BF7 0%, #9D5CF0 55%, #7320E6 100%);
+    background-image: linear-gradient(100deg, #8DB8F7 0%, #5595F1 55%, #1668E3 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .lp-cta-glow {
-    box-shadow: 0 0 28px rgba(115, 32, 230, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 28px rgba(22, 104, 227, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35);
     transition: box-shadow 0.25s ease;
   }
   .lp-cta-glow:hover {
-    box-shadow: 0 0 42px rgba(115, 32, 230, 0.65), 0 4px 18px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 42px rgba(22, 104, 227, 0.65), 0 4px 18px rgba(0, 0, 0, 0.4);
   }
   .lp-aurora {
-    background-image: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(115, 32, 230, 0.16) 0%, transparent 65%);
+    background-image: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(22, 104, 227, 0.16) 0%, transparent 65%);
   }
   .lp-fade-x {
     -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
             mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
   }
+  .lp-fade-y {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 86%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0%, black 14%, black 86%, transparent 100%);
+  }
+
+  /* ── Tipografia de display da landing ────────────────────────
+     Space Grotesk (já carregada no <link> do layout) só no marketing:
+     dá caráter próprio à LP sem contaminar o app, que segue Geist. */
+  .lp-display {
+    font-family: "Space Grotesk", var(--font-geist-sans), system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+
+  /* ── Bloco claro dentro da página dark ───────────────────────
+     Redefine os tokens localmente: qualquer utility que use
+     bg-surface/text-foreground/border-hairline vira modo claro
+     dentro do container, sem precisar reescrever as classes. */
+  .lp-light {
+    --background: #F3F0FB;
+    --background-secondary: #FFFFFF;
+    --background-tertiary: #FAF8FF;
+    --background-quaternary: #EFEBFA;
+    --text-primary: #14121C;
+    --text-secondary: #3D3653;
+    --text-muted: #6B6480;
+    --text-subtle: #928CA6;
+    --hairline: rgba(20, 18, 28, 0.10);
+    --hairline-strong: rgba(20, 18, 28, 0.20);
+    --border-accent: rgba(22, 104, 227, 0.30);
+    --shadow-card: 0 8px 30px rgba(35, 20, 70, 0.10);
+    /* Repetidas de propósito: o valor que desce de .lp-root já vem resolvido
+       em preto e não acompanha os --background-* declarados aqui. */
+    --surface: #FFFFFF;
+    --surface-2: #FAF8FF;
+    --card: #FFFFFF;
+    --popover: #FFFFFF;
+    --secondary: #FAF8FF;
+    --muted: #FAF8FF;
+    background-color: var(--background);
+    color: var(--text-primary);
+  }
+  /* Raiz da landing — preto de verdade.
+     A regra "sem #000 puro" do DESIGN.md vale pro app; aqui o preto é pedido
+     e as superfícies sobem em degraus curtos pra não virar cinza. */
+  .lp-root {
+    --background: #000000;
+    --background-secondary: #0A0A0B;
+    --background-tertiary: #101012;
+    --background-quaternary: #17171A;
+    --hairline: rgba(255, 255, 255, 0.08);
+    --hairline-strong: rgba(255, 255, 255, 0.16);
+    /* --surface & cia. resolvem var(--background-*) lá no :root, e o valor já
+       resolvido é o que desce por herança — então precisam ser repetidos aqui. */
+    --surface: #0A0A0B;
+    --surface-2: #101012;
+    --card: #0A0A0B;
+    --popover: #0A0A0B;
+    --secondary: #101012;
+    --muted: #101012;
+    background-color: #000000;
+  }
+
+  /* ── Entradas por scroll (CSS puro — ver components/landing/reveal.tsx) ──
+     O JS só liga `.is-in`; a transição roda no compositor. Se a thread
+     principal estiver ocupada, o conteúdo continua aparecendo. */
+  /* `lp-reveal-failsafe` é a rede de segurança: se o JS não subir (erro, bundle
+     que não carregou), em 2,5s o próprio CSS revela tudo — landing em branco não
+     é uma opção. Assim que o primeiro Reveal monta ele marca `html.lp-js` e o
+     failsafe é desligado, senão ele revelaria a página inteira de uma vez e
+     mataria a entrada por scroll. */
+  .lp-js .lp-reveal { animation: none; }
+  @keyframes lp-reveal-failsafe {
+    to { opacity: 1; transform: none; }
+  }
+  .lp-reveal {
+    opacity: 0;
+    transition: opacity 0.6s cubic-bezier(0.21, 0.6, 0.35, 1),
+                transform 0.6s cubic-bezier(0.21, 0.6, 0.35, 1);
+    animation: lp-reveal-failsafe 0.4s ease 2.5s forwards;
+    /* sem will-change: são ~25 blocos na página e cada camada promovida custa
+       memória de GPU — opacity/transform já são compostas por padrão */
+  }
+  .lp-reveal-bottom { transform: translateY(26px); }
+  .lp-reveal-left { transform: translateX(-26px); }
+  .lp-reveal-right { transform: translateX(26px); }
+  .lp-reveal-scale { transform: translateY(12px) scale(0.97); }
+  .lp-reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  @keyframes lp-word-in {
+    from { opacity: 0; transform: translateY(0.4em); filter: blur(6px); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+  }
+  /* `backwards` em vez de `both`: terminada a animação o estado é o natural do
+     elemento (visível), sem depender do último keyframe. */
+  .lp-word {
+    display: inline-block;
+    animation: lp-word-in 0.55s cubic-bezier(0.21, 0.6, 0.35, 1) backwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+      animation: none;
+    }
+    .lp-word { animation: none; }
+  }
+
+  /* Véu do hero: elipse central — a luz nasce no meio e some antes das bordas. */
+  .lp-veil-mask {
+    -webkit-mask-image: radial-gradient(ellipse 52% 58% at 50% 50%, #000 22%, rgba(0, 0, 0, 0.55) 55%, transparent 82%);
+            mask-image: radial-gradient(ellipse 52% 58% at 50% 50%, #000 22%, rgba(0, 0, 0, 0.55) 55%, transparent 82%);
+  }
+
+  /* Bloco claro sobre branco puro. */
+  .lp-light.lp-white {
+    background-color: #FFFFFF;
+  }
+
+  /* Acentos manuscritos do rodapé (Caveat, carregada no layout). */
+  .lp-hand {
+    font-family: "Caveat", cursive;
+    font-weight: 600;
+  }
+
+  .lp-light .lp-text-gradient {
+    background-image: linear-gradient(100deg, #1668E3 0%, #2A79EA 55%, #12A5F5 100%);
+  }
+
+  /* ── Movimento ───────────────────────────────────────────── */
+  @keyframes lp-marquee-y {
+    from { transform: translateY(0); }
+    to { transform: translateY(-50%); }
+  }
+  .lp-marquee-y {
+    display: flex;
+    flex-direction: column;
+    height: max-content;
+    animation: lp-marquee-y var(--lp-speed, 40s) linear infinite;
+  }
+  .lp-marquee-y-rev { animation-direction: reverse; }
+
+  @keyframes lp-shine-x {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .lp-topbar-flow {
+    background-image: linear-gradient(90deg, #0D4396, #1668E3, #12A5F5, #1668E3, #0D4396);
+    background-size: 200% 100%;
+    animation: lp-shine-x 12s linear infinite;
+  }
+
+  @keyframes lp-caret {
+    0%, 45% { opacity: 1; }
+    50%, 95% { opacity: 0.15; }
+    100% { opacity: 1; }
+  }
+  .lp-caret { animation: lp-caret 1.1s steps(1, end) infinite; }
+
+  @keyframes lp-float-y {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .lp-float { animation: lp-float-y 7s ease-in-out infinite; }
+  .lp-float-slow { animation: lp-float-y 9s ease-in-out infinite; animation-delay: -3s; }
+
+  @keyframes lp-sweep {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(220%); }
+  }
+  .lp-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.13) 50%, transparent 65%);
+    animation: lp-sweep 3.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes lp-ring-pulse {
+    0% { transform: scale(0.9); opacity: 0.5; }
+    70% { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+  }
+  .lp-ring-pulse { animation: lp-ring-pulse 2.4s ease-out infinite; }
+
+  /* Halo de marca — usado atrás do hero e do CTA final */
+  .lp-halo {
+    background-image:
+      radial-gradient(ellipse 55% 45% at 20% 0%, rgba(22, 104, 227, 0.26) 0%, transparent 60%),
+      radial-gradient(ellipse 45% 40% at 85% 15%, rgba(193, 63, 214, 0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 100%, rgba(88, 12, 232, 0.14) 0%, transparent 65%);
+  }
+
+  /* Grão sutil — tira o aspecto "chapado de template" do fundo escuro */
+  .lp-noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  }
+
+  /* Linha divisória com foco central roxo */
+  .lp-rule {
+    height: 1px;
+    background-image: linear-gradient(90deg, transparent, rgba(22, 104, 227, 0.55) 50%, transparent);
+  }
+
+  /* Borda que acende no hover do card */
+  .lp-card {
+    transition: border-color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+  }
+  .lp-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-marquee,
+    .lp-marquee-y,
+    .lp-topbar-flow,
+    .lp-caret,
+    .lp-float,
+    .lp-float-slow,
+    .lp-ring-pulse,
+    .lp-sweep::after {
+      animation: none !important;
+    }
+    .lp-card:hover { transform: none; }
+  }
 }
+
+

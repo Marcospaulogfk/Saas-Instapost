@@ -28,8 +28,8 @@ export function OnboardingStepper({ current }: { current: number }) {
           style={{
             width: `${progress}%`,
             background:
-              "linear-gradient(90deg, var(--onb-primary-light), var(--onb-primary), #8A33EC)",
-            boxShadow: "0 0 12px rgba(115, 32, 230, 0.5)",
+              "linear-gradient(90deg, var(--onb-primary-light), var(--onb-primary), #2A79EA)",
+            boxShadow: "0 0 12px rgba(22, 104, 227, 0.5)",
           }}
         />
       </div>
@@ -48,11 +48,11 @@ export function OnboardingStepper({ current }: { current: number }) {
 
           if (isActive) {
             bg =
-              "linear-gradient(180deg, #9A52EF 0%, var(--onb-primary) 60%, #5F14D6 100%)"
+              "linear-gradient(180deg, #9A52EF 0%, var(--onb-primary) 60%, #0E52BC 100%)"
             border = "var(--onb-primary)"
             iconColor = "#ffffff"
             glow =
-              "0 0 0 4px var(--onb-primary-glow), 0 4px 16px rgba(115, 32, 230, 0.45)"
+              "0 0 0 4px var(--onb-primary-glow), 0 4px 16px rgba(22, 104, 227, 0.45)"
           } else if (isCompleted) {
             bg = "var(--onb-primary-dim)"
             border = "var(--onb-primary-border)"

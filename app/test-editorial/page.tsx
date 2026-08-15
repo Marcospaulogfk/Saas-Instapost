@@ -34,8 +34,8 @@ const SerifLayout = dynamic(
 )
 
 const brandInfo = {
-  name: 'SYNCPOST',
-  handle: '@SYNCPOST_',
+  name: 'NEXUS CONTENT',
+  handle: '@NEXUSCONTENT',
 }
 
 const TEST_SLIDES: EditorialSlide[] = [

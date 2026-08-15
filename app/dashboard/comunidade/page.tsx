@@ -27,7 +27,7 @@ export default function ComunidadePage() {
         </div>
         <p className="text-sm text-text-secondary">
           Veja o que outros criadores estão postando, troque ideias e inspire-se com
-          o feed da comunidade SyncPost.
+          o feed da comunidade Nexus Content.
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export default function ComunidadePage() {
               Feed da comunidade em construção
             </h2>
             <p className="text-sm text-text-secondary mb-3 max-w-2xl">
-              Em breve você vai poder publicar seus posts pra comunidade SyncPost,
+              Em breve você vai poder publicar seus posts pra comunidade Nexus Content,
               dar curtida, comentar e remixar conteúdos. Por enquanto, dá uma olhada
               em como vai ficar.
             </p>

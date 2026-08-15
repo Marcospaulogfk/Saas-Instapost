@@ -4,8 +4,9 @@
     {
       "name": "syncpost",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["next", "dev", "-p", "3007"],
-      "port": 3007
+      "runtimeArgs": ["next", "dev", "-p", "3010"],
+      "port": 3010,
+      "autoPort": false
     }
   ]
 }

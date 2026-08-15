@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { X } from "lucide-react"
-import { SyncPostLogo } from "./logo"
+import { NexusLogo } from "./logo"
 import { ExitDialog } from "./exit-dialog"
 import { clearOnboardingStorage } from "@/lib/onboarding/store"
 
@@ -33,7 +33,7 @@ export function OnboardingHeader({
         }}
       >
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-8 py-4">
-          <SyncPostLogo />
+          <NexusLogo />
 
           {showStep && (
             <div className="flex items-center gap-4">

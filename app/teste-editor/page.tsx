@@ -58,7 +58,7 @@ export default function TesteEditorPage() {
       caption="Sandbox"
       brandName="Sandbox"
       handle="@sandbox"
-      colors={["#7320E6", "#0A0A0F", "#FAF8F5"]}
+      colors={["#1668E3", "#0A0A0F", "#FAF8F5"]}
       template="editorial"
       editorialStyle="minimal"
       initialCarouselId="sandbox"

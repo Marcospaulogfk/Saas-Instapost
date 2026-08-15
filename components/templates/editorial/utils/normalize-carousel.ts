@@ -7,7 +7,7 @@ import type {
 const VALID_BACKGROUNDS: ReadonlyArray<BackgroundType> = ['dark', 'cream', 'white', 'photo']
 
 /**
- * Normaliza um carrossel pra paleta SyncPost (preto/branco) + capa sempre photo.
+ * Normaliza um carrossel pra paleta Nexus Content (preto/branco) + capa sempre photo.
  * Aplicar tanto em carrosséis recém-gerados pela IA quanto em carregados do banco
  * (slides salvos antes da migração de paleta).
  */

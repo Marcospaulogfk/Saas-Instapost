@@ -25,7 +25,7 @@ const sat = (c: { r: number; g: number; b: number }) => {
  * então o canvas NÃO fica "tainted" e o getImageData funciona.
  */
 export async function extractPalette(url: string): Promise<string[]> {
-  const fallback = ["#7320E6", "#0A0A0F", "#FAF8F5"]
+  const fallback = ["#1668E3", "#0A0A0F", "#FAF8F5"]
   if (typeof window === "undefined" || !url) return fallback
 
   const img = new Image()

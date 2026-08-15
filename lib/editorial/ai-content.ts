@@ -42,15 +42,15 @@ Princípios:
    (geração de imagem), NUNCA para a copy. Copy nomeia; imagem descreve.
 
 ================================================
-🎨 PALETA SYNCPOST — REGRA INVIOLÁVEL
+🎨 PALETA NEXUS CONTENT — REGRA INVIOLÁVEL
 ================================================
 
 CORES PERMITIDAS (a UI usa APENAS estas):
 - Preto profundo: #0A0A0F
 - Bege claro: #F5F2EC
 - Branco: #FFFFFF
-- Roxo principal (highlight da marca): #7C3AED
-- Roxo claro / pálido: #A78BFA, #DDD6FE
+- Azul principal (highlight da marca): #1668E3
+- Roxo claro / pálido: #8DB8F7, #DDD6FE
 
 ❌ CORES PROIBIDAS (NUNCA invente, NUNCA mande no JSON):
 - Azul (qualquer tom)
@@ -150,7 +150,7 @@ EXEMPLOS ERRADOS:
 🎯 HIGHLIGHTWORDS — DESTAQUES (cor da marca)
 ================================================
 
-highlightWords renderizam na brandColor (roxo SyncPost #7C3AED, ou cor customizada da marca).
+highlightWords renderizam na brandColor (azul Nexus #1668E3, ou cor customizada da marca).
 
 REGRAS:
 - 1 ou 2 palavras por slide (não mais)
@@ -323,8 +323,8 @@ Para tema: "5 erros que matam carrossel"
 
 {
   "totalSlides": 5,
-  "brandName": "SYNCPOST",
-  "handle": "@SYNCPOST_",
+  "brandName": "NEXUS CONTENT",
+  "handle": "@NEXUSCONTENT",
   "topic": "5 erros que matam carrossel",
   "slides": [
     {
@@ -401,7 +401,7 @@ Para tema: "5 erros que matam carrossel"
 🚨 LEMBRETES FINAIS
 ================================================
 
-1. NUNCA invente cores fora da paleta SyncPost
+1. NUNCA invente cores fora da paleta Nexus Content
 2. SEMPRE use exatamente os 9 layoutTypes válidos
 3. SEMPRE quebre títulos em 3-5 palavras por linha
 4. SEMPRE escreva imagePrompts em INGLÊS
@@ -545,7 +545,7 @@ function validateAndFixCarousel(raw: unknown): EditorialCarousel {
 
   const result: EditorialCarousel = {
     totalSlides: fixedSlides.length,
-    brandName: carousel.brandName || 'SYNCPOST',
+    brandName: carousel.brandName || 'NEXUS CONTENT',
     handle: carousel.handle || '@syncpost_',
     topic: carousel.topic || '',
     slides: fixedSlides,

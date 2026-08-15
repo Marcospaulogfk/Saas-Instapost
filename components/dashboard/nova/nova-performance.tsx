@@ -20,7 +20,7 @@ export function NovaPerformance({ data }: { data: PerfPoint[] }) {
             Performance de conteúdo
           </h2>
           <div className="flex items-center gap-4 mt-2">
-            <Legend color="#8b5cf6" label="Criados" value={totalCriados} />
+            <Legend color="#2A79EA" label="Criados" value={totalCriados} />
             <Legend color="#3b82f6" label="Agendados" value={totalAgendados} />
           </div>
         </div>
@@ -37,8 +37,8 @@ export function NovaPerformance({ data }: { data: PerfPoint[] }) {
           <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
             <defs>
               <linearGradient id="perfCriados" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                <stop offset="0%" stopColor="#2A79EA" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#2A79EA" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="perfAgendados" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.25} />
@@ -56,17 +56,17 @@ export function NovaPerformance({ data }: { data: PerfPoint[] }) {
             />
             <YAxis stroke="#6b7180" fontSize={11} tickLine={false} axisLine={false} width={36} allowDecimals={false} />
             <Tooltip
-              cursor={{ stroke: "rgba(139,92,246,0.3)", strokeWidth: 1 }}
+              cursor={{ stroke: "rgba(42, 121, 234,0.3)", strokeWidth: 1 }}
               contentStyle={{
                 background: "rgba(18,18,29,0.96)",
-                border: "1px solid rgba(139,92,246,0.3)",
+                border: "1px solid rgba(42, 121, 234,0.3)",
                 borderRadius: 10,
                 fontSize: 12,
                 color: "#fff",
               }}
               labelStyle={{ color: "#9ba1b2", fontSize: 11, marginBottom: 4 }}
             />
-            <Area isAnimationActive={false} type="monotone" dataKey="criados" name="Criados" stroke="#8b5cf6" strokeWidth={2.2} fill="url(#perfCriados)" />
+            <Area isAnimationActive={false} type="monotone" dataKey="criados" name="Criados" stroke="#2A79EA" strokeWidth={2.2} fill="url(#perfCriados)" />
             <Area isAnimationActive={false} type="monotone" dataKey="agendados" name="Agendados" stroke="#3b82f6" strokeWidth={2.2} fill="url(#perfAgendados)" />
           </AreaChart>
         </ResponsiveContainer>

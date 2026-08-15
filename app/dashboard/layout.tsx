@@ -50,24 +50,20 @@ export default async function DashboardLayout({
   }))
 
   return (
-    <div className="dashboard-root nova-root dark flex h-screen relative overflow-hidden">
-      <NovaSidebar
-        userName={displayName}
-        userEmail={user.email ?? ""}
-        userInitials={getInitials(displayName)}
-        userAvatarUrl={avatarUrl}
-        credits={profile?.credits ?? 0}
-        subscriptionStatus={profile?.subscription_status ?? "trial"}
-        planCreditsMonthly={profile?.plan_credits_monthly ?? 0}
-        creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
-        activeBrand={activeBrand}
-        brands={sidebarBrands}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    // Layout-CARTÃO (padrão EverReply): o canvas tem gutter (p-2) e a sidebar
+    // flutua como painel arredondado, em vez de colar na borda com border-right.
+    <div className="dashboard-root nova-root dark relative flex h-screen gap-2 overflow-hidden p-2">
+      <NovaSidebar activeBrand={activeBrand} brands={sidebarBrands} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <NovaTopBar
           userName={displayName}
+          userEmail={user.email ?? ""}
           userInitials={getInitials(displayName)}
           userAvatarUrl={avatarUrl}
+          credits={profile?.credits ?? 0}
+          planCreditsMonthly={profile?.plan_credits_monthly ?? 0}
+          creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
+          subscriptionStatus={profile?.subscription_status ?? "trial"}
           mobileNav={
             <MobileNav
               activeBrandName={activeBrand?.name ?? null}
@@ -76,7 +72,7 @@ export default async function DashboardLayout({
             />
           }
         />
-        <main className="flex-1 overflow-y-auto nova-scroll">{children}</main>
+        <main className="nova-scroll flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import { getActiveBrand } from "@/lib/data/queries"
 import { PlanejarChat } from "./planejar-chat"
 
 export const metadata = {
-  title: "Planejar conteúdo — SyncPost",
+  title: "Planejar conteúdo — Nexus Content",
 }
 
 export default async function PlanejarPage() {

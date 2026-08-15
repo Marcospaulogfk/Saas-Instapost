@@ -131,7 +131,7 @@ export function MobileNav({
                 className="flex items-center justify-center gap-2 w-full h-10 rounded-lg text-sm font-semibold"
                 style={{
                   background:
-                    "linear-gradient(180deg, #8A33EC 0%, #7320E6 50%, #5F14D6 100%)",
+                    "linear-gradient(180deg, #2A79EA 0%, #1668E3 50%, #0E52BC 100%)",
                   color: "#ffffff",
                 }}
               >
@@ -150,7 +150,7 @@ export function MobileNav({
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium"
                     style={{
                       color: isActive ? "var(--text-primary)" : "var(--text-muted)",
-                      background: isActive ? "rgba(115, 32, 230,0.1)" : "transparent",
+                      background: isActive ? "rgba(22, 104, 227,0.1)" : "transparent",
                     }}
                   >
                     <item.icon className="w-4 h-4" strokeWidth={isActive ? 2.2 : 1.8} />
@@ -159,7 +159,7 @@ export function MobileNav({
                       <span
                         className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                         style={{
-                          background: "rgba(115, 32, 230,0.15)",
+                          background: "rgba(22, 104, 227,0.15)",
                           color: "var(--brand-300)",
                         }}
                       >

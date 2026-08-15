@@ -1,7 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
-import { Instagram } from "lucide-react"
+import { Instagram, Plus } from "lucide-react"
+import { getBrandGradient } from "@/lib/brand-colors"
 
 export interface DistSlice {
   name: string
@@ -9,13 +11,27 @@ export interface DistSlice {
   color: string
 }
 
-export function NovaDistribution({ slices }: { slices: DistSlice[] }) {
+export interface DistBrand {
+  id: string
+  name: string
+  logoUrl: string | null
+  /** Quantos conteúdos essa marca já tem. */
+  count: number
+}
+
+export function NovaDistribution({
+  slices,
+  brands = [],
+}: {
+  slices: DistSlice[]
+  brands?: DistBrand[]
+}) {
   const total = slices.reduce((a, s) => a + s.value, 0)
   const hasData = total > 0
   const chartData = hasData ? slices.filter((s) => s.value > 0) : [{ name: "Sem dados", value: 1, color: "#26263a" }]
 
   return (
-    <div className="nv-card nv-fade p-5 flex flex-col">
+    <div className="nv-card nv-fade p-5 flex flex-col h-full">
       <h2 className="text-[15px] font-semibold mb-4" style={{ color: "var(--nv-text)" }}>
         Distribuição de conteúdo
       </h2>
@@ -70,11 +86,77 @@ export function NovaDistribution({ slices }: { slices: DistSlice[] }) {
         </ul>
       </div>
 
+      {/* Marcas ativas — ocupa a altura que sobrava embaixo do gráfico */}
+      <div className="mt-5 pt-4 flex-1 min-h-0 flex flex-col" style={{ borderTop: "1px solid var(--nv-border)" }}>
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <p className="text-[11px]" style={{ color: "var(--nv-text-subtle)" }}>
+            Marcas ativas
+          </p>
+          <Link
+            href="/dashboard/marcas"
+            className="text-[11.5px] font-medium"
+            style={{ color: "var(--nv-brand-soft)" }}
+          >
+            Gerenciar
+          </Link>
+        </div>
+
+        {brands.length === 0 ? (
+          <Link
+            href="/onboarding"
+            className="nv-card-hover flex items-center gap-3 rounded-xl p-2.5"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--nv-border)" }}
+          >
+            <span
+              className="grid w-8 h-8 shrink-0 place-items-center rounded-lg"
+              style={{ background: "rgba(10,46,122,0.5)", color: "var(--nv-brand-soft)" }}
+            >
+              <Plus className="w-4 h-4" />
+            </span>
+            <span className="text-[12.5px] font-medium" style={{ color: "var(--nv-text)" }}>
+              Criar primeira marca
+            </span>
+          </Link>
+        ) : (
+          <ul className="space-y-1.5 overflow-y-auto nova-scroll">
+            {brands.map((b) => (
+              <li key={b.id}>
+                <Link
+                  href={`/dashboard/marcas/${b.id}`}
+                  className="nv-card-hover flex items-center gap-2.5 rounded-lg px-2 py-1.5"
+                >
+                  {b.logoUrl ? (
+                    <span className="w-7 h-7 shrink-0 overflow-hidden rounded-md bg-white/10">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={b.logoUrl} alt="" className="w-full h-full object-contain" />
+                    </span>
+                  ) : (
+                    <span
+                      className={`grid w-7 h-7 shrink-0 place-items-center rounded-md ${getBrandGradient(b.id)}`}
+                    >
+                      <span className="text-[11px] font-bold text-white">
+                        {b.name.charAt(0).toUpperCase()}
+                      </span>
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-[12.5px]" style={{ color: "var(--nv-text)" }}>
+                    {b.name}
+                  </span>
+                  <span
+                    className="shrink-0 text-[11px] tabular-nums"
+                    style={{ color: "var(--nv-text-subtle)" }}
+                  >
+                    {b.count}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {/* Plataforma principal */}
-      <div className="mt-5 pt-4" style={{ borderTop: "1px solid var(--nv-border)" }}>
-        <p className="text-[11px] mb-2.5" style={{ color: "var(--nv-text-subtle)" }}>
-          Plataforma principal
-        </p>
+      <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--nv-border)" }}>
         <div className="flex items-center gap-3">
           <span className="nv-tile nv-tile-pink w-9 h-9">
             <Instagram className="w-[18px] h-[18px]" />

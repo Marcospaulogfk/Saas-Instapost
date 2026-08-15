@@ -308,7 +308,7 @@ export function SmartSlideImage({
           className={className}
           style={{
             background:
-              "radial-gradient(ellipse at 50% 25%, rgba(115,32,230,0.16), rgba(10,10,15,0.85))",
+              "radial-gradient(ellipse at 50% 25%, rgba(22,104,227,0.16), rgba(10,10,15,0.85))",
           }}
         />
       )}

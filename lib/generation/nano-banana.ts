@@ -22,15 +22,36 @@ export interface NanoBananaResult {
 
 /**
  * Modelos do Fal.ai pra Nano Banana / Gemini Image.
- * IDs comuns:
- *  - "fal-ai/nano-banana"      → Nano Banana 1 (Gemini 2.5 Flash Image) — NORMAL
- *  - "fal-ai/nano-banana-pro"  → Nano Banana 2 (Gemini 3 Pro Image)     — PRO
- * Override via env: FAL_NANO_BANANA_MODEL (normal) / FAL_NANO_BANANA_PRO_MODEL (pro)
+ *
+ * O modelo de CAPA é o `nano-banana-2` (Gemini 3.1 Flash Image), NÃO o
+ * `nano-banana-pro`. Não é economia com perda: no leaderboard do arena o
+ * nano-banana-2 pontua 1264 (rank 7) contra 1246 do pro (rank 12) — ele é ao
+ * mesmo tempo metade do preço (US$0,08 vs 0,15) e melhor avaliado. O pro é
+ * dominado nos dois eixos.
+ *
+ * Override via env: FAL_NANO_BANANA_MODEL (normal) /
+ * FAL_NANO_BANANA_COVER_MODEL (capa; FAL_NANO_BANANA_PRO_MODEL ainda é lido
+ * por compatibilidade com o deploy atual).
  */
 const NANO_BANANA_MODEL =
   process.env.FAL_NANO_BANANA_MODEL || "fal-ai/nano-banana"
-const NANO_BANANA_PRO_MODEL =
-  process.env.FAL_NANO_BANANA_PRO_MODEL || "fal-ai/nano-banana-pro"
+const NANO_BANANA_COVER_MODEL =
+  process.env.FAL_NANO_BANANA_COVER_MODEL ||
+  process.env.FAL_NANO_BANANA_PRO_MODEL ||
+  "fal-ai/nano-banana-2"
+
+/**
+ * Resolução da capa. É o parâmetro mais caro do produto inteiro: o Fal cobra
+ * 1,5× em 2K e 2× em 4K, e a margem do plano Studio depende deste número.
+ *
+ * O export renderiza em 1080×1350 (`canvasWidth: 1080, pixelRatio: 1`), então
+ * nada acima de 1080px de largura sobrevive — 2K só serviria pra evitar o
+ * upscale de ~1,2× que o 1K exige em 4:5. Fica em 1K até medição em contrário.
+ *
+ * Pra testar 2K sem deploy: FAL_NANO_BANANA_RESOLUTION=2K. Vazio = não manda o
+ * campo (útil se o schema do modelo mudar e passar a rejeitar o parâmetro).
+ */
+const COVER_RESOLUTION = process.env.FAL_NANO_BANANA_RESOLUTION ?? "1K"
 
 /**
  * Qualidade solicitada. O gate de plano (canUseNanoBananaPro) deve ser
@@ -58,7 +79,8 @@ export async function generateNanoBanana(
   ensureConfigured()
   const start = performance.now()
 
-  const model = quality === "pro" ? NANO_BANANA_PRO_MODEL : NANO_BANANA_MODEL
+  const isCover = quality === "pro"
+  const model = isCover ? NANO_BANANA_COVER_MODEL : NANO_BANANA_MODEL
 
   const result = await fal.subscribe(model, {
     input: {
@@ -66,6 +88,10 @@ export async function generateNanoBanana(
       num_images: 1,
       output_format: "jpeg",
       aspect_ratio: "4:5",
+      // Só na capa: é o único caminho em que a resolução muda o preço.
+      ...(isCover && COVER_RESOLUTION
+        ? { resolution: COVER_RESOLUTION }
+        : {}),
     },
     logs: false,
   })
@@ -79,12 +105,24 @@ export async function generateNanoBanana(
     throw new Error(`Nano Banana não retornou imagem (${model})`)
   }
 
+  // Dimensão CRUA da API, antes do fallback abaixo. O fallback 1080×1350 é o
+  // que o export precisa, então ele mascararia justamente o caso que interessa
+  // medir: a capa saindo menor que 1080 e sendo upscalada no export.
+  console.log(
+    `[nano-banana] ${model} res=${COVER_RESOLUTION || "default"} ` +
+      `saiu ${image.width ?? "?"}×${image.height ?? "?"} em ${Math.round(ms)}ms` +
+      (isCover && image.width && image.width < 1080
+        ? ` ⚠️  ABAIXO de 1080 — o export vai upscalar ${(1080 / image.width).toFixed(2)}×`
+        : ""),
+  )
+
   return {
     url: image.url,
     width: image.width ?? 1080,
     height: image.height ?? 1350,
-    // Pricing aprox Fal.ai: normal ~$0.039/img · pro ~$0.15/img (ver doc §2)
-    costUsd: quality === "pro" ? 0.15 : 0.039,
+    // Fal.ai: nano-banana normal ~$0.039 · nano-banana-2 ~$0.08 em 1K
+    // (2K = 1,5× = $0.12 — ver COVER_RESOLUTION acima).
+    costUsd: isCover ? (COVER_RESOLUTION === "2K" ? 0.12 : 0.08) : 0.039,
     ms,
     model,
   }

@@ -1,7 +1,7 @@
 "use client"
 
 // ============================================================================
-// Dashboard V2 — client. Layout NyxFlow adaptado pro SyncPost com dados reais,
+// Dashboard V2 — client. Layout NyxFlow adaptado pro Nexus Content com dados reais,
 // modo dark/white (sidebar sempre preta, logo branca) e cards de posts no
 // mesmo motor dos templates: SlidePreview ao vivo + navegação por slides.
 // ============================================================================
@@ -85,8 +85,8 @@ const DARK = {
   text: "#E6EAF2",
   sub: "#8A94A8",
   muted: "#5B6478",
-  brand: "#832FEC",
-  brandSoft: "#9C5FF1",
+  brand: "#2A79EA",
+  brandSoft: "#5595F1",
   green: "#34D399",
   red: "#FB7185",
   gold: "#F5B94A",
@@ -102,8 +102,8 @@ const LIGHT: Palette = {
   text: "#14181F",
   sub: "#4C5568",
   muted: "#8A94A8",
-  brand: "#7320E6",
-  brandSoft: "#7320E6",
+  brand: "#1668E3",
+  brandSoft: "#1668E3",
   green: "#0B9E6E",
   red: "#E02D4B",
   gold: "#B87407",
@@ -112,8 +112,8 @@ const LIGHT: Palette = {
 
 type Palette = typeof DARK
 
-const MAGENTA = "#D53FF4"
-const CORE = "#7320E6"
+const MAGENTA = "#12A5F5"
+const CORE = "#1668E3"
 const BRAND_GRADIENT = `linear-gradient(135deg, ${MAGENTA}, ${CORE})`
 
 const POST_GRADIENTS = [
@@ -121,7 +121,7 @@ const POST_GRADIENTS = [
   `linear-gradient(160deg, ${CORE}, #38BDF8)`,
   `linear-gradient(160deg, #38BDF8, #34D399)`,
   `linear-gradient(160deg, #F5B94A, #FB7185)`,
-  `linear-gradient(160deg, #9C5FF1, ${MAGENTA})`,
+  `linear-gradient(160deg, #5595F1, ${MAGENTA})`,
   `linear-gradient(160deg, #34D399, #38BDF8)`,
 ]
 
@@ -587,7 +587,7 @@ function PostCard({ post, index }: { post: PostItem; index: number }) {
           href={post.href}
           className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-[12.5px] font-medium text-white transition-colors"
           style={{ background: CORE }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#5F14D6")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#0E52BC")}
           onMouseLeave={(e) => (e.currentTarget.style.background = CORE)}
         >
           Abrir {post.kind.toLowerCase()}
@@ -630,10 +630,10 @@ function Sidebar(props: DashboardV2Props) {
         className="hidden w-[240px] shrink-0 flex-col border-r lg:flex"
         style={{ background: "#000000", borderColor: C.line }}
       >
-        {/* Logo oficial branca */}
+        {/* Logo oficial */}
         <div className="px-4 pb-2 pt-5">
           <Link href="/dashboard" className="mb-4 flex items-center px-1">
-            <Logo size={28} variant="light" />
+            <Logo size={28} />
           </Link>
 
           {/* Marca ativa */}
@@ -704,7 +704,7 @@ function Sidebar(props: DashboardV2Props) {
             href="/dashboard/criar"
             className="group flex h-10 w-full items-center justify-center gap-2 rounded-lg text-[13px] font-semibold text-white transition-colors"
             style={{ background: CORE }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#5F14D6")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#0E52BC")}
             onMouseLeave={(e) => (e.currentTarget.style.background = CORE)}
           >
             <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
@@ -980,7 +980,7 @@ export function DashboardV2Client(props: DashboardV2Props) {
                   className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[9.5px] font-mono uppercase tracking-[0.14em]"
                   style={{ background: C.card, borderColor: C.line, color: C.sub }}
                 >
-                  <span style={{ color: C.brandSoft }}>◆</span> SyncPost · Produção
+                  <span style={{ color: C.brandSoft }}>◆</span> Nexus Content · Produção
                 </span>
                 <h1 className="text-[26px] font-semibold tracking-tight" style={{ color: C.text }}>
                   Central de Conteúdo

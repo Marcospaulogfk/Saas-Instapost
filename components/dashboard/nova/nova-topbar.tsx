@@ -1,79 +1,97 @@
 "use client"
 
 import Link from "next/link"
-import { Search, Bell, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Bell, ChevronDown, User, CreditCard, LogOut } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { signOut } from "@/app/actions/auth"
 
 interface NovaTopBarProps {
   mobileNav?: React.ReactNode
   userName: string
+  userEmail: string
   userInitials: string
   userAvatarUrl: string | null
+  credits: number
+  planCreditsMonthly: number
+  creditsUsedThisMonth: number
+  subscriptionStatus: string
 }
 
-export function NovaTopBar({ mobileNav, userName, userInitials, userAvatarUrl }: NovaTopBarProps) {
+const PLAN_LABEL: Record<string, string> = {
+  trial: "Trial",
+  active: "Pro",
+  past_due: "Atrasado",
+  canceled: "Cancelado",
+  incomplete: "Incompleto",
+}
+
+/**
+ * Topo do dashboard no padrão EverReply: barra SEM fundo e SEM borda, com tudo
+ * encostado à direita. Quem dá corpo são as próprias pílulas (uso, busca, sino,
+ * conta) flutuando sobre o canvas.
+ */
+export function NovaTopBar({
+  mobileNav,
+  userName,
+  userEmail,
+  userInitials,
+  userAvatarUrl,
+  credits,
+  planCreditsMonthly,
+  creditsUsedThisMonth,
+  subscriptionStatus,
+}: NovaTopBarProps) {
+  const router = useRouter()
+  const planLabel = PLAN_LABEL[subscriptionStatus] ?? subscriptionStatus
+
+  async function handleSignOut() {
+    await signOut()
+    router.push("/")
+    router.refresh()
+  }
+
   return (
-    <header
-      className="h-[68px] px-4 sm:px-7 flex items-center gap-3 shrink-0 sticky top-0 z-20"
-      style={{
-        background: "rgba(8,8,14,0.72)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--nv-border)",
-      }}
-    >
+    <header className="relative z-20 flex h-[60px] shrink-0 items-center gap-2 px-4 sm:px-6">
       {mobileNav}
 
-      {/* Busca */}
-      <div className="relative w-full max-w-lg hidden sm:block">
-        <Search
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-          style={{ color: "var(--nv-text-subtle)" }}
+      <div className="ml-auto flex items-center gap-2">
+        <UsageChip
+          credits={credits}
+          planCreditsMonthly={planCreditsMonthly}
+          creditsUsedThisMonth={creditsUsedThisMonth}
         />
-        <input
-          placeholder="Buscar templates, projetos, marcas..."
-          className="nv-search w-full h-11 pl-11 pr-16 text-[13.5px]"
-        />
-        <kbd
-          className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:inline-flex h-5 items-center gap-0.5 rounded px-1.5 font-mono text-[10px]"
-          style={{ background: "rgba(255,255,255,0.05)", color: "var(--nv-text-subtle)" }}
-        >
-          ⌘K
-        </kbd>
-      </div>
 
-      <div className="flex items-center gap-2.5 ml-auto">
-        {/* Criar novo — vai direto pro fluxo de criação */}
-        <Link
-          href="/dashboard/criar"
-          className="nv-btn-primary hidden sm:flex items-center gap-1.5 h-10 px-4 text-[13px]"
+        {/* Busca (ainda placeholder — não há índice de busca no app) */}
+        <button
+          type="button"
+          aria-label="Buscar"
+          title="Buscar"
+          className="nv-pill flex h-9 w-9 items-center justify-center"
+          style={{ color: "var(--nv-text)" }}
         >
-          <Plus className="w-4 h-4" />
-          Criar novo
-        </Link>
-
-        {/* AI Assistant */}
-        <Link
-          href="/dashboard/planejar"
-          className="nv-btn-ghost hidden md:flex items-center gap-1.5 h-10 px-4 text-[13px]"
-        >
-          Assistente IA
-        </Link>
+          <Search className="h-4 w-4" />
+        </button>
 
         {/* Notificações */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="relative w-10 h-10 rounded-xl flex items-center justify-center nv-card-hover"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--nv-border)" }}
+              type="button"
+              aria-label="Notificações"
+              className="nv-pill relative flex h-9 w-9 items-center justify-center"
+              style={{ color: "var(--nv-text)" }}
             >
-              <Bell className="w-[18px] h-[18px]" style={{ color: "var(--nv-text-muted)" }} />
+              <Bell className="h-4 w-4" />
               <span
-                className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full"
+                className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full"
                 style={{ background: "var(--nv-pink)" }}
               />
             </button>
@@ -85,19 +103,123 @@ export function NovaTopBar({ mobileNav, userName, userInitials, userAvatarUrl }:
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Avatar (mobile) */}
-        <div className="md:hidden w-9 h-9 rounded-full overflow-hidden flex items-center justify-center"
-          style={{ background: "rgba(139,92,246,0.2)" }}>
-          {userAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={userAvatarUrl} alt={userName} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-[12px] font-semibold" style={{ color: "#b79dfb" }}>
-              {userInitials}
-            </span>
-          )}
-        </div>
+        {/* Conta — desceu da sidebar pro topo (padrão EverReply) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              title={userEmail}
+              className="nv-pill flex items-center gap-2.5 py-1.5 pl-1.5 pr-3"
+            >
+              <Avatar className="h-8 w-8">
+                {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
+                <AvatarFallback
+                  style={{ background: "rgba(42, 121, 234,0.2)", color: "#8DB8F7", fontSize: 11, fontWeight: 600 }}
+                >
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden text-left leading-tight sm:block">
+                <span
+                  className="block max-w-[160px] truncate text-[12.5px] font-semibold"
+                  style={{ color: "var(--nv-text)" }}
+                >
+                  {userName}
+                </span>
+                <span className="block text-[11px]" style={{ color: "var(--nv-text-subtle)" }}>
+                  Plano {planLabel}
+                </span>
+              </span>
+              <ChevronDown
+                className="hidden h-3.5 w-3.5 sm:block"
+                style={{ color: "var(--nv-text-subtle)" }}
+              />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-2 py-1.5">
+              <div className="truncate text-[12.5px] font-semibold" style={{ color: "var(--nv-text)" }}>
+                {userName}
+              </div>
+              <div className="truncate text-[11px]" style={{ color: "var(--nv-text-muted)" }}>
+                {userEmail}
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/configuracoes" className="cursor-pointer">
+                <User className="mr-2 h-3.5 w-3.5" />
+                Minha conta
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/pricing" className="cursor-pointer">
+                <CreditCard className="mr-2 h-3.5 w-3.5" />
+                Plano e cobrança
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                void handleSignOut()
+              }}
+              className="text-danger focus:text-danger"
+            >
+              <LogOut className="mr-2 h-3.5 w-3.5" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
+  )
+}
+
+/**
+ * Chip de uso do plano ("340/2.000 ▬ 17%"). Mostra o CONSUMIDO no mês, então a
+ * barra enche conforme você gasta — âmbar em 80%, vermelho em 95%. Some quando
+ * o plano não tem teto definido.
+ */
+function UsageChip({
+  credits,
+  planCreditsMonthly,
+  creditsUsedThisMonth,
+}: {
+  credits: number
+  planCreditsMonthly: number
+  creditsUsedThisMonth: number
+}) {
+  const total = planCreditsMonthly > 0 ? planCreditsMonthly : credits + creditsUsedThisMonth
+  if (total <= 0) return null
+
+  const used = Math.max(0, Math.min(total, creditsUsedThisMonth))
+  const pct = Math.min(100, Math.round((used / total) * 100))
+  const color = pct >= 95 ? "#f87171" : pct >= 80 ? "#f6c35a" : "var(--nv-brand)"
+  const title = `${used.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} créditos usados neste mês`
+
+  return (
+    <>
+      {/* Completo (lg+): números + barra + % */}
+      <Link href="/pricing" title={title} className="nv-pill hidden items-center gap-2 px-3 py-1.5 lg:flex">
+        <span className="text-[11px] tabular-nums" style={{ color: "var(--nv-text)" }}>
+          {used.toLocaleString("pt-BR")}
+          <span style={{ color: "var(--nv-text-subtle)" }}>/{total.toLocaleString("pt-BR")}</span>
+        </span>
+        <span className="h-1.5 w-10 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
+          <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+        </span>
+        <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
+          {pct}%
+        </span>
+      </Link>
+      {/* Compacto (até lg): bolinha + % */}
+      <Link href="/pricing" title={title} className="nv-pill flex items-center gap-1.5 px-2.5 py-1.5 lg:hidden">
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+        <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
+          {pct}%
+        </span>
+      </Link>
+    </>
   )
 }

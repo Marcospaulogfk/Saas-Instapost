@@ -1,11 +1,11 @@
 /* =============================================================================
    Dashboard — sistema Linear (voltagent/awesome-design-md · linear.app/DESIGN.md)
-   adaptado à marca SyncPost.
+   adaptado à marca Nexus Content.
 
    Filosofia Linear ("alisar tudo"): o canvas escuro É o espaço em branco.
    Profundidade vem de uma ESCADA DE SUPERFÍCIES + bordas hairline — nunca de
    sombras, glows, gradientes de brilho ou spotlights. Um único acento cromático
-   (roxo SyncPost #7320E6), reservado a marca / CTA / focus ring / link.
+   (roxo Nexus Content #1668E3), reservado a marca / CTA / focus ring / link.
 
    Regras aplicadas do DESIGN.md:
    - canvas quase-preto (não #000 puro) como âncora
@@ -51,7 +51,7 @@
   --hairline-strong: rgba(255, 255, 255, 0.11);
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-medium: rgba(255, 255, 255, 0.11);
-  --border-accent: rgba(115, 32, 230, 0.4);
+  --border-accent: rgba(22, 104, 227, 0.4);
 
   background-color: var(--canvas);
 }
@@ -127,7 +127,7 @@
   transform: translateY(-4px);
   box-shadow:
     0 22px 48px -14px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(115, 32, 230, 0.4);
+    0 0 0 1px rgba(22, 104, 227, 0.4);
 }
 
 /* ===== Cards: superfície chapada + hairline, profundidade por nível ===== */

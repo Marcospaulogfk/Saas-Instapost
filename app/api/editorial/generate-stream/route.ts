@@ -38,8 +38,8 @@ async function loadActiveBrandContext() {
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
   const topic = sp.get('topic') || ''
-  const brandName = sp.get('brandName') || 'SYNCPOST'
-  const handle = sp.get('handle') || '@SYNCPOST_'
+  const brandName = sp.get('brandName') || 'NEXUS CONTENT'
+  const handle = sp.get('handle') || '@NEXUSCONTENT'
   const tone = (sp.get('tone') || 'direto') as 'profissional' | 'casual' | 'direto'
   const audience = sp.get('audience') || 'criadores de conteúdo'
   const desiredSlides = sp.get('desiredSlides')
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
             name: activeBrand?.name || brandName,
             handle: activeBrand?.handle || handle,
             // brandColor fica pra depois (decisão de cor adiada pelo fundador);
-            // por ora segue o roxo SyncPost default na renderização.
+            // por ora segue o roxo Nexus Content default na renderização.
           },
           tone,
           targetAudience: activeBrand?.audience || audience,

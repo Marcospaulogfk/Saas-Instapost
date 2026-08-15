@@ -36,7 +36,7 @@ const presetColors = [
   "#EF4444",
   "#F59E0B",
   "#22C55E",
-  "#8B5CF6",
+  "#2A79EA",
   "#EC4899",
 ]
 

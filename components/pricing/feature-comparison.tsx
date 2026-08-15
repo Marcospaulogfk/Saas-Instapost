@@ -9,7 +9,7 @@ const featureGroups = [
     features: [
       { name: "Tokens por mes", starter: "300", pro: "1.000", studio: "3.000" },
       { name: "≈ imagens normais", starter: "60", pro: "200", studio: "600" },
-      { name: "Nano Banana Pro (premium)", starter: false, pro: true, studio: true },
+      { name: "Capa em Nano Banana 2", starter: true, pro: true, studio: true },
       { name: "Templates", starter: "5", pro: "20+ exclusivos", studio: "Todos + custom" },
     ],
   },

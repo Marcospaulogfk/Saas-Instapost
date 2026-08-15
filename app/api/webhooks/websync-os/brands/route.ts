@@ -59,7 +59,7 @@ export async function GET(req: Request) {
   }
 
   // O filtro por dono é o ponto desta rota, não um detalhe: sem ele o CRM
-  // enxergaria a brand de cada cliente que usa o SyncPost.
+  // enxergaria a brand de cada cliente que usa o Nexus Content.
   const { data, error } = await admin
     .from("brands")
     .select("id, name, instagram_handle")

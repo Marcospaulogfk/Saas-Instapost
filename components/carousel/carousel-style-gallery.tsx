@@ -3,6 +3,7 @@
 import {
   useState,
   useRef,
+  useEffect,
   useLayoutEffect,
   type ReactNode,
 } from "react"
@@ -129,7 +130,18 @@ const DESIGN_W = 400
  * Renderiza qualquer conteúdo numa largura fixa de design e escala pra preencher
  * a largura real do container (via ResizeObserver), mantendo o frame 4:5.
  */
-function ScaledPreview({
+/**
+ * Renderiza o preview no tamanho de design (400px) e ESCALA pra largura real do
+ * container, mantendo 4:5. Exportado pra que a vitrine do dashboard mostre
+ * exatamente o mesmo preview da página de Templates.
+ *
+ * MONTAGEM PREGUIÇOSA: cada `SlidePreview` arrasta a árvore inteira de layouts
+ * editoriais, e a galeria mostra 10 estilos de uma vez — montar todos no mesmo
+ * frame travava o passo "Estilo" do wizard. Agora o filho só é montado quando o
+ * frame chega perto da viewport; o box 4:5 já ocupa o espaço desde o início,
+ * então nada pula no layout quando o preview entra.
+ */
+export function ScaledPreview({
   children,
   className = "",
 }: {
@@ -138,6 +150,7 @@ function ScaledPreview({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState<number | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -149,18 +162,43 @@ function ScaledPreview({
     return () => ro.disconnect()
   }, [])
 
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // Sem IntersectionObserver (SSR/browser antigo) monta na hora — o
+    // comportamento antigo continua sendo o fallback seguro.
+    if (typeof IntersectionObserver === "undefined") {
+      setMounted(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setMounted(true)
+          io.disconnect()
+        }
+      },
+      // Margem generosa: o preview já está pronto quando o card aparece.
+      { rootMargin: "400px 0px" },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   return (
     <div
       ref={ref}
       className={`relative w-full aspect-[4/5] overflow-hidden bg-background ${className}`}
     >
-      {scale != null && (
+      {scale != null && mounted ? (
         <div
           className="absolute top-0 left-0 origin-top-left"
           style={{ width: DESIGN_W, transform: `scale(${scale})` }}
         >
           {children}
         </div>
+      ) : (
+        <div className="absolute inset-0 animate-pulse bg-surface-2" />
       )}
     </div>
   )
@@ -211,7 +249,10 @@ export function CarouselStyleCard({
   return (
     <div
       onClick={selectable ? () => onSelect?.(style) : undefined}
-      className={`group flex flex-col rounded-xl border bg-card overflow-hidden transition-colors ${
+      /* content-visibility: o browser pula layout/paint dos cards fora da tela.
+         O contain-intrinsic-size reserva a altura aproximada pra barra de
+         scroll não dançar enquanto eles entram. */
+      className={`group flex flex-col rounded-xl border bg-card overflow-hidden transition-colors [content-visibility:auto] [contain-intrinsic-size:auto_520px] ${
         selectable ? "cursor-pointer" : ""
       } ${
         selected
@@ -226,7 +267,7 @@ export function CarouselStyleCard({
             slide={DEMO_SLIDES[active]}
             totalSlides={TOTAL_DEMO}
             template="editorial"
-            brandColors={["#7320E6", "#1A1A1A", "#FAF8F5"]}
+            brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
             fontClass={inter.className}
             showDevBadges={false}
             editorialStyle={style}
@@ -249,7 +290,7 @@ export function CarouselStyleCard({
             e.stopPropagation()
             go(active - 1)
           }}
-          className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/70 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-all backdrop-blur-sm"
+          className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/85 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-opacity"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -260,17 +301,19 @@ export function CarouselStyleCard({
             e.stopPropagation()
             go(active + 1)
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/70 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-all backdrop-blur-sm"
+          className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/85 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-opacity"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Rodapé: nome + badge + pontinhos + descrição + CTA */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      {/* Compacto de propósito: a galeria do wizard vai a 4 colunas, e o
+          rodapé precisa caber em ~230px sem quebrar. */}
+      <div className="flex flex-1 flex-col gap-2.5 p-3.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <h3 className="text-base font-semibold text-text-primary truncate">
+            <h3 className="text-sm font-semibold text-text-primary truncate">
               {name}
             </h3>
             {badge && <StyleBadge label={badge.label} tone={badge.tone} />}
@@ -296,7 +339,7 @@ export function CarouselStyleCard({
           </div>
         </div>
 
-        <p className="text-sm text-text-muted leading-relaxed line-clamp-3">
+        <p className="text-[11.5px] text-text-muted leading-relaxed line-clamp-2">
           {desc}
         </p>
 

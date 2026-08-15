@@ -27,8 +27,8 @@ const TONE_OPTIONS = [
 
 export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
   const [topic, setTopic] = useState('')
-  const [brandName, setBrandName] = useState('SYNCPOST')
-  const [handle, setHandle] = useState('@SYNCPOST_')
+  const [brandName, setBrandName] = useState('NEXUS CONTENT')
+  const [handle, setHandle] = useState('@NEXUSCONTENT')
   const [tone, setTone] = useState<'profissional' | 'casual' | 'direto'>('direto')
   const [audience, setAudience] = useState('criadores de conteúdo')
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +69,7 @@ export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
             <Input
               value={brandName}
               onChange={(e) => setBrandName(e.target.value.toUpperCase())}
-              placeholder="SYNCPOST"
+              placeholder="NEXUS CONTENT"
               disabled={disabled}
             />
           </div>
@@ -80,7 +80,7 @@ export function GenerationForm({ onGenerate, disabled }: GenerationFormProps) {
             <Input
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
-              placeholder="@SYNCPOST_"
+              placeholder="@NEXUSCONTENT"
               disabled={disabled}
             />
           </div>

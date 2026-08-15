@@ -1,7 +1,10 @@
 import { NovaHero } from "@/components/dashboard/nova/nova-hero"
 import { NovaStats } from "@/components/dashboard/nova/nova-stats"
-import { NovaPerformance, type PerfPoint } from "@/components/dashboard/nova/nova-performance"
-import { NovaDistribution, type DistSlice } from "@/components/dashboard/nova/nova-distribution"
+import {
+  NovaDistribution,
+  type DistSlice,
+  type DistBrand,
+} from "@/components/dashboard/nova/nova-distribution"
 import { NovaRecent, type NovaRecentItem } from "@/components/dashboard/nova/nova-recent"
 import {
   NovaQuickActions,
@@ -63,7 +66,7 @@ export default async function DashboardPage() {
       listActiveScheduledPosts().catch(() => ({ posts: [] as never[] })),
     ])
 
-  const scheduledPosts = (sched.posts ?? []) as { scheduled_date: string }[]
+  const scheduledPosts = sched.posts ?? []
 
   // Fontes com datas normalizadas
   const carouselDates = carousels.map((c) => c.updated_at)
@@ -106,7 +109,8 @@ export default async function DashboardPage() {
     })),
   ]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 4)
+    // 12 itens = 3 páginas de 4 no carrossel.
+    .slice(0, 12)
 
   // Perfil / saudação
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
@@ -127,25 +131,30 @@ export default async function DashboardPage() {
     scheduled: bucketByDay(scheduledDates, 7),
   }
 
-  // Performance (28 dias)
-  const criadosSeries = bucketByDay(allContentDates, 28)
-  const agendadosSeries = bucketByDay(scheduledDates, 28)
-  const today0 = new Date()
-  today0.setHours(0, 0, 0, 0)
-  const perfData: PerfPoint[] = criadosSeries.map((criados, idx) => {
-    const d = new Date(today0)
-    d.setDate(today0.getDate() - (27 - idx))
-    return {
-      label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
-      criados,
-      agendados: agendadosSeries[idx] ?? 0,
-    }
-  })
+  // Marcas ativas com quantos conteúdos cada uma tem. As fontes só carregam o
+  // NOME da marca, então a contagem casa por nome.
+  const porMarca = new Map<string, number>()
+  for (const nome of [
+    ...carousels.map((c) => c.brand_name),
+    ...singlePosts.map((p) => p.brand_name),
+    ...projects.map((p) => p.brand.name),
+  ]) {
+    if (!nome) continue
+    porMarca.set(nome, (porMarca.get(nome) ?? 0) + 1)
+  }
+  const marcasAtivas: DistBrand[] = brands
+    .map((b) => ({
+      id: b.id,
+      name: b.name,
+      logoUrl: b.logo_url ?? null,
+      count: porMarca.get(b.name) ?? 0,
+    }))
+    .sort((a, b) => b.count - a.count)
 
   // Distribuição por tipo
   const distSlices: DistSlice[] = [
-    { name: "Carrosséis", value: carousels.length, color: "#8b5cf6" },
-    { name: "Posts únicos", value: singlePosts.length, color: "#3b82f6" },
+    { name: "Carrosséis", value: carousels.length, color: "#2A79EA" },
+    { name: "Posts únicos", value: singlePosts.length, color: "#38BDF8" },
     { name: "Projetos", value: projects.length, color: "#f59e0b" },
     { name: "Agendados", value: scheduledPosts.length, color: "#22c55e" },
   ]
@@ -158,6 +167,14 @@ export default async function DashboardPage() {
         <NovaQuickActions />
       </div>
 
+      {/* Linha 2: projetos recentes (carrossel de 2) + distribuição ao lado.
+          A distribuição subiu do rodapé pra cá — o que você fez e de que tipo
+          lê melhor junto do que separado por meia página. */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-stretch">
+        <NovaRecent items={recentItems} />
+        <NovaDistribution slices={distSlices} brands={marcasAtivas} />
+      </div>
+
       {/* Stats — 1 linha de 4 colunas */}
       <NovaStats
         totalContent={totalContent}
@@ -167,17 +184,8 @@ export default async function DashboardPage() {
         spark={spark}
       />
 
-      {/* Projetos recentes */}
-      <NovaRecent items={recentItems} />
-
-      {/* Performance + (Distribuição / Upgrade) */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-start">
-        <NovaPerformance data={perfData} />
-        <div className="space-y-5">
-          <NovaDistribution slices={distSlices} />
-          <NovaUpgradeCard isPro={isPro} />
-        </div>
-      </div>
+      {/* Upgrade — o gráfico de performance saiu daqui */}
+      <NovaUpgradeCard isPro={isPro} />
     </div>
   )
 }

@@ -22,7 +22,7 @@ interface HandleBadgeProps {
  */
 export function HandleBadge({
   handle,
-  accentColor = '#7C3AED',
+  accentColor = '#1668E3',
   textColor,
   x,
   y,

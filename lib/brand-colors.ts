@@ -1,4 +1,4 @@
-﻿// Paleta SyncPost — base escura (zinc) com acento roxo brand-700/800/900 nos extremos.
+﻿// Paleta Nexus Content — base escura (zinc) com acento roxo brand-700/800/900 nos extremos.
 // Texto branco sobre estes gradientes mantém legibilidade.
 const BRAND_GRADIENTS = [
   "bg-gradient-to-br from-brand-800 to-zinc-950",

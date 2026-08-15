@@ -62,7 +62,7 @@ export function CarouselNavPreview({
                 className="h-1.5 rounded-full transition-all"
                 style={{
                   width: i === active ? 16 : 6,
-                  background: i === active ? "#8b5cf6" : "rgba(255,255,255,0.55)",
+                  background: i === active ? "#2A79EA" : "rgba(255,255,255,0.55)",
                 }}
               />
             ))}

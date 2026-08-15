@@ -5,7 +5,7 @@ import { ChevronDown, Mail, MessageCircle } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Suporte',
-  description: 'Central de ajuda do SyncPost — perguntas frequentes e contato com o suporte.',
+  description: 'Central de ajuda do Nexus Content — perguntas frequentes e contato com o suporte.',
 }
 
 const WHATSAPP = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? '5521994959476'
@@ -33,7 +33,7 @@ const FAQ = [
   },
   {
     q: 'Como agendo ou organizo minhas publicações?',
-    a: 'Use o "Calendário" na barra lateral pra planejar seus posts por data e manter a constância. O SyncPost organiza sua fila de conteúdo; a publicação no Instagram é feita por você — exporte o post pronto e publique no app ou na sua ferramenta de agendamento.',
+    a: 'Use o "Calendário" na barra lateral pra planejar seus posts por data e manter a constância. O Nexus Content organiza sua fila de conteúdo; a publicação no Instagram é feita por você — exporte o post pronto e publique no app ou na sua ferramenta de agendamento.',
   },
   {
     q: 'A geração de imagem falhou ou veio estranha. O que eu faço?',
@@ -53,7 +53,7 @@ export default function SuportePage() {
       <div>
         <h1 className="text-h1 font-display font-bold text-text-primary">Suporte</h1>
         <p className="text-text-secondary mt-1">
-          Tire suas dúvidas sobre o SyncPost ou fale direto com a gente.
+          Tire suas dúvidas sobre o Nexus Content ou fale direto com a gente.
         </p>
       </div>
 

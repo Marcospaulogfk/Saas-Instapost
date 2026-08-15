@@ -134,7 +134,7 @@ export default function OnboardingAnalyzePage() {
         objectives: OBJECTIVE_MAP[a.main_objective]
           ? [OBJECTIVE_MAP[a.main_objective]!]
           : [],
-        primaryColor: colorsArr[0] ?? "#7320E6",
+        primaryColor: colorsArr[0] ?? "#1668E3",
         secondaryColor: colorsArr[1] ?? "#5B8FF9",
         accentColor: colorsArr[2] ?? "#E2D5FF",
         instagramHandle: a.instagram_handle || state.instagramHandle,

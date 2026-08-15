@@ -595,7 +595,7 @@ function buildMyPostFlow(slide: CarouselSlideInput, opts: CarouselSpecOpts): Fre
       type: "pill",
       position: {},
       text: slide.cta_badge,
-      bg: "#7C3AED",
+      bg: "#1668E3",
       fg: "#FFFFFF",
       font: "inter",
       font_size: "min(2.8cqw, 0.88rem)",

@@ -5,11 +5,11 @@ import { resolverDono } from "@/lib/websync/dono"
 export const runtime = "nodejs"
 
 // =====================================================================
-// Webhook WebSync-OS → SyncPost  (a Ponte, 11/08/2026)
+// Webhook WebSync-OS → Nexus Content  (a Ponte, 11/08/2026)
 //
 // Recebe as pautas que os agentes do WebSync-OS escreveram no espelho
 // (conteudo_posts) e cria cada uma como ideia no planejador daqui
-// (scheduled_posts). É a conexão CRM → SyncPost que faltava pros posts
+// (scheduled_posts). É a conexão CRM → Nexus Content que faltava pros posts
 // saírem de forma automática: a pauta chega pronta no calendário e o
 // dono só gera a arte.
 //

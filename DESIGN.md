@@ -1,4 +1,4 @@
-# SyncPost — DESIGN.md
+# Nexus Content — DESIGN.md
 
 > **Fonte da verdade de design.** Este arquivo segue o padrão
 > [`voltagent/awesome-design-md`](https://github.com/voltagent/awesome-design-md): um documento
@@ -18,11 +18,11 @@
 em branco**. A profundidade nasce de uma **escada de superfícies + bordas hairline**, nunca de
 sombras, glows, gradientes de brilho ou spotlights.
 
-- Um **único acento cromático**: o roxo SyncPost `#7320E6`. Reservado a marca, CTA primário,
+- Um **único acento cromático**: o azul Nexus Content `#1668E3`. Reservado a marca, CTA primário,
   focus ring e link. Nunca como preenchimento de fundo de área grande.
 - Alto contraste contido, tipografia com tracking negativo no display, muito respiro.
 - Pistas de "sistema vivo" discretas (mono em labels, `●`/`▌`, régua roxa de topo `--rule-top`).
-- **Sem** neon, **sem** glassmorphism decorativo, **sem** verde/lime na interface.
+- **Sem** neon, **sem** glassmorphism decorativo, **sem** verde/lime como ACENTO (verde só existe no estado de sucesso).
 
 Regra mental: se um efeito existe só pra impressionar, ele não pertence ao app. Se existe pra
 comunicar hierarquia ou estado, fica.
@@ -32,18 +32,18 @@ comunicar hierarquia ou estado, fica.
 ## 2. Color Palette & Roles
 
 ### Marca (escala oficial — extraída da logo, `app/globals.css`)
-Gradiente da logo: magenta-violeta `#D53FF4` → core `#7320E6` → índigo `#580CE8`.
+Gradiente da logo: ciano de ponta `#12A5F5` → core `#1668E3` → dobra `#0E52BC`.
 
 | Token | Hex | Papel |
 |---|---|---|
 | `--brand-50` | `#F6F3FE` | tint mais claro / bg de chip |
 | `--brand-100` | `#EBE3FD` | |
 | `--brand-200` | `#D7C5FB` | |
-| `--brand-300` | `#BD9BF7` | acento suave (texto sobre escuro) |
+| `--brand-300` | `#8DB8F7` | acento suave (texto sobre escuro) |
 | `--brand-400` | `#9C5FF1` | acento em dark / gradient-text achatado |
 | `--brand-500` | `#832FEC` | |
-| **`--brand-600`** | **`#7320E6`** | **PRINCIPAL — marca / CTA / focus / link** |
-| `--brand-700` | `#5F14D6` | hover do CTA |
+| **`--brand-600`** | **`#1668E3`** | **PRINCIPAL — marca / CTA / focus / link** |
+| `--brand-700` | `#0E52BC` | hover do CTA |
 | `--brand-800` | `#4D0FB4` | active |
 | `--brand-900` | `#320B74` | sombra de marca |
 | `--brand-950` | `#1D0846` | |
@@ -51,13 +51,13 @@ Gradiente da logo: magenta-violeta `#D53FF4` → core `#7320E6` → índigo `#58
 ### Funcionais
 | Token | Hex | Papel |
 |---|---|---|
-| `--success` | `#9B87FF` | sucesso — **é roxo por decisão de marca (sem verde)** |
+| `--success` | `#22C55E` | sucesso — verde (a marca é azul, então verde não colide com o acento) |
 | `--warning` | `#F59E0B` | atenção |
 | `--danger` | `#EF4444` | erro / destrutivo |
-| `--info` | `#3B82F6` | informação |
+| `--info` | `#38BDF8` | informação |
 
 ### Superfícies — modo escuro / Linear (`.dashboard-root`, `app/dashboard/dashboard.css`)
-Escada com **no máximo 4 níveis**. Canvas quase-preto com leve viés roxo (**nunca `#000` puro**).
+Escada com **no máximo 4 níveis**. Canvas quase-preto com leve viés azul-frio (**nunca `#000` puro**).
 
 | Token | Hex | Papel |
 |---|---|---|
@@ -79,11 +79,11 @@ Background `#EEEEEE`, sidebar/cards `#FFFFFF`, tertiary `#F5F5F5`. Texto `#0e0e0
 |---|---|---|
 | `--hairline` | `rgba(255,255,255,.06–.07)` | borda padrão de card/painel |
 | `--hairline-strong` | `rgba(255,255,255,.11–.15)` | ênfase / hover neutro |
-| `--border-accent` | `rgba(115,32,230,.4)` | hover que revela a marca |
-| `--rule-top` | `2px solid #7320E6` | régua de topo (assinatura visual) |
+| `--border-accent` | `rgba(22,104,227,.4)` | hover que revela a marca |
+| `--rule-top` | `2px solid #1668E3` | régua de topo (assinatura visual) |
 
-**Regra de acento:** o roxo aparece em texto de link, ícone de marca, CTA primário e focus ring.
-**Nunca** pinte um card, um header ou uma seção inteira de roxo.
+**Regra de acento:** o azul aparece em texto de link, ícone de marca, CTA primário e focus ring.
+**Nunca** pinte um card, um header ou uma seção inteira de azul.
 
 ---
 
@@ -116,10 +116,10 @@ Todos os estados são progressões de **cor de borda e superfície**, não de so
 ### Button
 - **Primário:** bg `--brand-600`, texto `#FFF`, raio 8px. Hover `--brand-700`, active `--brand-800`.
 - **Secundário/outline:** bg transparente, borda `--hairline`, texto `--text-secondary`.
-  Hover: bg `--accent` (`#7320E6`) + texto `#FFF` (`--accent-foreground` é branco — nunca escuro,
+  Hover: bg `--accent` (`#1668E3`) + texto `#FFF` (`--accent-foreground` é branco — nunca escuro,
   senão o texto some no hover).
 - **Ghost:** só texto; hover clareia bg pra `--surface-2`.
-- Focus: `box-shadow: 0 0 0 2px rgba(115,32,230,.5), 0 0 0 4px var(--background)`.
+- Focus: `box-shadow: 0 0 0 2px rgba(22,104,227,.5), 0 0 0 4px var(--background)`.
 
 ### Card (`.dash-card`)
 - bg `--surface-1`, borda `1px solid --hairline`, raio **12px**.
@@ -128,11 +128,11 @@ Todos os estados são progressões de **cor de borda e superfície**, não de so
 
 ### Input
 - bg `--surface-1`/`--surface-2`, borda `--hairline`, raio 8px, texto `--text-primary`,
-  placeholder `--text-subtle`. Focus: borda `--brand-600` + ring roxo.
+  placeholder `--text-subtle`. Focus: borda `--brand-600` + ring azul.
 
 ### Nav / Sidebar (`.dash-sidebar-float`)
 - Superfície flutuante `--surface-1`, hairline, raio **16px**, margem 12px. Sem glass/glow/shadow.
-- Item ativo: texto `--text-primary` + indicador roxo fino; inativo: `--text-muted`.
+- Item ativo: texto `--text-primary` + indicador azul fino; inativo: `--text-muted`.
 
 ---
 
@@ -161,7 +161,7 @@ Todos os estados são progressões de **cor de borda e superfície**, não de so
 ## 7. Do's & Don'ts
 
 ### ✅ DO
-- Um único acento: `#7320E6`.
+- Um único acento: `#1668E3`.
 - Hierarquia por superfície + hairline.
 - Mono para labels de sistema, timestamps e estados.
 - Copy honesto sobre estados (ex.: "em configuração", "planejado") — nunca prometa o que não faz.
@@ -173,7 +173,7 @@ Todos os estados são progressões de **cor de borda e superfície**, não de so
    **Nunca** use `brand_colors[0]` cru como destaque — pode ficar ilegível.
 3. **Foto de conteúdo nunca corta a cabeça.** `object-cover` + `PHOTO_FOCUS` (viés pro topo).
    Exceções: full-bleed 4:5 e avatares.
-4. **Sem lime `#D1FE17`, sem verde, sem neon** na interface. (`--editorial-purple` no namespace
+4. **Sem lime `#D1FE17` e sem neon** na interface; verde só no estado de sucesso. (`--editorial-purple` no namespace
    `editorial-*` é exceção **isolada** do canvas Konva de template — não vaze pro app.)
 5. **Sem gradiente/glow/spotlight** na UI do app: nada de `bg-gradient-brand`, `shadow-glow*`,
    `hover:border-purple-600`, classes `purple-*`/`violet-*` cruas do Tailwind. Use tokens de marca.
@@ -196,20 +196,20 @@ Todos os estados são progressões de **cor de borda e superfície**, não de so
 Bloco pronto pra colar/consumir ao gerar ou revisar UI do app autenticado:
 
 ```
-Paleta SyncPost (app autenticado, dark/Linear):
-  Acento único ....... #7320E6  (marca/CTA/focus/link — nunca preenchimento de área)
+Paleta Nexus Content (app autenticado, dark/Linear):
+  Acento único ....... #1668E3  (marca/CTA/focus/link — nunca preenchimento de área)
   Canvas ............. #0a0910  (nunca #000 puro)
   Superfícies ........ #121118 → #17161e → #1c1b24 → #201f28  (máx. 4 níveis)
   Texto .............. #f7f8f8 / #c9ced7 / #8a8f98 / #62666d
   Hairline ........... rgba(255,255,255,.06)  hover: rgba(255,255,255,.11)
-  Sucesso ............ #9B87FF (roxo, sem verde)   Erro #EF4444  Aviso #F59E0B  Info #3B82F6
+  Sucesso ............ #22C55E (verde)   Erro #EF4444  Aviso #F59E0B  Info #38BDF8
 
 Tipografia: Geist Sans; display peso 600, tracking -0.028em; body peso 400. Mono p/ labels.
 Raios: botão/input 8px · card 12px · painel 16px. Espaçamento base 4px.
 
-PROIBIDO: glow, box-shadow p/ profundidade, gradiente na UI, lime/verde #D1FE17,
+PROIBIDO: glow, box-shadow p/ profundidade, gradiente na UI, lime #D1FE17 (verde só em sucesso),
 classes purple-*/violet-* cruas, #000 puro, imagem sobrepondo texto.
-OBRIGATÓRIO: acento único #7320E6, hairlines, readableAccent() p/ destaques,
+OBRIGATÓRIO: acento único #1668E3, hairlines, readableAccent() p/ destaques,
 PHOTO_FOCUS em fotos, copy honesto de estado.
 ```
 

@@ -31,7 +31,7 @@ const faqs = [
   },
   {
     question: "Como funciona o teste gratis?",
-    answer: "Voce pode criar uma conta gratuita e gerar ate 2 imagens sem precisar cadastrar cartao de credito. E uma otima forma de conhecer a plataforma antes de assinar.",
+    answer: "Voce pode criar uma conta gratuita e montar 1 carrossel completo, com capa gerada por IA, sem precisar cadastrar cartao de credito. E uma otima forma de conhecer a plataforma antes de assinar.",
   },
   {
     question: "Voces oferecem reembolso?",

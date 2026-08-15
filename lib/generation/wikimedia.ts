@@ -20,7 +20,7 @@ export interface WikimediaResult {
   ms: number
 }
 
-const USER_AGENT = "SyncPostBot/1.0 (https://syncpost.app; contato@syncpost.app)"
+const USER_AGENT = "NexusContentBot/1.0 (https://syncpost.app; contato@syncpost.app)"
 const TIMEOUT = 10_000
 
 async function getJson<T>(url: string): Promise<T | null> {

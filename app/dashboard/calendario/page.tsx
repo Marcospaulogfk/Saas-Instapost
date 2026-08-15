@@ -371,7 +371,7 @@ export default function CalendarioPage() {
                           style={{
                             background:
                               s.source === "ia"
-                                ? "rgba(115,32,230,0.12)"
+                                ? "rgba(22,104,227,0.12)"
                                 : "rgba(255,255,255,0.04)",
                           }}
                           title={`${fmtHora(s.scheduled_time)} ${s.title}`.trim()}

@@ -1,17 +1,28 @@
 // =====================================================================
 // lib/tokens.ts
-// Fonte única da verdade do sistema de TOKENS do SyncPost.
+// Fonte única da verdade do sistema de TOKENS do Nexus Content.
 //
 // Estratégia completa (números, planos, margens): ver
 // ESTRATEGIA-MONETIZACAO.md na raiz do repo.
 //
-// Moeda = token. Cada ação "queima" tokens conforme a qualidade:
-//   - texto sozinho (roteiro/legenda, sem imagem) = 1 token
-//   - imagem NORMAL (Flux / Nano Banana normal)    = 5 tokens
-//   - imagem Nano Banana PRO                        = 20 tokens
+// Moeda = token. O usuário escolhe, por carrossel, se quer imagem de IA na
+// CAPA e/ou nos DEMAIS slides — e cada escolha queima tokens:
+//   - roteiro + legenda (sempre)                          =  4 tokens
+//   - imagem de CAPA (Nano Banana 2 / Gemini 3.1 Flash)    = 25 tokens
+//   - imagem por slide de miolo (Flux Schnell)             =  2 tokens
 //
-// Nano Banana Pro só é liberado nos planos Pro e Studio (Starter e trial
-// caem para imagem normal — é o gancho de upgrade, §5 do doc).
+// A capa é o único slide que justifica modelo caro: é ela que para o scroll.
+// O miolo roda no modelo barato, então "imagem em tudo" custa quase o mesmo
+// que "só a capa" — a conta é dominada pela capa.
+//
+// CALIBRAGEM (regra de negócio): os números acima saem de uma restrição, não
+// de gosto — margem bruta >= 80% em TODOS os planos com o usuário queimando
+// 100% dos tokens, em qualquer um dos três modos (sem imagem / só capa /
+// tudo). Mexer em qualquer custo aqui exige refazer essa verificação.
+//
+// PRÉ-REQUISITO do textOnly=4: prompt caching ligado no system prompt do
+// Claude (texto a ~R$0,05/carrossel). Sem cache o texto custa R$0,12 e o modo
+// "sem imagem" desaba pra ~58% de margem.
 //
 // Este módulo é ADITIVO: os campos de crédito já existentes no perfil
 // (`credits`, `plan_credits_monthly`, `plan_credits_used_this_month`)
@@ -20,13 +31,39 @@
 
 /** Custo em tokens por tipo de ação. Ver §3 do ESTRATEGIA-MONETIZACAO.md. */
 export const TOKEN_COST = {
-  /** Texto sozinho (roteiro/legenda, sem imagem). */
-  textOnly: 1,
-  /** Imagem normal — Flux Schnell / Flux Pro / Nano Banana normal. */
-  imageNormal: 5,
-  /** Imagem Nano Banana Pro (Gemini 3 Pro Image) — 4× mais cara. */
-  imagePro: 20,
+  /** Roteiro + legenda. Cobrado sempre, mesmo sem imagem nenhuma. */
+  textOnly: 4,
+  /** Imagem de CAPA — Nano Banana 2 (Gemini 3.1 Flash Image), ~US$0,08. */
+  imageCover: 25,
+  /** Imagem de slide de miolo — Flux Schnell, ~US$0,003. */
+  imageSlide: 2,
 } as const
+
+/** O que o usuário marcou no wizard antes de gerar. */
+export interface ImageChoice {
+  /** Gerar a imagem da capa com IA. */
+  cover: boolean
+  /** Gerar imagem de IA em cada slide de miolo. */
+  slides: boolean
+}
+
+/**
+ * Quanto custa gerar um carrossel com as escolhas do usuário.
+ * É esta função que alimenta o "vai custar N tokens" na tela de geração — o
+ * preço nunca deve ser recalculado à mão em outro lugar.
+ *
+ * @param totalSlides total de slides do carrossel (capa inclusa).
+ */
+export function tokenCostForCarousel(
+  totalSlides: number,
+  choice: ImageChoice,
+): number {
+  const n = Math.max(1, totalSlides)
+  let cost = TOKEN_COST.textOnly
+  if (choice.cover) cost += TOKEN_COST.imageCover
+  if (choice.slides) cost += TOKEN_COST.imageSlide * Math.max(0, n - 1)
+  return cost
+}
 
 /** Planos disponíveis. `trial` = teste grátis (≈ 7 slides, ver §5). */
 export type Plan = "trial" | "starter" | "pro" | "studio"
@@ -39,7 +76,10 @@ export type ImageQuality = "normal" | "pro"
  * O trial é um one-shot (~7 slides de imagem normal ≈ 40 tokens, §5).
  */
 export const PLAN_TOKENS: Record<Plan, number> = {
-  trial: 40,
+  // 1 carrossel de 7 slides COMPLETO (4 texto + 25 capa + 6×2 miolo = 41),
+  // com folga. O trial mostra o produto no melhor estado possível — custa
+  // ~R$0,56 de COGS, o CAC mais barato do funil.
+  trial: 45,
   starter: 300,
   pro: 1000,
   studio: 3000,
@@ -65,9 +105,26 @@ export function canUseNanoBananaPro(plan: string | null | undefined): boolean {
   return PLAN_ALLOWS_PRO[plan as Plan] ?? false
 }
 
-/** Custo em tokens de uma imagem conforme a qualidade escolhida. */
+/**
+ * Custo em tokens de UMA imagem conforme o PAPEL dela no carrossel.
+ *
+ * O que decide o preço deixou de ser o plano do usuário e passou a ser o
+ * slide: capa roda no modelo caro, miolo no barato — para todo mundo.
+ */
+export function tokenCostForRole(role: "cover" | "slide"): number {
+  return role === "cover" ? TOKEN_COST.imageCover : TOKEN_COST.imageSlide
+}
+
+/**
+ * COMPAT com a assinatura antiga (quality). Os endpoints de geração ainda
+ * raciocinam em "normal x pro"; o mapa abaixo os liga na tabela nova sem
+ * quebrar nada: "pro" = modelo caro (hoje a capa), "normal" = Flux.
+ *
+ * @deprecated Usar tokenCostForRole() quando os endpoints passarem a mandar
+ * o papel do slide em vez da qualidade derivada do plano.
+ */
 export function tokenCostForImage(quality: ImageQuality): number {
-  return quality === "pro" ? TOKEN_COST.imagePro : TOKEN_COST.imageNormal
+  return quality === "pro" ? TOKEN_COST.imageCover : TOKEN_COST.imageSlide
 }
 
 /**

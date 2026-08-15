@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import "./onboarding.css"
 
 export const metadata: Metadata = {
-  title: "Configurar marca · SyncPost",
+  title: "Configurar marca · Nexus Content",
 }
 
 export default function OnboardingLayout({

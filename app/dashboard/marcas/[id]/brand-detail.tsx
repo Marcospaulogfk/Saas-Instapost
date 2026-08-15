@@ -147,7 +147,7 @@ export function BrandDetail({
     tone_of_voice: brand.tone_of_voice ?? "",
     visual_style: brand.visual_style ?? "",
     main_objective: primaryObjective(brand.main_objective),
-    brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7320E6"],
+    brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#1668E3"],
   })
 
   function reset() {
@@ -160,7 +160,7 @@ export function BrandDetail({
       tone_of_voice: brand.tone_of_voice ?? "",
       visual_style: brand.visual_style ?? "",
       main_objective: primaryObjective(brand.main_objective),
-      brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#7320E6"],
+      brand_colors: brand.brand_colors.length > 0 ? brand.brand_colors : ["#1668E3"],
     })
     setError(null)
   }
@@ -342,7 +342,7 @@ export function BrandDetail({
           </div>
         )}
         {savedAt && !editing && (
-          <div className="relative z-10 mt-4 rounded-lg bg-lime/10 border border-[rgba(115, 32, 230,0.3)] p-3 text-sm text-lime">
+          <div className="relative z-10 mt-4 rounded-lg bg-lime/10 border border-[rgba(22, 104, 227,0.3)] p-3 text-sm text-lime">
             Marca atualizada com sucesso.
           </div>
         )}

@@ -15,7 +15,7 @@ interface WhatsAppFloatProps {
  */
 export function WhatsAppFloat({
   phoneNumber,
-  message = 'Oi! Preciso de ajuda com o SyncPost.',
+  message = 'Oi! Preciso de ajuda com o Nexus Content.',
 }: WhatsAppFloatProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])

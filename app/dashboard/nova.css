@@ -5,27 +5,39 @@
    ============================================================================ */
 
 .nova-root {
-  --nv-bg: #08080e;
-  --nv-bg-2: #0b0b14;
-  --nv-sidebar: #040406;
-  --nv-card: #040406;
-  --nv-card-2: #040406;
-  --nv-card-hover: #0c0c14;
-  --nv-elev: #131320;
-  --nv-elev-2: #1a1a26;
+  /* Superfícies PRETAS, sem viés de cor. Mas os cartões precisam ficar um pouco
+     ACIMA do canvas: com card mais escuro que o fundo (padrão antigo do Nova),
+     nesta faixa de preto os dois viravam a mesma cor e o cartão sumia. */
+  --nv-bg: #030304;
+  --nv-bg-2: #050506;
+  --nv-sidebar: #020203;
+  --nv-card: #0a0a0c;
+  --nv-card-2: #0d0d10;
+  --nv-card-hover: #131316;
+  --nv-elev: #16161a;
+  --nv-elev-2: #1d1d23;
 
-  --nv-border: rgba(255, 255, 255, 0.07);
-  --nv-border-strong: rgba(255, 255, 255, 0.13);
+  /* Hairlines neutras. */
+  --nv-border: rgba(255, 255, 255, 0.08);
+  --nv-border-strong: rgba(255, 255, 255, 0.16);
 
-  --nv-text: #f6f7fb;
-  --nv-text-muted: #9ba1b2;
-  --nv-text-subtle: #6b7180;
+  --nv-text: #f4f7fc;
+  --nv-text-muted: #97a3ba;
+  --nv-text-subtle: #66718a;
 
-  --nv-purple: #8b5cf6;
-  --nv-purple-2: #a855f7;
-  --nv-purple-deep: #7c3aed;
-  --nv-indigo: #6366f1;
-  --nv-blue: #3b82f6;
+  /* Escada de azul COMPLETA — do navy quase-preto ao ciano da ponta da logo.
+     Antes só existiam três tons quase idênticos ao #1668E3, e a tela inteira
+     ficava com a mesma cor da marca. */
+  --nv-brand-abyss: #071A38;
+  --nv-brand-deepest: #0A2E7A;
+  --nv-brand-deep: #0D4396;
+  --nv-brand: #1668E3;
+  --nv-brand-mid: #2A79EA;
+  --nv-brand-bright: #12A5F5;
+  --nv-brand-soft: #8DB8F7;
+
+  --nv-indigo: #4f46e5;
+  --nv-blue: #38BDF8;
   --nv-green: #22c55e;
   --nv-green-bright: #4ade80;
   --nv-orange: #f59e0b;
@@ -33,8 +45,13 @@
   --nv-pink: #ec4899;
   --nv-cyan: #06b6d4;
 
-  --nv-grad-primary: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
-  --nv-grad-hero: linear-gradient(120deg, #17172b 0%, #14121f 55%, #0f0e18 100%);
+  --nv-grad-primary: linear-gradient(140deg, #0A2E7A 0%, #1055C8 55%, #1A7FE8 100%);
+  --nv-grad-hero: linear-gradient(120deg, #0B111C 0%, #070A11 55%, #050506 100%);
+
+  /* Superfície dos PAINÉIS flutuantes (sidebar-cartão e chips do topo). */
+  --nv-sheet: #08080a;
+  --nv-sheet-2: #0e152433;
+  --nv-r-sheet: 20px;
 
   background: var(--nv-bg);
   color: var(--nv-text);
@@ -42,7 +59,7 @@
 }
 
 .nova-root ::selection {
-  background: rgba(139, 92, 246, 0.35);
+  background: rgba(42, 121, 234, 0.35);
   color: #fff;
 }
 
@@ -55,43 +72,42 @@
    Importado DEPOIS do dashboard.css (mesma especificidade → este vence).
    ============================================================================ */
 .nova-root {
-  /* Superfícies → escada Nova (cards = cor do sidebar #040406) */
-  --canvas: #08080e;
-  --card-black: #040406;
-  --surface-1: #040406;
-  --surface-2: #0c0c14;
-  --surface-3: #131320;
-  --surface-4: #1a1a26;
-  --background: #08080e;
-  --background-secondary: #040406;
-  --background-tertiary: #0c0c14;
-  --background-quaternary: #131320;
-  --surface: #040406;
-  --card: #040406;
-  --popover: #0c0c14;
+  /* Superfícies → escada Nova (navy, apontando pros tokens --nv-* acima) */
+  --canvas: var(--nv-bg);
+  --card-black: var(--nv-card);
+  --surface-1: var(--nv-card);
+  --surface-2: var(--nv-card-hover);
+  --surface-3: var(--nv-elev);
+  --surface-4: var(--nv-elev-2);
+  --background: var(--nv-bg);
+  --background-secondary: var(--nv-card);
+  --background-tertiary: var(--nv-card-hover);
+  --background-quaternary: var(--nv-elev);
+  --surface: var(--nv-card);
+  --card: var(--nv-card);
+  --popover: var(--nv-elev);
 
   /* Tinta */
-  --text-primary: #f6f7fb;
-  --text-secondary: #c9ced7;
-  --text-muted: #9ba1b2;
-  --text-subtle: #6b7180;
+  --text-primary: var(--nv-text);
+  --text-secondary: #c4cddd;
+  --text-muted: var(--nv-text-muted);
+  --text-subtle: var(--nv-text-subtle);
 
-  /* Bordas → hairline Nova + acento roxo Nova */
-  --hairline: rgba(255, 255, 255, 0.07);
-  --hairline-strong: rgba(255, 255, 255, 0.13);
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-medium: rgba(255, 255, 255, 0.13);
-  --border-accent: rgba(139, 92, 246, 0.45);
+  /* Bordas → hairline azulada + acento da marca */
+  --hairline: var(--nv-border);
+  --hairline-strong: var(--nv-border-strong);
+  --border-subtle: var(--nv-border);
+  --border-medium: var(--nv-border-strong);
 
-  /* Escala de marca → roxo/violeta Nova (afeta bg-brand-*, text-brand-* etc.) */
-  --brand-300: #b79dfb;
-  --brand-400: #a855f7;
-  --brand-500: #8b5cf6;
-  --brand-600: #7c3aed;
-  --brand-700: #6d28d9;
-  --brand-800: #5b21b6;
-  --accent: #7c3aed;
-  --border-accent: rgba(139, 92, 246, 0.45);
+  /* Escala de marca (afeta bg-brand-*, text-brand-* etc.) */
+  --brand-300: var(--nv-brand-soft);
+  --brand-400: var(--nv-brand-bright);
+  --brand-500: var(--nv-brand-mid);
+  --brand-600: var(--nv-brand);
+  --brand-700: #0E52BC;
+  --brand-800: var(--nv-brand-deep);
+  --accent: var(--nv-brand);
+  --border-accent: rgba(22, 104, 227, 0.42);
 }
 
 /* Cards das subpáginas: raio e hover no padrão Nova */
@@ -114,7 +130,7 @@
 /* CTA primário das subpáginas (bg-brand-600) ganha gradiente + glow Nova */
 .nova-root .bg-brand-600 {
   background: var(--nv-grad-primary) !important;
-  box-shadow: 0 6px 20px -6px rgba(124, 58, 237, 0.55);
+  box-shadow: 0 6px 20px -6px rgba(22, 104, 227, 0.55);
 }
 
 /* ---- Scrollbar discreta ---- */
@@ -153,11 +169,11 @@
   color: #fff;
   border-radius: 10px;
   font-weight: 600;
-  box-shadow: 0 6px 20px -6px rgba(109, 40, 217, 0.7);
+  box-shadow: 0 6px 20px -6px rgba(14, 82, 188, 0.7);
   transition: box-shadow 0.2s ease, filter 0.2s ease, transform 0.12s ease;
 }
 .nv-btn-primary:hover {
-  box-shadow: 0 8px 30px -6px rgba(109, 40, 217, 0.9);
+  box-shadow: 0 8px 30px -6px rgba(14, 82, 188, 0.9);
   filter: brightness(1.08);
 }
 .nv-btn-primary:active {
@@ -193,8 +209,8 @@
   height: 460px;
   background: radial-gradient(
     circle,
-    rgba(139, 92, 246, 0.28) 0%,
-    rgba(139, 92, 246, 0.08) 40%,
+    rgba(18, 165, 245, 0.2) 0%,
+    rgba(10, 46, 122, 0.18) 40%,
     transparent 70%
   );
   pointer-events: none;
@@ -221,8 +237,10 @@
   align-items: center;
   justify-content: center;
 }
-.nv-tile-purple { background: rgba(139, 92, 246, 0.16); color: #b79dfb; }
-.nv-tile-blue   { background: rgba(59, 130, 246, 0.16); color: #7cb0ff; }
+/* Cada tile pega um AZUL diferente da escada, de propósito — antes eram dois
+   tons quase idênticos ao da logo, lado a lado. */
+.nv-tile-purple { background: rgba(10, 46, 122, 0.45); color: #8DB8F7; }
+.nv-tile-blue   { background: rgba(18, 165, 245, 0.14); color: #5FCBFA; }
 .nv-tile-green  { background: rgba(34, 197, 94, 0.16);  color: #62e29a; }
 .nv-tile-orange { background: rgba(245, 158, 11, 0.16); color: #f6c35a; }
 .nv-tile-pink   { background: rgba(236, 72, 153, 0.16); color: #f584bd; }
@@ -234,28 +252,78 @@
   overflow: hidden;
 }
 .nv-progress-fill {
-  background: var(--nv-grad-primary);
+  /* Ciano → azul-marca. Deliberadamente DIFERENTE do gradiente do botão
+     primário, pra barra e CTA não lerem como a mesma coisa. */
+  background: linear-gradient(90deg, #0D4396 0%, #12A5F5 100%);
   border-radius: 999px;
   height: 100%;
 }
 
-/* ---- Sidebar nav item ---- */
+/* ---- Sidebar nav item ----
+   Item ativo NÃO é pill sólido: com fundo cheio ele lê como BOTÃO, e botão
+   convida a clicar no que você já está vendo. O "você está aqui" vem de um
+   traço vertical na borda + fundo levemente lavado + texto no azul claro. */
 .nv-nav-item {
+  position: relative;
   color: var(--nv-text-muted);
   border-radius: 10px;
   transition: color 0.16s ease, background 0.16s ease;
 }
 .nv-nav-item:hover {
   color: var(--nv-text);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 .nv-nav-item[data-active="true"] {
-  color: #fff;
-  background: linear-gradient(
-    90deg,
-    rgba(139, 92, 246, 0.22) 0%,
-    rgba(139, 92, 246, 0.06) 100%
-  );
+  color: var(--nv-brand-soft);
+  background: rgba(22, 104, 227, 0.1);
+}
+.nv-nav-item[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 0 3px 3px 0;
+  background: var(--nv-brand-bright);
+}
+.nv-nav-item[data-active="true"]:hover {
+  background: rgba(22, 104, 227, 0.16);
+}
+
+/* ---- Layout-cartão (EverReply): canvas com gutter, sidebar flutuando ----
+   A sidebar é um painel arredondado com glow roxo ancorado no TOPO (atrás da
+   logo/menu) desaparecendo pro meio. O glow fica preso à caixa, não rola junto
+   com a nav. */
+.nv-sidebar-card {
+  border-radius: var(--nv-r-sheet);
+  /* Glow do topo em NAVY profundo, não no azul da marca: no tom da logo ele
+     lavava a sidebar inteira de azul-claro. */
+  background:
+    radial-gradient(130% 38% at 28% 0%, rgba(10, 46, 122, 0.3), rgba(7, 26, 56, 0) 62%),
+    var(--nv-sheet);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Rótulo dos grupos da nav ("Menu principal" / "Outros"). */
+.nv-nav-group {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nv-text-subtle);
+  padding: 0 8px 6px;
+}
+
+/* ---- Peças do topo: pílulas sobre canvas transparente ----
+   O header não tem fundo nem borda; quem dá corpo são as próprias pílulas. */
+.nv-pill {
+  background: var(--nv-sheet);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  transition: filter 0.16s ease;
+}
+.nv-pill:hover {
+  filter: brightness(1.25);
 }
 
 /* ---- Upgrade card (glow forte) ---- */
@@ -263,8 +331,8 @@
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  border: 1px solid rgba(139, 92, 246, 0.28);
-  background: linear-gradient(150deg, rgba(124, 58, 237, 0.18) 0%, rgba(168, 85, 247, 0.06) 100%);
+  border: 1px solid rgba(42, 121, 234, 0.28);
+  background: linear-gradient(150deg, rgba(22, 104, 227, 0.18) 0%, rgba(18, 165, 245, 0.06) 100%);
 }
 .nv-upgrade::after {
   content: "";
@@ -273,7 +341,7 @@
   bottom: -60px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(18, 165, 245, 0.4) 0%, transparent 65%);
   pointer-events: none;
 }
 
@@ -290,8 +358,8 @@
 }
 .nv-search:focus {
   outline: none;
-  border-color: rgba(139, 92, 246, 0.55);
-  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(42, 121, 234, 0.55);
+  background: rgba(42, 121, 234, 0.06);
 }
 
 /* ---- Badge de status (tabela) ---- */
@@ -307,41 +375,6 @@
 .nv-badge-progress { color: #f6c35a; background: rgba(245, 158, 11, 0.14); }
 .nv-badge-done     { color: #62e29a; background: rgba(34, 197, 94, 0.14); }
 .nv-badge-draft    { color: var(--nv-text-muted); background: rgba(255, 255, 255, 0.07); }
-
-/* ---- Ilustração do hero (cards flutuando + glow respirando) ---- */
-@keyframes nvHeroFloatFront {
-  0%, 100% { transform: translateY(0) rotate(0.6deg); }
-  50% { transform: translateY(-10px) rotate(-0.8deg); }
-}
-@keyframes nvHeroFloatBack {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(9px); }
-}
-@keyframes nvHeroGlow {
-  0%, 100% { opacity: 0.45; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.14); }
-}
-.nv-hero-front {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: nvHeroFloatFront 5.5s ease-in-out infinite;
-}
-.nv-hero-back {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: nvHeroFloatBack 7s ease-in-out infinite;
-}
-.nv-hero-glow {
-  transform-origin: center;
-  animation: nvHeroGlow 4.5s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nv-hero-front,
-  .nv-hero-back,
-  .nv-hero-glow {
-    animation: none;
-  }
-}
 
 /* ---- Animação de entrada ---- */
 @keyframes nvFadeUp {

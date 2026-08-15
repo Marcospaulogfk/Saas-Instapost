@@ -54,7 +54,7 @@ function mockSlide(i: number, total: number, bg?: string): PreviewSlide {
 // Swatches pra testar o override "Fundo do Slide" (dev).
 const BG_SWATCHES: { label: string; value?: string }[] = [
   { label: "Auto", value: undefined },
-  { label: "Roxo", value: "#7320E6" },
+  { label: "Roxo", value: "#1668E3" },
   { label: "Preto", value: "#0A0A0F" },
   { label: "Creme", value: "#F5F2EC" },
   { label: "Branco", value: "#FFFFFF" },
@@ -157,12 +157,12 @@ export default function PreviewEstilosPage() {
           slide={mockSlide(slideIdx, TOTAL, bg)}
           totalSlides={TOTAL}
           template="editorial"
-          brandColors={["#7320E6", "#1A1A1A", "#FAF8F5"]}
+          brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
           fontClass={inter.className}
           showDevBadges={false}
           editorialStyle={style}
           handle="@syncpost"
-          brandLabel="SyncPost"
+          brandLabel="Nexus Content"
         />
       </div>
 

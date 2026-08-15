@@ -88,7 +88,7 @@ export function QuickActionCard() {
                     />
                   ))}
                 </div>
-                <div className="text-[8px] font-mono font-semibold tracking-wider text-white/50">SYNCPOST</div>
+                <div className="text-[8px] font-mono font-semibold tracking-wider text-white/50">NEXUS CONTENT</div>
               </div>
             </div>
           </div>

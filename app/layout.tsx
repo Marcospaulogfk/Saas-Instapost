@@ -30,14 +30,15 @@ const anton = Anton({
 export const metadata: Metadata = {
   metadataBase: new URL('https://syncpost.com.br'),
   title: {
-    default: 'SyncPost — Conteúdo pra Instagram com IA',
-    template: '%s | SyncPost',
+    default: 'Nexus Content — Conteúdo pra Instagram com IA',
+    template: '%s | Nexus Content',
   },
   description:
     'Crie carrosséis e posts virais para Instagram em minutos com IA. A engine aprende sua marca e entrega roteiro, design e imagem prontos pra postar — tudo em português.',
-  generator: 'SyncPost',
-  applicationName: 'SyncPost',
+  generator: 'Nexus Content',
+  applicationName: 'Nexus Content',
   keywords: [
+    'nexus content',
     'syncpost',
     'carrossel instagram',
     'conteúdo com IA',
@@ -60,23 +61,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'pt_BR',
     url: 'https://syncpost.com.br',
-    siteName: 'SyncPost',
-    title: 'SyncPost — Conteúdo pra Instagram com IA',
+    siteName: 'Nexus Content',
+    title: 'Nexus Content — Conteúdo pra Instagram com IA',
     description:
       'A IA que aprende a sua marca e entrega carrosséis e posts prontos pra postar no Instagram — roteiro, design e imagem em minutos.',
     images: [
       {
-        url: '/syncpost-icon.png',
-        alt: 'SyncPost — Conteúdo pra Instagram com IA',
+        url: '/nexus-og.png',
+        alt: 'Nexus Content — Conteúdo pra Instagram com IA',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SyncPost — Conteúdo pra Instagram com IA',
+    title: 'Nexus Content — Conteúdo pra Instagram com IA',
     description:
       'A IA que aprende a sua marca e entrega carrosséis e posts prontos pra postar no Instagram — roteiro, design e imagem em minutos.',
-    images: ['/syncpost-icon.png'],
+    images: ['/nexus-og.png'],
   },
 }
 
@@ -107,7 +108,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Playfair+Display:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Caveat:wght@500;600;700&family=Playfair+Display:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         />
       </head>
       <body className="font-sans antialiased bg-background text-foreground">

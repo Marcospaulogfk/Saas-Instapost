@@ -82,8 +82,8 @@ export function CountrySelect({
             "--onb-bg-elevated": "#181818",
             "--onb-border-default": "#2a2a2a",
             "--onb-text-primary": "#ffffff",
-            "--onb-primary-dim": "rgba(115, 32, 230, 0.15)",
-            "--onb-primary-light": "#9C5FF1",
+            "--onb-primary-dim": "rgba(22, 104, 227, 0.15)",
+            "--onb-primary-light": "#5595F1",
           } as CSSProperties
         }
       >

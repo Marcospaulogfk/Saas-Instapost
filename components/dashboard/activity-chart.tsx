@@ -93,12 +93,12 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
           <AreaChart data={data} margin={{ top: 10, right: 24, bottom: 8, left: 8 }}>
             <defs>
               <linearGradient id="postsArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#9C5FF1" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#9C5FF1" stopOpacity={0} />
+                <stop offset="0%" stopColor="#5595F1" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#5595F1" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="imagensArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#7320E6" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#7320E6" stopOpacity={0} />
+                <stop offset="0%" stopColor="#1668E3" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#1668E3" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -111,10 +111,10 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             />
             <YAxis hide />
             <Tooltip
-              cursor={{ stroke: "rgba(124,58,237,0.3)", strokeWidth: 1 }}
+              cursor={{ stroke: "rgba(22, 104, 227,0.3)", strokeWidth: 1 }}
               contentStyle={{
                 background: "rgba(28,28,38,0.95)",
-                border: "1px solid rgba(124,58,237,0.3)",
+                border: "1px solid rgba(22, 104, 227,0.3)",
                 borderRadius: 8,
                 fontSize: 12,
                 color: "#FFFFFF",
@@ -125,7 +125,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             <Area
               type="monotone"
               dataKey="posts"
-              stroke="#9C5FF1"
+              stroke="#5595F1"
               strokeWidth={2}
               fill="url(#postsArea)"
               name="Posts"
@@ -133,7 +133,7 @@ export function ActivityChart({ projectsCount, creditsUsedThisMonth }: ActivityC
             <Area
               type="monotone"
               dataKey="imagens"
-              stroke="#7320E6"
+              stroke="#1668E3"
               strokeWidth={2}
               fill="url(#imagensArea)"
               name="Imagens"

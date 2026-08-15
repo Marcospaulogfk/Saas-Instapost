@@ -723,7 +723,7 @@ export function SplitMyPostFlowCta({
       <div className="inline-flex items-center gap-2 mb-4 flex-shrink-0">
         <span
           className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
-          style={{ backgroundColor: "#7C3AED", color: "#FFFFFF", fontSize: 11, fontWeight: 700 }}
+          style={{ backgroundColor: "#1668E3", color: "#FFFFFF", fontSize: 11, fontWeight: 700 }}
         >
           {slide.handle_avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1251,7 +1251,7 @@ export function SplitCardsWhite({
   const canvas = bgOverride || "#0E0E12"
   // Cores do rodapé adaptam ao canvas (que o usuário pode trocar via "Fundo").
   const ct = splitTheme(canvas)!
-  const brand = slide.brand_label || "SyncPost"
+  const brand = slide.brand_label || "Nexus Content"
   const titleSizeClass = fitTitle(
     slide.title,
     "text-[1.9rem]",

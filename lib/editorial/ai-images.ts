@@ -1,7 +1,6 @@
 import { fal } from '@fal-ai/client'
 import type { EditorialSlide } from '@/components/templates/editorial/editorial.types'
 import { generateNanoBanana } from '@/lib/generation/nano-banana'
-import { canUseNanoBananaPro } from '@/lib/tokens'
 
 let configured = false
 
@@ -53,7 +52,7 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
       console.log(
         `  🎨 Fal tentativa ${attempt}/${MAX_RETRIES}: ${params.prompt.slice(0, 60)}…`,
       )
-      const result = await fal.subscribe('fal-ai/flux-pro/v1.1', {
+      const result = await fal.subscribe('fal-ai/flux/schnell', {
         input: {
           prompt: enhancedPrompt,
           image_size: ASPECT_TO_SIZE[params.aspectRatio || '4:5'] as
@@ -61,9 +60,7 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
             | 'square_hd'
             | 'landscape_16_9'
             | 'portrait_16_9',
-          num_inference_steps: 32,
-          // guidance mais alto = imagem mais fiel ao prompt (menos "viagem").
-          guidance_scale: 4.5,
+          num_inference_steps: 4,
           num_images: 1,
           enable_safety_checker: true,
         },
@@ -91,7 +88,12 @@ export async function generateEditorialImage(params: GenerateImageParams): Promi
   throw new Error(`Fal.ai falhou após ${MAX_RETRIES} tentativas: ${final}`)
 }
 
-/** Qualidade EFETIVA gerada — usada pra debitar tokens (pro=20, normal=5). */
+/**
+ * Qualidade EFETIVA gerada — é o que o caller usa pra debitar tokens.
+ * O mapa em `tokenCostForImage` liga 'pro' → imageCover (25) e
+ * 'normal' → imageSlide (2). Os nomes ficaram por compatibilidade com os
+ * endpoints; a semântica hoje é CAPA x MIOLO, não plano caro x barato.
+ */
 export type EditorialImageQuality = 'normal' | 'pro'
 
 export interface EditorialImageForPlanResult {
@@ -99,21 +101,29 @@ export interface EditorialImageForPlanResult {
   quality: EditorialImageQuality
 }
 
+/** Papel do slide na peça — é ele que decide o modelo, não o plano. */
+export type EditorialImageRole = 'cover' | 'slide'
+
 /**
- * Gera a imagem editorial respeitando o PLANO do usuário (mesma regra do
- * post único, ESTRATEGIA-MONETIZACAO.md §5):
- *   - Pro / Studio  → Nano Banana Pro (fallback Flux Pro se falhar) → quality "pro"
- *   - trial/starter → Flux Pro v1.1 atual (inalterado)              → quality "normal"
+ * Gera a imagem editorial escolhendo o modelo pelo PAPEL do slide:
+ *   - capa  → Nano Banana 2 (arena rank 7)   → quality "pro"    → 25 tokens
+ *   - miolo → Flux Schnell                   → quality "normal" →  2 tokens
  *
- * ADITIVO e NÃO-QUEBRANTE: se o Nano Banana Pro falhar, CAI pro Flux Pro —
- * a geração nunca quebra por causa do modelo premium. O caller usa `quality`
- * pra debitar os tokens certos.
+ * Por que não um modelo bom no miolo: o miolo tem 6 imagens, então qualquer
+ * preço unitário é multiplicado por 6. Segurando a margem de 80% no Studio, o
+ * miolo tem teto de ~US$0,006/imagem — só o Schnell cabe. E ali a imagem é
+ * fundo escurecido atrás de texto, onde a diferença não aparece. Na capa, que
+ * é o que para o scroll, aparece — e a capa roda no modelo bom.
+ *
+ * NÃO-QUEBRANTE: se o Nano Banana 2 falhar, a capa CAI pro Schnell e volta
+ * como quality 'normal' — o usuário é cobrado 2 tokens em vez de 25, que é o
+ * que ele de fato recebeu.
  */
-export async function generateEditorialImageForPlan(
+export async function generateEditorialImageForRole(
   params: GenerateImageParams,
-  plan: string | null | undefined,
+  role: EditorialImageRole,
 ): Promise<EditorialImageForPlanResult> {
-  if (canUseNanoBananaPro(plan)) {
+  if (role === 'cover') {
     try {
       // Mantém a mesma orientação de estilo do pipeline Flux, pro look ficar
       // coerente entre os modelos.
@@ -123,10 +133,10 @@ export async function generateEditorialImageForPlan(
       return { url: r.url, quality: 'pro' }
     } catch (err) {
       console.warn(
-        '[editorial] Nano Banana Pro falhou, fallback Flux Pro:',
+        '[editorial] Nano Banana 2 falhou na capa, fallback Schnell:',
         err instanceof Error ? err.message : err,
       )
-      // segue pro Flux Pro abaixo
+      // segue pro Schnell abaixo — e cobra como miolo.
     }
   }
   const url = await generateEditorialImage(params)
@@ -134,14 +144,28 @@ export async function generateEditorialImageForPlan(
 }
 
 /**
- * Gera todas as imagens de um slide respeitando o PLANO (Pro/Studio → Nano
- * Banana Pro; demais → Flux Pro). Retorna as URLs e a qualidade EFETIVA de
- * cada uma (pra o caller debitar tokens). Se `plan` for omitido, cai no
- * comportamento normal (Flux Pro, quality "normal").
+ * @deprecated O modelo deixou de ser função do plano. Use
+ * `generateEditorialImageForRole`. Mantida porque `/api/editorial/*` ainda
+ * chama por esta assinatura; trata tudo como miolo.
+ */
+export async function generateEditorialImageForPlan(
+  params: GenerateImageParams,
+  _plan?: string | null,
+): Promise<EditorialImageForPlanResult> {
+  return generateEditorialImageForRole(params, 'slide')
+}
+
+/**
+ * Gera todas as imagens de um slide. A capa (`layoutType === 'capa'`) vai pro
+ * Nano Banana 2; todo o resto vai pro Schnell. Retorna a qualidade EFETIVA de
+ * cada imagem pro caller debitar os tokens certos.
+ *
+ * `_plan` não é mais usado na escolha do modelo — todo mundo recebe a mesma
+ * capa. Ficou na assinatura pros callers atuais não quebrarem.
  */
 export async function generateImagesForSlide(
   slide: EditorialSlide,
-  plan?: string | null,
+  _plan?: string | null,
 ): Promise<EditorialImageForPlanResult[]> {
   if (!slide.imagePrompts?.length) return []
 
@@ -164,9 +188,13 @@ export async function generateImagesForSlide(
         ? '1:1'
         : '4:5'
 
+  // Só a capa justifica o modelo caro — ver generateEditorialImageForRole.
+  const role: EditorialImageRole =
+    slide.layoutType === 'capa' ? 'cover' : 'slide'
+
   // Geração paralela (todas as imagens do slide ao mesmo tempo)
   const imagePromises = slide.imagePrompts.map((prompt) =>
-    generateEditorialImageForPlan({ prompt, style, aspectRatio }, plan),
+    generateEditorialImageForRole({ prompt, style, aspectRatio }, role),
   )
 
   return await Promise.all(imagePromises)

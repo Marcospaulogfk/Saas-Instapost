@@ -53,7 +53,7 @@ export default function OnboardingEntryPage() {
               <span
                 style={{
                   background:
-                    "linear-gradient(90deg, #9C5FF1 0%, #7320E6 60%, #5F14D6 100%)",
+                    "linear-gradient(90deg, #5595F1 0%, #1668E3 60%, #0E52BC 100%)",
                   WebkitBackgroundClip: "text",
                   backgroundClip: "text",
                   WebkitTextFillColor: "transparent",

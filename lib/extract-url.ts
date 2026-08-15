@@ -55,7 +55,7 @@ export async function extractFromUrl(rawUrl: string): Promise<ExtractedContent> 
     const response = await fetch(url, {
       headers: {
         // alguns sites bloqueiam requests sem User-Agent de navegador
-        "User-Agent": "Mozilla/5.0 (compatible; SyncPostBot/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; NexusContentBot/1.0)",
         Accept: "text/html,application/xhtml+xml",
       },
       signal: AbortSignal.timeout(15_000),
@@ -187,7 +187,7 @@ export async function downloadLogoAsBase64(
     const res = await fetch(logoUrl, {
       headers: {
         // alguns sites bloqueiam requests sem User-Agent de navegador
-        "User-Agent": "Mozilla/5.0 (compatible; SyncPostBot/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; NexusContentBot/1.0)",
       },
       signal: AbortSignal.timeout(10_000),
     })

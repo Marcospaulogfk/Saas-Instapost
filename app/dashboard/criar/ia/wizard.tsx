@@ -143,7 +143,7 @@ export function Wizard({ brands }: WizardProps) {
     setLoading(true)
     setLoadingMessage("Preparando editor...")
 
-    const fallbackColors = ["#7320E6", "#1A1A1A", "#FAF8F5"]
+    const fallbackColors = ["#1668E3", "#1A1A1A", "#FAF8F5"]
     const colors =
       activeBrand.brand_colors && activeBrand.brand_colors.length > 0
         ? activeBrand.brand_colors.slice(0, 3)
@@ -347,7 +347,7 @@ function TemplateCard({ template, selected, onSelect }: TemplateCardProps) {
         {template.value === "hybrid" && <HybridPreview />}
 
         {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(115, 32, 230,0.6)]">
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-lime flex items-center justify-center shadow-[0_0_12px_rgba(22, 104, 227,0.6)]">
             <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
           </div>
         )}
@@ -406,7 +406,7 @@ function CinematicPreview() {
         className="absolute inset-0 opacity-30"
         style={{
           background:
-            "radial-gradient(circle at 30% 30%, rgba(167,139,250,0.5), transparent 50%), radial-gradient(circle at 80% 80%, rgba(124,58,237,0.4), transparent 60%)",
+            "radial-gradient(circle at 30% 30%, rgba(141, 184, 247,0.5), transparent 50%), radial-gradient(circle at 80% 80%, rgba(22, 104, 227,0.4), transparent 60%)",
         }}
       />
       {/* Overlay dramático bottom */}
@@ -419,7 +419,7 @@ function CinematicPreview() {
       </div>
       {/* Indicador top */}
       <div className="absolute top-3 left-3 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(115, 32, 230,0.7)]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-lime shadow-[0_0_6px_rgba(22, 104, 227,0.7)]" />
         <span className="text-[7px] uppercase tracking-wider text-white/80 font-mono">LIVE</span>
       </div>
     </div>
@@ -458,7 +458,7 @@ function HybridPreview() {
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-1 h-1 rounded-full bg-brand-400" />
-          <div className="text-[7px] tracking-wider text-white/40">SYNCPOST · ESPORTE</div>
+          <div className="text-[7px] tracking-wider text-white/40">NEXUS CONTENT · ESPORTE</div>
         </div>
       </div>
     </div>

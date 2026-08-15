@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { Suspense, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
@@ -37,11 +38,27 @@ import type { ClaudeSlide } from "@/lib/generation/claude"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
 import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
+import BorderGlow from "@/components/backgrounds/border-glow"
 import {
   CAROUSEL_STYLES,
   CarouselStyleCard,
 } from "@/components/carousel/carousel-style-gallery"
 import type { EditorialStyle } from "@/components/carousel/slide-preview"
+import { AbordagemArt } from "./abordagem-art"
+import "./criar.css"
+import {
+  buildIdeaSuggestions,
+  type Abordagem,
+  type IdeaSuggestion,
+  type Objetivo,
+} from "./idea-suggestions"
+
+/* Arrasta o three.js junto (~150KB gz) e só roda no cliente — sob demanda pra
+   não pesar o bundle do wizard. Ele mesmo pausa fora da viewport e com a aba
+   oculta, então não fica consumindo GPU à toa. */
+const LiquidEther = dynamic(() => import("@/components/backgrounds/liquid-ether"), {
+  ssr: false,
+})
 
 type StepId = 1 | 2 | 3 | 4 | 5
 
@@ -77,7 +94,7 @@ function recommendedTemplates(
 const WIZARD_BRAND = {
   id: "wizard-brand",
   name: "Marca Demo",
-  brand_colors: ["#7320E6", "#0A0A0F", "#FAF8F5"],
+  brand_colors: ["#1668E3", "#0A0A0F", "#FAF8F5"],
   instagram_handle: "marca",
 }
 
@@ -115,14 +132,8 @@ function buildFormato(format: FormatKind, slides: number): Formato {
   }
 }
 
-type Objetivo = "vender" | "engajar" | "informar" | "comunidade"
-type Abordagem =
-  | "viral"
-  | "educativo"
-  | "comunidade"
-  | "storytelling"
-  | "dados"
-  | "oferta"
+/* Objetivo e Abordagem vivem em ./idea-suggestions — o gerador de sugestões
+   do passo 4 depende deles, e deixar a declaração lá evita import circular. */
 type ComoCriar = "zero" | "link" | "inspiracoes"
 
 // === Objetivo: UI ↔ API (o backend usa sell/inform/engage/community) ===
@@ -193,18 +204,22 @@ const OBJETIVO_OPTIONS: {
   },
 ]
 
+/* Sem cor por item de propósito: seis ícones em seis cores viravam um
+   arco-íris que brigava com o acento único da marca — e a cor não dizia nada
+   sobre a abordagem. Quem diferencia agora é a descrição, que é informação de
+   verdade; o ícone fica monocromático e só acende no azul quando selecionado. */
 const ABORDAGEM_OPTIONS: {
   id: Abordagem
   label: string
+  desc: string
   icon: typeof Sparkles
-  color: string
 }[] = [
-  { id: "viral", label: "Viral", icon: Flame, color: "text-orange-400" },
-  { id: "educativo", label: "Educativo", icon: GraduationCap, color: "text-blue-400" },
-  { id: "comunidade", label: "Comunidade", icon: Users, color: "text-emerald-400" },
-  { id: "storytelling", label: "Storytelling", icon: BookOpen, color: "text-brand-400" },
-  { id: "dados", label: "Dados & provas", icon: BarChart3, color: "text-sky-400" },
-  { id: "oferta", label: "Oferta direta", icon: Tag, color: "text-pink-400" },
+  { id: "viral", label: "Viral", desc: "Gancho forte e ritmo rápido", icon: Flame },
+  { id: "educativo", label: "Educativo", desc: "Ensina passo a passo", icon: GraduationCap },
+  { id: "comunidade", label: "Comunidade", desc: "Convida pra conversa", icon: Users },
+  { id: "storytelling", label: "Storytelling", desc: "Narrativa com começo e fim", icon: BookOpen },
+  { id: "dados", label: "Dados & provas", desc: "Números que sustentam", icon: BarChart3 },
+  { id: "oferta", label: "Oferta direta", desc: "Proposta clara e chamada", icon: Tag },
 ]
 
 const BRIEFING_PLACEHOLDER_FALLBACK =
@@ -726,7 +741,18 @@ function CriarWizard() {
   ]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto pb-24 lg:pb-8">
+    <div className="relative min-h-full">
+      {/* O fluido é WebGL rodando sobre a altura TOTAL do conteúdo. Nos passos
+          1 e 2 (curtos) ele é barato; do 3 em diante a página cresce muito e a
+          galeria de estilos já é pesada por conta própria — somar os dois
+          travava a rolagem. Ali entra o degradê estático. */}
+      <FundoFluido animado={step < 3} />
+
+      <div
+        className={`relative z-10 p-4 sm:p-6 lg:p-8 mx-auto pb-24 lg:pb-8 ${
+          step === 3 && hasStyleStep ? "max-w-6xl" : "max-w-5xl"
+        }`}
+      >
       {/* Stepper */}
       <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8">
         {steps.map((stepDef, i) => {
@@ -823,11 +849,12 @@ function CriarWizard() {
       {step === 4 && formato && (
         <Step3
           formato={formato}
-          objetivo={objetivo}
           comoCriar={comoCriar}
           briefing={briefing}
           setBriefing={setBriefing}
           briefingPlaceholder={buildBriefingPlaceholder(activeBrand)}
+          sugestoes={buildIdeaSuggestions(activeBrand, objetivo, abordagem)}
+          brandName={activeBrand?.name?.trim() || null}
           promptRefinado={promptRefinado}
           setPromptRefinado={setPromptRefinado}
           onRefinar={() => void refinarComIA()}
@@ -892,9 +919,68 @@ function CriarWizard() {
           onApprove={aprovarECriarCarrossel}
         />
       )}
+      </div>
     </div>
   )
 }
+
+/**
+ * Fluido atrás do wizard inteiro.
+ *
+ * Cobre toda a altura do conteúdo (não só a viewport), então acompanha o
+ * scroll dos passos longos — Template e Estilo são bem mais altos que o
+ * primeiro. Não recebe ponteiro: o LiquidEther escuta o mouse em `window`, e
+ * assim os cliques continuam chegando nos cards por cima. O véu escuro segura
+ * o contraste do texto sobre os picos claros do fluido.
+ */
+function FundoFluido({ animado }: { animado: boolean }) {
+  if (!animado) {
+    // Mesma paleta do fluido, congelada: o passo continua com a identidade
+    // sem custar um frame de GPU.
+    return (
+      <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(90% 55% at 18% 0%, rgba(82,39,255,0.28) 0%, transparent 60%), radial-gradient(80% 50% at 88% 22%, rgba(69,127,147,0.22) 0%, transparent 62%), radial-gradient(70% 45% at 50% 100%, rgba(34,16,184,0.24) 0%, transparent 65%)",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[rgba(5,7,12,0.66)]" />
+      </div>
+    )
+  }
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      <LiquidEther
+        /* Fundo puramente ambiente: ignora o cursor e se move sozinho pelo
+           autoDemo. Sem isso o ponteiro fica "dentro" do container quase
+           sempre (ele cobre a página toda) e o autoDemo nunca assumiria. */
+        interactive={false}
+        colors={["#5227FF", "#2210b8", "#457f93"]}
+        mouseForce={20}
+        cursorSize={100}
+        isViscous
+        viscous={30}
+        iterationsViscous={32}
+        iterationsPoisson={32}
+        resolution={0.5}
+        isBounce={false}
+        autoDemo
+        autoSpeed={0.5}
+        autoIntensity={2.2}
+        takeoverDuration={0.25}
+        autoResumeDelay={3000}
+        autoRampDuration={0.6}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[rgba(5,7,12,0.66)]" />
+    </div>
+  )
+}
+
+/** Raio dos cards de formato — o BorderGlow recebe em px, o botão interno
+ *  precisa do mesmo valor pro anel de seleção acompanhar a curva. */
+const CARD_RADIUS = 28
 
 function Step1({
   formato,
@@ -949,36 +1035,61 @@ function Step1({
         {FORMAT_OPTIONS.map((f) => {
           const selected = chosen && format === f.id
           return (
-            <button
+            <BorderGlow
               key={f.id}
-              type="button"
-              onClick={() => onSelect(buildFormato(f.id, slides))}
-              className={`relative rounded-2xl p-5 text-left transition-all border-2 ${
-                selected
-                  ? "border-brand-500 bg-brand-500/10"
-                  : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
-              }`}
+              /* Calibrado pra ficar discreto. Dois detalhes não óbvios:
+                 1) o componente pinta um mesh gradient no MIOLO do card
+                    (fillOpacity 0.5 por padrão) — aqui vai quase zerado;
+                 2) ele conta com um `backgroundColor` OPACO pra mascarar esse
+                    mesh e deixar só a borda de 1px colorida. Como o card é
+                    preto a 70% (pra deixar o fluido aparecer), 30% do mesh
+                    vaza pelo miolo — por isso as cores são versões escuras do
+                    roxo/rosa/azul: o vazamento fica imperceptível e a borda
+                    ainda acende perto do cursor. Clarear essas cores traz a
+                    mancha de volta. */
+              edgeSensitivity={50}
+              glowColor="40 80 80"
+              backgroundColor="rgba(0,0,0,0.7)"
+              borderRadius={CARD_RADIUS}
+              glowRadius={22}
+              glowIntensity={0.35}
+              fillOpacity={0.1}
+              coneSpread={30}
+              animated={false}
+              colors={["#3a2a63", "#3f2547", "#123a52"]}
             >
-              {selected && (
-                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center">
-                  <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                </div>
-              )}
-              <div
-                className={`inline-flex items-center justify-center w-10 h-10 rounded-lg mb-3 ${
-                  selected ? "bg-brand-500/20" : "bg-background-tertiary"
+              <button
+                type="button"
+                onClick={() => onSelect(buildFormato(f.id, slides))}
+                /* O anel de seleção fica AQUI, e não no BorderGlow: o wrapper
+                   já usa box-shadow inline pro glow, e um `ring` por fora
+                   seria sobrescrito por ele. */
+                className={`relative h-full w-full p-5 text-left transition-colors ${
+                  selected ? "bg-brand-500/10 ring-2 ring-inset ring-brand-500" : ""
                 }`}
+                style={{ borderRadius: CARD_RADIUS }}
               >
-                <f.icon
-                  className={`w-5 h-5 ${selected ? "text-brand-300" : "text-text-secondary"}`}
-                />
-              </div>
-              <p className="text-base font-semibold text-text-primary">
-                {f.label}
-              </p>
-              <p className="text-[11px] text-text-secondary mt-0.5">{f.desc}</p>
-              <p className="text-[10px] text-text-muted mt-0.5">{f.size}</p>
-            </button>
+                {selected && (
+                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                  </div>
+                )}
+                <div
+                  className={`inline-flex items-center justify-center w-10 h-10 rounded-lg mb-3 ${
+                    selected ? "bg-brand-500/20" : "bg-white/[0.06]"
+                  }`}
+                >
+                  <f.icon
+                    className={`w-5 h-5 ${selected ? "text-brand-300" : "text-text-secondary"}`}
+                  />
+                </div>
+                <p className="text-base font-semibold text-text-primary">
+                  {f.label}
+                </p>
+                <p className="text-[11px] text-text-secondary mt-0.5">{f.desc}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{f.size}</p>
+              </button>
+            </BorderGlow>
           )
         })}
       </div>
@@ -1086,11 +1197,11 @@ function Step2({
                 )}
                 <div className="flex items-start gap-2.5">
                   <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      sel ? "bg-brand-500/20" : "bg-background-tertiary"
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                      sel ? "bg-brand-500 text-white" : "bg-brand-500/15 text-brand-400"
                     }`}
                   >
-                    <o.icon className={`w-4 h-4 ${sel ? "text-brand-300" : "text-text-secondary"}`} />
+                    <o.icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-text-primary">
@@ -1124,19 +1235,49 @@ function Step2({
                 key={a.id}
                 type="button"
                 onClick={() => onAbordagem(a.id)}
-                className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
+                className={`group relative overflow-hidden text-left p-3.5 rounded-xl border transition-colors ${
                   sel
-                    ? "border-brand-500 bg-brand-500/10"
+                    ? "border-brand-500/50 bg-brand-500/[0.07]"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
+                <AbordagemArt id={a.id} selected={sel} />
                 {reco && (
-                  <span className="absolute top-1.5 right-1.5 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600/90 text-white">
+                  <span className="absolute top-1.5 right-1.5 z-20 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand-600/90 text-white">
                     Recomendado
                   </span>
                 )}
-                <a.icon className={`w-5 h-5 ${a.color}`} />
-                <p className="text-xs font-medium text-text-primary">{a.label}</p>
+                {/* Texto acima da arte e limitado a ~60% da largura pra nunca
+                    encostar na ilustração, em qualquer breakpoint. */}
+                <div className="relative z-10 w-[62%]">
+                  {/* Chip sempre azul: o ícone virou o acento do card agora que
+                      a arte de fundo carrega o peso visual. */}
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
+                      sel ? "bg-brand-500 text-white" : "bg-brand-500/15 text-brand-400"
+                    }`}
+                  >
+                    <a.icon className="w-4 h-4" />
+                  </div>
+                  <p
+                    className={`text-[13px] font-semibold transition-colors ${
+                      sel ? "text-brand-200" : "text-text-primary"
+                    }`}
+                  >
+                    {a.label}
+                  </p>
+                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                    {a.desc}
+                  </p>
+                </div>
+                {/* Seleção = sublinhado na base do card (o anel de 2px era o
+                    mesmo sinal usado por Objetivo e Modo — agora cada seção
+                    tem o seu). */}
+                <span
+                  className={`absolute inset-x-0 bottom-0 z-10 h-[3px] bg-brand-500 transition-transform duration-200 origin-left ${
+                    sel ? "scale-x-100" : "scale-x-0"
+                  }`}
+                />
               </button>
             )
           })}
@@ -1175,16 +1316,22 @@ function Step2({
                 key={c.id}
                 type="button"
                 onClick={() => onComoCriar(c.id)}
-                className={`text-left p-4 rounded-xl border-2 transition-all ${
+                className={`text-left p-3.5 rounded-xl border-2 transition-all ${
                   sel
                     ? "border-brand-500 bg-brand-500/10"
                     : "border-border-subtle bg-background-tertiary/30 hover:border-border-medium"
                 }`}
               >
-                <c.icon
-                  className={`w-5 h-5 mb-2 ${sel ? "text-brand-300" : "text-text-secondary"}`}
-                />
-                <p className="text-sm font-semibold text-text-primary mb-1">
+                {/* Mesmo chip de ícone do Objetivo e da Abordagem — as três
+                    seções do passo compartilham a anatomia. */}
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
+                    sel ? "bg-brand-500 text-white" : "bg-brand-500/15 text-brand-400"
+                  }`}
+                >
+                  <c.icon className="w-4 h-4" />
+                </div>
+                <p className="text-[13px] font-semibold text-text-primary">
                   {c.label}
                 </p>
                 <p className="text-[11px] text-text-secondary leading-relaxed">
@@ -1226,12 +1373,13 @@ function Step3({
   linkUrl,
   setLinkUrl,
   linkErr,
+  sugestoes,
+  brandName,
   onBack,
   onGerar,
   canFinish,
 }: {
   formato: Formato
-  objetivo: Objetivo
   comoCriar: ComoCriar
   briefing: string
   setBriefing: (v: string) => void
@@ -1245,41 +1393,52 @@ function Step3({
   linkUrl: string
   setLinkUrl: (v: string) => void
   linkErr: string | null
+  sugestoes: IdeaSuggestion[]
+  brandName: string | null
   onBack: () => void
   onGerar: () => void
   canFinish: boolean
 }) {
   const isPostUnico = formato.pageMode === "post-unico"
   const isLinkMode = comoCriar === "link"
+  const busy = refinando || submitting
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  /** Sugestão clicada vira o briefing e o foco volta pro campo pra editar. */
+  function aplicarSugestao(s: IdeaSuggestion) {
+    setBriefing(s.briefing)
+    setPromptRefinado(null)
+    inputRef.current?.focus()
+  }
+
+  const modoLabel =
+    comoCriar === "zero"
+      ? "Criar do Zero"
+      : comoCriar === "link"
+        ? "A partir de Link"
+        : "Inspirações"
+
   return (
     <div>
-      <div className="text-center mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-1.5 tracking-tight">
-          Sua ideia
+      <div className="text-center mb-7">
+        {/* Orbe da marca: abre a etapa como um "assistente" em vez de um
+            formulário. Animação em ./criar.css (nx-orbe). */}
+        <div className="nx-orbe mx-auto mb-5" aria-hidden>
+          <span className="nx-orbe-brilho" />
+        </div>
+        <p className="text-sm text-text-secondary mb-1.5">
+          {brandName ? `Tudo pronto, ${brandName}.` : "Tudo pronto."}
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2 tracking-tight">
+          {isLinkMode ? "Sua ideia" : "Sobre o que vamos falar?"}
         </h1>
-        <p className="text-sm text-text-secondary">
+        <p className="mx-auto max-w-md text-sm text-text-secondary leading-relaxed">
           {isLinkMode
             ? "Cole um link. A IA lê a página e transforma o conteúdo na sua ideia."
             : isPostUnico
               ? "Escreva a ideia. A IA escreve o texto e você revisa antes da arte."
-              : "Vamos transformar sua ideia em conteúdo profissional."}
+              : "Descreva o tema ou comece por uma das sugestões da sua marca."}
         </p>
-      </div>
-
-      {/* Resumo das escolhas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-        <Pill
-          icon={formato.icon}
-          label="FORMATO"
-          value={formato.label}
-          sub={formato.size}
-        />
-        <Pill
-          icon={Wand2}
-          label="MODO"
-          value={comoCriar === "zero" ? "Criar do Zero" : comoCriar === "link" ? "A partir de Link" : "Inspirações"}
-          sub={formato.slides > 1 ? `${formato.slides} slides` : "1 slide"}
-        />
       </div>
 
       {/* Modo Link: só o campo de URL. A IA analisa a página na hora de gerar. */}
@@ -1311,42 +1470,124 @@ function Step3({
         </div>
       )}
 
-      {/* Briefing + refino agrupados num card coeso (oculto no modo link) */}
-      <div className={`rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5 mb-5${isLinkMode ? " hidden" : ""}`}>
-      <div className="mb-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3" />
-            Ideia Original
-          </p>
-          {briefing.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setBriefing("")
-                setPromptRefinado(null)
-              }}
-              className="text-[10px] text-text-muted hover:text-text-primary"
+      {/* Caixa de composição única (padrão chat): o campo, o resumo das
+          escolhas e o botão de gerar moram juntos, e as sugestões da marca
+          ficam logo abaixo como ponto de partida. */}
+      <div className={isLinkMode ? "hidden" : ""}>
+        <div
+          className={`relative rounded-2xl border bg-background-tertiary/20 transition-colors ${
+            briefing.trim() ? "border-brand-500/40" : "border-border-subtle"
+          }`}
+        >
+          <Sparkles
+            className="pointer-events-none absolute left-4 top-[18px] h-4 w-4 text-brand-400"
+            aria-hidden
+          />
+          <Textarea
+            ref={inputRef}
+            value={briefing}
+            onChange={(e) => {
+              setBriefing(e.target.value)
+              if (promptRefinado) setPromptRefinado(null)
+            }}
+            onKeyDown={(e) => {
+              // Enter quebra linha (a ideia costuma ter mais de uma frase);
+              // Ctrl/Cmd+Enter é o atalho pra gerar.
+              if (
+                e.key === "Enter" &&
+                (e.metaKey || e.ctrlKey) &&
+                canFinish &&
+                !busy
+              ) {
+                e.preventDefault()
+                onGerar()
+              }
+            }}
+            placeholder={briefingPlaceholder}
+            rows={4}
+            className="border-0 bg-transparent pl-11 pr-4 pt-4 text-[15px] leading-relaxed resize-none shadow-none focus-visible:ring-0"
+          />
+          <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MiniChip icon={formato.icon} label={formato.label} />
+              <MiniChip icon={Wand2} label={modoLabel} />
+              {briefing.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBriefing("")
+                    setPromptRefinado(null)
+                  }}
+                  className="text-[10px] text-text-muted hover:text-text-primary px-1"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <Button
+              onClick={onGerar}
+              disabled={!canFinish || busy}
+              className="h-9 px-4 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 flex-shrink-0"
             >
-              Limpar
-            </button>
-          )}
+              {refinando ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  Refinando...
+                </>
+              ) : submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  Gerar
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        <Textarea
-          value={briefing}
-          onChange={(e) => {
-            setBriefing(e.target.value)
-            if (promptRefinado) setPromptRefinado(null)
-          }}
-          placeholder={briefingPlaceholder}
-          rows={3}
-          className="text-sm"
-        />
-        <p className="text-[10px] text-text-muted mt-1 text-right">
-          {briefing.length} chars
+        <p className="mt-1.5 text-[10px] text-text-muted text-right">
+          {briefing.length} chars · Ctrl+Enter pra gerar
         </p>
+
+        {/* Sugestões derivadas da marca ativa + objetivo/abordagem escolhidos.
+            Heurística local (ver ./idea-suggestions) — nenhuma chamada de IA
+            acontece aqui, só no "Gerar". */}
+        {sugestoes.length > 0 && (
+          <div className="mt-7">
+            <p className="text-[13px] text-text-secondary mb-3">
+              {brandName
+                ? `Comece por um exemplo de ${brandName}`
+                : "Comece por um exemplo abaixo"}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {sugestoes.map((s) => (
+                <button
+                  key={s.title}
+                  type="button"
+                  onClick={() => aplicarSugestao(s)}
+                  className="group flex flex-col text-left rounded-xl border border-border-subtle bg-background-tertiary/30 p-4 transition-colors hover:border-brand-500/50 hover:bg-brand-500/[0.06]"
+                >
+                  <p className="text-[14px] font-semibold text-text-primary">
+                    {s.title}
+                  </p>
+                  <p className="text-[12px] text-text-secondary leading-relaxed mt-1">
+                    {s.desc}
+                  </p>
+                  {/* Sempre visível: no hover-only o card virava um bloco de
+                      texto sem affordance de clique. */}
+                  <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-brand-400 transition-transform group-hover:translate-x-0.5">
+                    Usar esta ideia
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
+      <div className={isLinkMode ? "" : "mt-5"}>
       {/* Prompt refinado */}
       {promptRefinado && (
         <div className="mb-4 rounded-xl border border-brand-600/30 bg-brand-600/5 p-4">
@@ -1391,36 +1632,30 @@ function Step3({
       )}
       </div>
 
-      <div className="flex justify-between gap-3">
-        <Button variant="outline" onClick={onBack} disabled={refinando}>
+      <div className="flex justify-between gap-3 mt-6">
+        <Button variant="outline" onClick={onBack} disabled={busy}>
           <ArrowLeft className="w-4 h-4 mr-1.5" />
           Voltar
         </Button>
-        <Button
-          onClick={onGerar}
-          disabled={!canFinish || submitting || refinando}
-          className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 min-w-[160px]"
-        >
-          {refinando ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-              Refinando sua ideia...
-            </>
-          ) : submitting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : isPostUnico ? (
-            <>
-              <Sparkles className="w-4 h-4 mr-1.5" />
-              Gerar conteúdo
-              <ArrowRight className="w-4 h-4 ml-1.5" />
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-1.5" />
-              Gerar com IA
-            </>
-          )}
-        </Button>
+        {/* Fora do modo link o botão de gerar vive DENTRO da caixa de
+            composição — aqui embaixo ele seria um segundo CTA pro mesmo ato. */}
+        {isLinkMode && (
+          <Button
+            onClick={onGerar}
+            disabled={!canFinish || busy}
+            className="bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 min-w-[160px]"
+          >
+            {submitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-1.5" />
+                {isPostUnico ? "Gerar conteúdo" : "Gerar com IA"}
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -1619,7 +1854,7 @@ function StyleStep({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {CAROUSEL_STYLES.map((s) => (
           <CarouselStyleCard
             key={s.style}
@@ -1647,33 +1882,12 @@ function StyleStep({
   )
 }
 
-function Pill({
-  icon: Icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: typeof Sparkles
-  label: string
-  value: string
-  sub: string
-}) {
+/** Resumo compacto das escolhas, dentro da caixa de composição do passo 4. */
+function MiniChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
   return (
-    <div className="rounded-xl border border-border-subtle bg-background-tertiary/30 p-3">
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-background-tertiary border border-border-subtle flex items-center justify-center flex-shrink-0">
-          <Icon className="w-3.5 h-3.5 text-text-secondary" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-text-muted">
-            {label}
-          </p>
-          <p className="text-xs font-semibold text-text-primary truncate">
-            {value}
-          </p>
-          <p className="text-[10px] text-text-muted truncate">{sub}</p>
-        </div>
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-background-tertiary/50 px-1.5 py-1 text-[10px] text-text-secondary whitespace-nowrap">
+      <Icon className="w-3 h-3 flex-shrink-0" />
+      {label}
+    </span>
   )
 }

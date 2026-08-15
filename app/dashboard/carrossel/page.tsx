@@ -108,7 +108,7 @@ export default function CarrosselEditorPage() {
           colors:
             Array.isArray(d.colors) && d.colors.length
               ? d.colors
-              : ["#7320E6", "#0A0A0F", "#FAF8F5"],
+              : ["#1668E3", "#0A0A0F", "#FAF8F5"],
           handle: d.handle || handleFromBrand(d.brandName),
           avatarInitials: d.avatarInitials || "",
           chrome: d.chrome,
@@ -157,7 +157,7 @@ export default function CarrosselEditorPage() {
               colors:
                 Array.isArray(draft.colors) && draft.colors.length
                   ? draft.colors
-                  : ["#7320E6", "#0A0A0F", "#FAF8F5"],
+                  : ["#1668E3", "#0A0A0F", "#FAF8F5"],
               handle: draft.handle || handleFromBrand(draft.brandName),
               avatarInitials: draft.avatarInitials || "",
               chrome: draft.chrome,
@@ -204,7 +204,7 @@ export default function CarrosselEditorPage() {
       colors:
         Array.isArray(payload.colors) && payload.colors.length
           ? payload.colors
-          : ["#7320E6", "#0A0A0F", "#FAF8F5"],
+          : ["#1668E3", "#0A0A0F", "#FAF8F5"],
       handle:
         normalizeHandle(payload.handle) ?? handleFromBrand(payload.brandName),
       avatarInitials: "",

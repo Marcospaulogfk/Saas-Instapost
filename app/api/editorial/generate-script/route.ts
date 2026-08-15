@@ -96,7 +96,7 @@ export async function POST(req: Request) {
       brandColors:
         Array.isArray(body.colors) && body.colors.length
           ? body.colors
-          : ["#7320E6", "#0A0A0F", "#FAF8F5"],
+          : ["#1668E3", "#0A0A0F", "#FAF8F5"],
       nSlides,
       abordagem: typeof body.abordagem === "string" ? body.abordagem : undefined,
       avoidTitles: Array.isArray(body.avoidTitles)

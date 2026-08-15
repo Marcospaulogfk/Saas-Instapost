@@ -650,8 +650,8 @@ export function FreePostRenderer({
               ...wrapperStyle,
               cursor: dragHandler ? "grab" : "pointer",
               outline: isSelected
-                ? "2px solid #a855f7"
-                : "1px dashed rgba(168,85,247,0.45)",
+                ? "2px solid #12A5F5"
+                : "1px dashed rgba(18, 165, 245,0.45)",
               outlineOffset: 2,
               zIndex: b.z ?? 5,
             }}

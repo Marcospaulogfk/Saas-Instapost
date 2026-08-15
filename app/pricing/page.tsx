@@ -31,9 +31,10 @@ export default function PricingPage() {
 
       <div className="max-w-3xl mx-auto px-4 pt-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Tokens sao a moeda do SyncPost: texto = 1 token, imagem normal = 5,
-          imagem Nano Banana Pro = 20. O Nano Banana Pro (qualidade maxima) esta
-          disponivel apenas nos planos Pro e Studio.
+          Tokens sao a moeda do Nexus Content: roteiro + legenda = 4 tokens,
+          imagem de capa = 25, imagem por slide = 2. Voce decide em cada
+          carrossel se quer imagem de IA — sem imagem, um carrossel custa 4
+          tokens. A capa roda em Nano Banana 2 em todos os planos.
         </p>
       </div>
 

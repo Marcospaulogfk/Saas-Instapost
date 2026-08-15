@@ -103,14 +103,14 @@ export function NovaCalendar({
                 background: isToday ? "var(--nv-grad-primary)" : "transparent",
                 color: isToday ? "#fff" : "var(--nv-text-muted)",
                 fontWeight: isToday ? 700 : 400,
-                boxShadow: isToday ? "0 4px 14px -4px rgba(124,58,237,0.6)" : "none",
+                boxShadow: isToday ? "0 4px 14px -4px rgba(22, 104, 227,0.6)" : "none",
               }}
             >
               {d}
               {isScheduled && !isToday && (
                 <span
                   className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                  style={{ background: "var(--nv-purple)" }}
+                  style={{ background: "var(--nv-brand)" }}
                 />
               )}
             </div>
@@ -137,7 +137,7 @@ export function NovaActivity({ items }: { items: NovaActivityItem[] }) {
         <h2 className="text-[15px] font-semibold" style={{ color: "var(--nv-text)" }}>
           Atividade recente
         </h2>
-        <Link href="/dashboard/projetos" className="text-[12px] font-medium" style={{ color: "#b79dfb" }}>
+        <Link href="/dashboard/projetos" className="text-[12px] font-medium" style={{ color: "#8DB8F7" }}>
           Ver tudo
         </Link>
       </div>
@@ -151,7 +151,7 @@ export function NovaActivity({ items }: { items: NovaActivityItem[] }) {
             <div key={it.id} className="flex items-start gap-3">
               <span
                 className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
-                style={{ background: "rgba(139,92,246,0.18)", color: "#b79dfb" }}
+                style={{ background: "rgba(42, 121, 234,0.18)", color: "#8DB8F7" }}
               >
                 {it.title.charAt(0).toUpperCase()}
               </span>
@@ -184,7 +184,7 @@ export function NovaUpgradeCard({ isPro }: { isPro: boolean }) {
         <div className="flex items-center gap-2 mb-2">
           <Crown className="w-4 h-4" style={{ color: "#f6c35a" }} />
           <h2 className="text-[14px] font-bold" style={{ color: "var(--nv-text)" }}>
-            Desbloqueie o SyncPost Pro
+            Desbloqueie o Nexus Content Pro
           </h2>
         </div>
         <ul className="space-y-1.5 mb-4">

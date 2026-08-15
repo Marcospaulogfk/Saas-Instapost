@@ -16,7 +16,7 @@ interface SepiaLayoutProps {
 }
 
 /**
- * "Sepia" virou "Photo Background com overlay preto" — paleta SyncPost
+ * "Sepia" virou "Photo Background com overlay preto" — paleta Nexus Content
  * (apenas preto e branco). O nome do arquivo/layoutType é mantido pra
  * compatibilidade com slides salvos antes.
  */

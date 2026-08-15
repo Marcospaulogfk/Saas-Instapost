@@ -17,7 +17,7 @@ export function FinalCTA() {
         Pronto para criar carrosseis virais?
       </h2>
       <p className="text-xl text-muted-foreground mb-8">
-        Comece gratis com 2 imagens. Sem cartao de credito.
+        Comece gratis com 1 carrossel completo. Sem cartao de credito.
       </p>
       <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg px-8 py-6">
         Comecar agora

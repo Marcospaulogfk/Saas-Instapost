@@ -26,3 +26,7 @@ tsconfig.tsbuildinfo
 # Local tooling state
 .claude/settings.local.json
 supabase/.temp/
+# Fontes de design (PSD/ZIP) — pesadas e sem diff útil. Os assets exportados
+# que o app usa ficam versionados em public/.
+*.psd
+*.zip

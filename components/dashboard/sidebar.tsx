@@ -136,7 +136,7 @@ export function DashboardSidebar({
                   background: "rgba(255,255,255,0.03)",
                 }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "rgba(115, 32, 230,0.06)")
+                  (e.currentTarget.style.background = "rgba(22, 104, 227,0.06)")
                 }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
@@ -233,7 +233,7 @@ export function DashboardSidebar({
               color: "var(--text-secondary)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(115, 32, 230,0.08)"
+              e.currentTarget.style.background = "rgba(22, 104, 227,0.08)"
               e.currentTarget.style.color = "var(--text-primary)"
             }}
             onMouseLeave={(e) => {
@@ -243,7 +243,7 @@ export function DashboardSidebar({
           >
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(115, 32, 230,0.1)" }}
+              style={{ background: "rgba(22, 104, 227,0.1)" }}
             >
               <Plus className="w-4 h-4" />
             </div>
@@ -282,7 +282,7 @@ export function DashboardSidebar({
                   ? "var(--text-primary)"
                   : "var(--text-muted)",
                 background: isActive
-                  ? "rgba(115, 32, 230,0.1)"
+                  ? "rgba(22, 104, 227,0.1)"
                   : "transparent",
               }}
               onMouseEnter={(e) => {
@@ -312,7 +312,7 @@ export function DashboardSidebar({
                 <span
                   className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
                   style={{
-                    background: "rgba(115, 32, 230,0.15)",
+                    background: "rgba(22, 104, 227,0.15)",
                     color: "var(--brand-300)",
                   }}
                 >
@@ -343,7 +343,7 @@ export function DashboardSidebar({
                 )}
                 <AvatarFallback
                   style={{
-                    background: "rgba(115, 32, 230,0.18)",
+                    background: "rgba(22, 104, 227,0.18)",
                     color: "var(--brand-300)",
                     fontSize: 11,
                     fontWeight: 600,

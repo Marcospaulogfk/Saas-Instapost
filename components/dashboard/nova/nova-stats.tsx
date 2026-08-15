@@ -16,7 +16,7 @@ interface NovaStatsProps {
 type Tone = "purple" | "blue" | "orange" | "green"
 
 const COLOR: Record<Tone, string> = {
-  purple: "#8b5cf6",
+  purple: "#2A79EA",
   blue: "#3b82f6",
   orange: "#f59e0b",
   green: "#22c55e",

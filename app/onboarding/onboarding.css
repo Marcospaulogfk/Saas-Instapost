@@ -1,11 +1,11 @@
 .onb-root {
-  /* === Roxo SyncPost (escopo onboarding) === */
-  --onb-primary: #7320E6;
-  --onb-primary-hover: #5F14D6;
-  --onb-primary-light: #9C5FF1;
-  --onb-primary-dim: rgba(115, 32, 230, 0.15);
-  --onb-primary-border: rgba(115, 32, 230, 0.3);
-  --onb-primary-glow: rgba(115, 32, 230, 0.12);
+  /* === Roxo Nexus Content (escopo onboarding) === */
+  --onb-primary: #1668E3;
+  --onb-primary-hover: #0E52BC;
+  --onb-primary-light: #5595F1;
+  --onb-primary-dim: rgba(22, 104, 227, 0.15);
+  --onb-primary-border: rgba(22, 104, 227, 0.3);
+  --onb-primary-glow: rgba(22, 104, 227, 0.12);
 
   /* Gradient do banner */
   --onb-gradient-banner: linear-gradient(
@@ -76,7 +76,7 @@
   background:
     radial-gradient(
       ellipse 60% 50% at 50% 0%,
-      rgba(115, 32, 230, 0.08),
+      rgba(22, 104, 227, 0.08),
       transparent 70%
     ),
     radial-gradient(
@@ -95,12 +95,12 @@
   z-index: -1;
   background-image:
     linear-gradient(
-      rgba(115, 32, 230, 0.025) 1px,
+      rgba(22, 104, 227, 0.025) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(115, 32, 230, 0.025) 1px,
+      rgba(22, 104, 227, 0.025) 1px,
       transparent 1px
     );
   background-size: 64px 64px;
@@ -142,7 +142,7 @@
   transform: translateY(-1px);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(115, 32, 230, 0.12);
+    0 0 0 1px rgba(22, 104, 227, 0.12);
 }
 
 .onb-card-selectable[data-selected="true"] {
@@ -153,8 +153,8 @@
     rgba(28, 20, 60, 0.5) 100%
   );
   box-shadow:
-    0 4px 24px rgba(115, 32, 230, 0.2),
-    0 0 0 1px rgba(115, 32, 230, 0.4),
+    0 4px 24px rgba(22, 104, 227, 0.2),
+    0 0 0 1px rgba(22, 104, 227, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
@@ -184,7 +184,7 @@
   border-color: var(--onb-primary);
   box-shadow:
     0 0 0 3px var(--onb-primary-glow),
-    0 0 20px rgba(115, 32, 230, 0.12);
+    0 0 20px rgba(22, 104, 227, 0.12);
 }
 
 .onb-input[aria-invalid="true"] {
@@ -215,7 +215,7 @@
   border-color: var(--onb-primary);
   box-shadow:
     0 0 0 3px var(--onb-primary-glow),
-    0 0 20px rgba(115, 32, 230, 0.12);
+    0 0 20px rgba(22, 104, 227, 0.12);
 }
 
 .onb-label {
@@ -236,9 +236,9 @@
 .onb-btn-primary {
   background: linear-gradient(
     180deg,
-    #8A33EC 0%,
+    #2A79EA 0%,
     var(--onb-primary) 50%,
-    #5F14D6 100%
+    #0E52BC 100%
   );
   color: #ffffff;
   border: none;
@@ -255,7 +255,7 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.18) inset,
     0 -1px 0 rgba(0, 0, 0, 0.18) inset,
-    0 4px 14px rgba(115, 32, 230, 0.35);
+    0 4px 14px rgba(22, 104, 227, 0.35);
 }
 
 .onb-btn-primary:hover:not(:disabled) {
@@ -268,7 +268,7 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.22) inset,
     0 -1px 0 rgba(0, 0, 0, 0.18) inset,
-    0 6px 22px rgba(115, 32, 230, 0.45);
+    0 6px 22px rgba(22, 104, 227, 0.45);
   transform: translateY(-1px);
 }
 
@@ -277,7 +277,7 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12) inset,
     0 -1px 0 rgba(0, 0, 0, 0.2) inset,
-    0 2px 8px rgba(115, 32, 230, 0.3);
+    0 2px 8px rgba(22, 104, 227, 0.3);
 }
 
 .onb-btn-primary:disabled {
@@ -343,14 +343,14 @@
   background: radial-gradient(
     circle at 30% 25%,
     rgba(184, 164, 234, 0.18) 0%,
-    rgba(115, 32, 230, 0.12) 40%,
+    rgba(22, 104, 227, 0.12) 40%,
     rgba(88, 12, 232, 0.04) 100%
   );
   border: 0.5px solid var(--onb-primary-border);
   border-radius: 999px;
   color: var(--onb-primary-light);
   box-shadow:
-    0 0 32px rgba(115, 32, 230, 0.18),
+    0 0 32px rgba(22, 104, 227, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 

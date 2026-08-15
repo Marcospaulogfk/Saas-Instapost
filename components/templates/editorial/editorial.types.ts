@@ -10,7 +10,7 @@ export type LayoutType =
   | 'cta'
 
 /**
- * Backgrounds permitidos na marca SyncPost (apenas preto, branco e foto).
+ * Backgrounds permitidos na marca Nexus Content (apenas preto, branco e foto).
  * Não usar navy/sepia/colored — fora da paleta.
  */
 export type BackgroundType = 'dark' | 'cream' | 'white' | 'photo'

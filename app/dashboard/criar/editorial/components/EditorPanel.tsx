@@ -187,7 +187,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
               <Input
                 value={slide.callout || ''}
                 onChange={(e) => onUpdate({ callout: e.target.value })}
-                placeholder="Esse foi feito no SyncPost."
+                placeholder="Esse foi feito no Nexus Content."
               />
             </div>
           </div>
@@ -285,7 +285,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
               <FieldLabel>Cor de marca (highlight)</FieldLabel>
               <input
                 type="color"
-                value={slide.brandInfo.brandColor || '#7320E6'}
+                value={slide.brandInfo.brandColor || '#1668E3'}
                 onChange={(e) =>
                   onUpdate({
                     brandInfo: { ...slide.brandInfo, brandColor: e.target.value },
@@ -294,7 +294,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                 className="w-full h-12 rounded cursor-pointer bg-transparent border border-border-medium"
               />
               <Input
-                value={slide.brandInfo.brandColor || '#7320E6'}
+                value={slide.brandInfo.brandColor || '#1668E3'}
                 onChange={(e) =>
                   onUpdate({
                     brandInfo: { ...slide.brandInfo, brandColor: e.target.value },
@@ -321,7 +321,7 @@ export function EditorPanel({ slide, onUpdate }: EditorPanelProps) {
                 <option value="photo">Foto fullscreen</option>
               </select>
               <p className="text-[11px] text-text-muted mt-2">
-                Paleta SyncPost: apenas preto e branco. Distribua entre os slides.
+                Paleta Nexus Content: apenas preto e branco. Distribua entre os slides.
               </p>
             </div>
           </div>
