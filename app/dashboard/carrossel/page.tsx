@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CarouselEditor } from "@/components/carousel/carousel-editor"
 import { generateCarouselImages } from "@/lib/carousel/generate-images"
+import type { ImageChoice } from "@/lib/tokens"
 import { loadCarouselV2 } from "@/app/actions/carousel"
 import type {
   PreviewSlide,
@@ -27,6 +28,9 @@ interface PendingGeneration {
   editorialStyle?: EditorialStyle
   /** Formato do frame (feed/stories). Vem como "post"/"story" ou "feed"/"stories". */
   format?: string
+  /** Imagens de IA que o usuário marcou no wizard (capa / demais slides).
+   *  Ausente = payload antigo → gera tudo, como antes. */
+  imageChoice?: ImageChoice
 }
 
 function handleFromBrand(name?: string): string {
@@ -213,7 +217,10 @@ export default function CarrosselEditorPage() {
 
     ;(async () => {
       try {
-        const result = await generateCarouselImages(claudeSlides)
+        const result = await generateCarouselImages(
+          claudeSlides,
+          payload.imageChoice ?? { cover: true, slides: true },
+        )
         setSlides(result)
         setStatus("ready")
       } catch (err) {

@@ -1,5 +1,6 @@
 import type { ClaudeSlide } from "@/lib/generation/claude"
 import type { PreviewSlide } from "@/components/carousel/slide-preview"
+import type { ImageChoice } from "@/lib/tokens"
 
 /**
  * Carrega a imagem e devolve a proporção (largura/altura). Usada pra REJEITAR
@@ -23,6 +24,9 @@ function loadAspect(url: string): Promise<number> {
 /** Acima disto a imagem é "larga demais" — provável logo/wordmark. */
 const WORDMARK_ASPECT = 1.7
 
+/** Tudo ligado — o comportamento de antes da escolha do usuário existir. */
+const ALL_IMAGES: ImageChoice = { cover: true, slides: true }
+
 /**
  * Recebe os slides text-only do roteiro (ClaudeSlide) e gera a imagem de cada um,
  * devolvendo PreviewSlide[] pronto pro editor/preview.
@@ -31,14 +35,26 @@ const WORDMARK_ASPECT = 1.7
  *  1. Se o slide tem image_entity (empresa/pessoa real) → foto/logo real (Wikimedia).
  *  2. Senão (ou se a Wikipedia não tiver) → imagem gerada por IA com image_prompt.
  *
+ * `choice` é o que o usuário marcou no wizard e controla APENAS o passo 2 (a
+ * IA, que é o que custa token). As fotos reais do Wikimedia continuam ligadas
+ * mesmo com tudo desmarcado: elas são gratuitas, e "sem imagem de IA" não
+ * deveria significar "carrossel sem imagem nenhuma".
+ *
  * Roda os slides em paralelo. Nenhum slide fica sem tentar — se tudo falhar,
  * o slide volta sem imagem (image.url = null) e o editor permite trocar à mão.
  */
 export async function generateCarouselImages(
   slides: ClaudeSlide[],
+  choice: ImageChoice = ALL_IMAGES,
 ): Promise<PreviewSlide[]> {
   return Promise.all(
     slides.map(async (slide, i): Promise<PreviewSlide> => {
+      // Capa = order_index 0 (com a posição no array como reserva). É ela que
+      // decide tanto o modelo quanto o preço: 25 tokens contra 2.
+      const isCover =
+        (typeof slide.order_index === "number" ? slide.order_index : i) === 0
+      const aiAllowed = isCover ? choice.cover : choice.slides
+      const role = isCover ? "cover" : "slide"
       const base: PreviewSlide = {
         order_index: typeof slide.order_index === "number" ? slide.order_index : i,
         title: slide.title,
@@ -69,7 +85,7 @@ export async function generateCarouselImages(
           const res = await fetch("/api/editorial/generate-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: p, aspectRatio: "4:5" }),
+            body: JSON.stringify({ prompt: p, aspectRatio: "4:5", role }),
           })
           const data = await res.json()
           if (!res.ok || !data?.success) {
@@ -83,7 +99,9 @@ export async function generateCarouselImages(
         }
         return img
       }
-      if (extraPrompts.length) {
+      // Imagens extras são IA pura — se o usuário desmarcou este tipo de
+      // slide, elas nem são pedidas. Eram até 2 cobranças invisíveis por slide.
+      if (aiAllowed && extraPrompts.length) {
         base.extra_images = await Promise.all(extraPrompts.map((p) => genAiImage(p)))
       }
 
@@ -136,13 +154,13 @@ export async function generateCarouselImages(
         }
       }
 
-      // 2) Fallback IA
-      if (!prompt) return base
+      // 2) Fallback IA — só se o usuário pediu imagem de IA neste tipo de slide.
+      if (!aiAllowed || !prompt) return base
       try {
         const res = await fetch("/api/editorial/generate-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, aspectRatio: "4:5" }),
+          body: JSON.stringify({ prompt, aspectRatio: "4:5", role }),
         })
         const data = await res.json()
         if (!res.ok || !data?.success) {

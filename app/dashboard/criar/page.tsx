@@ -52,6 +52,7 @@ import {
   type IdeaSuggestion,
   type Objetivo,
 } from "./idea-suggestions"
+import { TOKEN_COST, tokenCostForCarousel, type ImageChoice } from "@/lib/tokens"
 
 /* Arrasta o three.js junto (~150KB gz) e só roda no cliente — sob demanda pra
    não pesar o bundle do wizard. Ele mesmo pausa fora da viewport e com a aba
@@ -283,6 +284,13 @@ function CriarWizard() {
   const [templateId, setTemplateId] = useState<string>("auto")
   // Estilo visual do carrossel (passo "Estilo" — só p/ carrossel, 2+ slides).
   const [carouselStyle, setCarouselStyle] = useState<EditorialStyle>("minimal")
+  // Imagens de IA que o usuário quer. Default = só a capa: ela é o que para o
+  // scroll e custa 25 tokens; ligar o miolo inteiro custa 12 a mais e é
+  // decisão consciente, não padrão.
+  const [imageChoice, setImageChoice] = useState<ImageChoice>({
+    cover: true,
+    slides: false,
+  })
   const [promptRefinado, setPromptRefinado] = useState<string | null>(null)
   const [refinando, setRefinando] = useState(false)
   const [refineErr, setRefineErr] = useState<string | null>(null)
@@ -663,6 +671,8 @@ function CriarWizard() {
           // Estilo escolhido no passo "Estilo" + formato (feed/stories) — o
           // editor do carrossel abre já aplicando ambos.
           editorialStyle: carouselStyle,
+          // Sem isto o /dashboard/carrossel gera imagem em todos os slides.
+          imageChoice,
           format: formato.format,
           nSlides: carouselDraft.slides.length || (formato.slides ?? 7),
           colors: wizardBrand.brand_colors,

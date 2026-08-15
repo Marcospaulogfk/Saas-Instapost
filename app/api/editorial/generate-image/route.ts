@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateEditorialImageForPlan } from '@/lib/editorial/ai-images'
-import { getUserPlan } from '@/lib/generation/image'
+import { generateEditorialImageForRole } from '@/lib/editorial/ai-images'
 import { debitTokens, tokenCostForImage } from '@/lib/tokens'
 
 export const runtime = 'nodejs'
@@ -10,15 +9,19 @@ export const maxDuration = 120
 /**
  * Endpoint atômico de geração de imagem editorial (carrossel).
  *
- * Respeita o PLANO (igual ao post único): Pro/Studio geram com Nano Banana
- * Pro (fallback Flux Pro); trial/starter usam Flux Pro. Debita tokens por
- * imagem conforme a qualidade EFETIVA (pro=20, normal=5) — best-effort, só
- * se houver sessão. Endpoint segue PÚBLICO: sem login o plano vira "trial"
- * (Flux) e nada quebra nem debita.
+ * O modelo é escolhido pelo PAPEL do slide, não pelo plano: capa → Nano
+ * Banana 2, miolo → Flux Schnell. Todo mundo recebe a mesma capa.
+ *
+ * O débito usa a qualidade EFETIVA, não a pedida: se o Nano Banana 2 falhar
+ * e a capa cair pro Schnell, o usuário paga 2 tokens em vez de 25 — ele
+ * recebeu uma imagem de miolo, paga preço de miolo.
+ *
+ * Best-effort e PÚBLICO: sem sessão não debita e nada quebra.
  *
  * Body:
  * {
  *   prompt: string,                                 // obrigatório
+ *   role?: 'cover' | 'slide',                       // default 'slide'
  *   style?: 'cinematic' | 'editorial' | 'minimal' | 'sepia',
  *   aspectRatio?: '4:5' | '1:1' | '16:9' | '9:16'
  * }
@@ -51,16 +54,19 @@ export async function POST(request: Request) {
       | '9:16'
       | undefined
 
-    // Auth OPCIONAL: deriva o plano se houver sessão, senão "trial" (Flux).
+    // Capa só quando o caller pede explicitamente — default é miolo, o
+    // caminho barato. Um caller esquecido gera imagem de 2 tokens, não de 25.
+    const role: 'cover' | 'slide' = body?.role === 'cover' ? 'cover' : 'slide'
+
+    // Auth OPCIONAL: sem sessão, gera e não debita.
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    const plan = await getUserPlan(supabase)
 
-    const { url, quality } = await generateEditorialImageForPlan(
+    const { url, quality } = await generateEditorialImageForRole(
       { prompt, style, aspectRatio },
-      plan,
+      role,
     )
 
     // Débito best-effort (só se logado). Nunca bloqueia a geração.
