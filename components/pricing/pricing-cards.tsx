@@ -6,13 +6,39 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { BillingCycle } from "@/app/pricing/page"
 import { cycles } from "@/app/pricing/page"
+import {
+  planTokensForCycle,
+  TOKEN_COST,
+  type BillingCycleId,
+  type Plan,
+} from "@/lib/tokens"
 
 interface PricingCardsProps {
   billingCycle: BillingCycle
 }
 
+/**
+ * Linha de tokens do card. Sai de PLAN_TOKENS_BY_CYCLE porque o grant ENCOLHE
+ * nos ciclos com desconto — o token e quem trava o COGS, entao manter 1.000
+ * no anual (-40%) entregaria o mesmo custo por 60% da receita. Nunca escrever
+ * esse numero a mao aqui.
+ *
+ * O "≈" usa o carrossel completo de 7 slides (41 tokens: 4 roteiro + 25 capa
+ * + 6x2 miolo) e o roteiro sozinho (4 tokens).
+ */
+function tokenFeature(
+  id: Exclude<Plan, "trial">,
+  cycle: BillingCycleId,
+): string {
+  const tk = planTokensForCycle(id, cycle)
+  const completos = Math.floor(tk / 41)
+  const roteiros = Math.floor(tk / TOKEN_COST.textOnly)
+  return `${tk.toLocaleString("pt-BR")} tokens/mes (≈ ${completos} carrosseis completos ou ${roteiros} roteiros)`
+}
+
 const plans = [
   {
+    id: "starter" as const,
     name: "Starter",
     tagline: "Para criadores comecando",
     basePrice: 47,
@@ -20,7 +46,6 @@ const plans = [
     cta: "Comecar com Starter",
     ctaVariant: "outline" as const,
     features: [
-      "300 tokens/mes (≈ 7 carrosseis completos ou 75 roteiros)",
       "1 marca configurada",
       "Templates basicos",
       "Capa em Nano Banana 2",
@@ -30,6 +55,7 @@ const plans = [
     featurePrefix: "Inclui:",
   },
   {
+    id: "pro" as const,
     name: "Pro",
     tagline: "Para criadores serios e agencias",
     basePrice: 97,
@@ -37,7 +63,6 @@ const plans = [
     cta: "Escolher Pro",
     ctaVariant: "default" as const,
     features: [
-      "1.000 tokens/mes (≈ 24 carrosseis completos ou 250 roteiros)",
       "5 marcas configuradas",
       "Sem marca d'agua",
       "Templates exclusivos",
@@ -47,6 +72,7 @@ const plans = [
     featurePrefix: "Tudo do Starter, mais:",
   },
   {
+    id: "studio" as const,
     name: "Studio",
     tagline: "Para agencias e empresas",
     basePrice: 247,
@@ -54,7 +80,6 @@ const plans = [
     cta: "Falar com vendas",
     ctaVariant: "outline" as const,
     features: [
-      "3.000 tokens/mes (≈ 73 carrosseis completos ou 750 roteiros)",
       "Marcas ilimitadas",
       "API para automacao",
       "Equipe de ate 3 usuarios",
@@ -164,12 +189,14 @@ export function PricingCards({ billingCycle }: PricingCardsProps) {
                 {plan.featurePrefix}
               </p>
               <ul className="space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3 text-sm">
-                    <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                    <span className="text-foreground">{feature}</span>
-                  </li>
-                ))}
+                {[tokenFeature(plan.id, billingCycle), ...plan.features].map(
+                  (feature) => (
+                    <li key={feature} className="flex items-start gap-3 text-sm">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span className="text-foreground">{feature}</span>
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           </motion.div>

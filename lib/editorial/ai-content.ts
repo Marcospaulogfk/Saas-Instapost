@@ -596,7 +596,17 @@ Gere um carrossel editorial completo no formato JSON.`
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4000,
-    system: SYSTEM_PROMPT,
+    // O SYSTEM_PROMPT tem ~6.7k tokens e é IDÊNTICO entre gerações (todo dado
+    // do pedido vai na mensagem do usuário) — cachear corta ~90% do custo de
+    // input. É a premissa do textOnly=4 em lib/tokens.ts: sem isto o roteiro
+    // custa R$0,12 em vez de R$0,05 e o modo "sem imagem" perde a margem.
+    system: [
+      {
+        type: 'text',
+        text: SYSTEM_PROMPT,
+        cache_control: { type: 'ephemeral' },
+      },
+    ],
     messages: [{ role: 'user', content: userPrompt }],
   })
 

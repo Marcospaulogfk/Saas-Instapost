@@ -85,6 +85,42 @@ export const PLAN_TOKENS: Record<Plan, number> = {
   studio: 3000,
 }
 
+/** Ciclos de cobrança e o desconto de cada um (espelha app/pricing/page.tsx). */
+export type BillingCycleId = "monthly" | "quarterly" | "semiannual" | "annual"
+
+/**
+ * Tokens/mês por plano em CADA ciclo.
+ *
+ * Por que o grant encolhe quando o preço cai: o token é o que trava o COGS.
+ * Manter 1.000 tokens no anual (−40%) significaria entregar o mesmo custo por
+ * 60% da receita — o Pro anual fecharia em 72,7% e o Studio em 67,6%, abaixo
+ * do piso de 80% que rege a tabela de custos acima.
+ *
+ * Os números saem da mesma restrição: no modo mais caro (só capa, R$0,466 por
+ * carrossel de 29 tokens), tokens <= 0,20 × receita_liquida / 0,016069.
+ * Todos os pares abaixo fecham entre 80,4% e 81,5%.
+ *
+ * O Starter não muda em ciclo nenhum: 300 está bem abaixo do teto dele (554),
+ * então sobra folga mesmo no anual.
+ */
+export const PLAN_TOKENS_BY_CYCLE: Record<
+  BillingCycleId,
+  Record<Exclude<Plan, "trial">, number>
+> = {
+  monthly: { starter: 300, pro: 1000, studio: 3000 },
+  quarterly: { starter: 300, pro: 950, studio: 2500 },
+  semiannual: { starter: 300, pro: 800, studio: 2100 },
+  annual: { starter: 300, pro: 700, studio: 1800 },
+}
+
+/** Tokens/mês de um plano num ciclo. Fallback seguro no grant mensal. */
+export function planTokensForCycle(
+  plan: Exclude<Plan, "trial">,
+  cycle: BillingCycleId,
+): number {
+  return PLAN_TOKENS_BY_CYCLE[cycle]?.[plan] ?? PLAN_TOKENS[plan]
+}
+
 /**
  * Quais planos podem usar Nano Banana Pro.
  * Starter e trial ficam na imagem normal (gancho de upgrade).

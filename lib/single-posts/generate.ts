@@ -235,7 +235,14 @@ export async function generatePostContent(
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1024,
-    system: SYSTEM_PROMPT,
+    // ~4,2k tokens fixos entre chamadas → cacheia (ver lib/tokens.ts).
+    system: [
+      {
+        type: "text",
+        text: SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: [
       { role: "user", content: buildPrompt(brand, template, rawContent) },
     ],

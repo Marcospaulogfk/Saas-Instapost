@@ -346,7 +346,14 @@ async function generateCopy(brand: PostBrand, briefing: string, chosen: Skeleton
     model: "claude-sonnet-4-6",
     max_tokens: 1500,
     temperature: 0.8,
-    system: SYSTEM_PROMPT,
+    // ~5,3k tokens fixos entre chamadas → cacheia (ver lib/tokens.ts).
+    system: [
+      {
+        type: "text",
+        text: SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: [{ role: "user", content: userPrompt }],
   })
   const block = response.content.find((b) => b.type === "text")

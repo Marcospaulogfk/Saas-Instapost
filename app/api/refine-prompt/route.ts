@@ -123,6 +123,14 @@ async function refineWithGrounding(
   // web_search é um server tool da Anthropic (cobrado por busca).
   const webSearchTool = { type: "web_search_20250305", name: "web_search", max_uses: 3 }
 
+  // O refino roda em TODA geração (é automático no "Gerar"), e o SYSTEM_PROMPT
+  // é fixo — os dados do pedido vão na mensagem do usuário. Cachear aqui pega
+  // as 3 chamadas abaixo, inclusive os reenvios de pause_turn, que repetem o
+  // mesmo prefixo várias vezes na MESMA geração.
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    { type: "text", text: system, cache_control: { type: "ephemeral" } },
+  ]
+
   const extractText = (content: Anthropic.ContentBlock[]) =>
     content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -138,7 +146,7 @@ async function refineWithGrounding(
     let response = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system,
+      system: systemBlocks,
       tools: [webSearchTool] as any,
       messages,
     })
@@ -150,7 +158,7 @@ async function refineWithGrounding(
       response = await client.messages.create({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system,
+        system: systemBlocks,
         tools: [webSearchTool] as any,
         messages,
       })
@@ -166,7 +174,7 @@ async function refineWithGrounding(
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system,
+      system: systemBlocks,
       messages: [{ role: "user", content: userMessage }],
     })
     return { text: extractText(response.content), grounded: false }
