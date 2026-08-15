@@ -865,6 +865,8 @@ function CriarWizard() {
           briefingPlaceholder={buildBriefingPlaceholder(activeBrand)}
           sugestoes={buildIdeaSuggestions(activeBrand, objetivo, abordagem)}
           brandName={activeBrand?.name?.trim() || null}
+          imageChoice={imageChoice}
+          onImageChoice={setImageChoice}
           promptRefinado={promptRefinado}
           setPromptRefinado={setPromptRefinado}
           onRefinar={() => void refinarComIA()}
@@ -1385,12 +1387,16 @@ function Step3({
   linkErr,
   sugestoes,
   brandName,
+  imageChoice,
+  onImageChoice,
   onBack,
   onGerar,
   canFinish,
 }: {
   formato: Formato
   comoCriar: ComoCriar
+  imageChoice: ImageChoice
+  onImageChoice: (v: ImageChoice) => void
   briefing: string
   setBriefing: (v: string) => void
   briefingPlaceholder: string
@@ -1413,6 +1419,8 @@ function Step3({
   const isLinkMode = comoCriar === "link"
   const busy = refinando || submitting
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  // Fonte única do preço — nunca recalcular à mão aqui (ver lib/tokens.ts).
+  const custoTokens = tokenCostForCarousel(formato.slides, imageChoice)
 
   /** Sugestão clicada vira o briefing e o foco volta pro campo pra editar. */
   function aplicarSugestao(s: IdeaSuggestion) {
@@ -1517,6 +1525,35 @@ function Step3({
             rows={4}
             className="border-0 bg-transparent pl-11 pr-4 pt-4 text-[15px] leading-relaxed resize-none shadow-none focus-visible:ring-0"
           />
+          {/* Escolha de imagens de IA — só no carrossel: no post único a
+              imagem única JÁ é a capa, não há miolo pra decidir. */}
+          {!isPostUnico && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle px-3 py-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                Imagens de IA
+              </span>
+              <ImagemToggle
+                ativo={imageChoice.cover}
+                label="Capa"
+                custo={TOKEN_COST.imageCover}
+                onClick={() =>
+                  onImageChoice({ ...imageChoice, cover: !imageChoice.cover })
+                }
+              />
+              <ImagemToggle
+                ativo={imageChoice.slides}
+                label="Demais slides"
+                custo={TOKEN_COST.imageSlide * Math.max(0, formato.slides - 1)}
+                onClick={() =>
+                  onImageChoice({ ...imageChoice, slides: !imageChoice.slides })
+                }
+              />
+              <span className="ml-auto font-mono text-[11px] text-text-secondary tabular-nums">
+                {custoTokens} tokens
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <MiniChip icon={formato.icon} label={formato.label} />
@@ -1889,6 +1926,46 @@ function StyleStep({
         </Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Toggle de imagem de IA com o preço em tokens visível no próprio botão.
+ * O custo fica no rótulo de propósito: é a única forma de o usuário aprender
+ * que a capa pesa 12× um slide de miolo antes de gastar.
+ */
+function ImagemToggle({
+  ativo,
+  label,
+  custo,
+  onClick,
+}: {
+  ativo: boolean
+  label: string
+  custo: number
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={ativo}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors ${
+        ativo
+          ? "border-brand-500/60 bg-brand-500/10 text-brand-200"
+          : "border-border-subtle text-text-secondary hover:border-border-medium"
+      }`}
+    >
+      <span
+        className={`grid h-3.5 w-3.5 place-items-center rounded-[4px] border ${
+          ativo ? "border-brand-500 bg-brand-500" : "border-border-medium"
+        }`}
+      >
+        {ativo && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} />}
+      </span>
+      {label}
+      <span className="text-text-muted tabular-nums">+{custo}</span>
+    </button>
   )
 }
 
