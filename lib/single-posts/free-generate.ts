@@ -296,20 +296,42 @@ interface ApprovedOpts {
  * - Se forceSkeletonId estiver setado, usa ele.
  * - Senão escolhe random uniforme dos disponíveis (excluindo os já usados).
  */
-function pickRandomSkeleton(
+/**
+ * Sorteia CANDIDATOS de layout e deixa a IA escolher qual combina com o
+ * briefing.
+ *
+ * Antes um unico skeleton era sorteado e imposto ao Claude. Isso dava
+ * variedade, mas ignorava o assunto: o layout `card-center-on-color`, cuja
+ * vibe cadastrada e "alerta, urgencia, comunicado" (icone de triangulo de
+ * alerta hardcoded, titulo padrao "ATENCAO"), podia cair numa noticia de
+ * reconhecimento. O sorteio continua — mas de uma LISTA, e quem decide dentro
+ * dela e a IA, que le a vibe de cada um.
+ */
+function pickSkeletonShortlist(
   forceId: string | null | undefined,
   excludeIds: string[] = [],
-): string {
-  if (forceId) return forceId
+  size = 5,
+): SkeletonImpl[] {
+  if (forceId) {
+    const forced = getSkeleton(forceId)
+    if (forced) return [forced]
+  }
   const available = SKELETONS.filter((s) => !excludeIds.includes(s.meta.id))
-  // Se todos foram excluídos, ignora exclusão e escolhe qualquer um
-  const pool = available.length > 0 ? available : SKELETONS
-  const idx = Math.floor(Math.random() * pool.length)
-  return pool[idx].meta.id
+  const pool = available.length > 0 ? [...available] : [...SKELETONS]
+  // Fisher-Yates parcial — sorteia `size` sem repetir.
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  return pool.slice(0, Math.min(size, pool.length))
 }
 
-/** Monta o user prompt da geração de copy pra um skeleton já escolhido. */
-function buildUserPrompt(brand: PostBrand, briefing: string, chosen: SkeletonImpl): string {
+/** Monta o user prompt da geração de copy com a lista de layouts candidatos. */
+function buildUserPrompt(
+  brand: PostBrand,
+  briefing: string,
+  candidates: SkeletonImpl[],
+): string {
   const seed = Math.floor(Math.random() * 100000)
   return `MARCA:
 - Nome: ${brand.name}
@@ -321,26 +343,39 @@ function buildUserPrompt(brand: PostBrand, briefing: string, chosen: SkeletonImp
 BRIEFING:
 "${briefing}"
 
-SKELETON ESCOLHIDO: ${chosen.meta.id}
-Nome: ${chosen.meta.name}
-Vibe: ${chosen.meta.vibe}
-Slots OBRIGATÓRIOS: ${chosen.meta.required_slots.join(", ")}
-Slots opcionais: ${chosen.meta.optional_slots.join(", ")}
-Descrição do layout: ${chosen.meta.description}
+LAYOUTS CANDIDATOS — escolha o que combina com o briefing:
+${candidates
+  .map(
+    (c) => `- id: "${c.meta.id}" | ${c.meta.name}
+  vibe: ${c.meta.vibe}
+  slots OBRIGATÓRIOS: ${c.meta.required_slots.join(", ")}
+  slots opcionais: ${c.meta.optional_slots.join(", ")}
+  layout: ${c.meta.description}
+`,
+  )
+  .join("")}
+
+Escolha pela VIBE: um layout de "alerta/urgência" não serve pra notícia boa,
+um de "comunicado" não serve pra bastidor. Se nenhum encaixar perfeitamente,
+pegue o mais neutro da lista.
 
 VARIATION SEED: ${seed}
 
 REGRA CRÍTICA SOBRE FOTO: SEMPRE forneça \`photo_prompt\` em INGLÊS pra enriquecer visualmente. Use prompts cinematográficos: assunto + iluminação + mood + estilo (ex: "minimalist beige textured background, soft natural light, editorial style", "professional fitness instructor mid-action, dramatic side lighting, intense expression").
 
-No JSON de resposta, sempre devolva "skeleton_id": "${chosen.meta.id}" (já está fixo, não mude).
+No JSON de resposta, devolva em "skeleton_id" o id do layout que você escolheu — obrigatoriamente um da lista acima.
 
 Preencha APENAS os slots required + opcionais que melhoram o post. Mantém minimalismo.`
 }
 
 /** Chama o Claude pra gerar copy (content + caption + photo_prompt) de um skeleton. */
-async function generateCopy(brand: PostBrand, briefing: string, chosen: SkeletonImpl) {
+async function generateCopy(
+  brand: PostBrand,
+  briefing: string,
+  candidates: SkeletonImpl[],
+) {
   const client = getClient()
-  const userPrompt = buildUserPrompt(brand, briefing, chosen)
+  const userPrompt = buildUserPrompt(brand, briefing, candidates)
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1500,
@@ -369,17 +404,14 @@ export async function generateFreeSpec({
 }: GenerateOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
-  // Escolhe skeleton ANTES de chamar Claude — garantia de aleatoriedade real
-  const chosenSkeletonId = pickRandomSkeleton(forceSkeletonId, excludeSkeletonIds)
-  const chosen = getSkeleton(chosenSkeletonId)
-  if (!chosen) throw new Error(`Skeleton "${chosenSkeletonId}" não existe`)
+  // Sorteia candidatos; a IA escolhe entre eles pela vibe do briefing.
+  const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
+  const { parsed, usage } = await generateCopy(brand, briefing, candidates)
 
-  const { parsed, usage } = await generateCopy(brand, briefing, chosen)
-
-  const skeleton = getSkeleton(parsed.skeleton_id)
-  if (!skeleton) {
-    throw new Error(`Skeleton "${parsed.skeleton_id}" não existe`)
-  }
+  // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
+  const skeleton =
+    candidates.find((c) => c.meta.id === parsed.skeleton_id) ?? candidates[0]
+  parsed.skeleton_id = skeleton.meta.id
 
   // Foto real (Wikipedia) se a IA marcou entidade real; senão IA (Pro/Flux).
   const resolved = await resolvePhotoUrl(parsed.image_entity, parsed.photo_prompt)
@@ -426,15 +458,13 @@ export async function generateFreeText({
 }: TextOnlyOpts): Promise<FreeGenerateTextResult> {
   const t0 = performance.now()
 
-  const chosenSkeletonId = pickRandomSkeleton(forceSkeletonId, excludeSkeletonIds)
-  const chosen = getSkeleton(chosenSkeletonId)
-  if (!chosen) throw new Error(`Skeleton "${chosenSkeletonId}" não existe`)
+  const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
+  const { parsed, usage } = await generateCopy(brand, briefing, candidates)
 
-  const { parsed, usage } = await generateCopy(brand, briefing, chosen)
-
-  if (!getSkeleton(parsed.skeleton_id)) {
-    throw new Error(`Skeleton "${parsed.skeleton_id}" não existe`)
-  }
+  // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
+  parsed.skeleton_id = (
+    candidates.find((c) => c.meta.id === parsed.skeleton_id) ?? candidates[0]
+  ).meta.id
 
   const ms = performance.now() - t0
   const claudeCost = computeCost(usage)
