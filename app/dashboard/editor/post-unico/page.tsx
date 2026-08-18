@@ -2,20 +2,31 @@ import Link from "next/link"
 import { Plus, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { listBrands, getProfile } from "@/lib/data/queries"
+import { getSinglePost } from "@/lib/single-posts/queries"
 import { generateMonogram } from "@/lib/single-posts/palette"
-import { EditorClient } from "./editor-client"
+import { EditorClient, type InitialPost } from "./editor-client"
 import type { PostBrand } from "@/lib/single-posts/types"
+import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 
 /**
  * Editor de post único — rota real do produto.
  *
- * Substitui o sandbox /teste no fluxo do post único: o wizard grava o
- * briefing no sessionStorage e redireciona pra cá, onde o post é gerado,
- * editado (camadas livres) e salvo na biblioteca. O /teste segue existindo
- * para o carrossel até ele também ser promovido.
+ * Dois modos de entrada:
+ *  - sem query: pega o briefing que o wizard deixou no sessionStorage e gera;
+ *  - `?post=<id>`: carrega um post salvo da biblioteca pra reedição.
+ *
+ * Substitui o sandbox /teste no fluxo do post único.
  */
-export default async function EditorPostUnicoPage() {
-  const [brands, { profile }] = await Promise.all([listBrands(), getProfile()])
+export default async function EditorPostUnicoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ post?: string }>
+}) {
+  const [{ post: postId }, brands, { profile }] = await Promise.all([
+    searchParams,
+    listBrands(),
+    getProfile(),
+  ])
 
   if (brands.length === 0) {
     return (
@@ -44,6 +55,30 @@ export default async function EditorPostUnicoPage() {
     )
   }
 
+  // Reedição: carrega o spec salvo. Só posts do editor livre abrem aqui.
+  let initialPost: InitialPost | null = null
+  if (postId) {
+    const saved = await getSinglePost(postId)
+    const content = saved?.content as unknown as {
+      _free_spec?: FreePostSpec
+      _font_preset?: string
+      _caption?: string
+    } | null
+    if (saved && content?._free_spec) {
+      initialPost = {
+        id: saved.id,
+        brandId: saved.brand_id,
+        spec: content._free_spec,
+        fontPreset: content._font_preset ?? "editorial",
+        caption: content._caption ?? "",
+        briefing: saved.raw_brief ?? "",
+        skeletonId: saved.template_id.startsWith("free:")
+          ? saved.template_id.slice(5)
+          : null,
+      }
+    }
+  }
+
   const editorBrands: PostBrand[] = brands.map((b) => ({
     id: b.id,
     name: b.name,
@@ -59,7 +94,11 @@ export default async function EditorPostUnicoPage() {
 
   return (
     <div className="relative p-6 md:p-8 max-w-7xl mx-auto">
-      <EditorClient brands={editorBrands} balance={profile?.credits ?? 0} />
+      <EditorClient
+        brands={editorBrands}
+        balance={profile?.credits ?? 0}
+        initialPost={initialPost}
+      />
     </div>
   )
 }

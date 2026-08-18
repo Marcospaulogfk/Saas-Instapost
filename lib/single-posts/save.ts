@@ -53,6 +53,8 @@ export interface SaveSinglePostParams {
   spec: FreePostSpec
   skeletonId: string | null
   briefing: string
+  /** Legenda do Instagram gerada junto com o post (com hashtags). */
+  caption: string
   fontPreset: string
   format: "post" | "story"
   photoUrl: string | null
@@ -72,8 +74,17 @@ export type SaveSinglePostResult =
 export async function saveSinglePost(
   params: SaveSinglePostParams,
 ): Promise<SaveSinglePostResult> {
-  const { brandId, spec, skeletonId, briefing, fontPreset, format, photoUrl, savedId } =
-    params
+  const {
+    brandId,
+    spec,
+    skeletonId,
+    briefing,
+    caption,
+    fontPreset,
+    format,
+    photoUrl,
+    savedId,
+  } = params
 
   if (!isRealBrandId(brandId)) {
     return {
@@ -103,6 +114,7 @@ export async function saveSinglePost(
     _font_preset: fontPreset,
     _format: format,
     _photo_url: photoUrl,
+    _caption: caption,
   } as unknown as PostContent
 
   try {

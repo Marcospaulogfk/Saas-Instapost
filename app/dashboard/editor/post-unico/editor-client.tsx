@@ -3,9 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Check, Download, Loader2, RefreshCw, Save, Sparkles } from "lucide-react"
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Download,
+  Loader2,
+  RefreshCw,
+  Save,
+  Sparkles,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -31,28 +41,48 @@ interface PendingPayload {
 
 const STORAGE_KEY = "syncpost_pending_post_unico"
 
+/** Post salvo carregado da biblioteca para reedicao (`?post=<id>`). */
+export interface InitialPost {
+  id: string
+  brandId: string
+  spec: FreePostSpec
+  fontPreset: string
+  caption: string
+  briefing: string
+  skeletonId: string | null
+}
+
 interface Props {
   brands: PostBrand[]
   balance: number
+  initialPost?: InitialPost | null
 }
 
-export function EditorClient({ brands, balance }: Props) {
+export function EditorClient({ brands, balance, initialPost }: Props) {
   const router = useRouter()
   const cost = tokenCostForSinglePost()
 
-  const [brand, setBrand] = useState<PostBrand | null>(brands[0] ?? null)
-  const [briefing, setBriefing] = useState("")
-  const [spec, setSpec] = useState<FreePostSpec | null>(null)
+  const [brand, setBrand] = useState<PostBrand | null>(
+    (initialPost && brands.find((b) => b.id === initialPost.brandId)) ??
+      brands[0] ??
+      null,
+  )
+  const [briefing, setBriefing] = useState(initialPost?.briefing ?? "")
+  const [caption, setCaption] = useState(initialPost?.caption ?? "")
+  const [copied, setCopied] = useState(false)
+  const [spec, setSpec] = useState<FreePostSpec | null>(initialPost?.spec ?? null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
-  const [skeletonId, setSkeletonId] = useState<string | null>(null)
+  const [skeletonId, setSkeletonId] = useState<string | null>(
+    initialPost?.skeletonId ?? null,
+  )
   const [usedIds, setUsedIds] = useState<string[]>([])
-  const [fontPreset, setFontPreset] = useState("editorial")
+  const [fontPreset, setFontPreset] = useState(initialPost?.fontPreset ?? "editorial")
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [savedId, setSavedId] = useState<string | null>(null)
+  const [savedId, setSavedId] = useState<string | null>(initialPost?.id ?? null)
   const [saveOk, setSaveOk] = useState(false)
 
   const previewRef = useRef<HTMLDivElement | null>(null)
@@ -87,6 +117,7 @@ export function EditorClient({ brands, balance }: Props) {
           return
         }
         setSpec(data.spec)
+        setCaption(typeof data.caption === "string" ? data.caption : "")
         setPhotoUrl(data.photo_url ?? null)
         setSkeletonId(data.skeleton_id ?? null)
         if (data.skeleton_id) setUsedIds((prev) => [...prev, data.skeleton_id])
@@ -105,6 +136,8 @@ export function EditorClient({ brands, balance }: Props) {
   useEffect(() => {
     if (bootstrapped.current) return
     bootstrapped.current = true
+    // Reedicao de post salvo: o estado ja veio do servidor, nada a fazer.
+    if (initialPost) return
     let payload: PendingPayload | null = null
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY)
@@ -119,7 +152,7 @@ export function EditorClient({ brands, balance }: Props) {
     if (b) setBrand(b)
     if (brief) setBriefing(brief)
     if (b && brief && payload.autoRun) void generate(b, brief, [])
-  }, [brands, generate])
+  }, [brands, generate, initialPost])
 
   async function handleExport() {
     if (!previewRef.current) return
@@ -144,6 +177,7 @@ export function EditorClient({ brands, balance }: Props) {
       spec,
       skeletonId,
       briefing,
+      caption,
       fontPreset,
       format: "post",
       photoUrl,
@@ -158,6 +192,16 @@ export function EditorClient({ brands, balance }: Props) {
     setSaveOk(true)
     setTimeout(() => setSaveOk(false), 2500)
     router.refresh()
+  }
+
+  async function copyCaption() {
+    try {
+      await navigator.clipboard.writeText(caption)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setError("Não consegui copiar — selecione o texto e copie manualmente.")
+    }
   }
 
   const canSave = !!spec && !!brand && isRealBrandId(brand.id) && !saving
@@ -288,6 +332,38 @@ export function EditorClient({ brands, balance }: Props) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {/* Legenda do Instagram — vinha sendo gerada e descartada. */}
+        {spec && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-text-secondary">Legenda</Label>
+              <button
+                type="button"
+                onClick={copyCaption}
+                disabled={!caption}
+                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary disabled:opacity-40"
+              >
+                {copied ? (
+                  <Check className="w-3 h-3" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
+                {copied ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+            <Textarea
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              rows={8}
+              placeholder="A legenda gerada aparece aqui."
+              className="bg-background-secondary/60 border-border-subtle text-xs leading-relaxed"
+            />
+            <p className="text-[10px] text-text-muted">
+              Vai junto com o post quando você salva. Editar não custa tokens.
+            </p>
           </div>
         )}
 

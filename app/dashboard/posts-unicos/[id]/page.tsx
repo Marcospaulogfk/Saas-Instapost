@@ -23,6 +23,7 @@ export default async function PostUnicoEditPage({
     _free_spec?: FreePostSpec
     _font_preset?: string
     _format?: "post" | "story"
+    _caption?: string
   }
   if (post.template_id.startsWith("free:") && freeContent?._free_spec) {
     return (
@@ -31,6 +32,8 @@ export default async function PostUnicoEditPage({
         spec={freeContent._free_spec}
         fontPreset={freeContent._font_preset ?? "editorial"}
         format={freeContent._format === "story" ? "story" : "post"}
+        caption={freeContent._caption}
+        postId={post.id}
       />
     )
   }

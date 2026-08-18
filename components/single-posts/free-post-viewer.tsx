@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Download, Loader2 } from "lucide-react"
+import { ArrowLeft, Check, Copy, Download, Loader2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
 import { applyFontPreset } from "@/lib/single-posts/font-presets"
@@ -20,6 +20,10 @@ interface FreePostViewerProps {
   spec: FreePostSpec
   fontPreset: string
   format: "post" | "story"
+  /** Legenda salva junto com o post (com hashtags). */
+  caption?: string
+  /** Id do post — habilita o botao de reabrir no editor. */
+  postId?: string
 }
 
 export function FreePostViewer({
@@ -27,12 +31,26 @@ export function FreePostViewer({
   spec,
   fontPreset,
   format,
+  caption,
+  postId,
 }: FreePostViewerProps) {
   const previewRef = useRef<HTMLDivElement | null>(null)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const finalSpec = applyFontPreset(spec, fontPreset)
+
+  async function copyCaption() {
+    if (!caption) return
+    try {
+      await navigator.clipboard.writeText(caption)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setError("Nao consegui copiar - selecione o texto e copie manualmente.")
+    }
+  }
 
   async function handleExport() {
     if (!previewRef.current) return
@@ -72,7 +90,16 @@ export function FreePostViewer({
           </Button>
           <h1 className="font-semibold truncate">{title}</h1>
         </div>
-        <Button
+        <div className="flex items-center gap-2">
+          {postId && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/editor/post-unico?post=${postId}`}>
+                <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                Editar
+              </Link>
+            </Button>
+          )}
+          <Button
           type="button"
           size="sm"
           onClick={handleExport}
@@ -84,7 +111,8 @@ export function FreePostViewer({
             <Download className="w-3.5 h-3.5 mr-1.5" />
           )}
           Exportar PNG
-        </Button>
+          </Button>
+        </div>
       </div>
 
       <main className="p-6 flex flex-col items-center gap-3">
@@ -97,11 +125,24 @@ export function FreePostViewer({
         >
           <FreePostRenderer spec={finalSpec} format={format} />
         </div>
-        <p className="text-[11px] text-text-muted max-w-md text-center">
-          Post salvo do editor livre. Pra reeditar o layout, crie uma nova
-          variação em Criar conteúdo — as edições aqui ficam disponíveis em
-          breve.
-        </p>
+        {caption && (
+          <div className="w-full max-w-[440px] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-text-secondary">Legenda</p>
+              <button
+                type="button"
+                onClick={copyCaption}
+                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary"
+              >
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? "Copiado" : "Copiar"}
+              </button>
+            </div>
+            <p className="whitespace-pre-wrap rounded-lg border border-border bg-background-secondary/40 p-3 text-xs leading-relaxed text-text-secondary">
+              {caption}
+            </p>
+          </div>
+        )}
       </main>
     </div>
   )
