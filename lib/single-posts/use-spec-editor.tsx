@@ -232,18 +232,38 @@ export function useSpecEditor(
       })
     }
     const remaining = walk(s.blocks, "")
-    if (detached.length === 0) return
+    if (detached.length === 0) return true
     onChange({ ...s, blocks: [...remaining, ...detached] })
+    return true
   }
 
   useEffect(() => {
     if (!spec) return
     if (lastDetachedRef.current === spec) return
     const hasGroups = spec.blocks.some((b) => b.type === "stack" && !b.bg)
-    lastDetachedRef.current = spec
-    if (!hasGroups) return
-    const t = setTimeout(() => detachAll(spec), 120)
-    return () => clearTimeout(t)
+    if (!hasGroups) {
+      lastDetachedRef.current = spec
+      return
+    }
+    // Só marca como processado depois de medir de verdade. Sem isso, um canvas
+    // que ainda não tem largura (fonte carregando, layout assentando) seria
+    // detachado com posições NaN e o spec ficaria quebrado pra sempre.
+    let cancelled = false
+    let tries = 0
+    let timer: ReturnType<typeof setTimeout>
+    const attempt = () => {
+      if (cancelled) return
+      if (detachAll(spec)) {
+        lastDetachedRef.current = spec
+        return
+      }
+      if (++tries < 15) timer = setTimeout(attempt, 120)
+    }
+    timer = setTimeout(attempt, 120)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec])
 

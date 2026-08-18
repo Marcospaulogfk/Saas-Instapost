@@ -300,35 +300,68 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const insufficient = balance < cost
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-      {/* ── Canvas ────────────────────────────────────────────────────── */}
-      <main className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" className="shrink-0">
-            <Link href="/dashboard/criar/post-unico" aria-label="Voltar">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-h2 font-display font-bold text-text-primary truncate">
-              Editor de post único
-            </h1>
-            <p className="text-xs text-text-muted">
-              Arraste qualquer bloco pra mover. Editar é grátis e ilimitado.
-            </p>
+    // Mesmo shell do editor de carrossel: TELA CHEIA por cima do dashboard.
+    // A sidebar do editor substitui a de navegação — sem ficar com duas.
+    <div className="fixed inset-0 z-50 bg-background flex overflow-hidden">
+      {/* Coluna direita (toolbar + canvas). A sidebar fica ANTES (order-1). */}
+      <div className="order-2 flex-1 min-w-0 flex flex-col">
+        {/* Toolbar de topo — ações sempre visíveis */}
+        <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
+          <span className="text-[13px] font-medium text-text-primary">Post único</span>
+          <span className="text-[11px] text-text-muted">1080 × 1350px</span>
+
+          <div className="ml-auto flex items-center gap-2 flex-wrap">
+            {spec && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => brand && briefing && generate(brand, briefing, usedIds)}
+                disabled={loading || insufficient || !brand || !briefing}
+                title={`Gera outra versão por ${cost} tokens`}
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Outra versão ({cost})
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={!spec || exporting}
+            >
+              {exporting ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              Exportar PNG
+            </Button>
+            <Button type="button" size="sm" onClick={handleSave} disabled={!canSave}>
+              {saving ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : saveOk ? (
+                <Check className="w-3.5 h-3.5 mr-1.5" />
+              ) : (
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {saveOk ? "Salvo" : savedId ? "Atualizar" : "Salvar"}
+            </Button>
           </div>
         </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
-
+        {/* Área do canvas */}
         <div
           ref={containerRef}
-          className="rounded-xl border border-border-subtle bg-background-secondary/40 p-6 flex justify-center"
+          className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-start gap-3"
         >
+          {error && (
+            <div className="w-full max-w-[440px] rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+              {error}
+            </div>
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-24 text-text-muted">
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -337,71 +370,40 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
           ) : finalSpec ? (
             <div
               ref={previewRef}
-              className={exporting ? "[&_*]:!outline-none [&_*]:!cursor-default" : ""}
+              /* Largura EXPLÍCITA é obrigatória: o renderizador usa
+                 container-type:inline-size + aspect-ratio, então sem largura do
+                 pai ele colapsa pra 0×0 — o post some e, pior, o auto-detach
+                 mede zero e embaralha as posições de todos os blocos. */
+              className={`w-full max-w-[440px] ${
+                exporting ? "[&_*]:!outline-none [&_*]:!cursor-default" : ""
+              }`}
             >
               {canvas}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
               <Sparkles className="w-8 h-8 text-text-muted" />
-              <p className="text-sm text-text-secondary">
-                Nada gerado ainda.
-              </p>
+              <p className="text-sm text-text-secondary">Nada gerado ainda.</p>
               <Button asChild variant="outline" size="sm">
-                <Link href="/dashboard/criar/post-unico">Criar um post</Link>
+                <Link href="/dashboard/criar">Criar um post</Link>
               </Button>
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* ── Painel ────────────────────────────────────────────────────── */}
-      <aside className="space-y-5">
-        <div className="flex gap-2">
-          <Button
-            onClick={handleSave}
-            disabled={!canSave}
-            className="flex-1"
-            size="sm"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : saveOk ? (
-              <Check className="w-4 h-4 mr-2" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            {saveOk ? "Salvo" : savedId ? "Atualizar" : "Salvar"}
-          </Button>
-          <Button
-            onClick={handleExport}
-            disabled={!spec || exporting}
-            variant="outline"
-            size="sm"
-          >
-            {exporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-
-        {spec && (
-          <Button
-            onClick={() => brand && briefing && generate(brand, briefing, usedIds)}
-            disabled={loading || insufficient || !brand || !briefing}
-            variant="outline"
-            size="sm"
-            className="w-full"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Gerar outra versão ({cost} tokens)
-          </Button>
-        )}
+      {/* Sidebar de edição — coluna cheia à ESQUERDA */}
+      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-4 h-full overflow-y-auto">
+        <Link
+          href="/dashboard/projetos"
+          className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Voltar para Dashboard
+        </Link>
 
         {insufficient && (
-          <p className="text-[11px] text-red-400">
+          <p className="text-[11px] text-danger px-1">
             Saldo insuficiente pra gerar de novo ({balance} de {cost}).{" "}
             <Link href="/pricing" className="underline underline-offset-2">
               Fazer upgrade
@@ -409,112 +411,99 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
           </p>
         )}
 
-        {/* Adicionar ao canvas — o spec ja suportava esses blocos, faltava a UI. */}
         {spec && (
-          <div className="space-y-2">
-            <Label className="text-sm text-text-secondary">Adicionar ao canvas</Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {TEXT_STYLES.map((s) => (
+          <>
+            <div className="space-y-2">
+              <Label className="text-sm text-text-secondary">Adicionar ao canvas</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {TEXT_STYLES.map((st) => (
+                  <Button
+                    key={st.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[11px]"
+                    onClick={() => setSpec(addTextBlock(spec, st.id))}
+                  >
+                    <Type className="w-3 h-3 mr-1" />
+                    {st.label}
+                  </Button>
+                ))}
                 <Button
-                  key={s.id}
                   type="button"
                   variant="outline"
                   size="sm"
                   className="h-8 text-[11px]"
-                  onClick={() => setSpec(addTextBlock(spec, s.id))}
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <Type className="w-3 h-3 mr-1" />
-                  {s.label}
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Imagem
                 </Button>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 text-[11px]"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImageIcon className="w-3 h-3 mr-1" />
-                Imagem
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 text-[11px]"
-                onClick={() => setSpec(addShapeBlock(spec, "rounded"))}
-              >
-                <Square className="w-3 h-3 mr-1" />
-                Forma
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[11px]"
+                  onClick={() => setSpec(addShapeBlock(spec, "rounded"))}
+                >
+                  <Square className="w-3 h-3 mr-1" />
+                  Forma
+                </Button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAddImage}
+              />
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAddImage}
-            />
-            <p className="text-[10px] text-text-muted">
-              O bloco nasce no centro. Arraste pra posicionar, clique pra editar.
-            </p>
-          </div>
-        )}
 
-        {spec && (
-          <div className="space-y-2">
-            <Label className="text-sm text-text-secondary">Tipografia</Label>
-            <Select value={fontPreset} onValueChange={setFontPreset}>
-              <SelectTrigger className="bg-background-secondary/60 border-border-subtle h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background-tertiary border-border-medium">
-                {FONT_PRESETS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Legenda do Instagram — vinha sendo gerada e descartada. */}
-        {spec && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-text-secondary">Legenda</Label>
-              <button
-                type="button"
-                onClick={copyCaption}
-                disabled={!caption}
-                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary disabled:opacity-40"
-              >
-                {copied ? (
-                  <Check className="w-3 h-3" />
-                ) : (
-                  <Copy className="w-3 h-3" />
-                )}
-                {copied ? "Copiado" : "Copiar"}
-              </button>
+            <div className="space-y-2">
+              <Label className="text-sm text-text-secondary">Tipografia</Label>
+              <Select value={fontPreset} onValueChange={setFontPreset}>
+                <SelectTrigger className="bg-background-secondary/60 border-border-subtle h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background-tertiary border-border-medium">
+                  {FONT_PRESETS.map((fp) => (
+                    <SelectItem key={fp.id} value={fp.id}>
+                      {fp.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Textarea
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              rows={8}
-              placeholder="A legenda gerada aparece aqui."
-              className="bg-background-secondary/60 border-border-subtle text-xs leading-relaxed"
-            />
-            <p className="text-[10px] text-text-muted">
-              Vai junto com o post quando você salva. Editar não custa tokens.
-            </p>
-          </div>
-        )}
 
-        {spec && (
-          <div className="rounded-lg border border-border-subtle bg-background-secondary/40 p-3">
-            {panel}
-          </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              {panel}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm text-text-secondary">Legenda</Label>
+                <button
+                  type="button"
+                  onClick={copyCaption}
+                  disabled={!caption}
+                  className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary disabled:opacity-40"
+                >
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copied ? "Copiado" : "Copiar"}
+                </button>
+              </div>
+              <Textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                rows={8}
+                placeholder="A legenda gerada aparece aqui."
+                className="bg-background-secondary/60 border-border-subtle text-xs leading-relaxed"
+              />
+              <p className="text-[10px] text-text-muted">
+                Vai junto com o post ao salvar. Editar não custa tokens.
+              </p>
+            </div>
+          </>
         )}
       </aside>
     </div>

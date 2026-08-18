@@ -92,13 +92,14 @@ export default async function EditorPostUnicoPage({
     tagline: null,
   }))
 
+  // SEM wrapper: o editor é um overlay `fixed inset-0`. Qualquer ancestral com
+  // `transform` (mesmo identidade, vinda de animação do dashboard) vira bloco
+  // de contenção e prende o overlay dentro dele.
   return (
-    <div className="relative p-6 md:p-8 max-w-7xl mx-auto">
-      <EditorClient
-        brands={editorBrands}
-        balance={profile?.credits ?? 0}
-        initialPost={initialPost}
-      />
-    </div>
+    <EditorClient
+      brands={editorBrands}
+      balance={profile?.credits ?? 0}
+      initialPost={initialPost}
+    />
   )
 }
