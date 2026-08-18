@@ -4,6 +4,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Medicao, MedicaoNoScript } from '@/components/tracking/medicao'
 import './globals.css'
 
 const bebasNeue = Bebas_Neue({
@@ -51,8 +52,23 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // DUAS metatags, e as duas precisam continuar aqui.
+  //
+  // A primeira sustenta a propriedade ANTIGA (syncpost.com.br), que segue
+  // verificada no Search Console e é onde mora todo o histórico de busca de
+  // antes do rebrand. Remover ela perderia esse histórico.
+  //
+  // A segunda verifica https://nexuscontentai.com.br/, cadastrada em
+  // 17/08/2026 e pendente até esta linha subir para produção. Depois do
+  // deploy, volte ao Search Console e clique em Verificar.
+  //
+  // Google diz explicitamente para não remover a metatag depois de verificar:
+  // ele revalida de tempos em tempos e a propriedade cai se ela sumir.
   verification: {
-    google: 'fA61f3OZcsdXlM2Qg4yA4PFG3EPZqJulDFlWCTvL4kw',
+    google: [
+      'fA61f3OZcsdXlM2Qg4yA4PFG3EPZqJulDFlWCTvL4kw',
+      '0l7i5OUyasOh3ebVeJYZMK6oO8LT9Nqg3kfl9mkWVXc',
+    ],
   },
   alternates: {
     canonical: '/',
@@ -112,9 +128,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-background text-foreground">
+        {/* Primeiro elemento do body por exigência do GTM. */}
+        <MedicaoNoScript />
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false} disableTransitionOnChange>
           {children}
         </ThemeProvider>
+        <Medicao />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
