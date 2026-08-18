@@ -93,6 +93,9 @@ export async function POST(req: Request) {
         content: body.approved_content,
         photoPrompt: body.photo_prompt ?? null,
         photoEntity: body.image_entity ?? null,
+        // Opcional neste modo (a validação de tamanho só vale pros modos que
+        // geram texto), mas dá ao compositor o assunto do post.
+        briefing: body.briefing?.trim() || null,
       })
       // Só a imagem: o texto já foi debitado na etapa text_only.
       await debitBestEffort(supabase, user?.id, imageCost(result.image_quality))

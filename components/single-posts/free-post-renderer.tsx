@@ -68,7 +68,14 @@ const ICONS = {
   camera: Camera,
 } as const
 
-function positionToStyle(p: FreeBlock["position"]): React.CSSProperties {
+function positionToStyle(
+  position: FreeBlock["position"] | undefined,
+): React.CSSProperties {
+  // `position` ausente é caso real, não defeito: blocos que fluem dentro de um
+  // stack não têm âncora, e a IA também omite a do próprio stack quando ele já
+  // está dentro de outro. Tratar como objeto vazio evita derrubar o render
+  // inteiro por causa de um bloco — o resultado é o mesmo do flow natural.
+  const p = position ?? {}
   // Se position está vazia, não força absolute (flow natural dentro de stack)
   const hasAnchor =
     p.top !== undefined ||
@@ -97,7 +104,13 @@ function positionToStyle(p: FreeBlock["position"]): React.CSSProperties {
   return s
 }
 
-function highlightText(text: string, highlights?: string[], outlineWord?: string, outlineColor?: string) {
+function highlightText(
+  text: string,
+  highlights?: string[],
+  outlineWord?: string,
+  outlineColor?: string,
+  highlightColor?: string,
+) {
   if (!highlights?.length && !outlineWord) return text
   const words = text.split(/(\s+)/)
   return words.map((part, i) => {
@@ -124,7 +137,7 @@ function highlightText(text: string, highlights?: string[], outlineWord?: string
     }
     if (isHighlight) {
       return (
-        <strong key={i} style={{ fontWeight: 700 }}>
+        <strong key={i} style={{ fontWeight: 700, color: highlightColor }}>
           {part}
         </strong>
       )
@@ -140,12 +153,30 @@ function renderText(b: FreeTextBlock) {
     b.font_size_scale && b.font_size_scale !== 1
       ? `calc(${b.font_size} * ${b.font_size_scale})`
       : b.font_size
+  // A rotação entra DEPOIS do transform de centragem (translate) que
+  // positionToStyle já pode ter montado — sobrescrever perderia o translate e
+  // jogaria o bloco pra fora do eixo.
+  const posStyle = positionToStyle(b.position)
+  // Texto vertical de margem (±90) usa writing-mode, não rotate: `rotate` gira
+  // em torno do centro de uma caixa que continua larga, então metade do texto
+  // sai do canvas. Com writing-mode a caixa já nasce estreita e alta, e a
+  // âncora que a IA deu vale de verdade. Ângulos livres seguem no rotate.
+  const isVertical = b.rotation === -90 || b.rotation === 90
+  const transform =
+    b.rotation && !isVertical
+      ? `${posStyle.transform ? `${posStyle.transform} ` : ""}rotate(${b.rotation}deg)`
+      : posStyle.transform
   return (
     <div
       key={`text-${JSON.stringify(b.position)}-${b.text.slice(0, 20)}`}
       className={FONT_CLASSES[b.font]}
       style={{
-        ...positionToStyle(b.position),
+        ...posStyle,
+        transform,
+        writingMode: isVertical ? "vertical-rl" : undefined,
+        // vertical-rl corre de cima pra baixo; -90 é a leitura de baixo pra
+        // cima, que é a convenção da lombada/margem editorial.
+        rotate: b.rotation === -90 ? "180deg" : undefined,
         color: b.color,
         fontSize: scaledSize,
         fontWeight: b.font_weight,
@@ -161,7 +192,13 @@ function renderText(b: FreeTextBlock) {
     >
       {lines.map((line, i) => (
         <span key={i} className="block">
-          {highlightText(line, b.highlights, b.outline_word, b.color)}
+          {highlightText(
+            line,
+            b.highlights,
+            b.outline_word,
+            b.color,
+            b.highlight_color,
+          )}
         </span>
       ))}
     </div>
@@ -318,8 +355,12 @@ function renderDivider(b: FreeDividerBlock) {
       style={{
         ...positionToStyle(b.position),
         background: b.color,
-        height: isVertical ? b.position.height ?? "min(20cqw, 80px)" : thickness,
-        width: isVertical ? thickness : b.position.width ?? "min(20cqw, 80px)",
+        height: isVertical
+          ? b.position?.height ?? "min(20cqw, 80px)"
+          : thickness,
+        width: isVertical
+          ? thickness
+          : b.position?.width ?? "min(20cqw, 80px)",
         zIndex: b.z ?? 1,
       }}
     />
@@ -338,6 +379,10 @@ function renderIcon(b: FreeIconBlock) {
           background: b.background,
           color: b.color,
           padding: b.padding ?? "min(2cqw, 10px)",
+          // O disco atrás do ícone tem que ser um círculo do tamanho do ícone,
+          // não uma cápsula esticada pelo container flex que o hospeda.
+          width: "fit-content",
+          flexShrink: 0,
           zIndex: b.z ?? 2,
         }}
       >
@@ -393,11 +438,30 @@ function renderStack(b: FreeStackBlock, pathPrefix?: string) {
       {b.children.map((child, i) => {
         const flowChild: FreeBlock = { ...child, position: {} }
         const childPath = pathPrefix ? `${pathPrefix}.${i}` : undefined
+        // Em coluna, o filho ocupa a linha inteira. Em LINHA, não: `width:100%`
+        // fazia cada filho reivindicar a largura toda do stack — o ícone virava
+        // uma barra e o texto ao lado era empurrado pra fora do canvas. Numa
+        // linha, ícone/imagem/forma mantêm o tamanho natural e o resto divide o
+        // espaço que sobra (minWidth:0 é o que autoriza o texto a quebrar).
+        const isRow = direction === "row"
+        const atomic =
+          child.type === "icon" ||
+          child.type === "image" ||
+          child.type === "shape" ||
+          child.type === "pill"
         return (
           <div
             key={i}
             data-flow-path={childPath}
-            style={{ position: "relative", flexShrink: 0, width: "100%" }}
+            style={{
+              position: "relative",
+              ...(isRow
+                ? {
+                    flex: atomic ? "0 0 auto" : "1 1 0",
+                    minWidth: 0,
+                  }
+                : { width: "100%", flexShrink: 0 }),
+            }}
           >
             {renderBlock(flowChild)}
           </div>

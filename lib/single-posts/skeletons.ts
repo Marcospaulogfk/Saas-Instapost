@@ -40,6 +40,15 @@ export interface SkeletonContent {
   stat_label?: string
   /** Pergunta-chave em uppercase pra destaque (modo pergunta) */
   question_keyword?: string
+  /**
+   * Itens do post (3-4), cada um com rótulo curto + uma frase.
+   *
+   * É o material que faltava pra alcançar a densidade do BestContent: a arte
+   * deles lista pontos com ícone + título bold + descrição, e sem esse slot o
+   * compositor só tinha título e corpo pra distribuir num canvas 1080×1350.
+   * Os skeletons antigos ignoram este campo — quem consome é `compose.ts`.
+   */
+  bullets?: Array<{ label: string; text: string }>
 }
 
 export interface SkeletonContext {

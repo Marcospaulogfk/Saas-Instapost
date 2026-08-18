@@ -76,6 +76,19 @@ export interface FreeTextBlock extends FreeBlockBase {
   font_style?: "italic" | "normal"
   /** palavras pra renderizar em bold inline dentro do text */
   highlights?: string[]
+  /**
+   * Cor das palavras em `highlights`. Sem isto elas só ficam bold — com isto
+   * viram destaque colorido (o nome próprio na cor da marca dentro de uma
+   * headline preta, padrão de capa de revista). Passe SEMPRE uma cor com
+   * contraste real contra o fundo do bloco.
+   */
+  highlight_color?: string
+  /**
+   * Rotação em graus. O uso real é texto vertical de margem (-90 sobe, 90
+   * desce) — aquela linha fina de crédito//seção que corre na lateral de
+   * página editorial. Fora disso, deixe sem.
+   */
+  rotation?: number
   /** palavra pra renderizar com text-stroke + transparente (efeito vazado) */
   outline_word?: string
   /** sombra de texto sutil (só pra texto sobre foto) */

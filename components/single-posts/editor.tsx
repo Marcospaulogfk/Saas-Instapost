@@ -215,7 +215,7 @@ export function PostUnicoEditor({
     try {
       if (!brand.id || brand.id.startsWith("demo-") || brand.id === "demo") {
         setSaveStatus(
-          "Esse é um sandbox de demo. Crie pelo /dashboard/criar/post-unico pra salvar.",
+          "Esse é um sandbox de demo. Crie pelo /dashboard/criar pra salvar.",
         )
         return
       }

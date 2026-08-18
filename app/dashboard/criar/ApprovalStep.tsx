@@ -8,6 +8,7 @@ import {
   Sparkles,
   Type,
   AlignLeft,
+  List,
   MessageSquareText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -30,6 +31,30 @@ export interface ApprovalDraft {
   photoPrompt: string | null
   /** Entidade real (lugar/pessoa/produto) — se houver, vira foto real (Wikipedia). */
   photoEntity?: string | null
+}
+
+type Bullet = NonNullable<SkeletonContent["bullets"]>[number]
+
+/** Itens → texto editável, uma linha por item. */
+function bulletsToText(bullets: Bullet[] | undefined): string {
+  return (bullets ?? []).map((b) => `${b.label} — ${b.text}`).join("\n")
+}
+
+/**
+ * Texto → itens. Aceita "—", "–" ou "-" como separador porque o usuário digita
+ * o que o teclado dele der; linha sem separador vira item só com texto, em vez
+ * de ser descartada silenciosamente.
+ */
+function textToBullets(raw: string): Bullet[] {
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^(.*?)\s+[—–-]\s+(.*)$/)
+      if (!m) return { label: "", text: line }
+      return { label: m[1].trim(), text: m[2].trim() }
+    })
 }
 
 export function ApprovalStep({
@@ -116,6 +141,29 @@ export function ApprovalStep({
               className="text-sm leading-relaxed resize-y"
             />
           </Field>
+
+          {/* Itens — só aparece quando a IA achou matéria pra listar. */}
+          {!!draft.rawContent.bullets?.length && (
+            <Field
+              icon={List}
+              label="Itens da arte"
+              hint="Um por linha, no formato Rótulo — frase"
+            >
+              <Textarea
+                value={bulletsToText(draft.rawContent.bullets)}
+                onChange={(e) =>
+                  onChange({
+                    rawContent: {
+                      ...draft.rawContent,
+                      bullets: textToBullets(e.target.value),
+                    },
+                  })
+                }
+                rows={4}
+                className="text-sm leading-relaxed resize-y"
+              />
+            </Field>
+          )}
 
           {/* Legenda */}
           <Field

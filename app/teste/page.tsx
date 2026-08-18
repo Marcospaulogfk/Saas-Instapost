@@ -1218,7 +1218,7 @@ export default function TestePage() {
     if (autoRunStartedRef.current) return
     if (typeof window === "undefined") return
 
-    // Primeiro: payload de post-único vindo do /dashboard/criar/post-unico
+    // Primeiro: payload de post-único vindo do wizard (/dashboard/criar)
     let postUnicoRaw: string | null = null
     try {
       postUnicoRaw = sessionStorage.getItem("syncpost_pending_post_unico")

@@ -7,7 +7,7 @@ import type { LucideIcon } from "lucide-react"
 /* ---------------- Quick Actions ---------------- */
 
 const ACTIONS: { label: string; sub: string; href: string; icon: LucideIcon; tile: string }[] = [
-  { label: "Criar post único", sub: "Imagem + legenda com IA", href: "/dashboard/criar/post-unico", icon: PenLine, tile: "nv-tile-purple" },
+  { label: "Criar post único", sub: "Imagem + legenda com IA", href: "/dashboard/criar?tipo=post-unico&step=2", icon: PenLine, tile: "nv-tile-purple" },
   { label: "Criar carrossel", sub: "Editorial de vários slides", href: "/dashboard/criar/editorial", icon: Layers, tile: "nv-tile-blue" },
   { label: "Explorar templates", sub: "Modelos prontos pra editar", href: "/dashboard/templates", icon: LayoutTemplate, tile: "nv-tile-orange" },
   { label: "Planejar com IA", sub: "Calendário de conteúdo", href: "/dashboard/planejar", icon: CalendarPlus, tile: "nv-tile-green" },

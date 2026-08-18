@@ -23,7 +23,7 @@ export default async function PostsUnicosPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/criar/post-unico">
+          <Link href="/dashboard/criar?tipo=post-unico&step=2">
             <Plus className="w-4 h-4 mr-2" />
             Criar post único
           </Link>
@@ -43,7 +43,7 @@ export default async function PostsUnicosPage() {
             </p>
           </div>
           <Button asChild>
-            <Link href="/dashboard/criar/post-unico">
+            <Link href="/dashboard/criar?tipo=post-unico&step=2">
               <Plus className="w-4 h-4 mr-2" />
               Criar primeiro post
             </Link>

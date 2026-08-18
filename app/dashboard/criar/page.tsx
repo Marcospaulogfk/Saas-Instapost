@@ -274,8 +274,21 @@ function CriarWizard() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [step, setStep] = useState<StepId>(1)
-  const [formato, setFormato] = useState<Formato | null>(null)
+  // `?tipo=post-unico` pré-seleciona feed de 1 slide e deixa o wizard abrir
+  // direto no passo 2. É o que os atalhos "Criar post único" do dashboard
+  // usam: antes existia uma página /dashboard/criar/post-unico paralela, que
+  // duplicava este fluxo e divergia dele.
+  const preSelecionado = searchParams.get("tipo") === "post-unico"
+  // O step inicial sai da URL aqui, e não do efeito de sync abaixo: aquele
+  // efeito só reage a mudança EXTERNA da URL e retorna cedo quando o step da
+  // URL bate com o estado — na entrada direta em ?step=2 ele nunca chegava a
+  // avançar, e o link caía no passo 1 com o formato já escolhido.
+  const [step, setStep] = useState<StepId>(() =>
+    preSelecionado && searchParams.get("step") === "2" ? 2 : 1,
+  )
+  const [formato, setFormato] = useState<Formato | null>(() =>
+    preSelecionado ? buildFormato("post", 1) : null,
+  )
   const [objetivo, setObjetivo] = useState<Objetivo>("engajar")
   const [abordagem, setAbordagem] = useState<Abordagem | null>(null)
   const [comoCriar, setComoCriar] = useState<ComoCriar>("zero")

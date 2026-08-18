@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { generateBrandImageForRole } from "@/lib/generation/image"
 import { searchWikimedia } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
+import { composeSpec } from "./compose"
 import type { PostBrand } from "./types"
 import type { FreePostSpec } from "./free-spec"
 import type { GenerateMetrics } from "./generate"
@@ -51,6 +52,7 @@ Não substitua por chavão genérico. "67% dos casos resolvem em 90 dias" é mel
 - **ghost_word**: 1 substantivo uppercase tema do post (fica gigante de fundo). Ex: "FORÇA", "JUSTIÇA".
 - **outline_word**: 1 palavra do title pra efeito vazado — escolha a com mais impacto visual.
 - **highlight_words**: 1-2 palavras que JÁ aparecem no body/title (mesma capitalização exata).
+- **bullets**: exatamente **3** itens \`{ label, text }\` que sustentam a tese do título. \`label\` = 2-4 palavras, o rótulo do ponto (ex: "Uma década de base", "Reconhecimento oficial"). \`text\` = 1 frase de até **10 palavras** com o fato concreto — frase mais longa não cabe na arte e é cortada. Cada item traz uma informação NOVA — não reformule o título nem repita o body. Preencha sempre que o briefing tiver matéria pra isso (trajetória, números, etapas, critérios, motivos); é o que dá densidade de revista à arte. Só deixe vazio quando o post for de uma frase só (manifesto, pergunta provocativa, oferta seca).
 
 # PHOTO PROMPT (sempre forneça em INGLÊS)
 
@@ -102,6 +104,20 @@ Se o tópico é abstrato, o photo deve ser editorial-concreto:
 
 PROIBIDO em todos os prompts: text, watermarks, logos, brand names, signs, billboards, illustrations, sketches, diagrams, posing forçado.
 
+## ⚠️ A FOTO NUNCA PODE CONTER LETRAS
+
+A arte é montada em CAMADAS: toda a tipografia é renderizada por cima, em HTML. Se o modelo desenhar letras dentro da foto, elas aparecem tortas, em inglês e brigando com o texto real — é o defeito mais visível do post.
+
+NUNCA use no prompt palavras que induzem tipografia, mesmo como estilo:
+"magazine cover", "editorial layout", "poster", "typography", "lettering", "headline", "title card", "book cover", "album cover", "signage", "storefront", "newspaper", "graffiti", "mural", "label", "packaging".
+
+Prefira o equivalente sem letras: em vez de "magazine cover style" → "editorial portrait, shallow depth of field"; em vez de "poster look" → "high-contrast studio lighting".
+
+Termine SEMPRE o photo_prompt com esta cláusula, literal:
+"No text, no letters, no words, no numbers, no signage, no watermark, no logo anywhere in the image."
+
+Se o assunto é um lugar com placas (loja, estádio, rua), descreva um ângulo que não pegue placa — detalhe, textura, interior, close.
+
 # CAPTION (legenda do post — OBRIGATÓRIA)
 
 Além do texto que vai NA imagem, escreva a **legenda** (\`caption\`) que vai
@@ -130,7 +146,8 @@ o olho, a legenda entrega o contexto e o argumento completos. Regras:
     "cta_text"?: string,
     "stat_value"?: string,
     "stat_label"?: string,
-    "question_keyword"?: string
+    "question_keyword"?: string,
+    "bullets"?: [{ "label": string, "text": string }]
   },
   "caption": "legenda completa do post (gancho + 2-4 parágrafos com contexto + CTA + linha de hashtags)",
   "photo_prompt"?: string,
@@ -156,7 +173,7 @@ Preencha "image_entity" com o NOME EXATO de algo REAL cuja FOTO de verdade ilust
 
 SEMPRE forneça photo_prompt também (é o fallback se a foto real não existir). Regra: entidade real nomeada com foto conhecida (pessoa/filme/produto) → SEMPRE image_entity; negócio local / oferta / conceito → vazio (IA).
 
-Preencha SÓ slots required + opcionais que adicionam valor. Slots vazios não viram nada — não invente. Minimal vence ruidoso.`
+Preencha os slots required + os opcionais que adicionam valor — incluindo \`bullets\`, que é o material de densidade da arte e vale pra qualquer layout. Slots vazios não viram nada; não invente fato que o briefing não deu. Minimal na FRASE, denso no CONTEÚDO.`
 
 interface SkeletonResponse {
   skeleton_id: string
@@ -209,13 +226,6 @@ function getClient(): Anthropic {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 }
 
-function parseJson(raw: string): SkeletonResponse {
-  let s = raw.trim()
-  if (s.startsWith("```")) {
-    s = s.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "")
-  }
-  return JSON.parse(s) as SkeletonResponse
-}
 
 function computeCost(usage: {
   input_tokens: number
@@ -289,6 +299,8 @@ interface ApprovedOpts {
   photoPrompt?: string | null
   /** Entidade real preservada da etapa de texto — vira foto real (Wikipedia). */
   photoEntity?: string | null
+  /** Briefing original — dá contexto de assunto ao compositor de layout. */
+  briefing?: string | null
 }
 
 /**
@@ -365,7 +377,57 @@ REGRA CRÍTICA SOBRE FOTO: SEMPRE forneça \`photo_prompt\` em INGLÊS pra enriq
 
 No JSON de resposta, devolva em "skeleton_id" o id do layout que você escolheu — obrigatoriamente um da lista acima.
 
-Preencha APENAS os slots required + opcionais que melhoram o post. Mantém minimalismo.`
+Preencha os slots required + os opcionais que melhoram o post.
+
+⚠️ \`bullets\` NÃO aparece na lista de slots dos layouts acima e mesmo assim é pra preencher: quem monta a arte final é um diretor de arte que compõe o layout livremente, e os itens são o material que dá densidade de revista à peça. A lista de slots do layout é o mínimo, não o teto. Só deixe \`bullets\` vazio se o post for genuinamente de uma frase só.`
+}
+
+/**
+ * Schema da resposta de copy.
+ *
+ * Existe pra que o modelo devolva a copy por TOOL USE em vez de um bloco de
+ * texto com JSON dentro. Copy publicitária vive cheia de aspas e travessões, e
+ * cada aspas não escapada quebrava o `JSON.parse` — perdendo a geração inteira
+ * depois de já paga. Por tool use a serialização é problema da API.
+ */
+const COPY_TOOL_SCHEMA = {
+  type: "object" as const,
+  properties: {
+    skeleton_id: { type: "string" },
+    content: {
+      type: "object",
+      properties: {
+        kicker: { type: "string" },
+        title: { type: "string" },
+        title_lines: { type: "array", items: { type: "string" } },
+        subtitle: { type: "string" },
+        body: { type: "string" },
+        highlight_words: { type: "array", items: { type: "string" } },
+        outline_word: { type: "string" },
+        ghost_word: { type: "string" },
+        cta_text: { type: "string" },
+        stat_value: { type: "string" },
+        stat_label: { type: "string" },
+        question_keyword: { type: "string" },
+        bullets: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              label: { type: "string" },
+              text: { type: "string" },
+            },
+            required: ["label", "text"],
+          },
+        },
+      },
+    },
+    caption: { type: "string" },
+    photo_prompt: { type: "string" },
+    image_entity: { type: "string" },
+    rationale: { type: "string" },
+  },
+  required: ["skeleton_id", "content", "caption", "rationale"],
 }
 
 /** Chama o Claude pra gerar copy (content + caption + photo_prompt) de um skeleton. */
@@ -378,7 +440,9 @@ async function generateCopy(
   const userPrompt = buildUserPrompt(brand, briefing, candidates)
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 1500,
+    // Com os `bullets` (3-4 itens de rótulo + frase) a resposta passou do teto
+    // anterior de 1500 e chegava cortada no meio.
+    max_tokens: 3000,
     temperature: 0.8,
     // ~5,3k tokens fixos entre chamadas → cacheia (ver lib/tokens.ts).
     system: [
@@ -388,12 +452,26 @@ async function generateCopy(
         cache_control: { type: "ephemeral" },
       },
     ],
+    tools: [
+      {
+        name: "entregar_copy",
+        description: "Entrega a copy do post no formato estruturado.",
+        input_schema: COPY_TOOL_SCHEMA,
+      },
+    ],
+    tool_choice: { type: "tool", name: "entregar_copy" },
     messages: [{ role: "user", content: userPrompt }],
   })
-  const block = response.content.find((b) => b.type === "text")
-  if (!block || block.type !== "text") throw new Error("Claude não retornou texto")
-  const parsed = parseJson(block.text)
-  return { parsed, usage: response.usage }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(
+      "A resposta da IA foi cortada no limite de tokens. Tente de novo com um briefing mais curto.",
+    )
+  }
+  const block = response.content.find((b) => b.type === "tool_use")
+  if (!block || block.type !== "tool_use") {
+    throw new Error("Claude não retornou a copy estruturada")
+  }
+  return { parsed: block.input as SkeletonResponse, usage: response.usage }
 }
 
 export async function generateFreeSpec({
@@ -418,14 +496,24 @@ export async function generateFreeSpec({
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 
-  const spec = skeleton.build({
+  // Composição livre com o skeleton como rede de segurança — mesma política
+  // de buildApprovedSpec.
+  const composed = await composeSpec({
     brand,
     content: parsed.content,
-    photo_url: photoUrl,
+    photoUrl,
+    briefing,
   })
+  const spec =
+    composed?.spec ??
+    skeleton.build({
+      brand,
+      content: parsed.content,
+      photo_url: photoUrl,
+    })
 
   const ms = performance.now() - t0
-  const claudeCost = computeCost(usage)
+  const claudeCost = computeCost(usage) + (composed ? computeCost(composed.usage) : 0)
   return {
     spec: { ...spec, rationale: parsed.rationale },
     rationale: parsed.rationale,
@@ -497,6 +585,7 @@ export async function buildApprovedSpec({
   content,
   photoPrompt,
   photoEntity,
+  briefing,
 }: ApprovedOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
@@ -508,24 +597,35 @@ export async function buildApprovedSpec({
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 
-  const spec = skeleton.build({ brand, content, photo_url: photoUrl })
+  // Composição livre: a IA monta o layout inteiro (ver compose.ts). O skeleton
+  // escolhido na etapa de texto vira rede de segurança — se a composição falhar
+  // ou vier inválida, o post sai no layout pré-composto em vez de quebrar.
+  const composed = await composeSpec({ brand, content, photoUrl, briefing })
+  const spec =
+    composed?.spec ?? skeleton.build({ brand, content, photo_url: photoUrl })
+  const rationale = composed
+    ? (composed.spec.rationale ?? "Composição livre")
+    : `Composição indisponível — layout ${skeletonId}`
+  const composeCost = composed ? computeCost(composed.usage) : 0
+
   const ms = performance.now() - t0
 
   return {
-    spec: { ...spec, rationale: "Conteúdo aprovado pelo usuário" },
-    rationale: "Conteúdo aprovado pelo usuário",
+    spec: { ...spec, rationale },
+    rationale,
     skeleton_id: skeletonId,
     caption: "",
     photo_url: photoUrl,
     image_quality: resolved.quality,
     metrics: {
       ms,
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheCreationInputTokens: 0,
-      cacheReadInputTokens: 0,
-      costUsd: 0,
-      totalCostUsd: imageCost,
+      inputTokens: composed?.usage.input_tokens ?? 0,
+      outputTokens: composed?.usage.output_tokens ?? 0,
+      cacheCreationInputTokens:
+        composed?.usage.cache_creation_input_tokens ?? 0,
+      cacheReadInputTokens: composed?.usage.cache_read_input_tokens ?? 0,
+      costUsd: composeCost,
+      totalCostUsd: composeCost + imageCost,
     },
   }
 }

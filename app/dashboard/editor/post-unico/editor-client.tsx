@@ -175,6 +175,9 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
             approved_content: p.approvedContent,
             photo_prompt: p.photoPrompt ?? null,
             image_entity: p.photoEntity ?? null,
+            // Contexto de assunto pro compositor de layout — o conteúdo
+            // aprovado sozinho não diz do que o post trata.
+            briefing: p.briefing ?? null,
           }),
         })
         const data = await res.json()

@@ -13,7 +13,7 @@ const OPTIONS = [
     desc: "Roteiro, imagens e design gerados pra você",
   },
   {
-    href: "/dashboard/criar/post-unico",
+    href: "/dashboard/criar?tipo=post-unico&step=2",
     icon: ImageIcon,
     name: "Post único",
     desc: "Uma arte pronta em segundos",
