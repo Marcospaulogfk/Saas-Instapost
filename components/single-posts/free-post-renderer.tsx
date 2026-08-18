@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { anton, playfair, inter, allura, bebas, montserrat, archivo, grotesk } from "./fonts"
 import { proxiedImageUrl } from "@/lib/proxy-image"
+import { POST_FORMATS, type PostFormat } from "@/lib/single-posts/formats"
 import type {
   FreeBlock,
   FreeFontKey,
@@ -526,8 +527,8 @@ function renderBlock(b: FreeBlock, pathPrefix?: string): React.ReactElement | nu
 interface Props {
   spec: FreePostSpec
   className?: string
-  /** "post" = 4:5 (1080×1350) · "story" = 9:16 (1080×1920) */
-  format?: "post" | "story"
+  /** "post" = 4:5 · "story" = 9:16 · "square" = 1:1 (sempre 1080 de largura) */
+  format?: PostFormat
   /** Quando true, blocos top-level ficam draggable */
   editable?: boolean
   /** Callback chamado ao soltar drag — recebe path e nova position */
@@ -637,12 +638,17 @@ export function FreePostRenderer({
       }
     : null
 
-  const aspectClass = format === "story" ? "aspect-[9/16]" : "aspect-[4/5]"
+  const aspectClass = (POST_FORMATS[format] ?? POST_FORMATS.post).aspectClass
   const fontVars = `${playfair.variable} ${inter.variable} ${anton.variable} ${allura.variable} ${bebas.variable} ${montserrat.variable} ${archivo.variable} ${grotesk.variable}`
 
   return (
     <div
       ref={containerRef}
+      /* `data-post-canvas` é o gancho estável pra quem precisa do NÓ DA ARTE:
+         export PNG, medição de camadas na adaptação de formato, auto-detach.
+         Antes cada um procurava pela classe de aspect-ratio — o que quebrava
+         calado a cada formato novo. */
+      data-post-canvas={format}
       className={`${fontVars} relative ${aspectClass} w-full overflow-hidden rounded-xl ${className ?? ""}`}
       style={{ ...bgStyle, containerType: "inline-size" }}
       onClick={editable ? () => onSelectBlock?.(null) : undefined}

@@ -1,17 +1,31 @@
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { Plus, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { listBrands } from "@/lib/data/queries"
+import { listBrands, getProfile } from "@/lib/data/queries"
 import { listCarouselsV2 } from "@/app/actions/carousel"
 import { listSinglePosts } from "@/lib/single-posts/queries"
 import { getBrandGradient } from "@/lib/brand-colors"
+import {
+  buildBrandLimitState,
+  brandLimitMessage,
+  formatBrandUsage,
+  PLAN_LABEL,
+} from "@/lib/brands/limits"
+import { DuplicateBrandButton } from "./duplicate-brand-button"
 
 export default async function MarcasPage() {
-  const [brands, carousels, singlePosts] = await Promise.all([
+  const [brands, carousels, singlePosts, profileData] = await Promise.all([
     listBrands(),
     listCarouselsV2(),
     listSinglePosts(),
+    getProfile(),
   ])
+
+  // Multi-marca é eixo de preço: o teto sai do plano (lib/tokens.ts) e a
+  // contagem é a lista que já carregamos — zero query extra.
+  const limitState = buildBrandLimitState(profileData.profile, brands.length)
+  const atLimit = !limitState.canCreate
+  const limitMessage = brandLimitMessage(limitState)
 
   // Conta TODO conteúdo da marca: projetos antigos (project_count) +
   // carrosséis do editor novo (guardados por NOME da marca) + posts únicos
@@ -33,18 +47,46 @@ export default async function MarcasPage() {
           <p className="text-muted-foreground mt-1">
             Gerencie a identidade visual de cada uma das suas marcas.
           </p>
+          {brands.length > 0 && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              {/* Indicador de uso — o usuário precisa saber onde está no teto
+                  ANTES de tentar criar a próxima marca. */}
+              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium">
+                {formatBrandUsage(limitState)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Plano {PLAN_LABEL[limitState.plan]}
+              </span>
+              {atLimit && (
+                <Link
+                  href="/pricing"
+                  className="text-xs font-medium text-primary underline underline-offset-2"
+                >
+                  Liberar mais marcas
+                </Link>
+              )}
+            </div>
+          )}
         </div>
-        {brands.length > 0 && (
-          <Button
-            asChild
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Link href="/onboarding">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar marca
-            </Link>
-          </Button>
-        )}
+        {brands.length > 0 &&
+          (atLimit ? (
+            <Button asChild variant="outline">
+              <Link href="/pricing">
+                <Lock className="w-4 h-4 mr-2" />
+                Ver planos
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Link href="/onboarding">
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar marca
+              </Link>
+            </Button>
+          ))}
       </div>
 
       {brands.length === 0 ? (
@@ -69,42 +111,69 @@ export default async function MarcasPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {brands.map((brand) => (
-            <Link
-              key={brand.id}
-              href={`/dashboard/marcas/${brand.id}`}
-              className="rounded-xl border border-border bg-card hover:border-primary/30 transition-all hover:-translate-y-1 overflow-hidden"
-            >
-              <div
-                className={`h-32 ${getBrandGradient(brand.id)} flex items-center justify-center`}
+            // O card inteiro continua clicável (Link), e o botão de duplicar
+            // fica FORA dele — botão dentro de <a> é HTML inválido e o clique
+            // navegaria junto.
+            <div key={brand.id} className="relative">
+              <Link
+                href={`/dashboard/marcas/${brand.id}`}
+                className="block rounded-xl border border-border bg-card hover:border-primary/30 transition-all hover:-translate-y-1 overflow-hidden"
               >
-                <span className="text-6xl font-bold text-white">
-                  {brand.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="p-4 space-y-1">
-                <h3 className="font-semibold text-lg">{brand.name}</h3>
-                {brand.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {brand.description}
+                <div
+                  className={`h-32 ${getBrandGradient(brand.id)} flex items-center justify-center`}
+                >
+                  <span className="text-6xl font-bold text-white">
+                    {brand.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="p-4 space-y-1">
+                  <h3 className="font-semibold text-lg">{brand.name}</h3>
+                  {brand.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {brand.description}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground pt-1">
+                    {contentCount(brand)}{" "}
+                    {contentCount(brand) === 1
+                      ? "conteúdo criado"
+                      : "conteúdos criados"}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground pt-1">
-                  {contentCount(brand)}{" "}
-                  {contentCount(brand) === 1
-                    ? "conteúdo criado"
-                    : "conteúdos criados"}
-                </p>
+                </div>
+              </Link>
+              <div className="absolute top-2 right-2 z-10">
+                <DuplicateBrandButton
+                  brandId={brand.id}
+                  brandName={brand.name}
+                  canCreate={limitState.canCreate}
+                  limitMessage={limitMessage}
+                />
               </div>
-            </Link>
+            </div>
           ))}
 
-          <Link
-            href="/onboarding"
-            className="rounded-xl border border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary min-h-[220px]"
-          >
-            <Plus className="w-10 h-10" />
-            <span className="text-sm font-medium">Nova marca</span>
-          </Link>
+          {atLimit ? (
+            <div className="rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-2 text-center p-6 min-h-[220px]">
+              <Lock className="w-8 h-8 text-muted-foreground" />
+              <p className="text-sm font-medium">
+                Limite do plano {PLAN_LABEL[limitState.plan]} atingido
+              </p>
+              <p className="text-xs text-muted-foreground max-w-[220px]">
+                {limitMessage}
+              </p>
+              <Button asChild size="sm" className="mt-1">
+                <Link href="/pricing">Ver planos</Link>
+              </Button>
+            </div>
+          ) : (
+            <Link
+              href="/onboarding"
+              className="rounded-xl border border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary min-h-[220px]"
+            >
+              <Plus className="w-10 h-10" />
+              <span className="text-sm font-medium">Nova marca</span>
+            </Link>
+          )}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -28,7 +28,7 @@ type ProximaData = DataComemorativa & { date: Date; daysAway: number }
 
 const CATEGORIAS: Array<{ id: "todas" | InspiracaoCategoria; label: string }> = [
   { id: "todas", label: "Todas" },
-  { id: "trends", label: "🔥 Trends" },
+  { id: "trends", label: "Trends" },
   { id: "engajamento", label: "Engajamento" },
   { id: "venda", label: "Venda" },
   { id: "autoridade", label: "Autoridade" },
@@ -77,9 +77,21 @@ interface Props {
   brandName: string | null
   /** Bloco de contexto da marca ativa pra prefixar briefings gerados na hora (datas). */
   contextoMarca: string | null
+  /**
+   * Seção das fontes próprias de inspiração, montada no server component.
+   * Entra como slot (e não como import direto) pra que os dados dela sejam
+   * buscados no servidor sem transformar esta tela num client component
+   * responsável por outra feature.
+   */
+  slotFontes?: ReactNode
 }
 
-export function InspiracoesClient({ inspiracoes, brandName, contextoMarca }: Props) {
+export function InspiracoesClient({
+  inspiracoes,
+  brandName,
+  contextoMarca,
+  slotFontes,
+}: Props) {
   const router = useRouter()
   const [catFilter, setCatFilter] = useState<"todas" | InspiracaoCategoria>("todas")
   const [formatoFilter, setFormatoFilter] = useState<"todos" | Inspiracao["formato"]>(
@@ -168,6 +180,9 @@ export function InspiracoesClient({ inspiracoes, brandName, contextoMarca }: Pro
           )}
         </p>
       </div>
+
+      {/* Fontes próprias de inspiração (montadas no server component) */}
+      {slotFontes}
 
       {/* Sem marca: convite pra criar e destravar personalização */}
       {!brandName && (

@@ -36,6 +36,16 @@ import {
   TEXT_STYLES,
 } from "@/lib/single-posts/add-block"
 import { tokenCostForSinglePost } from "@/lib/tokens"
+import {
+  adaptSpecFormat,
+  measureSpecBlocks,
+} from "@/lib/single-posts/adapt-format"
+import {
+  POST_FORMATS,
+  POST_FORMAT_LIST,
+  toPostFormat,
+  type PostFormat,
+} from "@/lib/single-posts/formats"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 import type { PostBrand } from "@/lib/single-posts/types"
 
@@ -73,6 +83,7 @@ export interface InitialPost {
   caption: string
   briefing: string
   skeletonId: string | null
+  format: PostFormat
 }
 
 interface Props {
@@ -100,6 +111,15 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   )
   const [usedIds, setUsedIds] = useState<string[]>([])
   const [fontPreset, setFontPreset] = useState(initialPost?.fontPreset ?? "editorial")
+  /**
+   * Formato do canvas. Não é só um preview diferente: o spec guardado JÁ está
+   * posicionado pra este formato (ver `handleFormat`), então ele viaja junto no
+   * save e volta na reedição.
+   */
+  const [format, setFormat] = useState<PostFormat>(
+    toPostFormat(initialPost?.format),
+  )
+  const [adapting, setAdapting] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -117,7 +137,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const { canvas, panel, containerRef, setSelectedPath } = useSpecEditor(
     finalSpec,
     (next) => setSpec(next),
-    { format: "post" },
+    { format },
   )
 
   const generate = useCallback(
@@ -228,13 +248,39 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     if (b && brief) void generate(b, brief, [])
   }, [brands, generate, buildApproved, initialPost])
 
+  /**
+   * Adapta a arte pro outro formato. CUSTO ZERO — nenhuma chamada de IA nem de
+   * imagem: as camadas são reposicionadas em TypeScript
+   * (lib/single-posts/adapt-format.ts). É o oposto do concorrente, que
+   * regenera a peça do zero e devolve um design diferente do aprovado.
+   *
+   * A medição sai do DOM ANTES de trocar o formato: com a arte renderizada, a
+   * altura de cada camada é o retângulo real, não uma estimativa — e é isso
+   * que faz o texto cair no lugar certo em vez de "quase certo".
+   */
+  function handleFormat(next: PostFormat) {
+    if (!spec || next === format || adapting) return
+    setAdapting(true)
+    setError(null)
+    try {
+      const measurements = measureSpecBlocks(previewRef.current)
+      const { spec: adapted } = adaptSpecFormat(spec, format, next, measurements)
+      setSpec(adapted)
+      setFormat(next)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "erro ao adaptar o formato")
+    } finally {
+      setAdapting(false)
+    }
+  }
+
   async function handleExport() {
     if (!previewRef.current) return
     setExporting(true)
     setSelectedPath(null)
     await new Promise((r) => setTimeout(r, 60)) // deixa a UI de edição sumir
     try {
-      await exportSpecToPng(previewRef.current)
+      await exportSpecToPng(previewRef.current, format)
     } catch (err) {
       setError(err instanceof Error ? err.message : "erro no export")
     } finally {
@@ -253,7 +299,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       briefing,
       caption,
       fontPreset,
-      format: "post",
+      format,
       photoUrl,
       savedId,
     })
@@ -311,7 +357,10 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         {/* Toolbar de topo — ações sempre visíveis */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
           <span className="text-[13px] font-medium text-text-primary">Post único</span>
-          <span className="text-[11px] text-text-muted">1080 × 1350px</span>
+          <span className="text-[11px] text-text-muted">
+            {POST_FORMATS[format].width} × {POST_FORMATS[format].height}px ·{" "}
+            {POST_FORMATS[format].ratio}
+          </span>
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
             {spec && (
@@ -377,7 +426,8 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                  container-type:inline-size + aspect-ratio, então sem largura do
                  pai ele colapsa pra 0×0 — o post some e, pior, o auto-detach
                  mede zero e embaralha as posições de todos os blocos. */
-              className={`w-full max-w-[440px] ${
+              style={{ maxWidth: POST_FORMATS[format].previewMaxWidth }}
+              className={`w-full ${
                 exporting ? "[&_*]:!outline-none [&_*]:!cursor-default" : ""
               }`}
             >
@@ -416,6 +466,46 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
 
         {spec && (
           <>
+            <div className="space-y-2">
+              <Label className="text-sm text-text-secondary">Adaptar formato</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {POST_FORMAT_LIST.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => handleFormat(f.id)}
+                    disabled={adapting}
+                    className={`h-[68px] rounded-md border text-[11px] flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50 ${
+                      format === f.id
+                        ? "border-brand-500 bg-brand-500/15 text-text-primary"
+                        : "border-border-subtle text-text-muted hover:text-text-primary"
+                    }`}
+                  >
+                    {/* Miniatura na proporção real — o usuário reconhece o
+                        formato pelo desenho antes de ler o rótulo. */}
+                    <span
+                      aria-hidden
+                      className={`border ${
+                        format === f.id ? "border-brand-400" : "border-current"
+                      }`}
+                      style={{
+                        height: 16,
+                        width: Math.round((16 * f.width) / f.height),
+                      }}
+                    />
+                    <span className="leading-none">{f.label}</span>
+                    <span className="leading-none text-[9px] opacity-70">
+                      {f.ratio}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-text-muted">
+                As camadas são reposicionadas — a arte não é gerada de novo.
+                Adaptar não custa tokens.
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-sm text-text-secondary">Adicionar ao canvas</Label>
               <div className="grid grid-cols-2 gap-1.5">

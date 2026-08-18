@@ -6,6 +6,7 @@
  * sandbox continua com a cópia dele até o carrossel também ser promovido.
  */
 import { createSinglePost, updateSinglePost } from "@/app/actions/single-posts"
+import { POST_FORMATS, type PostFormat } from "./formats"
 import type { FreeBlock, FreePostSpec } from "./free-spec"
 import type { PostContent } from "./types"
 
@@ -74,7 +75,7 @@ export interface SaveSinglePostParams {
   /** Legenda do Instagram gerada junto com o post (com hashtags). */
   caption: string
   fontPreset: string
-  format: "post" | "story"
+  format: PostFormat
   photoUrl: string | null
   /** Id de um save anterior — presente = update em vez de insert. */
   savedId: string | null
@@ -163,30 +164,31 @@ export async function saveSinglePost(
 }
 
 /**
- * Exporta o preview como PNG 1080×1350 e dispara o download.
+ * Exporta o preview como PNG no tamanho nativo do formato e dispara o download.
  *
- * Captura o nó da ARTE (o container com aspect-ratio), não o wrapper — assim
- * o 1080×1350 mapeia 1:1 e não entra padding da UI ao redor.
+ * Captura o nó da ARTE (`data-post-canvas`), não o wrapper — assim o canvas
+ * mapeia 1:1 e não entra padding da UI ao redor.
  *
  * REGRA GLOBAL: o nó capturado precisa estar visível na tela. Passar um nó
  * offscreen (fixed + left negativo) faz o PNG sair 100% transparente, sem erro.
  */
-export async function exportSpecToPng(node: HTMLElement): Promise<void> {
-  const art =
-    (node.querySelector(
-      ".relative.aspect-\\[4\\/5\\], .relative.aspect-\\[9\\/16\\]",
-    ) as HTMLElement | null) ?? node
+export async function exportSpecToPng(
+  node: HTMLElement,
+  format: PostFormat = "post",
+): Promise<void> {
+  const art = (node.querySelector("[data-post-canvas]") as HTMLElement | null) ?? node
+  const def = POST_FORMATS[format] ?? POST_FORMATS.post
   const { toPng } = await import("html-to-image")
   const dataUrl = await toPng(art, {
     cacheBust: true,
     includeQueryParams: true,
-    canvasWidth: 1080,
-    canvasHeight: 1350,
+    canvasWidth: def.width,
+    canvasHeight: def.height,
     pixelRatio: 1,
   })
   const a = document.createElement("a")
   a.href = dataUrl
-  a.download = `post-unico-${Date.now()}.png`
+  a.download = `post-unico-${format}-${Date.now()}.png`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

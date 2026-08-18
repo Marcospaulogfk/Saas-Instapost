@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { listBrands, getProfile } from "@/lib/data/queries"
 import { getSinglePost } from "@/lib/single-posts/queries"
 import { generateMonogram } from "@/lib/single-posts/palette"
+import { toPostFormat } from "@/lib/single-posts/formats"
 import { EditorClient, type InitialPost } from "./editor-client"
 import type { PostBrand } from "@/lib/single-posts/types"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
@@ -63,6 +64,7 @@ export default async function EditorPostUnicoPage({
       _free_spec?: FreePostSpec
       _font_preset?: string
       _caption?: string
+      _format?: string
     } | null
     if (saved && content?._free_spec) {
       initialPost = {
@@ -75,6 +77,10 @@ export default async function EditorPostUnicoPage({
         skeletonId: saved.template_id.startsWith("free:")
           ? saved.template_id.slice(5)
           : null,
+        // O spec salvo já está posicionado pro formato em que foi salvo —
+        // reabrir em 4:5 um post adaptado pra stories jogaria as camadas fora
+        // do canvas.
+        format: toPostFormat(content._format),
       }
     }
   }

@@ -281,11 +281,13 @@ function CriarWizard() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  // `?tipo=post-unico` pré-seleciona feed de 1 slide e deixa o wizard abrir
-  // direto no passo 2. É o que os atalhos "Criar post único" do dashboard
-  // usam: antes existia uma página /dashboard/criar/post-unico paralela, que
-  // duplicava este fluxo e divergia dele.
-  const preSelecionado = searchParams.get("tipo") === "post-unico"
+  // `?tipo=` pré-seleciona o formato e abre o wizard direto no passo 2. É o
+  // que os atalhos do dashboard usam: existiam páginas de criação paralelas
+  // (/dashboard/criar/post-unico e /dashboard/criar/editorial) que duplicavam
+  // este fluxo e divergiam dele — a do carrossel, inclusive, gerava sem
+  // escolha de imagem, sem preview de custo e sem debitar token.
+  const tipoParam = searchParams.get("tipo")
+  const preSelecionado = tipoParam === "post-unico" || tipoParam === "carrossel"
   // O step inicial sai da URL aqui, e não do efeito de sync abaixo: aquele
   // efeito só reage a mudança EXTERNA da URL e retorna cedo quando o step da
   // URL bate com o estado — na entrada direta em ?step=2 ele nunca chegava a
@@ -293,9 +295,13 @@ function CriarWizard() {
   const [step, setStep] = useState<StepId>(() =>
     preSelecionado && searchParams.get("step") === "2" ? 2 : 1,
   )
-  const [formato, setFormato] = useState<Formato | null>(() =>
-    preSelecionado ? buildFormato("post", 1) : null,
-  )
+  const [formato, setFormato] = useState<Formato | null>(() => {
+    if (!preSelecionado) return null
+    // 7 é o padrão de carrossel do produto (mesmo default do passo 1).
+    return tipoParam === "carrossel"
+      ? buildFormato("post", 7)
+      : buildFormato("post", 1)
+  })
   const [objetivo, setObjetivo] = useState<Objetivo>("engajar")
   const [abordagem, setAbordagem] = useState<Abordagem | null>(null)
   const [comoCriar, setComoCriar] = useState<ComoCriar>("zero")

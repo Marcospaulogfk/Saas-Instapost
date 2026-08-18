@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Copy, Download, Loader2, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
 import { applyFontPreset } from "@/lib/single-posts/font-presets"
+import { POST_FORMATS, type PostFormat } from "@/lib/single-posts/formats"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 
 // =====================================================================
@@ -19,7 +20,7 @@ interface FreePostViewerProps {
   title: string
   spec: FreePostSpec
   fontPreset: string
-  format: "post" | "story"
+  format: PostFormat
   /** Legenda salva junto com o post (com hashtags). */
   caption?: string
   /** Id do post — habilita o botao de reabrir no editor. */
@@ -62,7 +63,7 @@ export function FreePostViewer({
         cacheBust: true,
         includeQueryParams: true,
         canvasWidth: 1080,
-        canvasHeight: format === "story" ? 1920 : 1350,
+        canvasHeight: (POST_FORMATS[format] ?? POST_FORMATS.post).height,
         pixelRatio: 1,
       })
       const a = document.createElement("a")
@@ -119,9 +120,8 @@ export function FreePostViewer({
         {error && <p className="text-xs text-destructive">{error}</p>}
         <div
           ref={previewRef}
-          className={`w-full rounded-xl overflow-hidden bg-black ${
-            format === "story" ? "max-w-[320px]" : "max-w-[440px]"
-          }`}
+          style={{ maxWidth: (POST_FORMATS[format] ?? POST_FORMATS.post).previewMaxWidth }}
+          className="w-full rounded-xl overflow-hidden bg-black"
         >
           <FreePostRenderer spec={finalSpec} format={format} />
         </div>

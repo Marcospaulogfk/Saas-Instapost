@@ -7,8 +7,8 @@ import type {
   PostFormato,
   PostObjetivo,
   PostStatus,
-  ScheduledPost,
 } from "@/lib/planejar"
+import type { PautaScheduledPost } from "@/lib/pautas/types"
 
 type Result<T = undefined> =
   | (T extends undefined ? { ok: true } : { ok: true; data: T })
@@ -112,21 +112,23 @@ export async function createScheduledPost(input: {
 /** Lista os scheduled_posts da marca (ordenados por data). */
 export async function listScheduledPosts(
   brandId: string,
-): Promise<ScheduledPost[]> {
+): Promise<PautaScheduledPost[]> {
   const { supabase, user } = await getUser()
   if (!user) return []
 
+  // select("*") de proposito: `network` e `rationale` chegam com a migration
+  // 0013 e um select explicito quebraria a listagem inteira em qualquer banco
+  // que ainda nao a aplicou. Com "*" as colunas simplesmente nao vem, e o
+  // tipo PautaScheduledPost ja as declara opcionais.
   const { data, error } = await supabase
     .from("scheduled_posts")
-    .select(
-      "id, brand_id, title, description, format, objective, scheduled_date, scheduled_time, status, source, project_id, created_at",
-    )
+    .select("*")
     .eq("brand_id", brandId)
     .order("scheduled_date", { ascending: true })
     .order("scheduled_time", { ascending: true, nullsFirst: true })
 
   if (error || !data) return []
-  return data as ScheduledPost[]
+  return data as PautaScheduledPost[]
 }
 
 /**
@@ -136,7 +138,7 @@ export async function listScheduledPosts(
 export async function listActiveScheduledPosts(): Promise<{
   brandId: string | null
   brandName: string | null
-  posts: ScheduledPost[]
+  posts: PautaScheduledPost[]
 }> {
   const { getActiveBrand } = await import("@/lib/data/queries")
   const brand = await getActiveBrand()

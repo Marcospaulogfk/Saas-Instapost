@@ -233,4 +233,14 @@ export interface FreePostSpec {
   blocks: FreeBlock[]
   /** Notas da IA explicando as escolhas — útil pra debug/aprendizado */
   rationale?: string
+  /**
+   * Fator de tamanho que a ADAPTAÇÃO DE FORMATO aplicou à peça (1 = tamanhos
+   * como o compositor escreveu). Só `adapt-format.ts` escreve aqui.
+   *
+   * Existe pra separar "encolhi porque o canvas ficou mais baixo" de "o usuário
+   * puxou o slider de tamanho": sem esse registro, voltar de 1:1 pro 4:5 não
+   * teria como saber quanto devolver — e a arte ficaria permanentemente menor a
+   * cada ida e volta. Com ele, o round-trip devolve o design original.
+   */
+  layout_scale?: number
 }

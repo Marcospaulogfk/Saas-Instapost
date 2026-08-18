@@ -14,12 +14,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { gerarPautasIA } from "@/lib/pautas"
 import { getProximasDatas } from "@/lib/datas-comemorativas"
 import {
   listActiveScheduledPosts,
   createScheduledPost,
-  saveEditorialPlan,
   deleteScheduledPost,
 } from "@/app/actions/scheduled-posts"
 import {
@@ -27,11 +25,12 @@ import {
   statusLabel,
   FORMATO_LABEL,
   toISODate,
-  type ScheduledPost,
   type PostStatus,
   type PostFormato,
-  type PlanoIdeia,
 } from "@/lib/planejar"
+import type { PautaScheduledPost } from "@/lib/pautas/types"
+import { CalendarioInteligenteCard } from "./calendario-inteligente"
+import { PipelinePautas } from "./pipeline-pautas"
 import Link from "next/link"
 
 const MESES_LONG = [
@@ -71,11 +70,10 @@ export default function CalendarioPage() {
   const [month, setMonth] = useState(today.getMonth())
   const [filterStatus, setFilterStatus] = useState<"todos" | PostStatus>("todos")
   const [novaModal, setNovaModal] = useState<{ data: string } | null>(null)
-  const [iaModalOpen, setIaModalOpen] = useState(false)
 
   // Fonte ÚNICA: scheduled_posts (banco). Cobre tanto ideias da IA
   // (source='ia') quanto pautas manuais (source='manual').
-  const [scheduled, setScheduled] = useState<ScheduledPost[]>([])
+  const [scheduled, setScheduled] = useState<PautaScheduledPost[]>([])
   const [brandId, setBrandId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -119,7 +117,7 @@ export default function CalendarioPage() {
     return base
   }, [scheduled])
 
-  function itensNoDia(date: Date | null): ScheduledPost[] {
+  function itensNoDia(date: Date | null): PautaScheduledPost[] {
     if (!date) return []
     const iso = toISODate(date)
     return filtered.filter((s) => s.scheduled_date === iso)
@@ -169,32 +167,6 @@ export default function CalendarioPage() {
   async function handleDelete(id: string) {
     setScheduled((list) => list.filter((s) => s.id !== id))
     await deleteScheduledPost(id)
-  }
-
-  async function handleRecomendarIA(qtd: number) {
-    if (!brandId) {
-      alert("Selecione ou crie uma marca antes de gerar pautas.")
-      return
-    }
-    setSaving(true)
-    // Reusa o gerador de sementes e persiste no banco via saveEditorialPlan.
-    const seeds = gerarPautasIA(year, month, qtd)
-    const ideias: PlanoIdeia[] = seeds.map((p) => ({
-      titulo: p.titulo,
-      formato: p.formato as PostFormato,
-      objetivo: "engage",
-      data: p.data,
-      descricao: "",
-      motivo: "",
-    }))
-    const res = await saveEditorialPlan(brandId, ideias)
-    setSaving(false)
-    if (!res.ok) {
-      alert(res.error)
-      return
-    }
-    setIaModalOpen(false)
-    await refetch()
   }
 
   const monthList = useMemo(
@@ -286,6 +258,9 @@ export default function CalendarioPage() {
         })}
       </div>
 
+      {/* Calendário Inteligente — pauta grátis (0 tokens); o post é que cobra. */}
+      <CalendarioInteligenteCard brandId={brandId} onSaved={refetch} />
+
       {/* Planejador IA banner — superfície chapada + hairline (sem gradiente/glow, DESIGN.md §6) */}
       <Link
         href="/dashboard/planejar"
@@ -302,17 +277,6 @@ export default function CalendarioPage() {
         </div>
         <ChevronRight className="w-5 h-5 text-text-muted" />
       </Link>
-
-      {/* Recomendações IA local (sementes rápidas, sem chamar API) */}
-      <button
-        type="button"
-        onClick={() => setIaModalOpen(true)}
-        className="w-full mb-4 rounded-xl border border-border-subtle hover:border-hairline-strong text-text-secondary p-3 flex items-center gap-3 transition-colors text-left"
-      >
-        <Sparkles className="w-4 h-4 text-brand-400 flex-shrink-0" />
-        <span className="text-[13px] flex-1">Gerar pautas-semente rápidas (sem IA)</span>
-        <ChevronRight className="w-4 h-4" />
-      </button>
 
       {/* Grid mensal */}
       <div className="rounded-xl border border-border-subtle overflow-hidden bg-background-secondary/30">
@@ -457,6 +421,11 @@ export default function CalendarioPage() {
         </p>
       )}
 
+      {/* Pipeline: ideias da IA -> em criação -> prontos -> agendados.
+          Fica abaixo do calendário porque é a visão de EXECUÇÃO (o que fazer
+          agora), enquanto a grade acima é a visão de DISTRIBUIÇÃO (quando). */}
+      {!loading && <PipelinePautas posts={scheduled} onChanged={refetch} />}
+
       {/* Modal: Nova Pauta */}
       {novaModal && (
         <Modal onClose={() => setNovaModal(null)} title="Nova Pauta">
@@ -469,16 +438,6 @@ export default function CalendarioPage() {
         </Modal>
       )}
 
-      {/* Modal: Gerar com IA */}
-      {iaModalOpen && (
-        <Modal onClose={() => setIaModalOpen(false)} title="Gerar Calendário com IA">
-          <RecomendarIAForm
-            saving={saving}
-            onGerar={handleRecomendarIA}
-            onCancel={() => setIaModalOpen(false)}
-          />
-        </Modal>
-      )}
     </div>
   )
 }
@@ -619,53 +578,5 @@ function NovaPautaForm({
         </Button>
       </div>
     </form>
-  )
-}
-
-function RecomendarIAForm({
-  saving,
-  onGerar,
-  onCancel,
-}: {
-  saving: boolean
-  onGerar: (qtd: number) => void
-  onCancel: () => void
-}) {
-  const [qtd, setQtd] = useState(8)
-  return (
-    <div className="space-y-4">
-      <p className="text-xs text-text-secondary">
-        A IA vai gerar pautas espalhadas no mês baseadas em ideias prontas + datas
-        comemorativas. Você pode editar/excluir cada uma depois.
-      </p>
-      <div className="space-y-1">
-        <Label className="text-xs">Quantas pautas gerar?</Label>
-        <div className="grid grid-cols-4 gap-1.5">
-          {[4, 8, 12, 20].map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => setQtd(q)}
-              className={`text-xs h-9 rounded border ${
-                qtd === q
-                  ? "bg-brand-600 border-brand-600 text-white"
-                  : "border-border-subtle text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancelar
-        </Button>
-        <Button type="button" onClick={() => onGerar(qtd)} disabled={saving} className="flex-1">
-          <Sparkles className="w-4 h-4 mr-1.5" />
-          {saving ? "Gerando…" : `Gerar ${qtd}`}
-        </Button>
-      </div>
-    </div>
   )
 }

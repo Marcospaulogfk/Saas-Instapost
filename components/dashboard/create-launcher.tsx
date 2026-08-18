@@ -19,7 +19,7 @@ const OPTIONS = [
     desc: "Uma arte pronta em segundos",
   },
   {
-    href: "/dashboard/criar/editorial",
+    href: "/dashboard/criar?tipo=carrossel&step=2",
     icon: LayoutTemplate,
     name: "Carrossel editorial",
     desc: "Templates curados — você edita cada slide",

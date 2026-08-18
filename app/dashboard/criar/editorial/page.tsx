@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Loader2 } from 'lucide-react'
 import type {
@@ -26,8 +26,26 @@ export default function CriarEditorialPage() {
 }
 
 function CriarEditorialInner() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const carouselId = searchParams.get('id')
+
+  /*
+   * Esta rota tinha um formulario de criacao proprio, paralelo ao wizard de
+   * /dashboard/criar — e divergente dele: pedia a marca digitada a mao (com
+   * "NEXUS CONTENT" como default), nao oferecia escolha de imagens de IA, nao
+   * mostrava custo nem saldo, e o /api/editorial/generate-stream por tras nao
+   * debitava token nenhum. Era o caminho que o atalho "Criar carrossel" do
+   * dashboard usava, entao a opcao de gerar so a capa ou todos os slides
+   * simplesmente nao existia pra quem entrava por ali.
+   *
+   * A criacao agora mora so no wizard. O ?id= continua valendo: e por ele que
+   * um carrossel salvo abre pra edicao, e quebrar isso invalidaria os links da
+   * Biblioteca.
+   */
+  useEffect(() => {
+    if (!carouselId) router.replace('/dashboard/criar?tipo=carrossel&step=2')
+  }, [carouselId, router])
 
   const [step, setStep] = useState<Step>(carouselId ? 'loading-saved' : 'form')
   const [carousel, setCarousel] = useState<EditorialCarousel | null>(null)

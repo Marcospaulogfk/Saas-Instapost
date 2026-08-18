@@ -20,7 +20,7 @@ export default async function EditorialListPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/criar/editorial">
+          <Link href="/dashboard/criar?tipo=carrossel&step=2">
             <Plus className="w-4 h-4 mr-2" />
             Novo carrossel
           </Link>
@@ -34,7 +34,7 @@ export default async function EditorialListPage() {
             Você ainda não salvou nenhum carrossel editorial.
           </p>
           <Button asChild>
-            <Link href="/dashboard/criar/editorial">
+            <Link href="/dashboard/criar?tipo=carrossel&step=2">
               <Plus className="w-4 h-4 mr-2" />
               Criar meu primeiro
             </Link>

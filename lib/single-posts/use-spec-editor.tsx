@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { FreePostRenderer } from "@/components/single-posts/free-post-renderer"
 import type { FreePostSpec, FreeBlock } from "@/lib/single-posts/free-spec"
+import type { PostFormat } from "@/lib/single-posts/formats"
 
 /**
  * Hook reusável de edição "Canva-like" de um FreePostSpec:
@@ -99,7 +100,7 @@ function updateSpecBlockPatch(
 export function useSpecEditor(
   spec: FreePostSpec | null,
   onChange: (s: FreePostSpec) => void,
-  opts: { format?: "post" | "story" } = {},
+  opts: { format?: PostFormat } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
@@ -149,7 +150,7 @@ export function useSpecEditor(
   function detachBlock(path: string) {
     if (!spec || !path.includes(".")) return
     const containerEl = containerRef.current?.querySelector(
-      ".relative.aspect-\\[4\\/5\\], .relative.aspect-\\[9\\/16\\]",
+      "[data-post-canvas]",
     ) as HTMLElement | null
     const flowEl = containerRef.current?.querySelector(
       `[data-flow-path="${path}"]`,
@@ -198,7 +199,7 @@ export function useSpecEditor(
   // ── auto-detach: explode stacks (sem bg) em blocos individuais ─────────────
   function detachAll(s: FreePostSpec) {
     const containerEl = containerRef.current?.querySelector(
-      ".relative.aspect-\\[4\\/5\\], .relative.aspect-\\[9\\/16\\]",
+      "[data-post-canvas]",
     ) as HTMLElement | null
     if (!containerEl) return
     const cR = containerEl.getBoundingClientRect()
@@ -272,7 +273,7 @@ export function useSpecEditor(
     <div ref={containerRef} onClick={() => setSelectedPath(null)}>
       <FreePostRenderer
         spec={spec}
-        format={opts.format === "story" ? "story" : "post"}
+        format={opts.format ?? "post"}
         editable
         onPositionChange={positionChange}
         selectedPath={selectedPath}

@@ -7,6 +7,7 @@ import { PostUnicoEditor } from "@/components/single-posts/editor"
 import { FreePostViewer } from "@/components/single-posts/free-post-viewer"
 import type { PostBrand } from "@/lib/single-posts/types"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
+import { toPostFormat, type PostFormat } from "@/lib/single-posts/formats"
 
 export default async function PostUnicoEditPage({
   params,
@@ -22,7 +23,9 @@ export default async function PostUnicoEditPage({
   const freeContent = post.content as unknown as {
     _free_spec?: FreePostSpec
     _font_preset?: string
-    _format?: "post" | "story"
+    // "square" entrou com a adaptação de formato; estreitar o tipo aqui
+    // fazia um post salvo em 1:1 abrir como 4:5 no viewer, calado.
+    _format?: PostFormat
     _caption?: string
   }
   if (post.template_id.startsWith("free:") && freeContent?._free_spec) {
@@ -31,7 +34,7 @@ export default async function PostUnicoEditPage({
         title={post.title}
         spec={freeContent._free_spec}
         fontPreset={freeContent._font_preset ?? "editorial"}
-        format={freeContent._format === "story" ? "story" : "post"}
+        format={toPostFormat(freeContent._format)}
         caption={freeContent._caption}
         postId={post.id}
       />

@@ -85,6 +85,49 @@ export const PLAN_TOKENS: Record<Plan, number> = {
   studio: 3000,
 }
 
+/**
+ * Teto de MARCAS por plano.
+ *
+ * Mora aqui, junto dos outros números de plano, porque marca é o SEGUNDO eixo
+ * de preço do produto (o primeiro é o token). O ICP é social media / agência
+ * com 5–10 clientes: pra ele o que aperta não é token, é quantas marcas cabem
+ * na conta — e é exatamente assim que o concorrente monetiza (1 / 5 / 20).
+ *
+ * Alinhamento com ESTRATEGIA-MONETIZACAO.md §4 (Starter 1, Pro 5):
+ *  - trial   1 → o teste grátis mostra o produto com UMA marca; multi-marca é
+ *                justamente o motivo de pagar.
+ *  - starter 1 → plano do criador solo / dono de uma marca só.
+ *  - pro     5 → a faixa do ICP (agência pequena, 5 clientes). É o degrau que
+ *                converte: passou de 1 cliente, tem que subir pro Pro.
+ *  - studio 20 → o doc de monetização dizia "ilimitadas"; virou teto numérico
+ *                por dois motivos: (a) espelha o topo do concorrente (Max 20),
+ *                que é o número com que o mercado já compara, e (b) "ilimitado"
+ *                sem teto vira conta compartilhada entre agências e mata o
+ *                upgrade. Pra voltar a ilimitado basta trocar por
+ *                `BRAND_LIMIT_UNLIMITED` — os helpers já tratam Infinity.
+ *
+ * NÃO existe coluna de limite no banco: o teto é DERIVADO do plano (via
+ * planFromProfile), então mudar de plano ajusta o limite sozinho.
+ */
+export const BRAND_LIMIT_UNLIMITED = Number.POSITIVE_INFINITY
+
+export const PLAN_BRANDS: Record<Plan, number> = {
+  trial: 1,
+  starter: 1,
+  pro: 5,
+  studio: 20,
+}
+
+/**
+ * Quantas marcas o plano permite. Aceita string desconhecida — o fallback é o
+ * teto do trial (1), o mais restritivo: em dúvida, cobra o upgrade em vez de
+ * liberar de graça.
+ */
+export function brandLimitFor(plan: string | null | undefined): number {
+  if (!plan) return PLAN_BRANDS.trial
+  return PLAN_BRANDS[plan as Plan] ?? PLAN_BRANDS.trial
+}
+
 /** Ciclos de cobrança e o desconto de cada um (espelha app/pricing/page.tsx). */
 export type BillingCycleId = "monthly" | "quarterly" | "semiannual" | "annual"
 

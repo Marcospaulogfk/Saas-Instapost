@@ -8,6 +8,8 @@ import {
   getActiveBrandIdFromCookie,
   writeActiveBrandCookie,
 } from "@/lib/active-brand"
+import { brandLimitMessage, checkBrandLimit } from "@/lib/brands/limits"
+import { buildCopyName } from "@/lib/brands/copy-name"
 
 export interface BrandInput {
   name: string
@@ -29,7 +31,12 @@ export interface BrandInput {
 
 export type CreateBrandResult =
   | { ok: true; brandId: string }
-  | { ok: false; error: string }
+  /**
+   * `limitReached` deixa a UI diferenciar "estourou o plano" (mostra upgrade)
+   * de erro real. Quem só lê `error` continua funcionando: a mensagem do
+   * limite já é auto-explicativa.
+   */
+  | { ok: false; error: string; limitReached?: boolean }
 
 export async function createBrand(
   input: BrandInput,
@@ -64,6 +71,15 @@ export async function createBrand(
       await writeActiveBrandCookie(recent.id)
       revalidatePath("/dashboard")
       return { ok: true, brandId: recent.id }
+    }
+
+    // GATE DE PLANO (server-side): a UI já esconde o botão quando estourou,
+    // mas o servidor é a regra — o onboarding é uma rota pública logada e a
+    // action pode ser chamada direto. Fica DEPOIS do guard idempotente porque
+    // reaproveitar uma marca recém-criada não cria marca nova.
+    const limit = await checkBrandLimit(supabase, user.id)
+    if (!limit.canCreate) {
+      return { ok: false, error: brandLimitMessage(limit), limitReached: true }
     }
 
     const { data, error } = await supabase
@@ -175,6 +191,103 @@ export async function updateBrand(
   revalidatePath("/dashboard/marcas")
   revalidatePath("/dashboard")
   return { ok: true }
+}
+
+export type DuplicateBrandResult =
+  | { ok: true; brandId: string; name: string }
+  | { ok: false; error: string; limitReached?: boolean }
+
+/**
+ * Duplica uma marca existente ("Cópia de X").
+ *
+ * Caso de uso do ICP: a agência atende clientes parecidos (mesmo nicho, mesmo
+ * tom) e não quer refazer o onboarding inteiro pra cada um — duplica, troca o
+ * nome e as cores, e segue.
+ *
+ * Copia identidade CRIATIVA (descrição, público, tom, estilo, objetivo, cores,
+ * logo, template e fonte padrão) e NÃO copia identidade de CONTA
+ * (instagram_handle e website_url ficam vazios de propósito): herdar o @ do
+ * cliente antigo é o caminho mais curto pra publicar no perfil errado.
+ *
+ * Respeita o mesmo teto de plano da criação — duplicar é criar.
+ */
+export async function duplicateBrand(
+  brandId: string,
+): Promise<DuplicateBrandResult> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: "Voce precisa estar logado." }
+
+    const limit = await checkBrandLimit(supabase, user.id)
+    if (!limit.canCreate) {
+      return { ok: false, error: brandLimitMessage(limit), limitReached: true }
+    }
+
+    const { data: source, error: sourceError } = await supabase
+      .from("brands")
+      .select(
+        "name, description, target_audience, tone_of_voice, visual_style, main_objective, brand_colors, logo_url, default_template, default_font",
+      )
+      .eq("id", brandId)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (sourceError || !source) {
+      return { ok: false, error: "Marca nao encontrada." }
+    }
+
+    // Nomes já usados na conta, pra não gerar duas "Cópia de X" iguais.
+    const { data: siblings } = await supabase
+      .from("brands")
+      .select("name")
+      .eq("user_id", user.id)
+
+    const name = buildCopyName(
+      source.name ?? "",
+      (siblings ?? []).map((b: { name: string | null }) => b.name ?? ""),
+    )
+
+    const { data, error } = await supabase
+      .from("brands")
+      .insert({
+        user_id: user.id,
+        name,
+        description: source.description ?? null,
+        website_url: null,
+        instagram_handle: null,
+        target_audience: source.target_audience ?? null,
+        tone_of_voice: source.tone_of_voice ?? null,
+        visual_style: source.visual_style ?? null,
+        main_objective: source.main_objective ?? null,
+        brand_colors: source.brand_colors ?? [],
+        logo_url: source.logo_url ?? null,
+        default_template: source.default_template ?? "cinematic",
+        default_font: source.default_font ?? "inter",
+      })
+      .select("id, name")
+      .single()
+
+    if (error) return { ok: false, error: error.message }
+
+    // NÃO troca a marca ativa: quem duplica está organizando a conta, não
+    // começando a criar conteúdo — trocar o contexto do dashboard por baixo
+    // seria surpresa. A cópia abre pelo card da lista.
+    revalidatePath("/dashboard/marcas")
+    revalidatePath("/dashboard")
+
+    return { ok: true, brandId: data.id, name: data.name }
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error && err.message
+          ? err.message
+          : "Erro inesperado ao duplicar a marca. Tente novamente.",
+    }
+  }
 }
 
 export type DeleteBrandResult =
