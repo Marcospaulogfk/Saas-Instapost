@@ -53,7 +53,7 @@ const DEFAULT_TIPS: Tip[] = [
   {
     text:
       "Dica: o editor do post único permite arrastar qualquer bloco, mudar fonte e cor.",
-    cta: { label: "Abrir editor", href: "/teste" },
+    cta: { label: "Abrir editor", href: "/dashboard/editor/post-unico" },
   },
   { text: "Você sabia? O carrossel exporta cada slide separado em PNG." },
 ]

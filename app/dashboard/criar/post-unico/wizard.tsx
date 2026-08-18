@@ -82,7 +82,7 @@ export function Wizard({ brands, balance }: WizardProps) {
         ts: Date.now(),
       }
       sessionStorage.setItem("syncpost_pending_post_unico", JSON.stringify(payload))
-      router.push("/teste")
+      router.push("/dashboard/editor/post-unico")
     } catch (err) {
       const message = err instanceof Error ? err.message : "erro de redirect"
       setError(message)
@@ -103,7 +103,7 @@ export function Wizard({ brands, balance }: WizardProps) {
         ts: Date.now(),
       }
       sessionStorage.setItem("syncpost_pending_post_unico", JSON.stringify(payload))
-      router.push("/teste")
+      router.push("/dashboard/editor/post-unico")
     } catch (err) {
       const message = err instanceof Error ? err.message : "erro de redirect"
       setError(message)

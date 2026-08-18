@@ -17,7 +17,7 @@ export default async function PostUnicoEditPage({
   const post = await getSinglePost(id)
   if (!post) notFound()
 
-  // Post salvo do editor LIVRE (/teste): content carrega o spec inteiro.
+  // Post salvo do editor LIVRE: content carrega o spec inteiro.
   // Renderiza o viewer dedicado em vez do editor de templates.
   const freeContent = post.content as unknown as {
     _free_spec?: FreePostSpec
