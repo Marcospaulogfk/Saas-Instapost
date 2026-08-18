@@ -26,6 +26,13 @@ export default async function ProjetosPage() {
         brand_name: p.brand_name,
         rendered_image_url: p.rendered_image_url,
         created_at: p.created_at,
+        // O briefing e a legenda ja vinham da query e eram descartados aqui.
+        // Alimentam "Prompt usado / Recriar" e "Copiar legenda" no card.
+        raw_brief: p.raw_brief,
+        caption:
+          typeof (p.content as { caption?: unknown } | null)?.caption === "string"
+            ? ((p.content as { caption: string }).caption)
+            : null,
       }))}
       brands={brands.map((b) => ({ id: b.id, name: b.name }))}
     />

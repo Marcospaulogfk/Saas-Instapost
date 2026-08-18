@@ -299,7 +299,12 @@ function CriarWizard() {
   const [objetivo, setObjetivo] = useState<Objetivo>("engajar")
   const [abordagem, setAbordagem] = useState<Abordagem | null>(null)
   const [comoCriar, setComoCriar] = useState<ComoCriar>("zero")
-  const [briefing, setBriefing] = useState("")
+  // `?brief=` chega do "Recriar com este prompt" da Biblioteca: reabre o
+  // wizard com o briefing original preenchido, em vez de obrigar o usuario a
+  // copiar e colar o texto do post antigo.
+  const [briefing, setBriefing] = useState(
+    () => searchParams.get("brief") ?? "",
+  )
   // Template escolhido na etapa nova ("auto" = deixa a IA escolher).
   const [templateId, setTemplateId] = useState<string>("auto")
   // Estilo visual do carrossel (passo "Estilo" — só p/ carrossel, 2+ slides).

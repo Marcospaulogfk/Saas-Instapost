@@ -11,7 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { signOut } from "@/app/actions/auth"
+import { TOKEN_COST } from "@/lib/tokens"
 
 interface NovaTopBarProps {
   mobileNav?: React.ReactNode
@@ -64,6 +70,11 @@ export function NovaTopBar({
 
       <div className="ml-auto flex items-center gap-2">
         <UsageChip
+          credits={credits}
+          planCreditsMonthly={planCreditsMonthly}
+          creditsUsedThisMonth={creditsUsedThisMonth}
+        />
+        <UsageChipCompact
           credits={credits}
           planCreditsMonthly={planCreditsMonthly}
           creditsUsedThisMonth={creditsUsedThisMonth}
@@ -197,29 +208,163 @@ function UsageChip({
   const pct = Math.min(100, Math.round((used / total) * 100))
   const color = pct >= 95 ? "#f87171" : pct >= 80 ? "#f6c35a" : "var(--nv-brand)"
   const title = `${used.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} créditos usados neste mês`
+  const restante = Math.max(0, total - used)
 
   return (
-    <>
-      {/* Completo (lg+): números + barra + % */}
-      <Link href="/pricing" title={title} className="nv-pill hidden items-center gap-2 px-3 py-1.5 lg:flex">
-        <span className="text-[11px] tabular-nums" style={{ color: "var(--nv-text)" }}>
-          {used.toLocaleString("pt-BR")}
-          <span style={{ color: "var(--nv-text-subtle)" }}>/{total.toLocaleString("pt-BR")}</span>
+    <Popover>
+      <PopoverTrigger asChild>
+        {/* Completo (lg+): números + barra + % */}
+        <button
+          type="button"
+          title={title}
+          className="nv-pill hidden items-center gap-2 px-3 py-1.5 lg:flex"
+        >
+          <span className="text-[11px] tabular-nums" style={{ color: "var(--nv-text)" }}>
+            {used.toLocaleString("pt-BR")}
+            <span style={{ color: "var(--nv-text-subtle)" }}>/{total.toLocaleString("pt-BR")}</span>
+          </span>
+          <span className="h-1.5 w-10 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
+            <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+          </span>
+          <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
+            {pct}%
+          </span>
+        </button>
+      </PopoverTrigger>
+      <SaldoPopoverContent
+        restante={restante}
+        total={total}
+        used={used}
+        pct={pct}
+        color={color}
+      />
+    </Popover>
+  )
+}
+
+/**
+ * Compacto (até lg): bolinha + %. Popover próprio porque o trigger do Radix
+ * aceita um filho só — duplicar o conteúdo é mais barato que envolver os dois
+ * botões num wrapper que quebraria o layout da barra.
+ */
+function UsageChipCompact({
+  credits,
+  planCreditsMonthly,
+  creditsUsedThisMonth,
+}: {
+  credits: number
+  planCreditsMonthly: number
+  creditsUsedThisMonth: number
+}) {
+  const total = planCreditsMonthly > 0 ? planCreditsMonthly : credits + creditsUsedThisMonth
+  if (total <= 0) return null
+  const used = Math.max(0, Math.min(total, creditsUsedThisMonth))
+  const pct = Math.min(100, Math.round((used / total) * 100))
+  const color = pct >= 95 ? "#f87171" : pct >= 80 ? "#f6c35a" : "var(--nv-brand)"
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="nv-pill flex items-center gap-1.5 px-2.5 py-1.5 lg:hidden"
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+          <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
+            {pct}%
+          </span>
+        </button>
+      </PopoverTrigger>
+      <SaldoPopoverContent
+        restante={Math.max(0, total - used)}
+        total={total}
+        used={used}
+        pct={pct}
+        color={color}
+      />
+    </Popover>
+  )
+}
+
+/** Quanto custa cada ação, na mesma moeda do badge. Fonte: lib/tokens.ts. */
+const TABELA_CUSTOS: { acao: string; custo: string }[] = [
+  { acao: "Post único (texto + imagem)", custo: `${TOKEN_COST.textOnly + TOKEN_COST.imageCover}` },
+  { acao: "Carrossel — roteiro + legenda", custo: `${TOKEN_COST.textOnly}` },
+  { acao: "Imagem de capa", custo: `${TOKEN_COST.imageCover}` },
+  { acao: "Imagem de slide do miolo", custo: `${TOKEN_COST.imageSlide} cada` },
+  { acao: "Editar o que já foi gerado", custo: "grátis" },
+]
+
+/**
+ * Conteúdo do popover de saldo: quanto sobrou, o que consome e o caminho do
+ * upgrade. A tabela existe porque o usuário só aprende o preço quando ele fica
+ * visível ANTES de gastar — e a linha "editar = grátis" é o nosso argumento
+ * central contra o concorrente, que cobra crédito por correção.
+ */
+function SaldoPopoverContent({
+  restante,
+  total,
+  used,
+  pct,
+  color,
+}: {
+  restante: number
+  total: number
+  used: number
+  pct: number
+  color: string
+}) {
+  return (
+    <PopoverContent align="end" className="w-72 p-0">
+      <div className="p-3.5 pb-3">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+          Seus tokens
+        </p>
+        <p className="mt-1.5 text-2xl font-bold tabular-nums text-text-primary">
+          {restante.toLocaleString("pt-BR")}
+          <span className="ml-1.5 text-xs font-normal text-text-muted">
+            de {total.toLocaleString("pt-BR")} restantes
+          </span>
+        </p>
+        <span className="mt-2 block h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <span
+            className="block h-full rounded-full"
+            style={{ width: `${pct}%`, background: color }}
+          />
         </span>
-        <span className="h-1.5 w-10 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
-          <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
-        </span>
-        <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
-          {pct}%
-        </span>
-      </Link>
-      {/* Compacto (até lg): bolinha + % */}
-      <Link href="/pricing" title={title} className="nv-pill flex items-center gap-1.5 px-2.5 py-1.5 lg:hidden">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-        <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>
-          {pct}%
-        </span>
-      </Link>
-    </>
+        <p className="mt-1.5 text-[11px] text-text-muted">
+          {used.toLocaleString("pt-BR")} usados neste mês
+        </p>
+      </div>
+
+      <div className="border-t border-border-subtle px-3.5 py-3">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+          Quanto custa
+        </p>
+        <ul className="space-y-1.5">
+          {TABELA_CUSTOS.map((l) => (
+            <li key={l.acao} className="flex items-baseline justify-between gap-3">
+              <span className="text-xs text-text-secondary">{l.acao}</span>
+              <span
+                className={`shrink-0 font-mono text-xs tabular-nums ${
+                  l.custo === "grátis" ? "text-success" : "text-text-primary"
+                }`}
+              >
+                {l.custo}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="border-t border-border-subtle p-3.5 pt-3">
+        <Link
+          href="/pricing"
+          className="flex h-9 w-full items-center justify-center rounded-lg bg-brand-600 text-xs font-semibold text-white transition-colors hover:bg-brand-500"
+        >
+          Ver planos
+        </Link>
+      </div>
+    </PopoverContent>
   )
 }

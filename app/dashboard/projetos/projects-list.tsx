@@ -12,6 +12,9 @@ import {
   Download,
   Plus,
   Loader2,
+  Sparkles,
+  FileText,
+  Check,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -48,6 +51,10 @@ interface SinglePostItem {
   brand_name: string
   rendered_image_url: string | null
   created_at: string
+  /** Briefing original — alimenta "Prompt usado" e "Recriar com este prompt". */
+  raw_brief: string | null
+  /** Legenda pronta pro Instagram, pra copiar sem abrir o editor. */
+  caption: string | null
 }
 
 interface BrandOption {
@@ -68,6 +75,18 @@ export function ProjectsList({
   singlePosts = [],
   brands,
 }: ProjectsListProps) {
+  // Feedback do "copiar": o item do menu vira "copiada" por 2s. Sem isso o
+  // clique nao da sinal nenhum e o usuario copia duas vezes.
+  const [copiadoId, setCopiadoId] = useState<string | null>(null)
+  async function copiar(id: string, texto: string) {
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopiadoId(id)
+      setTimeout(() => setCopiadoId((atual) => (atual === id ? null : atual)), 2000)
+    } catch {
+      // clipboard bloqueado (http sem permissao) — silencioso, sem quebrar
+    }
+  }
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [brandFilter, setBrandFilter] = useState("todos")
@@ -266,6 +285,31 @@ export function ProjectsList({
                             <Download className="w-4 h-4 mr-2" />
                             Baixar
                           </a>
+                        </DropdownMenuItem>
+                      )}
+                      {post.caption && (
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault()
+                            void copiar(post.id, post.caption ?? "")
+                          }}
+                        >
+                          {copiadoId === post.id ? (
+                            <Check className="w-4 h-4 mr-2 text-success" />
+                          ) : (
+                            <FileText className="w-4 h-4 mr-2" />
+                          )}
+                          {copiadoId === post.id ? "Legenda copiada" : "Copiar legenda"}
+                        </DropdownMenuItem>
+                      )}
+                      {post.raw_brief && (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/dashboard/criar?tipo=post-unico&step=2&brief=${encodeURIComponent(post.raw_brief)}`}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Recriar com este prompt
+                          </Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem
