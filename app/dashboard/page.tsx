@@ -6,6 +6,7 @@ import {
   type DistBrand,
 } from "@/components/dashboard/nova/nova-distribution"
 import { NovaRecent, type NovaRecentItem } from "@/components/dashboard/nova/nova-recent"
+import { NovaComunidade } from "@/components/dashboard/nova/nova-comunidade"
 import {
   NovaQuickActions,
   NovaUpgradeCard,
@@ -174,6 +175,10 @@ export default async function DashboardPage() {
         <NovaRecent items={recentItems} />
         <NovaDistribution slices={distSlices} brands={marcasAtivas} />
       </div>
+
+      {/* Vitrine por nicho — o formato do feed de comunidade, mas assumido
+          como exemplo enquanto nao ha base instalada pra prova social real. */}
+      <NovaComunidade />
 
       {/* Stats — 1 linha de 4 colunas */}
       <NovaStats

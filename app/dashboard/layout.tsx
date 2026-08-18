@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { NovaSidebar } from "@/components/dashboard/nova/nova-sidebar"
 import { NovaTopBar } from "@/components/dashboard/nova/nova-topbar"
+import { AssistenteBolha } from "@/components/dashboard/assistente-bolha"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
@@ -74,6 +75,9 @@ export default async function DashboardLayout({
         />
         <main className="nova-scroll flex-1 overflow-y-auto">{children}</main>
       </div>
+      {/* Assistente em todas as telas do dashboard — o contexto de marca vem
+          do servidor a cada request, entao a bolha nao precisa de props. */}
+      <AssistenteBolha />
     </div>
   )
 }
