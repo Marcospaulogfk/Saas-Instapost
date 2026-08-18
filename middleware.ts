@@ -2,7 +2,19 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/auth"]
-const PROTECTED_PREFIXES = ["/dashboard", "/editor", "/onboarding"]
+// Sandboxes de dev (/teste*, /test-*, /preview-*) entram aqui: nenhuma tela do
+// produto linka mais pra elas, mas as rotas continuam no build e ficavam
+// abertas pra qualquer visitante. As APIs caras já eram protegidas pela
+// allowlist abaixo — isto fecha a vitrine.
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/editor",
+  "/onboarding",
+  "/teste",
+  "/test-editorial",
+  "/preview-estilos",
+  "/preview-posts-unicos",
+]
 
 // /api inteiro exige login, MENOS o que está aqui. Antes o /api ficava de fora
 // do PROTECTED_PREFIXES e rotas caras de IA (generate-stream com maxDuration

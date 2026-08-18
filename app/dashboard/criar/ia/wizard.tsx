@@ -134,14 +134,22 @@ export function Wizard({ brands }: WizardProps) {
     }
   }
 
-  function onGenerate() {
+  /**
+   * Gera o roteiro (texto) aqui e abre o editor real do carrossel.
+   *
+   * Antes este wizard empurrava só o briefing pro sandbox /teste, que fazia
+   * texto e imagem numa tacada via /api/teste-gerar. Agora segue o mesmo
+   * caminho do fluxo principal (/dashboard/criar): roteiro por
+   * /api/editorial/generate-script e as imagens no /dashboard/carrossel.
+   */
+  async function onGenerate() {
     if (!activeBrand) {
       setError("Selecione uma marca antes de gerar.")
       return
     }
     setError(null)
     setLoading(true)
-    setLoadingMessage("Preparando editor...")
+    setLoadingMessage("Escrevendo o roteiro com Claude...")
 
     const fallbackColors = ["#1668E3", "#1A1A1A", "#FAF8F5"]
     const colors =
@@ -149,32 +157,58 @@ export function Wizard({ brands }: WizardProps) {
         ? activeBrand.brand_colors.slice(0, 3)
         : fallbackColors
 
-    const payload = {
-      brandId: activeBrand.id,
-      brandName: activeBrand.name,
-      topic,
-      objective,
-      tone: activeBrand.tone_of_voice ?? "",
-      audience: activeBrand.target_audience ?? "",
-      visualStyle: activeBrand.visual_style ?? "",
-      colors,
-      template,
-      font: fontFamily,
-      nSlides,
-      mode,
-      autoRun: true,
-      ts: Date.now(),
-    }
-
     try {
-      sessionStorage.setItem("syncpost_pending_generation", JSON.stringify(payload))
-    } catch {
-      setError("Não consegui salvar o estado pra abrir o editor. Tente novamente.")
+      const res = await fetch("/api/editorial/generate-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: topic.trim(),
+          objective,
+          brandName: activeBrand.name,
+          tone: activeBrand.tone_of_voice ?? "",
+          audience: activeBrand.target_audience ?? "",
+          visualStyle: activeBrand.visual_style ?? "",
+          colors,
+          template,
+          desiredSlides: nSlides,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? "erro ao gerar o roteiro")
+        setLoading(false)
+        return
+      }
+
+      setLoadingMessage("Abrindo o editor...")
+      // Mesmo formato que /dashboard/criar entrega — o editor gera as imagens.
+      sessionStorage.setItem(
+        "syncpost_pending_generation",
+        JSON.stringify({
+          kind: "approved",
+          projectTitle: data.project_title ?? topic.trim().slice(0, 60),
+          slides: Array.isArray(data.slides) ? data.slides : [],
+          caption: data.caption ?? "",
+          objective,
+          template: "editorial",
+          editorialStyle: "auto",
+          // mode "all_ai" = imagem em todos os slides; senão só a capa.
+          imageChoice: { cover: true, slides: mode === "all_ai" },
+          format: "post",
+          nSlides,
+          colors,
+          brandName: activeBrand.name,
+          autoRun: true,
+          ts: Date.now(),
+        }),
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "erro de rede")
       setLoading(false)
       return
     }
 
-    router.push("/teste")
+    router.push("/dashboard/carrossel")
   }
 
   const canSubmit = !!brandId && topic.trim().length >= 10 && !loading
