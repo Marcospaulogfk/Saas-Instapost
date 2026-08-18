@@ -6,7 +6,7 @@
  * sandbox continua com a cópia dele até o carrossel também ser promovido.
  */
 import { createSinglePost, updateSinglePost } from "@/app/actions/single-posts"
-import type { FreePostSpec } from "./free-spec"
+import type { FreeBlock, FreePostSpec } from "./free-spec"
 import type { PostContent } from "./types"
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -46,6 +46,24 @@ async function maybeUploadDataUrl(url: string): Promise<string> {
     // mantém a data URL
   }
   return url
+}
+
+/**
+ * Percorre a árvore de blocos e re-hospeda toda imagem em data URL.
+ * Recursivo porque `card` e `stack` carregam filhos.
+ */
+async function hostImageBlocks(blocks: FreeBlock[]): Promise<FreeBlock[]> {
+  return Promise.all(
+    blocks.map(async (b): Promise<FreeBlock> => {
+      if (b.type === "image" && b.url.startsWith("data:")) {
+        return { ...b, url: await maybeUploadDataUrl(b.url) }
+      }
+      if (b.type === "card" || b.type === "stack") {
+        return { ...b, children: await hostImageBlocks(b.children) }
+      }
+      return b
+    }),
+  )
 }
 
 export interface SaveSinglePostParams {
@@ -96,7 +114,9 @@ export async function saveSinglePost(
 
   const title = titleFromSpec(spec) || briefing.trim().slice(0, 60) || "Post único"
 
-  // Foto de fundo em data URL → re-hospeda no Storage antes de persistir.
+  // Data URLs → Storage antes de persistir. Vale pro fundo E pros blocos de
+  // imagem que o usuário adiciona por upload: base64 de até 5MB cada dentro do
+  // JSONB incharia o banco rápido.
   let specToSave = spec
   if (
     specToSave.background.kind === "photo" &&
@@ -108,6 +128,7 @@ export async function saveSinglePost(
       background: { ...specToSave.background, photo_url: hosted },
     }
   }
+  specToSave = { ...specToSave, blocks: await hostImageBlocks(specToSave.blocks) }
 
   const content = {
     _free_spec: specToSave,

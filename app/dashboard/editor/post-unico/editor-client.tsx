@@ -10,8 +10,11 @@ import {
   Download,
   Loader2,
   RefreshCw,
+  Image as ImageIcon,
   Save,
   Sparkles,
+  Square,
+  Type,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -26,6 +29,12 @@ import {
 import { useSpecEditor } from "@/lib/single-posts/use-spec-editor"
 import { applyFontPreset, FONT_PRESETS } from "@/lib/single-posts/font-presets"
 import { exportSpecToPng, isRealBrandId, saveSinglePost } from "@/lib/single-posts/save"
+import {
+  addImageBlock,
+  addShapeBlock,
+  addTextBlock,
+  TEXT_STYLES,
+} from "@/lib/single-posts/add-block"
 import { tokenCostForSinglePost } from "@/lib/tokens"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 import type { PostBrand } from "@/lib/single-posts/types"
@@ -86,6 +95,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const [saveOk, setSaveOk] = useState(false)
 
   const previewRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const bootstrapped = useRef(false)
 
   const finalSpec = spec ? applyFontPreset(spec, fontPreset) : null
@@ -192,6 +202,27 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     setSaveOk(true)
     setTimeout(() => setSaveOk(false), 2500)
     router.refresh()
+  }
+
+  /**
+   * Imagem local vira camada. Fica como data URL enquanto edita; o save
+   * re-hospeda no Storage antes de persistir (maybeUploadDataUrl).
+   */
+  function handleAddImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = "" // permite re-selecionar o mesmo arquivo
+    if (!file || !spec) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Imagem muito grande (max 5MB).")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = typeof reader.result === "string" ? reader.result : null
+      if (url) setSpec((cur) => (cur ? addImageBlock(cur, url) : cur))
+    }
+    reader.onerror = () => setError("Nao consegui ler a imagem.")
+    reader.readAsDataURL(file)
   }
 
   async function copyCaption() {
@@ -315,6 +346,58 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               Fazer upgrade
             </Link>
           </p>
+        )}
+
+        {/* Adicionar ao canvas — o spec ja suportava esses blocos, faltava a UI. */}
+        {spec && (
+          <div className="space-y-2">
+            <Label className="text-sm text-text-secondary">Adicionar ao canvas</Label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {TEXT_STYLES.map((s) => (
+                <Button
+                  key={s.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-[11px]"
+                  onClick={() => setSpec(addTextBlock(spec, s.id))}
+                >
+                  <Type className="w-3 h-3 mr-1" />
+                  {s.label}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-[11px]"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImageIcon className="w-3 h-3 mr-1" />
+                Imagem
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-[11px]"
+                onClick={() => setSpec(addShapeBlock(spec, "rounded"))}
+              >
+                <Square className="w-3 h-3 mr-1" />
+                Forma
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAddImage}
+            />
+            <p className="text-[10px] text-text-muted">
+              O bloco nasce no centro. Arraste pra posicionar, clique pra editar.
+            </p>
+          </div>
         )}
 
         {spec && (
