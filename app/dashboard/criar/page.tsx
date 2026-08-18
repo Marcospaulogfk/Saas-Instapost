@@ -969,6 +969,68 @@ function FundoFluido({ animado }: { animado: boolean }) {
  *  precisa do mesmo valor pro anel de seleção acompanhar a curva. */
 const CARD_RADIUS = 28
 
+/**
+ * Tipo de peça: o que o usuário escolhe de fato. Cada um mapeia num par
+ * (formato do frame, nº de slides) — a contagem só aparece nos carrosséis,
+ * porque nos únicos ela é sempre 1 e mostrar o seletor confundia.
+ */
+type ContentKind = "post" | "carrossel" | "story" | "story-carrossel"
+
+const KIND_OPTIONS: {
+  id: ContentKind
+  label: string
+  desc: string
+  size: string
+  format: FormatKind
+  multi: boolean
+  icon: typeof Square
+}[] = [
+  {
+    id: "post",
+    label: "Post único",
+    desc: "Uma arte no feed",
+    size: "1080 × 1350px",
+    format: "post",
+    multi: false,
+    icon: Square,
+  },
+  {
+    id: "carrossel",
+    label: "Carrossel",
+    desc: "Várias artes deslizáveis",
+    size: "1080 × 1350px",
+    format: "post",
+    multi: true,
+    icon: GalleryHorizontal,
+  },
+  {
+    id: "story",
+    label: "Stories único",
+    desc: "Uma arte em tela cheia",
+    size: "1080 × 1920px",
+    format: "story",
+    multi: false,
+    icon: Smartphone,
+  },
+  {
+    id: "story-carrossel",
+    label: "Stories em sequência",
+    desc: "Vários stories encadeados",
+    size: "1080 × 1920px",
+    format: "story",
+    multi: true,
+    icon: Newspaper,
+  },
+]
+
+/** Deriva o tipo escolhido a partir do formato já montado. */
+function kindFromFormato(f: Formato | null): ContentKind | null {
+  if (!f) return null
+  const multi = f.slides > 1
+  if (f.format === "story") return multi ? "story-carrossel" : "story"
+  return multi ? "carrossel" : "post"
+}
+
 function Step1({
   formato,
   onSelect,
@@ -978,33 +1040,13 @@ function Step1({
   onSelect: (f: Formato) => void
   onNext: () => void
 }) {
-  // Escolha atual derivada do formato já montado (ou defaults).
-  const format: FormatKind = formato?.format ?? "post"
+  const kind = kindFromFormato(formato)
   const slides = formato?.slides ?? 1
   const chosen = formato !== null
-
-  const FORMAT_OPTIONS: {
-    id: FormatKind
-    label: string
-    size: string
-    desc: string
-    icon: typeof Square
-  }[] = [
-    {
-      id: "post",
-      label: "Feed",
-      size: "1080 × 1350px",
-      desc: "Post ou carrossel no feed",
-      icon: Square,
-    },
-    {
-      id: "story",
-      label: "Stories",
-      size: "1080 × 1920px",
-      desc: "Tela cheia vertical",
-      icon: Smartphone,
-    },
-  ]
+  const activeOption = KIND_OPTIONS.find((k) => k.id === kind) ?? null
+  // Quantidade só faz sentido em carrossel. Ao trocar de único pra carrossel,
+  // abre em 7 (o padrão de carrossel do produto) em vez de herdar o 1.
+  const showSlides = !!activeOption?.multi
 
   return (
     <div>
@@ -1013,27 +1055,16 @@ function Step1({
           Qual formato você quer criar?
         </h1>
         <p className="text-sm text-text-secondary">
-          Escolha onde vai publicar e quantos slides. O tema vem no próximo passo.
+          Escolha o tipo da peça. O tema vem no próximo passo.
         </p>
       </div>
 
-      {/* Formato: Feed x Stories */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 max-w-xl mx-auto">
-        {FORMAT_OPTIONS.map((f) => {
-          const selected = chosen && format === f.id
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 max-w-4xl mx-auto">
+        {KIND_OPTIONS.map((k) => {
+          const selected = chosen && kind === k.id
           return (
             <BorderGlow
-              key={f.id}
-              /* Calibrado pra ficar discreto. Dois detalhes não óbvios:
-                 1) o componente pinta um mesh gradient no MIOLO do card
-                    (fillOpacity 0.5 por padrão) — aqui vai quase zerado;
-                 2) ele conta com um `backgroundColor` OPACO pra mascarar esse
-                    mesh e deixar só a borda de 1px colorida. Como o card é
-                    preto a 70% (pra deixar o fluido aparecer), 30% do mesh
-                    vaza pelo miolo — por isso as cores são versões escuras do
-                    roxo/rosa/azul: o vazamento fica imperceptível e a borda
-                    ainda acende perto do cursor. Clarear essas cores traz a
-                    mancha de volta. */
+              key={k.id}
               edgeSensitivity={50}
               glowColor="40 80 80"
               backgroundColor="rgba(0,0,0,0.7)"
@@ -1047,10 +1078,11 @@ function Step1({
             >
               <button
                 type="button"
-                onClick={() => onSelect(buildFormato(f.id, slides))}
-                /* O anel de seleção fica AQUI, e não no BorderGlow: o wrapper
-                   já usa box-shadow inline pro glow, e um `ring` por fora
-                   seria sobrescrito por ele. */
+                onClick={() =>
+                  onSelect(
+                    buildFormato(k.format, k.multi ? (slides > 1 ? slides : 7) : 1),
+                  )
+                }
                 className={`relative h-full w-full p-5 text-left transition-colors ${
                   selected ? "bg-brand-500/10 ring-2 ring-inset ring-brand-500" : ""
                 }`}
@@ -1066,51 +1098,49 @@ function Step1({
                     selected ? "bg-brand-500/20" : "bg-white/[0.06]"
                   }`}
                 >
-                  <f.icon
+                  <k.icon
                     className={`w-5 h-5 ${selected ? "text-brand-300" : "text-text-secondary"}`}
                   />
                 </div>
-                <p className="text-base font-semibold text-text-primary">
-                  {f.label}
-                </p>
-                <p className="text-[11px] text-text-secondary mt-0.5">{f.desc}</p>
-                <p className="text-[10px] text-text-muted mt-0.5">{f.size}</p>
+                <p className="text-base font-semibold text-text-primary">{k.label}</p>
+                <p className="text-[11px] text-text-secondary mt-0.5">{k.desc}</p>
+                <p className="text-[10px] text-text-muted mt-0.5">{k.size}</p>
               </button>
             </BorderGlow>
           )
         })}
       </div>
 
-      {/* Quantidade de slides: 1 a 7 (máximo da geração) */}
-      <div className="max-w-xl mx-auto mb-8">
-        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
-          Quantos slides?
-        </p>
-        <div className="grid grid-cols-7 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
-            const selected = chosen && slides === n
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => onSelect(buildFormato(format, n))}
-                className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
-                  selected
-                    ? "border-brand-500 bg-brand-500/10 text-brand-200"
-                    : "border-border-subtle bg-background-tertiary/30 text-text-secondary hover:border-border-medium"
-                }`}
-              >
-                <span className="text-lg font-semibold tabular-nums">{n}</span>
-              </button>
-            )
-          })}
+      {/* Quantidade de slides: só nos carrosséis, de 2 a 7 (máximo da geração). */}
+      {showSlides && (
+        <div className="max-w-xl mx-auto mb-8">
+          <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
+            Quantos slides?
+          </p>
+          <div className="grid grid-cols-6 gap-2">
+            {[2, 3, 4, 5, 6, 7].map((n) => {
+              const selected = slides === n
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onSelect(buildFormato(activeOption.format, n))}
+                  className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
+                    selected
+                      ? "border-brand-500 bg-brand-500/10 text-brand-200"
+                      : "border-border-subtle bg-background-tertiary/30 text-text-secondary hover:border-border-medium"
+                  }`}
+                >
+                  <span className="text-lg font-semibold tabular-nums">{n}</span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-text-muted mt-2 text-center">
+            Máximo de 7 por geração.
+          </p>
         </div>
-        <p className="text-[11px] text-text-muted mt-2 text-center">
-          {slides <= 1
-            ? "1 slide = post único."
-            : `${slides} slides = carrossel. Máximo de 7 por geração.`}
-        </p>
-      </div>
+      )}
 
       <div className="flex justify-end">
         <Button onClick={onNext} disabled={!chosen} className="min-w-[140px]">
