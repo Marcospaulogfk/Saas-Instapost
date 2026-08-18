@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Loader2, Sparkles, Wand2, Code2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,10 +16,13 @@ import {
 } from "@/components/ui/select"
 import { TemplatePicker } from "@/components/single-posts/template-picker"
 import { CATEGORY_LABELS } from "@/lib/single-posts/catalog"
+import { tokenCostForSinglePost } from "@/lib/tokens"
 import type { PostBrand, PostCategory } from "@/lib/single-posts/types"
 
 interface WizardProps {
   brands: PostBrand[]
+  /** Saldo de tokens do usuário — alimenta o preview de custo. */
+  balance: number
 }
 
 const CATEGORIES: Array<{ value: "all" | PostCategory; label: string }> = [
@@ -31,8 +35,12 @@ const CATEGORIES: Array<{ value: "all" | PostCategory; label: string }> = [
 
 type Mode = "template" | "free"
 
-export function Wizard({ brands }: WizardProps) {
+export function Wizard({ brands, balance }: WizardProps) {
   const router = useRouter()
+  // Teto do post único (29). O débito real pode ser menor — foto real do
+  // Wikimedia não custa imagem, e o fallback pro Flux cobra 2 em vez de 25.
+  const cost = tokenCostForSinglePost()
+  const insufficient = balance < cost
   const [brandId, setBrandId] = useState(brands[0]?.id ?? "")
   const activeBrand = useMemo(
     () => brands.find((b) => b.id === brandId) ?? brands[0],
@@ -49,13 +57,15 @@ export function Wizard({ brands }: WizardProps) {
     mode === "template" &&
     !!activeBrand &&
     rawContent.trim().length >= 10 &&
-    !submitting
+    !submitting &&
+    !insufficient
 
   const canSubmitFree =
     mode === "free" &&
     !!activeBrand &&
     rawContent.trim().length >= 10 &&
-    !submitting
+    !submitting &&
+    !insufficient
 
   function handleGenerateTemplate() {
     if (!canSubmitTemplate || !activeBrand) return
@@ -257,6 +267,37 @@ export function Wizard({ brands }: WizardProps) {
             )}
           </Button>
         )}
+
+        {/* Preview de custo no ponto da decisão, antes de gerar. */}
+        <div
+          className={`rounded-lg border p-3 text-[11px] ${
+            insufficient
+              ? "border-red-500/40 bg-red-500/10"
+              : "border-border-subtle bg-background-secondary/40"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-text-secondary">
+              Custo: <strong className="text-text-primary">até {cost} tokens</strong>
+            </span>
+            <span className={insufficient ? "text-red-400" : "text-text-muted"}>
+              Saldo: {balance}
+            </span>
+          </div>
+          {insufficient ? (
+            <p className="mt-2 text-red-400">
+              Saldo insuficiente.{" "}
+              <Link href="/pricing" className="underline underline-offset-2">
+                Fazer upgrade
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-1.5 text-text-muted">
+              Texto {"+"} imagem. Custa menos se a foto vier de acervo real. Editar
+              o post depois é grátis e ilimitado.
+            </p>
+          )}
+        </div>
 
         <div className="rounded-lg border border-border-subtle bg-background-secondary/40 p-3 text-[11px] text-text-muted">
           <p className="font-medium text-text-secondary mb-1">

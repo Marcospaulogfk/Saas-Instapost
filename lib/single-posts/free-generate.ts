@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
-import { generateBrandImage } from "@/lib/generation/image"
-import type { Plan } from "@/lib/tokens"
+import { generateBrandImageForRole } from "@/lib/generation/image"
 import { searchWikimedia } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import type { PostBrand } from "./types"
@@ -171,12 +170,16 @@ interface SkeletonResponse {
 
 /**
  * Resolve a foto do post: se há uma entidade real (lugar/pessoa/produto),
- * tenta foto real na Wikipedia; senão (ou se não achar) cai pra IA (Flux).
+ * tenta foto real na Wikipedia; senão (ou se não achar) gera por IA.
+ *
+ * A imagem do post único tem papel de CAPA — é uma peça só, e é ela que para
+ * o scroll. Roda no modelo bom para todos os planos, igual à capa do
+ * carrossel, e é cobrada como tal (25 tokens). Se o Nano Banana cair pro
+ * Flux, volta como 'normal' e o usuário paga 2 — o que recebeu de fato.
  */
 async function resolvePhotoUrl(
   entity: string | null | undefined,
   photoPrompt: string | null | undefined,
-  plan: Plan = "trial",
 ): Promise<{ url: string | null; costUsd: number; quality: "normal" | "pro" | null }> {
   const e = (entity ?? "").trim()
   if (e) {
@@ -190,7 +193,7 @@ async function resolvePhotoUrl(
   }
   if (photoPrompt) {
     try {
-      const img = await generateBrandImage(photoPrompt, plan)
+      const img = await generateBrandImageForRole(photoPrompt, "cover")
       return { url: img.url, costUsd: img.costUsd, quality: img.quality }
     } catch (err) {
       console.warn("[free-generate] geração de imagem falhou:", err)
@@ -234,8 +237,6 @@ interface GenerateOpts {
   forceSkeletonId?: string | null
   /** IDs de skeletons que NÃO devem ser escolhidos (variação entre regenerações) */
   excludeSkeletonIds?: string[]
-  /** Plano do user → decide Nano Banana Pro (Pro/Studio) vs Flux. Default trial. */
-  plan?: Plan
 }
 
 export interface FreeGenerateResult {
@@ -288,8 +289,6 @@ interface ApprovedOpts {
   photoPrompt?: string | null
   /** Entidade real preservada da etapa de texto — vira foto real (Wikipedia). */
   photoEntity?: string | null
-  /** Plano do user → decide Nano Banana Pro (Pro/Studio) vs Flux. Default trial. */
-  plan?: Plan
 }
 
 /**
@@ -367,7 +366,6 @@ export async function generateFreeSpec({
   briefing,
   forceSkeletonId,
   excludeSkeletonIds,
-  plan = "trial",
 }: GenerateOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
@@ -384,7 +382,7 @@ export async function generateFreeSpec({
   }
 
   // Foto real (Wikipedia) se a IA marcou entidade real; senão IA (Pro/Flux).
-  const resolved = await resolvePhotoUrl(parsed.image_entity, parsed.photo_prompt, plan)
+  const resolved = await resolvePhotoUrl(parsed.image_entity, parsed.photo_prompt)
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 
@@ -469,7 +467,6 @@ export async function buildApprovedSpec({
   content,
   photoPrompt,
   photoEntity,
-  plan = "trial",
 }: ApprovedOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
@@ -477,7 +474,7 @@ export async function buildApprovedSpec({
   if (!skeleton) throw new Error(`Skeleton "${skeletonId}" não existe`)
 
   // Foto real (Wikipedia) se há entidade real; senão IA (Pro/Flux).
-  const resolved = await resolvePhotoUrl(photoEntity, photoPrompt, plan)
+  const resolved = await resolvePhotoUrl(photoEntity, photoPrompt)
   const photoUrl = resolved.url
   const imageCost = resolved.costUsd
 

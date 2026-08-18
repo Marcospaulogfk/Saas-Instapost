@@ -36,6 +36,54 @@ export interface BrandImageResult {
  * a geração continua funcionando mesmo se o Nano Banana Pro estiver fora.
  * (A geração base pelo Flux ainda pode lançar se o Fal cair — igual hoje.)
  */
+/**
+ * Gera a imagem "de marca" pelo PAPEL dela na peça, não pelo plano.
+ *
+ * Espelha `generateEditorialImageForRole` do carrossel: o que decide o modelo
+ * é a função da imagem, para todo mundo. No post único a imagem é sempre
+ * `cover` — é uma peça só, e é ela que para o scroll.
+ *
+ * NÃO-QUEBRANTE: se o Nano Banana 2 falhar, cai pro Flux e volta como
+ * quality 'normal' — o usuário é cobrado 2 tokens em vez de 25, que é o que
+ * ele de fato recebeu.
+ */
+export async function generateBrandImageForRole(
+  prompt: string,
+  role: "cover" | "slide",
+): Promise<BrandImageResult> {
+  if (role === "cover") {
+    try {
+      const r = await generateNanoBanana(prompt, "pro")
+      return {
+        url: r.url,
+        width: r.width,
+        height: r.height,
+        costUsd: r.costUsd,
+        ms: r.ms,
+        quality: "pro",
+      }
+    } catch (e) {
+      console.error("[image] Nano Banana 2 falhou na capa, fallback Flux", e)
+      // segue pro Flux abaixo — e cobra como miolo.
+    }
+  }
+
+  const r = await generateImage(prompt)
+  return {
+    url: r.url,
+    width: r.width,
+    height: r.height,
+    costUsd: r.costUsd,
+    ms: r.ms,
+    quality: "normal",
+  }
+}
+
+/**
+ * @deprecated O modelo deixou de ser função do plano — use
+ * `generateBrandImageForRole`. Mantida enquanto houver chamadas pela
+ * assinatura antiga.
+ */
 export async function generateBrandImage(
   prompt: string,
   plan: Plan,

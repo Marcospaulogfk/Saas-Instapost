@@ -152,6 +152,32 @@ export function tokenCostForRole(role: "cover" | "slide"): number {
 }
 
 /**
+ * Quanto custa gerar um POST ÚNICO (uma peça só, com imagem de IA).
+ *
+ * Reusa as MESMAS primitivas do carrossel — não existe preço próprio de post
+ * único. A imagem dele tem papel de CAPA (é uma peça só, e é ela que para o
+ * scroll), então roda no modelo caro e custa igual à capa de um carrossel:
+ *
+ *   textOnly (4) + imageCover (25) = 29 tokens
+ *
+ * Como o custo é composto pelas mesmas parcelas da capa, a margem é idêntica
+ * à dela por construção — a verificação de piso de 80% feita para o carrossel
+ * continua valendo sem conta nova.
+ *
+ * Este é o TETO, usado no preview "vai custar N tokens" antes de gerar. O
+ * débito real segue o que foi entregue de fato: se a foto vier do Wikimedia
+ * (grátis) ou o Nano Banana cair pro Flux, cobra-se menos. Nunca mais.
+ *
+ * REGRA DE PRODUTO: editar o post depois de gerado é sempre GRÁTIS e
+ * ilimitado. Cobra-se o pipeline de arte escolhido antes de gerar, nunca a
+ * editabilidade — é exatamente o oposto do concorrente, onde cada correção
+ * custa crédito e regenera o design do zero.
+ */
+export function tokenCostForSinglePost(): number {
+  return TOKEN_COST.textOnly + TOKEN_COST.imageCover
+}
+
+/**
  * COMPAT com a assinatura antiga (quality). Os endpoints de geração ainda
  * raciocinam em "normal x pro"; o mapa abaixo os liga na tabela nova sem
  * quebrar nada: "pro" = modelo caro (hoje a capa), "normal" = Flux.

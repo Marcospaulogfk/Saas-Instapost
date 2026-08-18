@@ -1,13 +1,13 @@
 ﻿import Link from "next/link"
 import { Plus, Sparkles, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { listBrands } from "@/lib/data/queries"
+import { listBrands, getProfile } from "@/lib/data/queries"
 import { generateMonogram } from "@/lib/single-posts/palette"
 import { Wizard } from "./wizard"
 import type { PostBrand } from "@/lib/single-posts/types"
 
 export default async function CriarPostUnicoPage() {
-  const brands = await listBrands()
+  const [brands, { profile }] = await Promise.all([listBrands(), getProfile()])
 
   if (brands.length === 0) {
     return (
@@ -67,7 +67,7 @@ export default async function CriarPostUnicoPage() {
         </div>
       </div>
 
-      <Wizard brands={wizardBrands} />
+      <Wizard brands={wizardBrands} balance={profile?.credits ?? 0} />
     </div>
   )
 }

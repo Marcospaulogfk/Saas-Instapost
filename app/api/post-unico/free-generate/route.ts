@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getUserPlan } from "@/lib/generation/image"
-import { debitTokens, tokenCostForImage } from "@/lib/tokens"
+import { debitTokens, tokenCostForImage, TOKEN_COST } from "@/lib/tokens"
 import {
   generateFreeSpec,
   generateFreeText,
@@ -14,21 +13,31 @@ export const runtime = "nodejs"
 export const maxDuration = 60
 
 /**
- * Débito best-effort de UMA imagem IA conforme a qualidade real.
- * Só debita se houver user logado e a imagem tiver sido gerada por IA
- * (quality != null). Nunca lança — tokens não quebram geração.
+ * Débito best-effort. Nunca lança — tokens não quebram geração.
+ *
+ * O post único custa `tokenCostForSinglePost()` (29) no TETO, cobrado em duas
+ * parcelas conforme o que é realmente entregue:
+ *   - texto (4) na etapa que chama o Claude;
+ *   - imagem (25 capa / 2 se caiu pro Flux / 0 se veio foto real do Wikimedia).
+ *
+ * Editar o post depois é sempre grátis — não há débito em edição.
  */
-async function debitImageBestEffort(
+async function debitBestEffort(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string | undefined,
-  quality: "normal" | "pro" | null,
+  amount: number,
 ): Promise<void> {
-  if (!userId || !quality) return
+  if (!userId || amount <= 0) return
   try {
-    await debitTokens(supabase, userId, tokenCostForImage(quality))
+    await debitTokens(supabase, userId, amount)
   } catch {
     // ignorado — tokens nunca quebram geração
   }
+}
+
+/** Débito da imagem conforme a qualidade REAL entregue (null = foto real, grátis). */
+function imageCost(quality: "normal" | "pro" | null): number {
+  return quality ? tokenCostForImage(quality) : 0
 }
 
 interface RequestBody {
@@ -62,12 +71,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "brand obrigatória" }, { status: 400 })
   }
 
-  // Auth OPCIONAL: deriva o plano se houver sessão, senão "trial" (Flux).
+  // Auth OPCIONAL: sem sessão a geração roda igual, só não debita tokens.
+  // O modelo da imagem NÃO depende mais do plano — é papel de capa pra todos.
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const plan = await getUserPlan(supabase)
 
   // ---- Modo: conteúdo já aprovado → só monta design + foto (sem regenerar texto)
   if (body.approved_content) {
@@ -84,9 +93,9 @@ export async function POST(req: Request) {
         content: body.approved_content,
         photoPrompt: body.photo_prompt ?? null,
         photoEntity: body.image_entity ?? null,
-        plan,
       })
-      await debitImageBestEffort(supabase, user?.id, result.image_quality)
+      // Só a imagem: o texto já foi debitado na etapa text_only.
+      await debitBestEffort(supabase, user?.id, imageCost(result.image_quality))
       return NextResponse.json({
         spec: result.spec,
         rationale: result.rationale,
@@ -119,6 +128,7 @@ export async function POST(req: Request) {
         forceSkeletonId: body.skeleton_id ?? null,
         excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
       })
+      await debitBestEffort(supabase, user?.id, TOKEN_COST.textOnly)
       return NextResponse.json({
         skeleton_id: result.skeleton_id,
         content: result.content,
@@ -142,9 +152,13 @@ export async function POST(req: Request) {
       briefing: body.briefing.trim(),
       forceSkeletonId: body.skeleton_id ?? null,
       excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
-      plan,
     })
-    await debitImageBestEffort(supabase, user?.id, result.image_quality)
+    // Gera texto + imagem numa tacada só → cobra as duas parcelas.
+    await debitBestEffort(
+      supabase,
+      user?.id,
+      TOKEN_COST.textOnly + imageCost(result.image_quality),
+    )
     return NextResponse.json({
       spec: result.spec,
       rationale: result.rationale,
