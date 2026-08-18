@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
+import NextLink from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
@@ -38,6 +39,7 @@ import type { ClaudeSlide } from "@/lib/generation/claude"
 import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
 import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
+import { getTokenBalance } from "@/app/actions/balance"
 import BorderGlow from "@/components/backgrounds/border-glow"
 import {
   CAROUSEL_STYLES,
@@ -52,7 +54,12 @@ import {
   type IdeaSuggestion,
   type Objetivo,
 } from "./idea-suggestions"
-import { TOKEN_COST, tokenCostForCarousel, type ImageChoice } from "@/lib/tokens"
+import {
+  TOKEN_COST,
+  tokenCostForCarousel,
+  tokenCostForSinglePost,
+  type ImageChoice,
+} from "@/lib/tokens"
 
 /* Arrasta o three.js junto (~150KB gz) e só roda no cliente — sob demanda pra
    não pesar o bundle do wizard. Ele mesmo pausa fora da viewport e com a aba
@@ -380,6 +387,14 @@ function CriarWizard() {
 
   // --- Marca ativa: usada na geração em vez da Marca Demo hardcoded ---
   const [activeBrand, setActiveBrand] = useState<ActiveBrandLite | null>(null)
+  // Saldo pro preview de custo do passo 4. `null` = sem sessão (ou falha na
+  // leitura): o preview de saldo some, mas o custo continua visível.
+  const [saldo, setSaldo] = useState<number | null>(null)
+  useEffect(() => {
+    getTokenBalance()
+      .then(setSaldo)
+      .catch(() => setSaldo(null))
+  }, [])
   // Marca se o usuário já escolheu objetivo manualmente (não sobrescrever).
   const objetivoTouched = useRef(false)
   useEffect(() => {
@@ -865,6 +880,7 @@ function CriarWizard() {
           setLinkUrl={setLinkUrl}
           linkErr={linkErr}
           onBack={() => goToStep(hasStep3 ? 3 : 2)}
+          saldo={saldo}
           onGerar={() => void handleGerar()}
           canFinish={canGerar()}
         />
@@ -1408,6 +1424,7 @@ function Step3({
   imageChoice,
   onImageChoice,
   onBack,
+  saldo,
   onGerar,
   canFinish,
 }: {
@@ -1429,6 +1446,7 @@ function Step3({
   linkErr: string | null
   sugestoes: IdeaSuggestion[]
   brandName: string | null
+  saldo: number | null
   onBack: () => void
   onGerar: () => void
   canFinish: boolean
@@ -1438,7 +1456,12 @@ function Step3({
   const busy = refinando || submitting
   const inputRef = useRef<HTMLTextAreaElement>(null)
   // Fonte única do preço — nunca recalcular à mão aqui (ver lib/tokens.ts).
-  const custoTokens = tokenCostForCarousel(formato.slides, imageChoice)
+  // O post único não passa pelo cálculo do carrossel: a imagem dele é capa por
+  // definição e o toggle de "demais slides" nem aparece.
+  const custoTokens = isPostUnico
+    ? tokenCostForSinglePost()
+    : tokenCostForCarousel(formato.slides, imageChoice)
+  const semSaldo = saldo != null && saldo < custoTokens
 
   /** Sugestão clicada vira o briefing e o foco volta pro campo pra editar. */
   function aplicarSugestao(s: IdeaSuggestion) {
@@ -1591,7 +1614,7 @@ function Step3({
             </div>
             <Button
               onClick={onGerar}
-              disabled={!canFinish || busy}
+              disabled={!canFinish || busy || semSaldo}
               className="h-9 px-4 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 flex-shrink-0"
             >
               {refinando ? (
@@ -1611,9 +1634,46 @@ function Step3({
             </Button>
           </div>
         </div>
-        <p className="mt-1.5 text-[10px] text-text-muted text-right">
-          {briefing.length} chars · Ctrl+Enter pra gerar
-        </p>
+        {/* Preview de custo — o preço aparece ANTES de gerar, junto do saldo,
+            e o bloqueio por saldo insuficiente traz o upgrade no mesmo lugar
+            em que a intenção existe. Sem sessão (saldo null) some: a geração
+            roda, só não debita. */}
+        <div className="mt-1.5 flex items-center justify-between gap-3 text-[10px]">
+          <span className="text-text-muted">
+            Custo:{" "}
+            <strong className="text-text-secondary tabular-nums">
+              até {custoTokens} tokens
+            </strong>
+            {saldo != null && (
+              <>
+                {" · "}
+                <span className={semSaldo ? "text-danger" : "text-text-muted"}>
+                  Saldo: <span className="tabular-nums">{saldo}</span>
+                </span>
+              </>
+            )}
+            {isPostUnico && (
+              <span className="hidden sm:inline">
+                {" "}
+                · custa menos se a foto vier de acervo real
+              </span>
+            )}
+          </span>
+          <span className="text-text-muted shrink-0">
+            {briefing.length} chars · Ctrl+Enter pra gerar
+          </span>
+        </div>
+        {semSaldo && (
+          <p className="mt-1 text-[11px] text-danger">
+            Saldo insuficiente.{" "}
+            <NextLink
+              href="/pricing"
+              className="underline hover:text-text-primary"
+            >
+              Fazer upgrade
+            </NextLink>
+          </p>
+        )}
 
         {/* Sugestões derivadas da marca ativa + objetivo/abordagem escolhidos.
             Heurística local (ver ./idea-suggestions) — nenhuma chamada de IA
