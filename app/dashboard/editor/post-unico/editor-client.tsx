@@ -39,13 +39,27 @@ import { tokenCostForSinglePost } from "@/lib/tokens"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 import type { PostBrand } from "@/lib/single-posts/types"
 
-/** Payload que o wizard grava no sessionStorage antes de redirecionar. */
+/**
+ * Payload que os wizards gravam no sessionStorage antes de redirecionar.
+ *
+ * - `skeleton`: so o briefing — o editor gera texto e imagem.
+ * - `approved`: o texto ja foi gerado e aprovado no passo 5 do /dashboard/criar.
+ *   O editor NAO regenera a copy: manda o conteudo aprovado e so monta o design
+ *   com a foto. O texto ja foi cobrado na etapa text_only, entao aqui so a
+ *   imagem e debitada.
+ */
 interface PendingPayload {
-  kind: "skeleton" | "template"
+  kind: "skeleton" | "approved" | "template"
   brand: PostBrand
   briefing?: string
   rawContent?: string
   autoRun?: boolean
+  // --- modo approved ---
+  skeletonId?: string
+  approvedContent?: Record<string, unknown>
+  caption?: string
+  photoPrompt?: string | null
+  photoEntity?: string | null
 }
 
 const STORAGE_KEY = "syncpost_pending_post_unico"
@@ -142,7 +156,48 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     [],
   )
 
-  // Recebe o briefing do wizard e gera de uma vez. Roda só na 1ª montagem.
+  /**
+   * Conteudo ja aprovado no wizard → nao regenera a copy, so monta o design e
+   * a foto. Espelha o modo `approved_content` da rota.
+   */
+  const buildApproved = useCallback(
+    async (p: PendingPayload) => {
+      if (!p.brand || !p.skeletonId || !p.approvedContent) return
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch("/api/post-unico/free-generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            brand: p.brand,
+            skeleton_id: p.skeletonId,
+            approved_content: p.approvedContent,
+            photo_prompt: p.photoPrompt ?? null,
+            image_entity: p.photoEntity ?? null,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error ?? "erro desconhecido")
+          return
+        }
+        setSpec(data.spec)
+        // A legenda aprovada no wizard vence a que volta da rota.
+        setCaption(p.caption ?? (typeof data.caption === "string" ? data.caption : ""))
+        setPhotoUrl(data.photo_url ?? null)
+        setSkeletonId(data.skeleton_id ?? p.skeletonId)
+        setSavedId(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "erro na geração")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [],
+  )
+
+  // Recebe o payload do wizard e monta o post. Roda só na 1ª montagem.
   useEffect(() => {
     if (bootstrapped.current) return
     bootstrapped.current = true
@@ -161,8 +216,14 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     const b = brands.find((x) => x.id === payload.brand?.id) ?? payload.brand ?? brands[0]
     if (b) setBrand(b)
     if (brief) setBriefing(brief)
-    if (b && brief && payload.autoRun) void generate(b, brief, [])
-  }, [brands, generate, initialPost])
+    if (!payload.autoRun) return
+    // Texto ja aprovado no wizard → so monta o design (nao recobra o texto).
+    if (payload.kind === "approved" && payload.approvedContent) {
+      void buildApproved(payload)
+      return
+    }
+    if (b && brief) void generate(b, brief, [])
+  }, [brands, generate, buildApproved, initialPost])
 
   async function handleExport() {
     if (!previewRef.current) return

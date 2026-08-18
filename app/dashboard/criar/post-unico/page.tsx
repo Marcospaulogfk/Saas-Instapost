@@ -50,7 +50,7 @@ export default async function CriarPostUnicoPage() {
   }))
 
   return (
-    <div className="relative p-6 md:p-8 max-w-6xl mx-auto">
+    <div className="relative p-6 md:p-8 max-w-3xl mx-auto">
       <div className="mb-8 flex items-start gap-3">
         <Button asChild variant="ghost" size="icon" className="shrink-0 mt-1">
           <Link href="/dashboard/criar" aria-label="Voltar">

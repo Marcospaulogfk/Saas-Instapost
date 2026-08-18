@@ -91,7 +91,7 @@ function recommendedTemplates(
   return POST_TEMPLATES.filter((t) => cats.has(t.category)).slice(0, 6)
 }
 
-/** Marca demo usada pelo wizard ao empurrar pra /teste. */
+/** Marca demo usada pelo wizard ao abrir o editor. */
 const WIZARD_BRAND = {
   id: "wizard-brand",
   name: "Marca Demo",
@@ -313,9 +313,12 @@ function CriarWizard() {
   const [carouselApproving, setCarouselApproving] = useState(false)
 
   const isPostUnico = formato?.pageMode === "post-unico"
-  // "Criar do Zero" pula a galeria de templates: vai direto pra Ideia e a
-  // geração usa o modo free/skeleton (templateId fica "auto").
-  const hasTemplateStep = isPostUnico && comoCriar !== "zero"
+  // O passo de Template saiu: o post único nasce editável, então escolher o
+  // layout ANTES de ver o conteúdo era decisão prematura — no editor dá pra
+  // mover bloco, trocar fonte e reescrever de graça. Agora o post único segue
+  // o mesmo processo do carrossel: Formato → Modo → Ideia → Aprovar, sempre
+  // pelo caminho free/skeleton (templateId fica "auto").
+  const hasTemplateStep = false
   // Passo "Estilo" do carrossel (2+ slides): escolhe o estilo visual antes da
   // ideia. Post único usa o passo de Template; carrossel usa o de Estilo.
   const hasStyleStep = formato != null && !isPostUnico
@@ -570,7 +573,7 @@ function CriarWizard() {
     }
   }
 
-  /** Empurra o conteúdo aprovado pra /teste montar o design (sem regerar texto). */
+  /** Conteúdo aprovado → editor real monta o design (sem regerar o texto). */
   function aprovarECriar() {
     if (!formato || !approvalDraft) return
     setApproving(true)
@@ -606,7 +609,7 @@ function CriarWizard() {
         }),
       )
     } catch {}
-    router.push(`/teste?format=${formato.format}`)
+    router.push("/dashboard/editor/post-unico")
   }
 
   /** Gera SÓ o roteiro do carrossel (texto + legenda) e abre a aprovação. */
@@ -654,7 +657,7 @@ function CriarWizard() {
     }
   }
 
-  /** Empurra o roteiro aprovado pra /teste montar o design (só gera imagens). */
+  /** Roteiro aprovado → /dashboard/carrossel monta o design (só gera imagens). */
   function aprovarECriarCarrossel() {
     if (!formato || !carouselDraft) return
     setCarouselApproving(true)
@@ -686,29 +689,6 @@ function CriarWizard() {
     router.push("/dashboard/carrossel")
   }
 
-  /** Template curado escolhido → vai direto pro /teste no modo template:
-   *  o editor gera o conteúdo estruturado daquele template e monta o design. */
-  function criarComTemplateEscolhido(refined?: string | null) {
-    if (!formato) return
-    setSubmitting(true)
-    const finalBriefing = (refined ?? promptRefinado ?? briefing).trim()
-    try {
-      sessionStorage.setItem(
-        "syncpost_pending_post_unico",
-        JSON.stringify({
-          kind: "template",
-          brand: wizardBrand,
-          templateId,
-          rawContent: finalBriefing,
-          briefing: finalBriefing,
-          autoRun: true,
-          ts: Date.now(),
-        }),
-      )
-    } catch {}
-    router.push(`/teste?format=${formato.format}`)
-  }
-
   async function handleGerar() {
     if (!formato || !canGerar()) return
     setLinkErr(null)
@@ -720,18 +700,13 @@ function CriarWizard() {
       refined = await refinarComIA()
     }
     if (formato.pageMode === "post-unico") {
-      // Escolheu um template curado (e não é modo link) → gera direto nele,
-      // sem a etapa de aprovação do caminho auto/skeleton.
-      if (comoCriar !== "link" && templateId !== "auto") {
-        criarComTemplateEscolhido(refined)
-        return
-      }
-      // Auto (ou link): gera o TEXTO primeiro e abre a etapa de aprovação.
+      // Mesmo processo do carrossel: gera o TEXTO primeiro e abre a etapa de
+      // aprovação. O design é montado no editor depois do usuário aprovar.
       void gerarTextoParaAprovacao(refined)
       return
     }
     // Carrossel: mesma etapa de aprovação — gera SÓ o roteiro (text-only),
-    // o usuário revisa/edita e só então as imagens são geradas em /teste.
+    // o usuário revisa/edita e só então as imagens são geradas no editor.
     void gerarRoteiroParaAprovacao(refined)
   }
 
