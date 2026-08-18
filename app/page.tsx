@@ -7,19 +7,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { ArrowRight, Check, Play, Star, TrendingUp, X } from "lucide-react"
+import { ArrowRight, Check, Play, TrendingUp, X } from "lucide-react"
 
 import { CardNav, type CardNavItem } from "@/components/landing/card-nav"
-import { DarkVeil } from "@/components/landing/dark-veil"
-import { StickyCta } from "@/components/landing/sticky-cta"
+import { HeroBackdrop } from "@/components/landing/hero-backdrop"
 import { SiteFooter } from "@/components/landing/site-footer"
+import { MascoteCta } from "@/components/landing/mascote-cta"
 import { HeroEngine } from "@/components/landing/hero-engine"
 import { ProofWall } from "@/components/landing/proof-wall"
-import { StepsFlow } from "@/components/landing/steps-flow"
+import { StepsTriptych } from "@/components/landing/steps-triptych"
 import { FeatureShowcase } from "@/components/landing/feature-showcase"
-import { CostStack } from "@/components/landing/cost-stack"
+import { CalculadoraCusto } from "@/components/landing/calculadora-custo"
 import { PricingCards } from "@/components/landing/pricing-cards"
+import { PlanosBackdrop } from "@/components/landing/planos-backdrop"
 import { Reveal, RevealWords } from "@/components/landing/reveal"
+import { DepoimentosCarousel } from "@/components/landing/depoimentos-carousel"
+import { VideoProva } from "@/components/landing/video-prova"
+import { PainCards } from "@/components/landing/pain-cards"
+import { Objecoes } from "@/components/landing/objecoes"
 
 /* ── Helpers de marca ─────────────────────────────────────────── */
 
@@ -123,46 +128,8 @@ const NAV_ITEMS: CardNavItem[] = [
   },
 ]
 
-const DORES = [
-  {
-    t: "O Canva come suas horas",
-    d: "Cada carrossel vira uma hora fuçando template, fonte e alinhamento. Tempo que devia virar venda.",
-  },
-  {
-    t: "Sem constância, o alcance morre",
-    d: "O algoritmo premia quem aparece todo dia. Você some uma semana e o perfil esfria por um mês.",
-  },
-  {
-    t: "Tudo com cara de template",
-    d: "Os mesmos layouts prontos de todo mundo. Seu conteúdo se dilui no meio do feed e ninguém para.",
-  },
-]
 
-// Quebra de objeção. Cada item é uma desculpa real que trava a compra, seguida
-// da resposta que o produto de fato entrega — nada de promessa que a engine não
-// cumpre hoje.
-const OBJECOES = [
-  {
-    desculpa: "“Meu perfil é pequeno demais.”",
-    resposta:
-      "Carrossel é o formato que o Instagram mais entrega pra quem ainda não te segue. Alcance não sai do tamanho do perfil, sai do formato e da frequência.",
-  },
-  {
-    desculpa: "“Eu não sei escrever.”",
-    resposta:
-      "Você dá o tema. A engine escreve os 8 slides — gancho, desenvolvimento e chamada — no tom da sua marca, em português de gente.",
-  },
-  {
-    desculpa: "“Não tenho tempo pra isso.”",
-    resposta:
-      "São 3 minutos por carrossel, do briefing ao arquivo pronto pra postar. O tempo que você levava pra escolher a fonte no Canva.",
-  },
-  {
-    desculpa: "“Vai ficar com cara de IA.”",
-    resposta:
-      "A engine lê a sua marca antes de criar: paleta, tipografia, tom de voz e enquadramento. Sai a sua cara, não a de um template genérico.",
-  },
-]
+
 
 // Bifurcação de fim de página: os dois cenários possíveis daqui a 90 dias.
 const CENARIOS = {
@@ -180,11 +147,11 @@ const CENARIOS = {
   ],
 }
 
-const DEPOIMENTOS = [
-  { ini: "CM", nome: "Cláudia M.", area: "Boutique de moda", txt: "Eu travava no Canva e postava 1x por semana. Agora saio com 4 carrosséis por dia, todos com a minha cara." },
-  { ini: "RT", nome: "Rafael T.", area: "Social media", txt: "Atendo 6 clientes sozinho. O que levava uma tarde por marca agora sai em minutos — e fica melhor." },
-  { ini: "JP", nome: "Juliana P.", area: "Infoprodutos", txt: "O roteiro já vem pronto pra vender. Colei, exportei e o engajamento subiu na primeira semana." },
-]
+// Vídeo de prova da seção "Quem usa". Troque o arquivo em /public/videos.
+const VIDEO_PROVA = {
+  src: "/videos/depoimento.mp4",
+  poster: "/dashboard-ambient.png",
+}
 
 export default function HomePage() {
   return (
@@ -214,12 +181,12 @@ export default function HomePage() {
             borda de baixo com o resto da página. */}
         {/* O véu fica centralizado: uma faixa no meio do hero com máscara radial,
             pra luz nascer no centro e morrer no preto das bordas. */}
-        <div className="absolute inset-0 -z-10 pointer-events-none flex items-center justify-center">
+        <div className="absolute inset-0 -z-10 flex items-center justify-center">
           <div className="lp-veil-mask relative h-[115%] w-[min(1500px,120%)]">
-            <DarkVeil hueShift={18} speed={0.4} warpAmount={0.06} />
+            <HeroBackdrop />
           </div>
-          <div className="absolute inset-0 bg-background/25" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background" />
+          <div className="absolute inset-0 bg-background/35 pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background pointer-events-none" />
         </div>
 
         <CardNav items={NAV_ITEMS} />
@@ -362,19 +329,7 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {DORES.map((p, i) => (
-              <Reveal key={p.t} delay={i * 0.12}>
-                <div className="lp-card h-full rounded-2xl border border-hairline bg-surface p-7">
-                  <div className="w-8 h-8 rounded-lg border border-danger/30 flex items-center justify-center mb-5">
-                    <X className="w-4 h-4 text-danger" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{p.t}</h3>
-                  <p className="text-text-secondary text-[15px] leading-relaxed">{p.d}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <PainCards />
 
           <Reveal delay={0.2} className="text-center mt-10">
             <p className="text-text-secondary mb-5">
@@ -408,7 +363,7 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          <StepsFlow />
+          <StepsTriptych />
 
           <Reveal delay={0.15} className="text-center mt-12">
             <Button
@@ -426,15 +381,17 @@ export default function HomePage() {
       </section>
 
       {/* ── Recursos em ação ──────────────────────────────────── */}
-      <section id="recursos" className="px-6 py-20 md:py-28 border-t border-hairline">
-        <div className="max-w-6xl mx-auto">
+      <section id="recursos" className="lp-light px-6 py-20 md:py-28">
+        <div className="max-w-[1100px] mx-auto">
           <Reveal className="text-center mb-12">
-            <SectionLabel>Recursos</SectionLabel>
+            <SectionLabel>Dezenas de recursos exclusivos</SectionLabel>
             <h2 className="lp-display text-3xl md:text-[3rem] leading-[1.08] mt-4 mb-3">
-              Mais que um gerador: uma engine de marca
+              Tudo que você precisa pra{" "}
+              <span className="lp-text-gradient">crescer no Instagram</span>
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Clique em cada recurso e veja funcionando — não em promessa.
+              São dezenas de funcionalidades dentro do Nexus Content. Veja as mais usadas
+              em ação — clique em cada uma.
             </p>
           </Reveal>
 
@@ -475,38 +432,27 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          <div className="grid md:grid-cols-2 gap-5">
-            {OBJECOES.map((o, i) => (
-              <Reveal key={o.desculpa} delay={i * 0.1}>
-                <div className="lp-card h-full rounded-2xl border border-hairline bg-surface p-7">
-                  <p className="text-text-muted text-[15px] italic leading-relaxed mb-4">
-                    {o.desculpa}
-                  </p>
-                  <div className="flex gap-3">
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-1" />
-                    <p className="text-[15px] leading-relaxed">{o.resposta}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <Objecoes />
         </div>
       </section>
 
       {/* ── Faça as contas (bloco claro) ──────────────────────── */}
       <section className="lp-light px-6 py-20 md:py-28">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <Reveal className="text-center mb-12">
             <SectionLabel>Faça as contas</SectionLabel>
             <h2 className="lp-display text-3xl md:text-[3rem] leading-[1.08] mt-4 mb-3">
               Quanto você pagaria separado por tudo isso?
             </h2>
-            <p className="text-lg text-text-secondary">
-              Pra fazer o que o Nexus Content faz, você precisaria montar (e pagar) esse arsenal:
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
+              Monte o seu mês e compare: agência, freelancer com IAs avulsas ou tudo
+              num lugar só.
             </p>
           </Reveal>
 
-          <CostStack />
+          <Reveal>
+            <CalculadoraCusto />
+          </Reveal>
 
           <Reveal delay={0.15} className="text-center mt-8">
             <Button
@@ -523,47 +469,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Depoimentos ───────────────────────────────────────── */}
-      <section className="px-6 py-20 md:py-24 border-t border-hairline">
-        <div className="max-w-6xl mx-auto">
-          <Reveal className="text-center mb-14">
-            <SectionLabel>Quem usa</SectionLabel>
-            <h2 className="lp-display text-3xl md:text-[2.75rem] leading-[1.1] mt-4">
-              Perfis que pararam de sumir do feed
-            </h2>
-          </Reveal>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {DEPOIMENTOS.map((t, i) => (
-              <Reveal key={t.nome} delay={i * 0.12}>
-                <div className="lp-card h-full rounded-2xl border border-hairline bg-surface p-7">
-                  <div className="flex gap-0.5 mb-4">
-                    {Array.from({ length: 5 }).map((_, s) => (
-                      <Star key={s} className="w-4 h-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-[15px] text-foreground leading-relaxed mb-6">&ldquo;{t.txt}&rdquo;</p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-surface-2 border border-border-accent flex items-center justify-center font-mono text-[11px] tracking-wider text-primary">
-                      {t.ini}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium">{t.nome}</div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-                        {t.area}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Planos ────────────────────────────────────────────── */}
-      <section id="planos" className="px-6 py-20 md:py-24 border-t border-hairline">
-        <div className="max-w-6xl mx-auto">
+      <section
+        id="planos"
+        className="isolate relative overflow-hidden px-6 py-20 md:py-24 border-t border-hairline"
+      >
+        <PlanosBackdrop />
+        <div className="relative max-w-6xl mx-auto">
           <Reveal className="text-center mb-16">
             <SectionLabel>Planos</SectionLabel>
             <h2 className="lp-display text-3xl md:text-[3rem] leading-[1.08] mt-4 mb-3">
@@ -587,15 +499,69 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Depoimentos ───────────────────────────────────────── */}
+      <section className="px-6 py-20 md:py-24 border-t border-hairline">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="text-center mb-14">
+            <SectionLabel>Quem usa</SectionLabel>
+            <h2 className="lp-display text-3xl md:text-[2.75rem] leading-[1.1] mt-4">
+              Perfis que pararam de sumir do feed
+            </h2>
+          </Reveal>
+
+          {/* Vídeo em destaque + o que ele prova */}
+          <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-12 items-center mb-16">
+            <Reveal from="left">
+              <VideoProva
+                src={VIDEO_PROVA.src}
+                poster={VIDEO_PROVA.poster}
+                legenda="Da conta em branco ao carrossel exportado — sem corte"
+              />
+            </Reveal>
+
+            <Reveal from="right" delay={0.15}>
+              <SectionLabel>Em vídeo</SectionLabel>
+              <h3 className="lp-display text-2xl md:text-[2rem] leading-[1.12] mt-4 mb-4">
+                Três minutos gravados,{" "}
+                <span className="lp-text-gradient">sem edição no meio.</span>
+              </h3>
+              <p className="text-text-secondary leading-relaxed mb-7">
+                Briefing, roteiro, imagem e exportação na mesma tela. É o mesmo
+                fluxo que você vai usar na primeira sessão — não um demo montado.
+              </p>
+              <div className="grid grid-cols-3 gap-px border border-hairline rounded-xl overflow-hidden bg-hairline">
+                {[
+                  { n: "3 min", l: "Do tema ao PNG" },
+                  { n: "8 slides", l: "Roteiro completo" },
+                  { n: "0", l: "Ida ao Canva" },
+                ].map((s) => (
+                  <div key={s.l} className="bg-surface p-4">
+                    <div className="font-mono text-lg font-medium tabular-nums">{s.n}</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted mt-1">
+                      {s.l}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal delay={0.1}>
+            <DepoimentosCarousel />
+          </Reveal>
+        </div>
+      </section>
+
       {/* ── FAQ ───────────────────────────────────────────────── */}
       <section id="faq" className="px-6 py-20 md:py-24 border-t border-hairline">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[0.82fr_1.18fr] gap-6">
           {/* Card destacado */}
           <Reveal from="left">
-            <div className="lp-noise relative h-full overflow-hidden rounded-3xl border border-hairline bg-surface p-8 md:p-9">
-              <div className="lp-halo absolute inset-0 opacity-70 pointer-events-none" />
+            <div className="lp-gradient-live relative h-full overflow-hidden rounded-3xl p-8 text-white shadow-[0_18px_50px_-24px_rgba(11,27,51,0.8)] md:p-9">
+              {/* véu escuro: mantém o texto legível por cima dos blobs em movimento */}
+              <div className="absolute inset-0 bg-[#06122A]/25 pointer-events-none" />
               <div className="relative flex h-full flex-col">
-                <span className="self-start rounded-full bg-primary px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white">
+                <span className="self-start rounded-full bg-white/15 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-white backdrop-blur-sm">
                   Teste grátis
                 </span>
 
@@ -605,19 +571,19 @@ export default function HomePage() {
                   que não está aqui?
                 </h2>
 
-                <p className="mt-4 text-[15px] leading-relaxed text-text-secondary">
+                <p className="mt-4 text-[15px] leading-relaxed text-white/85">
                   A resposta mais rápida é ver funcionando. Cria a conta, digita um tema e
                   julga o resultado com a sua marca — não com a demo de outra pessoa.
                 </p>
 
-                <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-hairline bg-hairline">
+                <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/20 bg-white/20">
                   {[
                     { n: "1 carrossel", l: "Grátis, sem cartão" },
                     { n: "1 clique", l: "Pra cancelar" },
                   ].map((s) => (
-                    <div key={s.l} className="bg-surface-2 p-4">
+                    <div key={s.l} className="bg-[#06122A]/35 p-4 backdrop-blur-sm">
                       <div className="lp-display text-xl tabular-nums">{s.n}</div>
-                      <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+                      <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/75">
                         {s.l}
                       </div>
                     </div>
@@ -626,7 +592,7 @@ export default function HomePage() {
 
                 <Button
                   asChild
-                  className="mt-8 h-11 w-fit rounded-full bg-foreground px-6 text-background hover:bg-foreground/90"
+                  className="mt-8 h-11 w-fit rounded-full bg-[#0B0B0F] px-6 text-white shadow-[0_10px_24px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 hover:bg-[#0B0B0F]/90"
                 >
                   <Link href="/onboarding">
                     Criar conta grátis
@@ -762,9 +728,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      <MascoteCta />
+
       <SiteFooter />
 
-      <StickyCta />
     </main>
   )
 }

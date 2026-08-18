@@ -747,6 +747,224 @@
     background-image: linear-gradient(90deg, transparent, rgba(22, 104, 227, 0.55) 50%, transparent);
   }
 
+  /* ── DriftWall (mural 3D atras dos planos) ───────────────────
+     CSS do React Bits com dois cortes: `pointer-events: none` (o mural e'
+     fundo — o clique tem que chegar nos cards de plano) e as regras de
+     `.is-active` / `:focus-visible`, que davam o realce no hover. Sem elas
+     todo tile fica no mesmo brilho, do jeito que o Marcos pediu. */
+  .drift-wall {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    perspective: var(--dw-perspective, 1200px);
+    perspective-origin: 50% 50%;
+    --dw-tile-w: 200px;
+    --dw-tile-h: 132px;
+    --dw-gap: 18px;
+    --dw-radius: 14px;
+    --dw-lift: 64px;
+    --dw-dim: 0.55;
+    --dw-gray: 0;
+    --dw-overlay: #060010;
+    --dw-edge: 40%;
+    -webkit-mask-image:
+      radial-gradient(ellipse 78% 82% at 50% 46%, #000 var(--dw-edge), transparent 100%),
+      linear-gradient(to top, #000 var(--dw-edge), transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(ellipse 78% 82% at 50% 46%, #000 var(--dw-edge), transparent 100%),
+      linear-gradient(to top, #000 var(--dw-edge), transparent 100%);
+    mask-composite: intersect;
+  }
+  .drift-wall__plane {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: row;
+    transform-style: preserve-3d;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .drift-wall__col {
+    position: relative;
+    width: calc(var(--dw-tile-w) + var(--dw-gap));
+    transform-style: preserve-3d;
+  }
+  .drift-wall__track {
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    transform-style: preserve-3d;
+  }
+  .drift-wall__tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: calc(var(--dw-tile-h) + var(--dw-gap));
+    flex: 0 0 auto;
+    outline: none;
+    transform-style: preserve-3d;
+  }
+  .drift-wall__inner {
+    position: absolute;
+    inset: calc(var(--dw-gap) / 2);
+    display: block;
+    border-radius: var(--dw-radius);
+    overflow: hidden;
+    background: #0b0b12;
+    opacity: var(--dw-dim);
+    transform: translateZ(0);
+    pointer-events: none;
+  }
+  .drift-wall__tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(var(--dw-gray)) saturate(0.92);
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .drift-wall__overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--dw-overlay);
+    opacity: 0.42;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .drift-wall__plane,
+    .drift-wall__track {
+      will-change: auto;
+    }
+  }
+
+  /* Container do LiquidEther (fundo do hero) */
+  .liquid-ether-container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  /* ── Gradiente animado do card de CTA (FAQ) ─────────────────
+     @property faz o browser interpolar as custom properties como número —
+     sem isso o gradiente daria salto em vez de deslizar. Cinco blobs com
+     durações primas entre si pra nunca repetir o mesmo desenho. */
+  @property --lp-x1 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
+  @property --lp-y1 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
+  @property --lp-x2 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
+  @property --lp-y2 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
+  @property --lp-x3 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
+  @property --lp-y3 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
+  @property --lp-x4 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
+  @property --lp-y4 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
+  @property --lp-x5 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+  @property --lp-y5 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
+  @property --lp-s1 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
+  @property --lp-s2 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
+  @property --lp-s3 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
+  @property --lp-s4 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
+  @property --lp-s5 { syntax: "<percentage>"; inherits: false; initial-value: 65%; }
+
+  .lp-gradient-live {
+    background-color: #1668E3;
+    background-image:
+      radial-gradient(circle at var(--lp-x1) var(--lp-y1), #9CC4FA 0px, transparent var(--lp-s1)),
+      radial-gradient(circle at var(--lp-x2) var(--lp-y2), #0A2E8F 0px, transparent var(--lp-s2)),
+      radial-gradient(circle at var(--lp-x3) var(--lp-y3), #4CC9F0 0px, transparent var(--lp-s3)),
+      radial-gradient(circle at var(--lp-x4) var(--lp-y4), #2F80ED 0px, transparent var(--lp-s4)),
+      radial-gradient(circle at var(--lp-x5) var(--lp-y5), #7A5BFF 0px, transparent var(--lp-s5));
+    animation:
+      lp-blob1 14s ease-in-out infinite,
+      lp-blob2 17s ease-in-out infinite,
+      lp-blob3 15.5s ease-in-out infinite,
+      lp-blob4 18.5s ease-in-out infinite,
+      lp-blob5 12s ease-in-out infinite,
+      lp-size1 9.5s ease-in-out infinite,
+      lp-size2 11.2s ease-in-out infinite,
+      lp-size3 10.8s ease-in-out infinite,
+      lp-size4 12.6s ease-in-out infinite,
+      lp-size5 8s ease-in-out infinite;
+  }
+
+  @keyframes lp-blob1 {
+    0%, 100% { --lp-x1: 5%;  --lp-y1: 5%; }
+    25%      { --lp-x1: 45%; --lp-y1: 20%; }
+    50%      { --lp-x1: 30%; --lp-y1: 55%; }
+    75%      { --lp-x1: 0%;  --lp-y1: 30%; }
+  }
+  @keyframes lp-blob2 {
+    0%, 100% { --lp-x2: 95%; --lp-y2: 5%; }
+    33%      { --lp-x2: 55%; --lp-y2: 35%; }
+    66%      { --lp-x2: 80%; --lp-y2: 65%; }
+  }
+  @keyframes lp-blob3 {
+    0%, 100% { --lp-x3: 5%;  --lp-y3: 95%; }
+    40%      { --lp-x3: 45%; --lp-y3: 65%; }
+    70%      { --lp-x3: 25%; --lp-y3: 100%; }
+  }
+  @keyframes lp-blob4 {
+    0%, 100% { --lp-x4: 95%;  --lp-y4: 95%; }
+    30%      { --lp-x4: 60%;  --lp-y4: 70%; }
+    60%      { --lp-x4: 100%; --lp-y4: 50%; }
+  }
+  @keyframes lp-blob5 {
+    0%, 100% { --lp-x5: 50%; --lp-y5: 50%; }
+    25%      { --lp-x5: 70%; --lp-y5: 30%; }
+    50%      { --lp-x5: 40%; --lp-y5: 70%; }
+    75%      { --lp-x5: 30%; --lp-y5: 40%; }
+  }
+  @keyframes lp-size1 { 0%, 100% { --lp-s1: 45%; } 50% { --lp-s1: 80%; } }
+  @keyframes lp-size2 { 0%, 100% { --lp-s2: 45%; } 50% { --lp-s2: 85%; } }
+  @keyframes lp-size3 { 0%, 100% { --lp-s3: 45%; } 50% { --lp-s3: 78%; } }
+  @keyframes lp-size4 { 0%, 100% { --lp-s4: 45%; } 50% { --lp-s4: 82%; } }
+  @keyframes lp-size5 { 0%, 100% { --lp-s5: 50%; } 50% { --lp-s5: 85%; } }
+
+  /* Slider da calculadora — trilho preenchido até --lp-pct */
+  .lp-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--brand-600, #1668E3) 0%,
+      var(--brand-600, #1668E3) var(--lp-pct, 50%),
+      var(--border-subtle, rgba(120,120,140,0.25)) var(--lp-pct, 50%),
+      var(--border-subtle, rgba(120,120,140,0.25)) 100%
+    );
+    outline: none;
+    cursor: pointer;
+  }
+  .lp-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #fff;
+    border: 2px solid var(--brand-600, #1668E3);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 22%);
+    transition: transform 0.15s ease;
+  }
+  .lp-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+  .lp-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #fff;
+    border: 2px solid var(--brand-600, #1668E3);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 22%);
+  }
+  .lp-range:focus-visible {
+    box-shadow: 0 0 0 3px rgb(22 104 227 / 35%);
+  }
+
   /* Borda que acende no hover do card */
   .lp-card {
     transition: border-color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
@@ -764,7 +982,8 @@
     .lp-float,
     .lp-float-slow,
     .lp-ring-pulse,
-    .lp-sweep::after {
+    .lp-sweep::after,
+    .lp-gradient-live {
       animation: none !important;
     }
     .lp-card:hover { transform: none; }

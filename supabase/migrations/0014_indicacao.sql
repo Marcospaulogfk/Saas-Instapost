@@ -388,8 +388,16 @@ as $$
 declare
   v_code text;
 begin
+  -- 45 = PLAN_TOKENS.trial em lib/tokens.ts. A 0010 concedia 40, escrito
+  -- quando esse era o valor no codigo; o codigo subiu pra 45 e o trigger
+  -- ficou pra tras. Nao era so divergencia cosmetica: um carrossel completo
+  -- de 7 slides custa 41 tokens (4 texto + 25 capa + 6x2 miolo), entao com 40
+  -- o trial nao fechava UMA peca inteira -- justamente o contrario do que o
+  -- trial existe pra fazer, que e mostrar o produto no melhor estado.
+  -- Quem ja se cadastrou com 40 continua com 40: mexer em saldo existente e
+  -- decisao de negocio, nao de migration.
   insert into public.users (id, email, credits, plan_credits_monthly, subscription_status)
-  values (new.id, new.email, 40, 40, 'trial')
+  values (new.id, new.email, 45, 45, 'trial')
   on conflict (id) do nothing;
 
   begin
