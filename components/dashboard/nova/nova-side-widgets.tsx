@@ -4,7 +4,7 @@ import Link from "next/link"
 import { PenLine, Layers, LayoutTemplate, CalendarPlus, ChevronRight, Crown, Check, Gift } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
-import { POST_UNICO_HABILITADO } from "@/lib/features"
+import { INDICACAO_HABILITADA, POST_UNICO_HABILITADO } from "@/lib/features"
 
 /* ---------------- Quick Actions ---------------- */
 
@@ -225,7 +225,7 @@ export function NovaUpgradeCard({ isPro }: { isPro: boolean }) {
           </Link>
         </div>
       </div>
-      <NovaIndicacaoCard />
+      {INDICACAO_HABILITADA && <NovaIndicacaoCard />}
     </div>
   )
 }

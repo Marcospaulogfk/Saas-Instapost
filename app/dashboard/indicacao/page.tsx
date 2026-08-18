@@ -18,6 +18,8 @@ import {
 } from "@/lib/indicacao/config"
 import { formatRelativeDate } from "@/lib/format-date"
 import { CartaoLink, FormConvite, Playbook } from "./indicacao-client"
+import { INDICACAO_HABILITADA } from "@/lib/features"
+import { notFound } from "next/navigation"
 
 export const metadata = { title: "Indique e ganhe" }
 
@@ -74,6 +76,11 @@ export default async function IndicacaoPage({
   // `?convite=ok|erro` vem do atalho /dashboard/indicacao/convite/[codigo].
   searchParams: Promise<{ convite?: string }>
 }) {
+  // Guard de rota: com a flag desligada as tabelas de indicação não existem
+  // (migration 0014 não aplicada) e qualquer query aqui estoura. 404 é a
+  // resposta honesta — a página realmente não está no ar.
+  if (!INDICACAO_HABILITADA) notFound()
+
   const [painel, { profile }, origem, sp] = await Promise.all([
     getPainelIndicacao(),
     getProfile(),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { aplicarCodigoConvite } from "@/app/actions/indicacao"
+import { INDICACAO_HABILITADA } from "@/lib/features"
 
 // =====================================================================
 // GET /dashboard/indicacao/convite/[codigo]
@@ -20,6 +21,11 @@ export async function GET(
   _req: Request,
   ctx: { params: Promise<{ codigo: string }> },
 ) {
+  // Mesma razão do guard da página: sem a migration 0014 não há tabela.
+  if (!INDICACAO_HABILITADA) {
+    return NextResponse.redirect(new URL("/dashboard", _req.url))
+  }
+
   const { codigo } = await ctx.params
   const r = await aplicarCodigoConvite(decodeURIComponent(codigo ?? ""))
 
