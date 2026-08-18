@@ -40,6 +40,7 @@ import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
 import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
 import { getTokenBalance } from "@/app/actions/balance"
+import { POST_UNICO_HABILITADO, podeGerarFormato } from "@/lib/features"
 import BorderGlow from "@/components/backgrounds/border-glow"
 import {
   CAROUSEL_STYLES,
@@ -287,7 +288,9 @@ function CriarWizard() {
   // este fluxo e divergiam dele — a do carrossel, inclusive, gerava sem
   // escolha de imagem, sem preview de custo e sem debitar token.
   const tipoParam = searchParams.get("tipo")
-  const preSelecionado = tipoParam === "post-unico" || tipoParam === "carrossel"
+  const preSelecionado =
+    (tipoParam === "post-unico" && POST_UNICO_HABILITADO) ||
+    tipoParam === "carrossel"
   // O step inicial sai da URL aqui, e não do efeito de sync abaixo: aquele
   // efeito só reage a mudança EXTERNA da URL e retorna cedo quando o step da
   // URL bate com o estado — na entrada direta em ?step=2 ele nunca chegava a
@@ -1083,6 +1086,10 @@ function Step1({
   const kind = kindFromFormato(formato)
   const slides = formato?.slides ?? 1
   const chosen = formato !== null
+  // Formatos de 1 slide saem da grade quando o post único está desligado
+  // (ver lib/features.ts) — não basta bloquear no submit: opção visível que
+  // não funciona é pior que opção ausente.
+  const opcoesVisiveis = KIND_OPTIONS.filter((k) => podeGerarFormato(k.multi))
   const activeOption = KIND_OPTIONS.find((k) => k.id === kind) ?? null
   // Quantidade só faz sentido em carrossel. Ao trocar de único pra carrossel,
   // abre em 7 (o padrão de carrossel do produto) em vez de herdar o 1.
@@ -1100,7 +1107,7 @@ function Step1({
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 max-w-4xl mx-auto">
-        {KIND_OPTIONS.map((k) => {
+        {opcoesVisiveis.map((k) => {
           const selected = chosen && kind === k.id
           return (
             <BorderGlow

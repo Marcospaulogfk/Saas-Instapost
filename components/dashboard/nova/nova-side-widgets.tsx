@@ -4,11 +4,17 @@ import Link from "next/link"
 import { PenLine, Layers, LayoutTemplate, CalendarPlus, ChevronRight, Crown, Check, Gift } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
+import { POST_UNICO_HABILITADO } from "@/lib/features"
 
 /* ---------------- Quick Actions ---------------- */
 
-const ACTIONS: { label: string; sub: string; href: string; icon: LucideIcon; tile: string }[] = [
-  { label: "Criar post único", sub: "Imagem + legenda com IA", href: "/dashboard/criar?tipo=post-unico&step=2", icon: PenLine, tile: "nv-tile-purple" },
+type QuickAction = { label: string; sub: string; href: string; icon: LucideIcon; tile: string }
+
+const ACTIONS: QuickAction[] = [
+  // Post único fica fora enquanto a flag estiver desligada (lib/features.ts).
+  ...(POST_UNICO_HABILITADO
+    ? ([{ label: "Criar post único", sub: "Imagem + legenda com IA", href: "/dashboard/criar?tipo=post-unico&step=2", icon: PenLine, tile: "nv-tile-purple" }] as QuickAction[])
+    : []),
   // Aponta pro wizard, não pra /dashboard/criar/editorial: aquela rota tinha um
   // formulário de criação próprio que pedia a marca digitada à mão, não oferecia
   // escolha de imagens de IA, não mostrava custo nem saldo — e não debitava

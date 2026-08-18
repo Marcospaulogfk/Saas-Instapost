@@ -1,10 +1,19 @@
 import Link from "next/link"
 import { Sparkles, Image as ImageIcon, LayoutTemplate, ArrowRight } from "lucide-react"
+import { POST_UNICO_HABILITADO } from "@/lib/features"
 
 /**
  * Lançador de criação — cards separados (sem divisórias tipo caderno).
  * Cada formato é um card próprio; hover revela a borda-acento.
  */
+/** Post único volta à lista quando a flag reabrir (lib/features.ts). */
+const POST_UNICO_OPTION = {
+  href: "/dashboard/criar?tipo=post-unico&step=2",
+  icon: ImageIcon,
+  name: "Post único",
+  desc: "Uma arte pronta em segundos",
+}
+
 const OPTIONS = [
   {
     href: "/dashboard/criar/ia",
@@ -13,17 +22,12 @@ const OPTIONS = [
     desc: "Roteiro, imagens e design gerados pra você",
   },
   {
-    href: "/dashboard/criar?tipo=post-unico&step=2",
-    icon: ImageIcon,
-    name: "Post único",
-    desc: "Uma arte pronta em segundos",
-  },
-  {
     href: "/dashboard/criar?tipo=carrossel&step=2",
     icon: LayoutTemplate,
     name: "Carrossel editorial",
     desc: "Templates curados — você edita cada slide",
   },
+  ...(POST_UNICO_HABILITADO ? [POST_UNICO_OPTION] : []),
 ]
 
 export function CreateLauncher() {
