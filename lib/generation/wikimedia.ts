@@ -272,7 +272,7 @@ export async function searchWikimediaPerson(
   if (!wd || !wd.isHuman || !wd.photo) return null
 
   const t = await commonsThumb(wd.photo)
-  if (!t) return null
+  if (!t || !isUsablePhoto(t.width, t.height)) return null
   return {
     url: t.url,
     title: wd.label,
@@ -281,4 +281,15 @@ export async function searchWikimediaPerson(
     height: t.height,
     ms: performance.now() - start,
   }
+}
+
+/**
+ * Filtro de sanidade pra foto que vai virar FUNDO de post: resolução mínima e
+ * proporção de fotografia (nem tira panorâmica, nem faixa fina de diagrama).
+ * Brasão/bandeira/mapa costuma reprovar aqui pela proporção ou pelo tamanho.
+ */
+function isUsablePhoto(width: number, height: number): boolean {
+  if (width < 500 || height < 500) return false
+  const ratio = width / height
+  return ratio >= 0.45 && ratio <= 2.2
 }

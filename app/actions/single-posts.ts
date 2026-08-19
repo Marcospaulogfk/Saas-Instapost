@@ -47,6 +47,10 @@ export async function createSinglePost(
 
   if (error) return { ok: false, error: error.message }
 
+  // /dashboard/projetos e a "Biblioteca" do menu — ficava de fora da
+  // revalidacao, entao o post recem-criado so aparecia la depois de um reload
+  // forcado.
+  revalidatePath("/dashboard/projetos")
   revalidatePath("/dashboard/posts-unicos")
   revalidatePath("/dashboard")
   return { ok: true, postId: data.id }
@@ -88,6 +92,7 @@ export async function updateSinglePost(
     .eq("id", postId)
   if (error) return { ok: false, error: error.message }
 
+  revalidatePath("/dashboard/projetos")
   revalidatePath("/dashboard/posts-unicos")
   revalidatePath(`/dashboard/posts-unicos/${postId}`)
   return { ok: true }
@@ -107,6 +112,7 @@ export async function deleteSinglePost(
   const { error } = await supabase.from("single_posts").delete().eq("id", postId)
   if (error) return { ok: false, error: error.message }
 
+  revalidatePath("/dashboard/projetos")
   revalidatePath("/dashboard/posts-unicos")
   revalidatePath("/dashboard")
   return { ok: true }

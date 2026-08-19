@@ -1,14 +1,14 @@
 // =====================================================================
 // lib/generation/image.ts
-// Dispatcher de geração de imagem por plano.
+// Dispatcher de geração de imagem pelo PAPEL da imagem na peça.
 //
-// Regra de produto (ESTRATEGIA-MONETIZACAO.md §5):
-//   - Pro / Studio  → Nano Banana Pro (modelo premium)
-//   - trial / starter → modelo NORMAL atual (Flux Schnell) — inalterado
+// Regra atual: capa (cover) → Nano Banana 2; miolo (slide) → Flux Schnell.
+// Vale pra TODOS os planos — a regra antiga por plano (Pro/Studio → premium)
+// morreu; só `generateBrandImage` (deprecada) ainda a usa.
 //
-// ADITIVO e NÃO-QUEBRANTE: se a geração Nano Banana Pro falhar (erro ou
-// timeout), CAI PRA FLUX (generateImage). A geração NUNCA quebra por causa
-// do modelo premium — sempre há fallback.
+// NÃO-QUEBRANTE: se o Nano Banana falhar (após os retries internos dele),
+// CAI PRA FLUX (generateImage) e cobra como 'normal'. A geração nunca quebra
+// por causa do modelo premium.
 // =====================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js"

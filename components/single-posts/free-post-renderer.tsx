@@ -472,6 +472,31 @@ function renderStack(b: FreeStackBlock, pathPrefix?: string) {
   )
 }
 
+/**
+ * Converte a cor do photo_overlay ("black" | "white" | "#hex") + alpha num
+ * rgba() válido. Nomes CSS não aceitam sufixo de alpha-hex, e hex de 3 dígitos
+ * também quebraria — normaliza tudo pra canal numérico.
+ */
+function overlayRgba(color: string, alpha: number): string {
+  const a = Math.min(1, Math.max(0, alpha))
+  const named: Record<string, [number, number, number]> = {
+    black: [0, 0, 0],
+    white: [255, 255, 255],
+  }
+  let rgb = named[color.toLowerCase()]
+  if (!rgb && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(color)) {
+    let hex = color.slice(1)
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("")
+    rgb = [
+      parseInt(hex.slice(0, 2), 16),
+      parseInt(hex.slice(2, 4), 16),
+      parseInt(hex.slice(4, 6), 16),
+    ]
+  }
+  if (!rgb) rgb = [0, 0, 0]
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${a})`
+}
+
 function renderCard(b: FreeCardBlock) {
   // shadow pode vir como boolean true ou string CSS completa
   const shadowValue =
@@ -492,11 +517,29 @@ function renderCard(b: FreeCardBlock) {
         zIndex: b.z ?? 3,
       }}
     >
-      {b.children.map((child, i) => (
-        <div key={i} style={{ position: "relative" }}>
-          {renderBlock(child)}
-        </div>
-      ))}
+      {b.children.map((child, i) => {
+        // Filho COM âncora fica absoluto direto no retângulo do card (o
+        // schema promete "relativo ao card") — o card já é positioned, então
+        // basta NÃO envolver num wrapper: o wrapper relative de altura
+        // colapsada era o que quebrava a âncora. Filho sem âncora segue no
+        // fluxo normal, embrulhado pra ganhar key.
+        const anchored =
+          child.position &&
+          (child.position.top !== undefined ||
+            child.position.bottom !== undefined ||
+            child.position.left !== undefined ||
+            child.position.right !== undefined ||
+            child.position.center_x ||
+            child.position.center_y)
+        if (anchored) {
+          return <React.Fragment key={i}>{renderBlock(child)}</React.Fragment>
+        }
+        return (
+          <div key={i} style={{ position: "relative" }}>
+            {renderBlock(child)}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -666,18 +709,19 @@ export function FreePostRenderer({
         <div
           className="absolute inset-0"
           style={{
+            // overlayRgba: "black"/"white"/#hex viram rgba() de verdade.
+            // Concatenar alpha-hex na string crua gerava "blackcc" — CSS
+            // inválido, o browser descartava a declaração e o overlay sumia
+            // (matando o contraste exatamente nas direções full-bleed).
             background: bg.photo_overlay.direction
-              ? `linear-gradient(${bg.photo_overlay.direction}, ${bg.photo_overlay.color}${Math.round(
-                  (bg.photo_overlay.start ?? 0) * 255,
-                )
-                  .toString(16)
-                  .padStart(2, "0")} 0%, ${bg.photo_overlay.color}${Math.round(
-                  bg.photo_overlay.opacity * 255,
-                )
-                  .toString(16)
-                  .padStart(2, "0")} 100%)`
-              : `${bg.photo_overlay.color}`,
-            opacity: bg.photo_overlay.direction ? 1 : bg.photo_overlay.opacity,
+              ? `linear-gradient(${bg.photo_overlay.direction}, ${overlayRgba(
+                  bg.photo_overlay.color,
+                  bg.photo_overlay.start ?? 0.4,
+                )} 0%, ${overlayRgba(
+                  bg.photo_overlay.color,
+                  bg.photo_overlay.opacity,
+                )} 100%)`
+              : overlayRgba(bg.photo_overlay.color, bg.photo_overlay.opacity),
           }}
         />
       )}

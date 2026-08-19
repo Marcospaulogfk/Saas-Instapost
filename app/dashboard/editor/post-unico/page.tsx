@@ -65,6 +65,7 @@ export default async function EditorPostUnicoPage({
       _font_preset?: string
       _caption?: string
       _format?: string
+      _bitmap_texts?: Record<string, unknown>
     } | null
     if (saved && content?._free_spec) {
       initialPost = {
@@ -81,6 +82,7 @@ export default async function EditorPostUnicoPage({
         // reabrir em 4:5 um post adaptado pra stories jogaria as camadas fora
         // do canvas.
         format: toPostFormat(content._format),
+        bitmapTexts: content._bitmap_texts ?? null,
       }
     }
   }

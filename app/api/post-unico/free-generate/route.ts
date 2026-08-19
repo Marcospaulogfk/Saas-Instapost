@@ -105,6 +105,8 @@ export async function POST(req: Request) {
         skeleton_id: result.skeleton_id,
         caption: result.caption,
         photo_url: result.photo_url,
+        // Textos que estão na arte — alimenta a edição cirúrgica (modo bitmap).
+        content: result.content,
         metrics: result.metrics,
       })
     } catch (err) {
@@ -168,6 +170,7 @@ export async function POST(req: Request) {
       skeleton_id: result.skeleton_id,
       caption: result.caption,
       photo_url: result.photo_url,
+      content: result.content,
       metrics: result.metrics,
     })
   } catch (err) {

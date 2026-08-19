@@ -21,8 +21,18 @@
  * O que NÃO desliga, de propósito: abrir, editar, exportar e salvar posts
  * únicos que já existem. Quem gerou um post antes do desligamento não pode
  * perder acesso ao que é dele — a biblioteca e o editor seguem de pé.
+ *
+ * LIGADO EM DESENVOLVIMENTO: em `next dev` (localhost) a feature aparece
+ * inteira, senão não dá pra calibrar o pipeline — é justamente ali que ela
+ * precisa ser exercitada. Em build de produção continua desligada.
+ * `NEXT_PUBLIC_POST_UNICO=1` força ligar (e `=0` força desligar) em qualquer
+ * ambiente. NODE_ENV e NEXT_PUBLIC_* são inlinados pelo Next no bundle do
+ * cliente, então a flag vale igual no servidor e no browser.
  */
-export const POST_UNICO_HABILITADO = false
+export const POST_UNICO_HABILITADO =
+  process.env.NEXT_PUBLIC_POST_UNICO === "1" ||
+  (process.env.NEXT_PUBLIC_POST_UNICO !== "0" &&
+    process.env.NODE_ENV !== "production")
 
 /** Formatos de 1 slide dependem do pipeline de post único. */
 export function podeGerarFormato(multiSlide: boolean): boolean {
@@ -48,3 +58,24 @@ export const INDICACAO_HABILITADA = false
 
 /** Fontes próprias de inspiração. Depende de 0016_inspiration_sources.sql. */
 export const FONTES_INSPIRACAO_HABILITADAS = false
+
+/**
+ * MODO BITMAP do post único (teste 19/08): a arte final É a imagem completa
+ * gerada pelo nano-banana-2 (mesmo motor do BestContent) — sem clean plate e
+ * sem transcrição HTML. A rodada de 3 posts da Rota B2 mostrou que re-diagramar
+ * em HTML o que o modelo de imagem compôs quebra o layout a cada geração
+ * (fontes medem diferente); o bitmap cru é o que tem qualidade de venda hoje.
+ * A edição vira operação de imagem (nano-banana /edit) por cima, e camadas
+ * HTML continuam disponíveis no editor pra quem quiser sobrepor.
+ */
+export const POST_UNICO_BITMAP = true
+
+/**
+ * HÍBRIDO (camadas medidas por visão sobre a clean plate): DESLIGADO.
+ * Testado em 19/08: a posição sai certa, mas re-renderizar com as nossas
+ * fontes perde a tipografia integrada do bitmap (luz, kerning, efeitos) — a
+ * peça cai de qualidade na comparação direta com o bitmap puro. Fica como
+ * experimento; a edição do produto é a cirúrgica (edit-bitmap) + camadas
+ * HTML adicionais que o usuário mesmo põe por cima.
+ */
+export const POST_UNICO_HIBRIDO = false

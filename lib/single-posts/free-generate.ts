@@ -1,6 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { generateBrandImageForRole } from "@/lib/generation/image"
-import { searchWikimedia } from "@/lib/generation/wikimedia"
+import { editNanoBanana } from "@/lib/generation/nano-banana"
+import { POST_UNICO_BITMAP, POST_UNICO_HIBRIDO } from "@/lib/features"
+import {
+  buildSpecFromLayout,
+  extractTextLayout,
+} from "./extract-layout"
+import { searchWikimediaPerson } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import { composeSpec } from "./compose"
 import type { PostBrand } from "./types"
@@ -54,69 +60,52 @@ Não substitua por chavão genérico. "67% dos casos resolvem em 90 dias" é mel
 - **highlight_words**: 1-2 palavras que JÁ aparecem no body/title (mesma capitalização exata).
 - **bullets**: exatamente **3** itens \`{ label, text }\` que sustentam a tese do título. \`label\` = 2-4 palavras, o rótulo do ponto (ex: "Uma década de base", "Reconhecimento oficial"). \`text\` = 1 frase de até **10 palavras** com o fato concreto — frase mais longa não cabe na arte e é cortada. Cada item traz uma informação NOVA — não reformule o título nem repita o body. Preencha sempre que o briefing tiver matéria pra isso (trajetória, números, etapas, critérios, motivos); é o que dá densidade de revista à arte. Só deixe vazio quando o post for de uma frase só (manifesto, pergunta provocativa, oferta seca).
 
-# PHOTO PROMPT (sempre forneça em INGLÊS)
+# PHOTO PROMPT — o DESIGN COMPLETO do post (sempre em INGLÊS)
 
-Composição: subject + lighting + mood + style + technical. Seja específico.
+O \`photo_prompt\` descreve o POST INTEIRO como um designer sênior o desenharia
+— 1080×1350 (4:5), com TIPOGRAFIA INCLUÍDA. Ele vira uma imagem de REFERÊNCIA
+gerada por um modelo de imagem de última geração; depois o sistema remove o
+texto da imagem e um diretor de arte transcreve o layout em camadas editáveis.
+Então: descreva um design finalizado, bonito, denso — não uma foto.
 
-## REGRA CRÍTICA — sem metáforas visuais
+## Anatomia do prompt (nesta ordem)
 
-Pra tópicos abstratos (negócio, tech, política, finanças, conceito), JAMAIS gere imagem metafórica. O Flux já te dá isso por default e fica ruim.
+1. Comece com: "Instagram post design, 1080x1350 vertical, in Brazilian Portuguese."
+2. **Conceito visual**: o assunto/cena dominante e onde ele vive no quadro
+   (ex: "dramatic night shot of a concrete house emerging on the right half",
+   "athletic woman mid-kick emerging from dark haze at bottom", "macro of
+   product on marble slab, top third"). Sem metáfora clichê (ships, puzzle,
+   lightbulb, rocket, scales); tema abstrato pede cena editorial-concreta.
+3. **A tipografia do design, com os TEXTOS REAIS dos slots** (title, kicker,
+   subtitle curto, os RÓTULOS dos bullets, cta) — em português, entre aspas,
+   com hierarquia: qual é gigante, qual é apoio, onde cada um senta.
+   Ex: headline "QUANTO MAIS GLOBAL, MAIS BRASILEIRA" bold condensed white,
+   upper left; kicker pill "WALLPAPER 2026"; three bullet rows with small
+   icons and labels "...", "...", "..."; CTA button "Ver o portfólio".
+   ⚠️ SÓ TEXTO GRANDE E MÉDIO: o modelo de imagem embaralha letra miúda.
+   NUNCA peça as frases descritivas dos bullets nem parágrafos pequenos na
+   arte — na imagem entram só headline, kicker, subtitle de 1 linha, os
+   rótulos curtos dos bullets (2-4 palavras) e o CTA. Feche esta parte do
+   prompt com, literal: "Only the quoted texts above may appear. No other
+   words, no small print, no fine text anywhere."
+4. **Paleta e clima**: 2-4 cores dominantes (pode ancorar na cor da marca),
+   iluminação nomeada, mood.
+5. **Acabamento**: "premium social media design, professional typography,
+   cohesive lighting, high production value".
 
-PROIBIDO esses cliché-metáforas:
-- "two ships drifting apart" pra distanciamento / separação / divórcio empresarial
-- "hands letting go of each other" pra rompimento / fim de parceria
-- "two paths diverging" pra escolha / decisão
-- "broken chain" pra ruptura
-- "puzzle pieces" pra colaboração
-- "lightbulb" pra ideia
-- "rocket launching" pra crescimento / startup
-- "sunrise / golden horizon" pra esperança / oportunidade
-- "domino effect" pra cadeia de eventos
-- "scales of justice" pra direito (a menos que MESMO seja foto de balança em escritório)
-- Qualquer ilustração simbólica, sketch, diagrama, ícone
+## Variedade — NÃO repita o mesmo arquétipo
 
-Se o tópico é abstrato, o photo deve ser editorial-concreto:
-- Tópico **tech/empresas** → sede corporativa, executivos em conferência, server room, mesa de reunião, prédio de vidro contra céu cinza
-- Tópico **finanças/economia** → bolsa de valores, mãos digitando em laptop com gráficos, prédio de banco
-- Tópico **política/poder** → corredor de prédio governamental, pódio de imprensa, sala de reunião formal
-- Tópico **direito** → sala de tribunal, biblioteca jurídica, advogado em escritório
-- Tópico **lifestyle/produto** → produto em ambiente real, pessoa interagindo com ele
-- Retrato **profissional** → pessoa no contexto da profissão (advogado em sala de audiência, dev em mesa com 2 monitores)
+Use o VARIATION SEED da mensagem pra variar de verdade entre gerações:
+- lado do assunto (esquerda/direita/topo/fundo/central),
+- fundo claro ou escuro,
+- headline serif elegante OU condensada impactante OU mista,
+- itens como linhas com ícone, chips, cards pequenos ou lista numerada,
+- com ou sem selo/carimbo, quote-card, número gigante.
+Um feed onde todo post tem o mesmo esqueleto denuncia IA — alterne.
 
-## Estrutura do prompt
+## Exemplo
 
-- Subject específico (idade aproximada, etnia, gênero quando relevante, AÇÃO CONCRETA — não posando)
-- Iluminação nomeada (Rembrandt, golden hour, hard noon, soft window light, studio softbox, fluorescent overhead, dim warm tungsten, cold blue monitor light)
-- Mood adjective (intense, contemplative, defiant, tender, urgent, melancholic, tense, focused)
-- Estilo (editorial photography, documentary, cinematic still, fine-art portrait, photojournalism)
-- Camera/lens detail (shot on 85mm shallow DoF, 35mm wide environmental, medium-format film grain)
-
-✓ Bom (tópico distanciamento OpenAI/Microsoft):
-"Wide shot of two glass corporate skyscrapers under heavy overcast sky in Seattle, no people, cold gray atmosphere, shot on 35mm wide, photojournalism style, editorial press photo. Negative: text, logos, signs, illustrations, metaphors, ships, hands."
-
-✓ Bom (advogada empreendedora):
-"Brazilian female lawyer mid-30s in dark navy blazer typing on laptop in dim home office at night, cold blue monitor light on her face, blurred bookshelf with law books behind, shot on 35mm, cinematic still, contemplative mood. Negative: text, watermarks, logos, posing."
-
-✗ Ruim:
-- "lawyer photo" (vago)
-- "two ships in ocean" (metáfora conceitual)
-- "beautiful woman smiling" (genérico, posando)
-
-PROIBIDO em todos os prompts: text, watermarks, logos, brand names, signs, billboards, illustrations, sketches, diagrams, posing forçado.
-
-## ⚠️ A FOTO NUNCA PODE CONTER LETRAS
-
-A arte é montada em CAMADAS: toda a tipografia é renderizada por cima, em HTML. Se o modelo desenhar letras dentro da foto, elas aparecem tortas, em inglês e brigando com o texto real — é o defeito mais visível do post.
-
-NUNCA use no prompt palavras que induzem tipografia, mesmo como estilo:
-"magazine cover", "editorial layout", "poster", "typography", "lettering", "headline", "title card", "book cover", "album cover", "signage", "storefront", "newspaper", "graffiti", "mural", "label", "packaging".
-
-Prefira o equivalente sem letras: em vez de "magazine cover style" → "editorial portrait, shallow depth of field"; em vez de "poster look" → "high-contrast studio lighting".
-
-Termine SEMPRE o photo_prompt com esta cláusula, literal:
-"No text, no letters, no words, no numbers, no signage, no watermark, no logo anywhere in the image."
-
-Se o assunto é um lugar com placas (loja, estádio, rua), descreva um ângulo que não pegue placa — detalhe, textura, interior, close.
+"Instagram post design, 1080x1350 vertical, in Brazilian Portuguese. Dramatic night photograph of a modern concrete house with warm interior light emerging from lush dark foliage, occupying the right half. Deep navy-black background fading clean on the left. Bold condensed white headline 'QUANTO MAIS GLOBAL, MAIS BRASILEIRA' upper left with the word 'GLOBAL' in electric blue; small blue pill label 'WALLPAPER 2026' above it; elegant thin italic serif line '30 escritórios do mundo. Um é de São Paulo.' below; three compact rows lower left with small circular blue icons and bold labels 'Uma década de base', '60 m² no mundo', 'Natureza no projeto'; small outlined button 'Ver o portfólio'. Palette: near-black navy, electric blue #1668E3, warm amber highlights, white. Premium social media design, professional typography, cohesive lighting, high production value."
 
 # CAPTION (legenda do post — OBRIGATÓRIA)
 
@@ -159,19 +148,11 @@ o olho, a legenda entrega o contexto e o argumento completos. Regras:
 
 Preencha "image_entity" com o NOME EXATO de algo REAL cuja FOTO de verdade ilustra o post melhor que uma arte de IA. O sistema busca a foto real (Wikipedia, grátis).
 
-⚠️ OBRIGATÓRIO quando o post é sobre uma PESSOA, FILME/SÉRIE ou PRODUTO real nomeado: preencher image_entity NÃO é opcional. Foto real do Tom Cruise num post sobre o Tom Cruise é SEMPRE melhor que arte de IA genérica. Gerar IA quando o assunto tem rosto/foto real conhecida é o pior erro de imagem possível.
+⚠️ SÓ para PESSOA pública real, citada pelo nome (ator, atleta, músico, CEO, artista — ex: "Tom Cruise", "Anitta", "Marília Pellegrini"). O sistema valida que a entidade é humana e tem foto; qualquer outra coisa é descartada. Post sobre filme/série → a PESSOA protagonista.
 
-✅ Preencha quando o post é sobre:
-- PESSOA pública/famosa citada pelo nome (ator, atleta, músico, CEO — ex: "Tom Cruise", "Elon Musk", "Cristiano Ronaldo", "Anitta") → foto real da pessoa
-- FILME/SÉRIE/JOGO/ÁLBUM nomeado → use a PESSOA protagonista (ex: post sobre o filme novo do Tom Cruise → "Tom Cruise")
-- LUGAR / cidade / país / ponto turístico real (ex: "São Paulo", "Cristo Redentor", "Times Square")
-- PRODUTO físico icônico (ex: "iPhone", "Tesla Model 3")
+❌ Deixe vazio pra: lugar, produto, empresa, negócio local, oferta, conceito — nesses casos a cena gerada é sempre melhor que imagem de enciclopédia.
 
-❌ Deixe vazio (não inclua o campo) quando:
-- o post é sobre NEGÓCIO LOCAL / oferta / serviço genérico (ex: "vagas de muay thai", "nova unidade") — isso NÃO tem foto na Wikipedia, use photo_prompt (IA);
-- é conceito abstrato, ou a entidade só teria um LOGO (empresa/marca/app — logo fica ruim).
-
-SEMPRE forneça photo_prompt também (é o fallback se a foto real não existir). Regra: entidade real nomeada com foto conhecida (pessoa/filme/produto) → SEMPRE image_entity; negócio local / oferta / conceito → vazio (IA).
+SEMPRE forneça photo_prompt também (é o fallback se a foto real não existir ou for reprovada).
 
 Preencha os slots required + os opcionais que adicionam valor — incluindo \`bullets\`, que é o material de densidade da arte e vale pra qualquer layout. Slots vazios não viram nada; não invente fato que o briefing não deu. Minimal na FRASE, denso no CONTEÚDO.`
 
@@ -194,29 +175,110 @@ interface SkeletonResponse {
  * carrossel, e é cobrada como tal (25 tokens). Se o Nano Banana cair pro
  * Flux, volta como 'normal' e o usuário paga 2 — o que recebeu de fato.
  */
+interface ResolvedPhoto {
+  /** Fundo que vai pro spec (clean plate na Rota B2; foto real; ou a própria geração). */
+  url: string | null
+  /** Referência COMPLETA (com tipografia) pra transcrição por visão — só na Rota B2. */
+  referenceUrl: string | null
+  costUsd: number
+  quality: "normal" | "pro" | null
+  /** true = a url É a arte completa (modo bitmap): sem compose, sem skeleton. */
+  bitmap?: boolean
+}
+
+/** Prompt fixo da clean plate — remove a tipografia preservando o design. */
+const CLEAN_PLATE_PROMPT =
+  "Erase every single piece of text from this image — headlines, small body text, captions, bullet list text, labels inside buttons and pills, prices, numbers, usernames, watermarks. No letters or digits of any size may remain anywhere. Keep untouched: the photograph, background colors, panels, gradients, shapes, pill/button shapes (now empty) and small icons without letters. Where text was erased, seamlessly continue the surface behind it. Do not add anything new."
+
 async function resolvePhotoUrl(
   entity: string | null | undefined,
   photoPrompt: string | null | undefined,
-): Promise<{ url: string | null; costUsd: number; quality: "normal" | "pro" | null }> {
+): Promise<ResolvedPhoto> {
   const e = (entity ?? "").trim()
   if (e) {
     try {
-      const real = await searchWikimedia(e)
+      // SÓ pessoa real com foto validada (P31=Q5 + P18 + proporção de foto).
+      // A busca genérica devolvia o primeiro resultado full-text sem checar
+      // nada — num teste real, o fundo do post saiu o PÔSTER da novela "Terra
+      // e Paixão". Entidade que não é gente (obra, lugar, empresa) rende fundo
+      // melhor via cena gerada do que via imagem de enciclopédia.
+      const real = await searchWikimediaPerson(e)
       // Foto real (Wikimedia) não gera imagem por IA → não custa token.
-      if (real?.url) return { url: real.url, costUsd: 0, quality: null }
+      if (real?.url)
+        return { url: real.url, referenceUrl: null, costUsd: 0, quality: null }
     } catch {
       // segue pro fallback de IA
     }
   }
   if (photoPrompt) {
     try {
+      // ROTA B2: o prompt descreve o POST COMPLETO (com tipografia). A
+      // referência sai do modelo de imagem — que compõe layout melhor que
+      // qualquer estimativa — e a clean plate remove o texto pra tipografia
+      // HTML editável entrar por cima, na posição transcrita da referência.
       const img = await generateBrandImageForRole(photoPrompt, "cover")
-      return { url: img.url, costUsd: img.costUsd, quality: img.quality }
+      // MODO BITMAP/HÍBRIDO: a referência completa é a arte. Se a clean plate
+      // sair, o layout vira camadas editáveis medidas por visão (híbrido);
+      // se falhar, o post fica no bitmap puro (edição cirúrgica).
+      if (POST_UNICO_BITMAP && img.quality === "pro") {
+        let cleanUrl: string | null = null
+        let cleanCost = 0
+        if (POST_UNICO_HIBRIDO) {
+          try {
+            const clean = await editNanoBanana(CLEAN_PLATE_PROMPT, img.url)
+            cleanUrl = clean.url
+            cleanCost = clean.costUsd
+          } catch (err) {
+            console.warn("[free-generate] clean plate (híbrido) falhou — bitmap puro:", err)
+          }
+        }
+        return {
+          url: img.url,
+          referenceUrl: cleanUrl,
+          costUsd: img.costUsd + cleanCost,
+          quality: img.quality,
+          bitmap: true,
+        }
+      }
+      if (img.quality === "pro") {
+        try {
+          const clean = await editNanoBanana(CLEAN_PLATE_PROMPT, img.url)
+          return {
+            url: clean.url,
+            referenceUrl: img.url,
+            costUsd: img.costUsd + clean.costUsd,
+            quality: img.quality,
+          }
+        } catch (err) {
+          console.warn("[free-generate] clean plate falhou:", err)
+          // Sem clean plate a referência não serve de fundo (o texto bitmapado
+          // brigaria com o HTML). 2º fallback: regera a MESMA cena pedindo os
+          // espaços de texto vazios — perde a transcrição fiel, mas mantém o
+          // fundo bonito (modo cena, sem referenceUrl).
+          try {
+            const scene = await generateBrandImageForRole(
+              photoPrompt +
+                " IMPORTANT OVERRIDE: do NOT render any of the quoted text, letters or numbers — leave those areas as clean empty surfaces ready for typography.",
+              "cover",
+            )
+            return {
+              url: scene.url,
+              referenceUrl: null,
+              costUsd: img.costUsd + scene.costUsd,
+              quality: scene.quality,
+            }
+          } catch {
+            return { url: null, referenceUrl: null, costUsd: img.costUsd, quality: null }
+          }
+        }
+      }
+      // Fallback Flux (sem edit disponível): usa a geração direto como fundo.
+      return { url: img.url, referenceUrl: null, costUsd: img.costUsd, quality: img.quality }
     } catch (err) {
       console.warn("[free-generate] geração de imagem falhou:", err)
     }
   }
-  return { url: null, costUsd: 0, quality: null }
+  return { url: null, referenceUrl: null, costUsd: 0, quality: null }
 }
 
 function getClient(): Anthropic {
@@ -256,6 +318,9 @@ export interface FreeGenerateResult {
   /** Legenda do post pro Instagram (gancho + valor + CTA + hashtags). */
   caption: string
   photo_url: string | null
+  /** Textos que estão NA arte (slots da copy) — alimenta a edição cirúrgica
+   * do modo bitmap. */
+  content: SkeletonContent | null
   /**
    * Qualidade da imagem IA gerada (pro=Nano Banana Pro, normal=Flux) ou null
    * se a foto veio da Wikimedia / não houve imagem. Pro débito de tokens.
@@ -373,7 +438,7 @@ pegue o mais neutro da lista.
 
 VARIATION SEED: ${seed}
 
-REGRA CRÍTICA SOBRE FOTO: SEMPRE forneça \`photo_prompt\` em INGLÊS pra enriquecer visualmente. Use prompts cinematográficos: assunto + iluminação + mood + estilo (ex: "minimalist beige textured background, soft natural light, editorial style", "professional fitness instructor mid-action, dramatic side lighting, intense expression").
+REGRA CRÍTICA SOBRE FOTO: SEMPRE forneça \`photo_prompt\` em INGLÊS seguindo a anatomia do system prompt — o DESIGN COMPLETO do post (cena + tipografia com os textos reais dos slots + paleta), variando o arquétipo pelo VARIATION SEED. Nunca "textured background" solto: textura sem cena é o que produz fundo sem sentido.
 
 No JSON de resposta, devolva em "skeleton_id" o id do layout que você escolheu — obrigatoriamente um da lista acima.
 
@@ -474,6 +539,42 @@ async function generateCopy(
   return { parsed: block.input as SkeletonResponse, usage: response.usage }
 }
 
+/**
+ * HÍBRIDO OU BITMAP: com clean plate disponível, mede o layout da arte por
+ * visão e monta camadas editáveis sobre o fundo limpo (drag/edição grátis,
+ * como no carrossel). Qualquer falha degrada pro bitmap puro — nunca quebra.
+ */
+async function hybridOrBitmapSpec(
+  artUrl: string,
+  cleanUrl: string | null,
+  content: SkeletonContent | null,
+): Promise<FreePostSpec> {
+  if (cleanUrl && content) {
+    try {
+      const items = await extractTextLayout(artUrl, content)
+      const spec = buildSpecFromLayout(cleanUrl, items)
+      console.info(
+        `[free-generate] híbrido: ${spec.blocks.length} camadas medidas por visão`,
+      )
+      return spec
+    } catch (err) {
+      console.warn("[free-generate] medição do layout falhou — bitmap puro:", err)
+    }
+  }
+  return bitmapSpec(artUrl)
+}
+
+/** Spec do modo bitmap: a arte completa vira o fundo, zero camadas HTML. */
+function bitmapSpec(url: string): FreePostSpec {
+  return {
+    version: 1,
+    background: { kind: "photo", photo_url: url },
+    blocks: [],
+    rationale:
+      "Arte completa gerada pelo modelo de imagem (modo bitmap) — edição por camadas opcionais por cima.",
+  }
+}
+
 export async function generateFreeSpec({
   brand,
   briefing,
@@ -497,20 +598,27 @@ export async function generateFreeSpec({
   const imageCost = resolved.costUsd
 
   // Composição livre com o skeleton como rede de segurança — mesma política
-  // de buildApprovedSpec.
-  const composed = await composeSpec({
-    brand,
-    content: parsed.content,
-    photoUrl,
-    briefing,
-  })
+  // de buildApprovedSpec. No modo bitmap a arte já está pronta: nada a compor.
+  const composed =
+    resolved.bitmap && photoUrl
+      ? null
+      : await composeSpec({
+          brand,
+          content: parsed.content,
+          photoUrl,
+          // Fora do modo bitmap, referenceUrl é a referência de transcrição.
+          referenceUrl: resolved.bitmap ? null : resolved.referenceUrl,
+          briefing,
+        })
   const spec =
-    composed?.spec ??
-    skeleton.build({
-      brand,
-      content: parsed.content,
-      photo_url: photoUrl,
-    })
+    resolved.bitmap && photoUrl
+      ? await hybridOrBitmapSpec(photoUrl, resolved.referenceUrl, parsed.content)
+      : (composed?.spec ??
+        skeleton.build({
+          brand,
+          content: parsed.content,
+          photo_url: photoUrl,
+        }))
 
   const ms = performance.now() - t0
   const claudeCost = computeCost(usage) + (composed ? computeCost(composed.usage) : 0)
@@ -520,6 +628,7 @@ export async function generateFreeSpec({
     skeleton_id: parsed.skeleton_id,
     caption: parsed.caption ?? "",
     photo_url: photoUrl,
+    content: parsed.content,
     image_quality: resolved.quality,
     metrics: {
       ms,
@@ -600,12 +709,26 @@ export async function buildApprovedSpec({
   // Composição livre: a IA monta o layout inteiro (ver compose.ts). O skeleton
   // escolhido na etapa de texto vira rede de segurança — se a composição falhar
   // ou vier inválida, o post sai no layout pré-composto em vez de quebrar.
-  const composed = await composeSpec({ brand, content, photoUrl, briefing })
+  const composed =
+    resolved.bitmap && photoUrl
+      ? null
+      : await composeSpec({
+          brand,
+          content,
+          photoUrl,
+          referenceUrl: resolved.bitmap ? null : resolved.referenceUrl,
+          briefing,
+        })
   const spec =
-    composed?.spec ?? skeleton.build({ brand, content, photo_url: photoUrl })
-  const rationale = composed
-    ? (composed.spec.rationale ?? "Composição livre")
-    : `Composição indisponível — layout ${skeletonId}`
+    resolved.bitmap && photoUrl
+      ? await hybridOrBitmapSpec(photoUrl, resolved.referenceUrl, content)
+      : (composed?.spec ?? skeleton.build({ brand, content, photo_url: photoUrl }))
+  const rationale =
+    resolved.bitmap && photoUrl
+      ? (spec.rationale ?? "Arte completa (modo bitmap)")
+      : composed
+        ? (composed.spec.rationale ?? "Composição livre")
+        : `Composição indisponível — layout ${skeletonId}`
   const composeCost = composed ? computeCost(composed.usage) : 0
 
   const ms = performance.now() - t0
@@ -616,6 +739,7 @@ export async function buildApprovedSpec({
     skeleton_id: skeletonId,
     caption: "",
     photo_url: photoUrl,
+    content,
     image_quality: resolved.quality,
     metrics: {
       ms,

@@ -72,6 +72,74 @@ export type NanoBananaQuality = "normal" | "pro"
  *   chegar aqui se o plano permitir (gate em lib/tokens.ts). Nada quebra
  *   se vier "pro" indevidamente — apenas gera com o modelo pro.
  */
+const MAX_RETRIES = 3
+
+/**
+ * EDIÇÃO de imagem com o Nano Banana 2 — é o que faz a "clean plate" da
+ * Rota B2 do post único: o modelo gera o post COMPLETO como referência
+ * (com tipografia) e esta chamada remove todo o texto mantendo o resto,
+ * devolvendo o fundo limpo sobre o qual a tipografia HTML editável entra.
+ *
+ * Endpoint: <modelo>/edit (padrão do Fal pros modelos Gemini Image).
+ * Custo: igual ao da geração (mesmo modelo, mesma resolução).
+ */
+export async function editNanoBanana(
+  prompt: string,
+  imageUrl: string,
+): Promise<NanoBananaResult> {
+  ensureConfigured()
+  const start = performance.now()
+  const model =
+    process.env.FAL_NANO_BANANA_EDIT_MODEL || `${NANO_BANANA_COVER_MODEL}/edit`
+
+  let result: Awaited<ReturnType<typeof fal.subscribe>> | null = null
+  let lastError: unknown
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      result = await fal.subscribe(model, {
+        input: {
+          prompt,
+          image_urls: [imageUrl],
+          num_images: 1,
+          output_format: "jpeg",
+          ...(COVER_RESOLUTION ? { resolution: COVER_RESOLUTION } : {}),
+        },
+        logs: false,
+      })
+      break
+    } catch (err) {
+      lastError = err
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt))
+      }
+    }
+  }
+  if (!result) {
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`Nano Banana edit falhou após ${MAX_RETRIES} tentativas (${model})`)
+  }
+  const ms = performance.now() - start
+  const data = result.data as {
+    images?: Array<{ url: string; width?: number; height?: number }>
+  }
+  const image = data?.images?.[0]
+  if (!image?.url) {
+    throw new Error(`Nano Banana edit não retornou imagem (${model})`)
+  }
+  console.log(
+    `[nano-banana] edit ${model} saiu ${image.width ?? "?"}×${image.height ?? "?"} em ${Math.round(ms)}ms`,
+  )
+  return {
+    url: image.url,
+    width: image.width ?? 1080,
+    height: image.height ?? 1350,
+    costUsd: COVER_RESOLUTION === "2K" ? 0.12 : 0.08,
+    ms,
+    model,
+  }
+}
+
 export async function generateNanoBanana(
   prompt: string,
   quality: NanoBananaQuality = "normal",
@@ -82,19 +150,40 @@ export async function generateNanoBanana(
   const isCover = quality === "pro"
   const model = isCover ? NANO_BANANA_COVER_MODEL : NANO_BANANA_MODEL
 
-  const result = await fal.subscribe(model, {
-    input: {
-      prompt,
-      num_images: 1,
-      output_format: "jpeg",
-      aspect_ratio: "4:5",
-      // Só na capa: é o único caminho em que a resolução muda o preço.
-      ...(isCover && COVER_RESOLUTION
-        ? { resolution: COVER_RESOLUTION }
-        : {}),
-    },
-    logs: false,
-  })
+  // Retry com backoff, espelhando o pipeline do carrossel
+  // (lib/editorial/ai-images.ts): um 429/timeout transitório do Fal não pode
+  // derrubar a capa pro Flux Schnell — o downgrade silencioso era uma das
+  // causas de foto ruim no post único.
+  let result: Awaited<ReturnType<typeof fal.subscribe>> | null = null
+  let lastError: unknown
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      result = await fal.subscribe(model, {
+        input: {
+          prompt,
+          num_images: 1,
+          output_format: "jpeg",
+          aspect_ratio: "4:5",
+          // Só na capa: é o único caminho em que a resolução muda o preço.
+          ...(isCover && COVER_RESOLUTION
+            ? { resolution: COVER_RESOLUTION }
+            : {}),
+        },
+        logs: false,
+      })
+      break
+    } catch (err) {
+      lastError = err
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt))
+      }
+    }
+  }
+  if (!result) {
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`Nano Banana falhou após ${MAX_RETRIES} tentativas (${model})`)
+  }
   const ms = performance.now() - start
 
   const data = result.data as {

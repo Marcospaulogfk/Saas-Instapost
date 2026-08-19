@@ -25,6 +25,7 @@ import type { SkeletonContent } from "./skeletons"
  */
 
 /** Canvas de referência do post único. 1cqw = 1% da largura = 10.8px. */
+console.info("[compose] módulo carregado v-b2-handle-fix")
 const CANVAS_W = 1080
 const CANVAS_H = 1350
 
@@ -355,6 +356,7 @@ function buildUserPrompt(
   brand: PostBrand,
   content: SkeletonContent,
   photoUrl: string | null,
+  referenceUrl: string | null,
   briefing: string | null,
   directions: ArtDirection[],
 ): string {
@@ -391,7 +393,65 @@ ${brand.tagline ? `- Tagline: ${brand.tagline}` : ""}
 ${brand.logo_url ? `- logo_url: ${brand.logo_url}  (use como bloco image num canto, fit "contain", altura ~7cqw)` : "- Sem logo: assine com o handle @ no rodapé."}
 
 ${briefing ? `BRIEFING ORIGINAL (contexto do assunto — não repita literalmente na arte)\n"${briefing}"\n` : ""}
-# DIREÇÃO DE ARTE — escolha UMA das duas e siga à risca
+${
+  referenceUrl && photoUrl
+    ? `# TRANSCRIÇÃO — duas imagens anexadas: [1] REFERÊNCIA e [2] FUNDO LIMPO
+
+A imagem [1] é o design FINALIZADO do post, criado por um designer: layout,
+hierarquia, cores e tipografia já decididos. A [2] é a MESMA arte com o texto
+removido — é ela o background (kind "photo" full-bleed, photo_url fornecida).
+
+Seu trabalho NÃO é criar um layout. É TRANSCREVER o da [1] em blocos:
+
+1. Pra cada elemento de TEXTO da [1], crie um bloco text/pill na MESMA posição
+   (estime top/left/width em % olhando a referência), mesma hierarquia de
+   tamanho, cor equivalente e fonte mais próxima (anton/archivo pra condensada
+   pesada, bebas pra condensada leve, playfair/playfair_italic pra serif,
+   inter pra neutra).
+2. O CONTEÚDO dos textos vem dos slots aprovados abaixo — NUNCA do que estiver
+   escrito na referência (modelo de imagem erra letra; os slots são a
+   verdade). Slot sem lugar óbvio: encaixe onde o design tem respiro. Texto da
+   referência sem slot correspondente: não transcreva.
+3. O que sobreviveu na [2] (formas, ícones sem letra, selos gráficos) já está
+   PINTADO no fundo — não crie bloco por cima. Recrie apenas o que sumiu junto
+   com o texto (pill de kicker, botão de CTA) como pill/card na mesma posição.
+4. Textos que fluem juntos na mesma zona viram UM stack ancorado ali — nunca
+   blocos soltos se sobrepondo.
+4b. LARGURA MÍNIMA: nossas fontes são maiores que as da referência. Nenhum
+   bloco/stack/card com frase (>3 palavras) pode ter largura menor que 24% do
+   canvas — se a coluna da referência for mais estreita que isso, ALARGUE a
+   zona e reduza o corpo da fonte. Uma palavra por linha é transcrição
+   reprovada.
+5. Cores dos textos saem da [1], mas confira o contraste contra a região real
+   da [2] (≥ 4.5:1) — ajuste o tom se precisar.
+6. No rationale, descreva em 1 frase o layout transcrito.
+
+photo_url (use a [2]): ${photoUrl}`
+    : photoUrl
+    ? `# A CENA — você está VENDO a imagem anexada. Ela é o post.
+
+A imagem foi gerada sob medida pra ESTA peça: é o cenário completo do post,
+com o assunto dramático de um lado e zonas limpas reservadas pra tipografia.
+Regras:
+
+1. background.kind "photo" full-bleed com a photo_url fornecida. NÃO recorte a
+   cena em coluna/janela — ela já é a composição inteira.
+2. OLHE a imagem e identifique as zonas realmente limpas (lisas, desfocadas ou
+   de cor uniforme). TODO o texto vive nelas. Nunca sobre o assunto principal.
+3. Tipografia nas cores da PRÓPRIA CENA: tons claros sobre zona escura (e
+   vice-versa); acento da marca só em highlights/pills. Contraste ≥ 4.5:1
+   contra a região EXATA onde o texto cai — você está vendo a região, avalie
+   de verdade.
+4. photo_overlay só se a zona limpa ainda precisar de reforço — e leve
+   (opacity ≤ 0.45), nunca um tapume sobre a cena inteira.
+5. Adornos (selo, pill, linha vertical, divider) onde a cena tem respiro. Nada
+   de card gigante cobrindo a cena — o texto se integra à cena, não flutua num
+   painel branco por cima dela.
+6. Declare no rationale ONDE viu as zonas limpas (ex: "terço superior liso
+   escuro; texto claro ancorado ali").
+
+photo_url: ${photoUrl}`
+    : `# DIREÇÃO DE ARTE — escolha UMA das duas e siga à risca
 
 ${directions
   .map((d) => `**${d.name}** (${d.id}): ${d.brief}`)
@@ -399,17 +459,12 @@ ${directions
 
 Escolha pela vibe do conteúdo (oferta pede energia, reconhecimento pede sofisticação, dado pede sobriedade) e declare o id no rationale. O exemplo do system prompt é OUTRA direção — vale a mecânica de zonas dele, NÃO o layout. Copiar o layout do exemplo ignorando a direção escolhida é reprovação certa.
 
+Nenhuma foto. Componha só com tipografia, cor e formas — manifesto tipográfico, cartão de dados ou bloco de cor.`
+}
+
 TEXTO APROVADO — use EXATAMENTE este conteúdo, sem reescrever:
 ${slots || "- (sem slots preenchidos)"}
 ${bulletsBlock}
-FOTO
-${
-  photoUrl
-    ? `photo_url disponível: ${photoUrl}
-Decida o papel dela: fundo full-bleed (com overlay pra proteger o texto), coluna lateral, ou bloco recortado. Se for retrato de pessoa, dê altura total à zona dela.`
-    : "Nenhuma foto. Componha só com tipografia, cor e formas — manifesto tipográfico, cartão de dados ou bloco de cor."
-}
-
 Componha o post. Canvas ${CANVAS_W}×${CANVAS_H}. Devolva só o JSON.`
 }
 
@@ -840,6 +895,10 @@ function critiqueSpec(
   spec: FreePostSpec,
   content: SkeletonContent,
   vocabulary: string,
+  /** Modo transcrição (Rota B2): as posições vêm de um design REAL renderizado
+   * e boa parte da densidade está PINTADA na clean plate — as heurísticas de
+   * densidade mínima e orçamento vertical estimado dão falso positivo. */
+  transcription = false,
 ): string[] {
   const issues: string[] = []
   const allText = collectAllText(spec.blocks)
@@ -894,15 +953,26 @@ function critiqueSpec(
   const zones = photoZones(spec.blocks)
 
   const checkOverPhoto = (t: FreeTextBlock, protectedByOverlay: boolean) => {
-    if (!protectedByOverlay && !t.text_shadow) {
+    // Transcrição (Rota B2): o fundo é a clean plate de um design REAL — as
+    // zonas de texto já nascem protegidas NA PINTURA (painéis, gradientes), e
+    // o compositor está VENDO os pixels. O crítico cego não pode exigir
+    // overlay por cima do que não enxerga; fica só o veto de cor saturada.
+    if (!transcription && !protectedByOverlay && !t.text_shadow) {
       issues.push(
         `Texto "${t.text.slice(0, 30)}" cru sobre foto sem proteção. Adicione overlay escura (photo_overlay opacity >= 0.5, ou um shape escuro sobre a zona da foto), ou mova o texto pra um card/stack com bg.`,
       )
       return
     }
-    if (saturation(t.color) > 0.4 && relativeLuminance(t.color) < 0.92) {
+    // Com text_shadow o texto ganha halo próprio — na Rota B o compositor VÊ
+    // a cena e pode usar a paleta dela; reprovar toda cor viraria tudo
+    // branco-sobre-escuro e mataria a integração com a cena.
+    if (
+      !t.text_shadow &&
+      saturation(t.color) > 0.4 &&
+      relativeLuminance(t.color) < 0.92
+    ) {
       issues.push(
-        `Cor saturada ${t.color} solta sobre foto ("${t.text.slice(0, 25)}"). Sobre foto, texto solto é branco/neutro; cor da marca entra em pill, card ou highlight_color de headline branca.`,
+        `Cor saturada ${t.color} solta sobre foto ("${t.text.slice(0, 25)}"). Sobre foto, texto solto é branco/neutro (ou adicione text_shadow); cor da marca entra em pill, card ou highlight_color.`,
       )
     }
   }
@@ -975,14 +1045,23 @@ function critiqueSpec(
         )
         continue
       }
-      if (b.rotation === -90 || b.rotation === 90) continue
-      const tRange = hRange(b.position)
+      // Texto vertical (rotation ±90) NÃO é isento: ele é uma coluna
+      // estreita, e era exatamente ele que atravessava a zona de conteúdo
+      // sem reprovar. Modela a caixa girada: largura = ~5cqw, altura =
+      // position.height (ou 40%).
+      const vertical = b.rotation === -90 || b.rotation === 90
+      const tRange = vertical
+        ? (() => {
+            const l = toPercent(b.position?.left)
+            if (l == null) return null
+            return { l, r: l + 5 }
+          })()
+        : hRange(b.position)
       const tTop = toHeightPct(b.position?.top)
       if (!tRange || tTop == null) continue
-      const tHeight = estimateBlockHeightPct(
-        b,
-        Math.max(tRange.r - tRange.l, 10),
-      )
+      const tHeight = vertical
+        ? (toHeightPct(b.position?.height) ?? 40)
+        : estimateBlockHeightPct(b, Math.max(tRange.r - tRange.l, 10))
       for (const s of stacks) {
         const sRange = hRange(s.position)
         const sTop = toHeightPct(s.position?.top)
@@ -1006,6 +1085,58 @@ function critiqueSpec(
         }
       }
     }
+
+    // Coluna estreita demais: com nossas métricas de fonte, largura < 16%
+    // com frase dentro vira uma palavra por linha vazando o canvas (visto na
+    // transcrição do card lateral da cafeteria). Vale pra text solto e pra
+    // stack/card inteiro.
+    for (const b of spec.blocks) {
+      const w = toPercent(b.position?.width)
+      if (w == null || w >= 16) continue
+      const texts: string[] = []
+      const grab = (x: FreeBlock) => {
+        if (x.type === "text" || x.type === "pill") texts.push(x.text)
+        if (x.type === "card" || x.type === "stack") x.children.forEach(grab)
+      }
+      grab(b)
+      const longo = texts.find((t) => t.trim().split(/\s+/).length > 3)
+      if (longo) {
+        issues.push(
+          `Bloco de ${Math.round(w)}% de largura contém a frase "${longo.slice(0, 30)}" — estreito demais, sai uma palavra por linha. Alargue pra >= 24% e reduza a fonte.`,
+        )
+      }
+    }
+
+    // Dois textos absolutos irmãos um sobre o outro — a causa direta do
+    // "subtítulo carimbado em cima do corpo". Estima a caixa dos dois e
+    // reprova interseção real (não encostar de borda).
+    const absTexts = spec.blocks.filter(
+      (b): b is FreeTextBlock =>
+        b.type === "text" &&
+        !b.rotation &&
+        !!b.position &&
+        cqwOf(b.font_size, 3.5) < 14,
+    )
+    for (let i = 0; i < absTexts.length; i++) {
+      for (let j = i + 1; j < absTexts.length; j++) {
+        const a = absTexts[i]
+        const c = absTexts[j]
+        const ar = hRange(a.position)
+        const cr = hRange(c.position)
+        const aTop = toHeightPct(a.position?.top)
+        const cTop = toHeightPct(c.position?.top)
+        if (!ar || !cr || aTop == null || cTop == null) continue
+        const aH = estimateBlockHeightPct(a, Math.max(ar.r - ar.l, 10))
+        const cH = estimateBlockHeightPct(c, Math.max(cr.r - cr.l, 10))
+        const hOv = Math.min(ar.r, cr.r) - Math.max(ar.l, cr.l)
+        const vOv = Math.min(aTop + aH, cTop + cH) - Math.max(aTop, cTop)
+        if (hOv > 8 && vOv > 2.5) {
+          issues.push(
+            `Os textos "${a.text.slice(0, 20)}" e "${c.text.slice(0, 20)}" se sobrepõem (mesma zona). Textos da mesma região são filhos de UM stack — reorganize.`,
+          )
+        }
+      }
+    }
   }
 
   // --- 4. Orçamento vertical -----------------------------------------------
@@ -1019,6 +1150,7 @@ function critiqueSpec(
     const est = estimateBlockHeightPct(b, widthCqw)
     // 91, não 100: os ~9% finais são do rodapé — invadi-los é o defeito
     // visível mais frequente (último item cortado, handle por cima do texto).
+    if (transcription) continue
     if (top + est > 90) {
       issues.push(
         `O stack de conteúdo começa em ${Math.round(top)}% e soma ~${Math.round(est)}% de altura — invade a faixa do rodapé (os últimos 9% do canvas). SEM cortar nem encurtar nenhum texto: alargue a coluna de texto (>= 55% da largura, foto em 40-45%), diminua o corpo dos itens (rótulo min(2.8cqw,16px), frase min(2.4cqw,14px)), aperte gaps e comece o stack em top 5-6%. A soma top+altura precisa ficar <= 88%.`,
@@ -1057,9 +1189,43 @@ function critiqueSpec(
     }
   }
 
+  // --- 5b. Handle que não é o da marca --------------------------------------
+  // "@marca" do exemplo é corrigido deterministicamente (fixBrandHandle), mas
+  // o modelo também inventa handles de terceiros — e a checagem de texto
+  // inventado pula strings curtas.
+  {
+    // O vocabulário carrega o handle da marca (com ou sem @) — qualquer
+    // @handle da arte cujo miolo não esteja no vocabulário foi inventado.
+    const vocabWords = new Set(
+      vocabulary
+        .toLowerCase()
+        .split(/[^a-z0-9_.@]+/)
+        .flatMap((w) => [w, w.replace(/^@/, "")])
+        .filter(Boolean),
+    )
+    const texts: string[] = []
+    const walk = (bs: FreeBlock[]) => {
+      for (const b of bs) {
+        if (b.type === "text" || b.type === "pill") texts.push(b.text)
+        if (b.type === "card" || b.type === "stack") walk(b.children)
+      }
+    }
+    walk(spec.blocks)
+    for (const raw of texts) {
+      for (const m of raw.matchAll(/@[a-z0-9_.]{2,}/gi)) {
+        const core = m[0].slice(1).toLowerCase()
+        if (!vocabWords.has(core)) {
+          issues.push(
+            `Handle "${m[0]}" não é o da marca. Use exatamente o handle fornecido na seção MARCA.`,
+          )
+        }
+      }
+    }
+  }
+
   // --- 6. Densidade mínima --------------------------------------------------
   const textBlocks = allText.split(" ").length
-  if (spec.blocks.length < 3 || textBlocks < 8) {
+  if (!transcription && (spec.blocks.length < 3 || textBlocks < 8)) {
     issues.push(
       `A composição está rala (${spec.blocks.length} blocos). Um post editorial tem camadas: assinatura da marca, kicker, headline, apoio${nBullets ? ", os itens com ícone" : ""} e rodapé.`,
     )
@@ -1091,6 +1257,9 @@ export interface ComposeOpts {
   brand: PostBrand
   content: SkeletonContent
   photoUrl: string | null
+  /** Referência COMPLETA (com tipografia) da Rota B2 — quando presente, o
+   * compositor TRANSCREVE o layout dela em vez de inventar um. */
+  referenceUrl?: string | null
   briefing?: string | null
 }
 
@@ -1125,6 +1294,43 @@ function subtleGhostColor(color: string): string {
   return "rgba(255, 255, 255, 0.07)"
 }
 
+/**
+ * Troca o handle do EXEMPLO do system prompt pelo handle real da marca.
+ *
+ * O exemplo completo do prompt assina o rodapé com "@marca", e o modelo copia
+ * a mecânica COM o literal — a crítica de texto inventado pula strings curtas
+ * (< 18 chars), então "@marca" atravessava as 4 tentativas sem reprovar.
+ * Corrigir aqui é determinístico e não gasta retry.
+ */
+function fixBrandHandle(blocks: FreeBlock[], brand: PostBrand): FreeBlock[] {
+  const core =
+    brand.instagram_handle?.replace(/^@/, "").trim() ||
+    brand.name.toLowerCase().replace(/\s+/g, "")
+  const handle = "@" + core
+  const fix = (bs: FreeBlock[]): FreeBlock[] =>
+    bs.map((b) => {
+      if (
+        (b.type === "text" || b.type === "pill") &&
+        /@[a-z0-9_.]{2,}/i.test(b.text)
+      ) {
+        // Qualquer @handle que não seja o da marca vira o handle real — cobre
+        // o "@marca" do exemplo E handles inventados de terceiros.
+        const fixed = b.text.replace(/@[a-z0-9_.]{2,}/gi, (m) =>
+          m.slice(1).toLowerCase() === core.toLowerCase() ? m : handle,
+        )
+        if (fixed !== b.text) {
+          console.info(`[compose] handle corrigido: "${b.text}" -> "${fixed}"`)
+        }
+        return { ...b, text: fixed }
+      }
+      if (b.type === "card" || b.type === "stack") {
+        return { ...b, children: fix(b.children) }
+      }
+      return b
+    })
+  return fix(blocks)
+}
+
 /** Sanitiza/normaliza o input do tool use num FreePostSpec renderizável. */
 function buildSpec(
   parsed: unknown,
@@ -1136,8 +1342,9 @@ function buildSpec(
   if (photoUrl) allowed.add(photoUrl)
   if (brand.logo_url) allowed.add(brand.logo_url)
 
-  const blocks = clampPositions(
-    pinImageUrls(sanitizeBlocks(obj?.blocks), allowed, photoUrl),
+  const blocks = fixBrandHandle(
+    clampPositions(pinImageUrls(sanitizeBlocks(obj?.blocks), allowed, photoUrl)),
+    brand,
   )
   if (!blocks.length) return null
   const background = obj?.background
@@ -1195,6 +1402,7 @@ export async function composeSpec({
   brand,
   content,
   photoUrl,
+  referenceUrl,
   briefing,
 }: ComposeOpts): Promise<ComposeResult | null> {
   const client = getClient()
@@ -1206,16 +1414,36 @@ export async function composeSpec({
   // A dupla de direções é sorteada UMA vez por geração e vale pro loop
   // inteiro: o retry corrige a execução da direção, não a re-sorteia.
   const directions = pickDirections(!!photoUrl)
+  const promptText = buildUserPrompt(
+    brand,
+    content,
+    photoUrl,
+    referenceUrl ?? null,
+    briefing ?? null,
+    directions,
+  )
+  // ROTA B2: com referência, o compositor VÊ o design pronto ([1]) e o fundo
+  // limpo ([2]) e transcreve o layout. Sem referência mas com foto, vê a cena
+  // e posiciona nas zonas limpas. Sem foto, tipográfico puro.
+  const imageBlocks: Anthropic.Messages.ContentBlockParam[] = []
+  if (referenceUrl) {
+    imageBlocks.push({
+      type: "image" as const,
+      source: { type: "url" as const, url: referenceUrl },
+    })
+  }
+  if (photoUrl) {
+    imageBlocks.push({
+      type: "image" as const,
+      source: { type: "url" as const, url: photoUrl },
+    })
+  }
   const messages: Anthropic.Messages.MessageParam[] = [
     {
       role: "user",
-      content: buildUserPrompt(
-        brand,
-        content,
-        photoUrl,
-        briefing ?? null,
-        directions,
-      ),
+      content: imageBlocks.length
+        ? [...imageBlocks, { type: "text" as const, text: promptText }]
+        : promptText,
     },
   ]
   const usages: Anthropic.Messages.Usage[] = []
@@ -1283,11 +1511,14 @@ export async function composeSpec({
       briefing ?? "",
       brand.name,
       brand.instagram_handle ?? "",
+      // Mesmo fallback de handle do fixBrandHandle: sem isso, o handle
+      // derivado do nome ("@perfilpessoal") reprovaria como inventado.
+      brand.name.toLowerCase().replace(/\s+/g, ""),
       brand.tagline ?? "",
       brand.profession ?? "",
     ].join(" ")
     const issues = spec
-      ? critiqueSpec(spec, content, vocabulary)
+      ? critiqueSpec(spec, content, vocabulary, !!referenceUrl)
       : [
           "O spec não tinha blocos renderizáveis ou veio sem background. Reenvie o spec COMPLETO seguindo o schema — todo bloco fora de stack precisa de position.",
         ]

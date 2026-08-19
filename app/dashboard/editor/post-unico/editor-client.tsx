@@ -35,7 +35,7 @@ import {
   addTextBlock,
   TEXT_STYLES,
 } from "@/lib/single-posts/add-block"
-import { tokenCostForSinglePost } from "@/lib/tokens"
+import { TOKEN_COST, tokenCostForSinglePost } from "@/lib/tokens"
 import {
   adaptSpecFormat,
   measureSpecBlocks,
@@ -84,6 +84,8 @@ export interface InitialPost {
   briefing: string
   skeletonId: string | null
   format: PostFormat
+  /** Textos pintados na arte (modo bitmap) — null em posts de camadas. */
+  bitmapTexts?: Record<string, unknown> | null
 }
 
 interface Props {
@@ -128,9 +130,25 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const [savedId, setSavedId] = useState<string | null>(initialPost?.id ?? null)
   const [saveOk, setSaveOk] = useState(false)
 
+  // ---- Edição cirúrgica (modo bitmap) ----
+  // Os textos PINTADOS na arte, na forma dos slots da copy. O painel edita um
+  // rascunho; "Aplicar" manda só as diferenças pro nano-banana /edit.
+  const [bitmapTexts, setBitmapTexts] = useState<Record<string, unknown> | null>(
+    initialPost?.bitmapTexts ?? null,
+  )
+  const [bitmapDraft, setBitmapDraft] = useState<Record<string, string>>({})
+  const [bitmapApplying, setBitmapApplying] = useState(false)
+  const [bitmapErr, setBitmapErr] = useState<string | null>(null)
+
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const bootstrapped = useRef(false)
+  /**
+   * Armado ao fim de uma geração NOVA; desarmado pelo efeito que salva.
+   * Ref e não estado porque o efeito precisa ler o valor já atualizado no mesmo
+   * ciclo em que o spec chega, sem provocar um render só pra isso.
+   */
+  const autoSaveRef = useRef(false)
 
   const finalSpec = spec ? applyFontPreset(spec, fontPreset) : null
 
@@ -164,9 +182,14 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         setCaption(typeof data.caption === "string" ? data.caption : "")
         setPhotoUrl(data.photo_url ?? null)
         setSkeletonId(data.skeleton_id ?? null)
+        if (data.content) {
+          setBitmapTexts(data.content)
+          setBitmapDraft({})
+        }
         if (data.skeleton_id) setUsedIds((prev) => [...prev, data.skeleton_id])
         // Novo post gerado = novo registro na biblioteca no próximo save.
         setSavedId(null)
+        autoSaveRef.current = true
       } catch (err) {
         setError(err instanceof Error ? err.message : "erro na geração")
       } finally {
@@ -209,8 +232,13 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         // A legenda aprovada no wizard vence a que volta da rota.
         setCaption(p.caption ?? (typeof data.caption === "string" ? data.caption : ""))
         setPhotoUrl(data.photo_url ?? null)
+        if (data.content ?? p.approvedContent) {
+          setBitmapTexts((data.content ?? p.approvedContent) as Record<string, unknown>)
+          setBitmapDraft({})
+        }
         setSkeletonId(data.skeleton_id ?? p.skeletonId)
         setSavedId(null)
+        autoSaveRef.current = true
       } catch (err) {
         setError(err instanceof Error ? err.message : "erro na geração")
       } finally {
@@ -247,6 +275,34 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     }
     if (b && brief) void generate(b, brief, [])
   }, [brands, generate, buildApproved, initialPost])
+
+  /**
+   * Auto-salva na biblioteca assim que um post NOVO termina de ser gerado.
+   *
+   * Antes o post só existia no banco depois do clique manual em "Salvar" — quem
+   * gerava e fechava a aba perdia a peça, e a queixa que chegava era "o post que
+   * eu gerei não foi pra Biblioteca". O carrossel já fazia isso desde sempre
+   * (components/carousel/carousel-editor.tsx); o post único ficou de fora.
+   *
+   * Roda DEPOIS que o spec chega ao estado, não dentro da geração: o handleSave
+   * lê `spec`/`caption`/`format` do closure do render, então salvar no meio da
+   * geração persistiria o spec anterior (ou nenhum).
+   *
+   * Marca-demo do sandbox não salva (isRealBrandId) — é o mesmo guard do save
+   * manual, e ali a mensagem de erro seria ruído numa geração que deu certo.
+   */
+  useEffect(() => {
+    if (!autoSaveRef.current) return
+    if (!spec || !brand || saving || savedId) return
+    if (!isRealBrandId(brand.id)) {
+      autoSaveRef.current = false
+      return
+    }
+    autoSaveRef.current = false
+    void handleSave()
+    // handleSave é recriado a cada render; depender dele reentraria no efeito.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spec, brand, saving, savedId])
 
   /**
    * Adapta a arte pro outro formato. CUSTO ZERO — nenhuma chamada de IA nem de
@@ -288,6 +344,96 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     }
   }
 
+  /**
+   * Campos editáveis da arte bitmap: os slots de texto que foram pintados na
+   * imagem (as frases descritivas dos bullets ficam de fora — não entram na
+   * arte por regra de prompt).
+   */
+  function bitmapFields(): Array<{ key: string; label: string; value: string }> {
+    if (!bitmapTexts) return []
+    const t = bitmapTexts as {
+      kicker?: string
+      title?: string
+      subtitle?: string
+      cta_text?: string
+      stat_value?: string
+      bullets?: Array<{ label?: string }>
+    }
+    const out: Array<{ key: string; label: string; value: string }> = []
+    if (t.kicker) out.push({ key: "kicker", label: "Etiqueta", value: t.kicker })
+    if (t.title) out.push({ key: "title", label: "Título", value: t.title })
+    if (t.subtitle)
+      out.push({ key: "subtitle", label: "Subtítulo", value: t.subtitle })
+    if (t.stat_value)
+      out.push({ key: "stat_value", label: "Número", value: t.stat_value })
+    t.bullets?.forEach((b, i) => {
+      if (b?.label)
+        out.push({ key: `bullet_${i}`, label: `Item ${i + 1}`, value: b.label })
+    })
+    if (t.cta_text) out.push({ key: "cta_text", label: "Botão", value: t.cta_text })
+    return out
+  }
+
+  /** true = post em modo bitmap (arte completa na imagem, sem camadas). */
+  const isBitmap =
+    !!spec && spec.blocks.length === 0 && spec.background.kind === "photo"
+
+  const bitmapChanges = bitmapFields()
+    .map((f) => ({ key: f.key, from: f.value, to: (bitmapDraft[f.key] ?? f.value).trim() }))
+    .filter((c) => c.to && c.to !== c.from)
+
+  /** Aplica as trocas de texto na PRÓPRIA arte via nano-banana /edit. */
+  async function handleBitmapApply() {
+    if (!spec || spec.background.kind !== "photo" || !spec.background.photo_url) return
+    if (!bitmapChanges.length) return
+    setBitmapApplying(true)
+    setBitmapErr(null)
+    try {
+      const res = await fetch("/api/post-unico/edit-bitmap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photo_url: spec.background.photo_url,
+          changes: bitmapChanges.map(({ from, to }) => ({ from, to })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setBitmapErr(data.error ?? "erro na edição da arte")
+        return
+      }
+      // Arte nova vira o fundo; os textos registrados acompanham a mudança.
+      setSpec((cur) =>
+        cur
+          ? { ...cur, background: { ...cur.background, photo_url: data.url } }
+          : cur,
+      )
+      setPhotoUrl(data.url)
+      setBitmapTexts((cur) => {
+        if (!cur) return cur
+        const next = JSON.parse(JSON.stringify(cur)) as Record<string, unknown>
+        for (const c of bitmapChanges) {
+          const m = c.key.match(/^bullet_(\d+)$/)
+          if (m) {
+            const arr = next.bullets as Array<{ label?: string }> | undefined
+            if (arr?.[Number(m[1])]) arr[Number(m[1])].label = c.to
+          } else {
+            next[c.key] = c.to
+          }
+        }
+        return next
+      })
+      setBitmapDraft({})
+      // Persiste a arte editada na biblioteca.
+      autoSaveRef.current = false
+      void handleSave()
+    } catch (err) {
+      setBitmapErr(err instanceof Error ? err.message : "erro de rede")
+    } finally {
+      setBitmapApplying(false)
+    }
+  }
+
   async function handleSave() {
     if (!spec || !brand) return
     setSaving(true)
@@ -301,6 +447,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       fontPreset,
       format,
       photoUrl,
+      bitmapTexts,
       savedId,
     })
     setSaving(false)
@@ -466,6 +613,48 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
 
         {spec && (
           <>
+            {isBitmap && bitmapFields().length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm text-text-secondary">Textos da arte</Label>
+                <p className="text-[10px] text-text-muted">
+                  A arte é uma imagem única. Edite os textos e aplique — a IA
+                  troca só o que mudou, mantendo todo o design.
+                </p>
+                {bitmapFields().map((f) => (
+                  <div key={f.key} className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-wide text-text-muted">
+                      {f.label}
+                    </Label>
+                    <Textarea
+                      value={bitmapDraft[f.key] ?? f.value}
+                      onChange={(e) =>
+                        setBitmapDraft((d) => ({ ...d, [f.key]: e.target.value }))
+                      }
+                      rows={1}
+                      className="min-h-8 text-xs"
+                    />
+                  </div>
+                ))}
+                {bitmapErr && <p className="text-xs text-red-400">{bitmapErr}</p>}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full"
+                  disabled={!bitmapChanges.length || bitmapApplying}
+                  onClick={() => void handleBitmapApply()}
+                >
+                  {bitmapApplying ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  {bitmapApplying
+                    ? "Editando a arte…"
+                    : `Aplicar na arte (${TOKEN_COST.imageCover} tokens)`}
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label className="text-sm text-text-secondary">Adaptar formato</Label>
               <div className="grid grid-cols-3 gap-1.5">

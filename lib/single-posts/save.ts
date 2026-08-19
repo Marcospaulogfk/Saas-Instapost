@@ -77,6 +77,9 @@ export interface SaveSinglePostParams {
   fontPreset: string
   format: PostFormat
   photoUrl: string | null
+  /** Textos pintados NA arte (modo bitmap) — alimentam a edição cirúrgica
+   * na reedição. Null fora do modo bitmap. */
+  bitmapTexts?: Record<string, unknown> | null
   /** Id de um save anterior — presente = update em vez de insert. */
   savedId: string | null
 }
@@ -102,6 +105,7 @@ export async function saveSinglePost(
     fontPreset,
     format,
     photoUrl,
+    bitmapTexts,
     savedId,
   } = params
 
@@ -137,6 +141,7 @@ export async function saveSinglePost(
     _format: format,
     _photo_url: photoUrl,
     _caption: caption,
+    ...(bitmapTexts ? { _bitmap_texts: bitmapTexts } : {}),
   } as unknown as PostContent
 
   try {
