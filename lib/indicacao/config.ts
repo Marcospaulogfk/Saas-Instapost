@@ -48,7 +48,7 @@ export const REFERRAL_TOKENS = {
 
 /** Quantos posts únicos dá pra fazer com N tokens (usado na copy da página). */
 export function postsUnicosEquivalentes(tokens: number): number {
-  return Math.floor(tokens / (TOKEN_COST.textOnly + TOKEN_COST.imageCover))
+  return Math.floor(tokens / (TOKEN_COST.singlePostText + TOKEN_COST.imageCover))
 }
 
 /** Janela (dias) em que um cadastro ainda pode ser vinculado a um código. */

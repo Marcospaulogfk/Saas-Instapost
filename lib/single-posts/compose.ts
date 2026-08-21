@@ -813,6 +813,45 @@ const CQW_TO_HEIGHT_PCT = ((CANVAS_W / 100) * 1.0) / (CANVAS_H / 100)
  * útil da coluna em cqw. Aproximação de auditoria, não de layout: serve pra
  * pegar estouro grosseiro do rodapé, não diferenças de 2%.
  */
+/**
+ * Caixa VISUAL de um texto, já considerando rotação.
+ *
+ * O `position` descreve a caixa antes de girar, e o CSS gira em torno do
+ * centro — então pra um texto vertical (~±90°) a caixa que o olho vê é a mesma
+ * com largura e altura trocadas em volta do mesmo centro. Sem isso, o texto
+ * vertical "não sobrepunha" nada no papel e cobria a headline na tela.
+ *
+ * `null` quando não dá pra situar o bloco (sem left/right ou sem top): aí a
+ * crítica não tem o que comparar e outra regra cuida.
+ */
+export function rotatedBox(
+  b: FreeTextBlock,
+): { h: HRange; top: number; height: number } | null {
+  const h = hRange(b.position)
+  const top = toHeightPct(b.position?.top)
+  if (!h || top == null) return null
+
+  const w = Math.max(h.r - h.l, 10)
+  const height = estimateBlockHeightPct(b, w)
+
+  const rot = Math.abs(((b.rotation ?? 0) % 180) + 180) % 180
+  const vertical = rot > 60 && rot < 120
+  if (!vertical) return { h, top, height }
+
+  // Gira em torno do centro: o que era largura vira altura e vice-versa.
+  // A largura em % do CANVAS e a altura em % da ALTURA não são a mesma
+  // unidade — 1080×1350 —, então converte na troca.
+  const cx = (h.l + h.r) / 2
+  const cy = top + height / 2
+  const newHalfW = (height * CANVAS_H) / CANVAS_W / 2
+  const newHalfH = (w * CANVAS_W) / CANVAS_H / 2
+  return {
+    h: { l: cx - newHalfW, r: cx + newHalfW },
+    top: cy - newHalfH,
+    height: newHalfH * 2,
+  }
+}
+
 function estimateBlockHeightPct(b: FreeBlock, colWidthCqw: number): number {
   switch (b.type) {
     case "text": {
@@ -892,7 +931,7 @@ function estimateBlockHeightPct(b: FreeBlock, colWidthCqw: number): number {
  * `vocabulary` é o texto-fonte inteiro (slots + briefing + dados da marca):
  * é contra ele que a auditoria decide se um texto do spec foi INVENTADO.
  */
-function critiqueSpec(
+export function critiqueSpec(
   spec: FreePostSpec,
   content: SkeletonContent,
   vocabulary: string,
@@ -1111,27 +1150,39 @@ function critiqueSpec(
     // Dois textos absolutos irmãos um sobre o outro — a causa direta do
     // "subtítulo carimbado em cima do corpo". Estima a caixa dos dois e
     // reprova interseção real (não encostar de borda).
+    // Bloco ROTACIONADO entra na checagem (antes era excluído por
+    // `!b.rotation`, e era justamente ele que escapava): num post real o
+    // "WARREN BUFFETT · INVESTIMENTO" vertical atravessou a headline sem
+    // reprovar, porque ninguém comparava a caixa dele com nada.
+    //
+    // A caixa do `position` é a NÃO rotacionada; o CSS gira em torno do
+    // centro. Pra ~±90° a caixa visual é a mesma com largura e altura
+    // trocadas — é o que `rotatedBox` devolve. Ângulo oblíquo (ex: 30°) fica
+    // de fora de propósito: a caixa envolvente exageraria e reprovaria peça
+    // boa, e falso positivo aqui custa uma volta inteira do loop.
     const absTexts = spec.blocks.filter(
       (b): b is FreeTextBlock =>
-        b.type === "text" &&
-        !b.rotation &&
-        !!b.position &&
-        cqwOf(b.font_size, 3.5) < 14,
+        b.type === "text" && !!b.position && cqwOf(b.font_size, 3.5) < 14,
     )
     for (let i = 0; i < absTexts.length; i++) {
       for (let j = i + 1; j < absTexts.length; j++) {
         const a = absTexts[i]
         const c = absTexts[j]
-        const ar = hRange(a.position)
-        const cr = hRange(c.position)
-        const aTop = toHeightPct(a.position?.top)
-        const cTop = toHeightPct(c.position?.top)
-        if (!ar || !cr || aTop == null || cTop == null) continue
-        const aH = estimateBlockHeightPct(a, Math.max(ar.r - ar.l, 10))
-        const cH = estimateBlockHeightPct(c, Math.max(cr.r - cr.l, 10))
+        const ab = rotatedBox(a)
+        const cb = rotatedBox(c)
+        if (!ab || !cb) continue
+        const { ar, aTop, aH } = { ar: ab.h, aTop: ab.top, aH: ab.height }
+        const { cr, cTop, cH } = { cr: cb.h, cTop: cb.top, cH: cb.height }
         const hOv = Math.min(ar.r, cr.r) - Math.max(ar.l, cr.l)
         const vOv = Math.min(aTop + aH, cTop + cH) - Math.max(aTop, cTop)
-        if (hOv > 8 && vOv > 2.5) {
+        // O limiar de 8% foi calibrado pra dois blocos LARGOS; um texto
+        // vertical tem ~5% de largura e jamais o alcançaria — sobrepor a
+        // headline inteira ainda daria "sem conflito". Agora o limiar é
+        // relativo ao MENOR dos dois: 8% para blocos largos (comportamento
+        // idêntico ao anterior) e 60% da largura quando um deles é estreito.
+        const minW = Math.min(ar.r - ar.l, cr.r - cr.l)
+        const hThresh = Math.min(8, 0.6 * minW)
+        if (hOv > hThresh && vOv > 2.5) {
           issues.push(
             `Os textos "${a.text.slice(0, 20)}" e "${c.text.slice(0, 20)}" se sobrepõem (mesma zona). Textos da mesma região são filhos de UM stack — reorganize.`,
           )

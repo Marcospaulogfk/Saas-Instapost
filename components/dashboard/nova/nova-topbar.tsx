@@ -288,7 +288,7 @@ function UsageChipCompact({
 
 /** Quanto custa cada ação, na mesma moeda do badge. Fonte: lib/tokens.ts. */
 const TABELA_CUSTOS: { acao: string; custo: string }[] = [
-  { acao: "Post único (texto + imagem)", custo: `${TOKEN_COST.textOnly + TOKEN_COST.imageCover}` },
+  { acao: "Post único (texto + imagem)", custo: `${TOKEN_COST.singlePostText + TOKEN_COST.imageCover}` },
   { acao: "Carrossel — roteiro + legenda", custo: `${TOKEN_COST.textOnly}` },
   { acao: "Imagem de capa", custo: `${TOKEN_COST.imageCover}` },
   { acao: "Imagem de slide do miolo", custo: `${TOKEN_COST.imageSlide} cada` },

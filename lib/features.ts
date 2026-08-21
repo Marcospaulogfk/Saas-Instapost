@@ -53,8 +53,17 @@ export function podeGerarFormato(multiSlide: boolean): boolean {
  * produção → trocar a flag → deploy.
  */
 
-/** Indique e ganhe. Depende de 0014_indicacao.sql. */
-export const INDICACAO_HABILITADA = false
+/**
+ * Indique e ganhe. LIGADA por decisão do Marcos em 20/08/2026, antes da
+ * migration: a faixa de indicação no topo do dashboard é a superfície que ele
+ * quis no ar agora.
+ *
+ * ATENÇÃO — enquanto `0014_indicacao.sql` não rodar no banco,
+ * /dashboard/indicacao não tem as tabelas (`referrals`, `referral_credits`,
+ * RPC `get_or_create_referral_code`) e a página falha. Aplicar a migration é o
+ * que fecha isso; a flag já está do lado certo.
+ */
+export const INDICACAO_HABILITADA = true
 
 /** Fontes próprias de inspiração. Depende de 0016_inspiration_sources.sql. */
 export const FONTES_INSPIRACAO_HABILITADAS = false
@@ -79,3 +88,40 @@ export const POST_UNICO_BITMAP = true
  * HTML adicionais que o usuário mesmo põe por cima.
  */
 export const POST_UNICO_HIBRIDO = false
+
+/**
+ * FOTO REAL (Wikimedia) no post único: DESLIGADA.
+ *
+ * A decisão de produto é que post único é gerado pelo nano-banana. Só que ela
+ * não estava implementada: `resolvePhotoUrl` tenta a entidade real ANTES de
+ * olhar o `photo_prompt`, sem nenhum guard de formato — então bastava a copy
+ * citar uma pessoa pública nomeada pra peça desviar do nano-banana e cair no
+ * compositor de camadas.
+ *
+ * Esse desvio é o pior dos três eixos ao mesmo tempo (medido em 21/08/2026):
+ *   - arte PIOR   — texto em cima do rosto, cabeça cortada, contraste ruim,
+ *                   e a crítica programática não pega nada disso;
+ *   - custa MAIS  — US$0,104 de composição contra US$0,014 de copy só;
+ *   - cobra MENOS — 4 tokens, porque foto de acervo não debita imagem.
+ *
+ * Fica como flag, e não arrancado, pelo mesmo motivo do resto deste arquivo:
+ * o dia em que a crítica souber reprovar sobreposição de rosto e a composição
+ * chegar no nível do bitmap, isto volta trocando uma linha.
+ */
+/**
+ * FOTO REAL (Wikimedia) no post único: LIGADA em 21/08/2026, depois de uma
+ * reprovação falsa no mesmo dia.
+ *
+ * O histórico importa pra ninguém reintroduzir o bug: a primeira rodada saiu
+ * OUTRA PESSOA no lugar da Marília Mendonça, e parecia guarda-corpo do modelo.
+ * Não era — o Fal baixa `image_urls` do lado dele e não consegue baixar
+ * upload.wikimedia.org, então o modelo gerava sem referência nenhuma (ou
+ * devolvia 422). Corrigido mandando a foto INLINE em base64; retestado com a
+ * própria Marília, identidade pixel-fiel.
+ *
+ * O caminho é: Wikimedia acha a pessoa → foto baixa aqui → `editNanoBanana`
+ * monta o design em volta do rosto verdadeiro → sai bitmap, mesmo padrão das
+ * outras peças, cobrado como capa (25 tokens). A composição livre continua
+ * fora deste caminho.
+ */
+export const POST_UNICO_FOTO_REAL = true

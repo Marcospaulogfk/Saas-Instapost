@@ -18,6 +18,7 @@
  * grátis — a experiência do carrossel, com o visual do bitmap.
  */
 import Anthropic from "@anthropic-ai/sdk"
+import { imageBlockFor } from "@/lib/generation/fetch-image"
 import type { SkeletonContent } from "./skeletons"
 import type {
   FreeBlock,
@@ -174,7 +175,9 @@ Texto da lista que NÃO aparece na arte: não inclua. Não invente itens fora da
       {
         role: "user",
         content: [
-          { type: "image", source: { type: "url", url: referenceUrl } },
+          // Inline (base64) pelo mesmo motivo do compose: a Anthropic nao
+          // baixa toda URL. Degrada pra URL sozinho se o download falhar.
+          (await imageBlockFor(referenceUrl)) as Anthropic.Messages.ContentBlockParam,
           { type: "text", text: prompt },
         ],
       },

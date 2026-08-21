@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         const imageTokens =
           result.image_counts.normal * tokenCostForImage("normal") +
           result.image_counts.pro * tokenCostForImage("pro")
-        const tokensToDebit = TOKEN_COST.textOnly + imageTokens
+        const tokensToDebit = TOKEN_COST.singlePostText + imageTokens
         await debitTokens(supabase, user.id, tokensToDebit)
       } catch {
         // ignorado — tokens nunca quebram geração

@@ -511,8 +511,14 @@ export async function lookupPerson(
   query: string,
 ): Promise<{ isHuman: boolean; photo: WikimediaResult | null }> {
   const cleaned = query.trim()
-  // nome+sobrenome: "Marilia" sozinho casaria com qualquer homônima
-  if (cleaned.length < 3 || !cleaned.includes(" ")) {
+  // Exigir nome+sobrenome derrubava MONÔNIMO — e no Brasil isso é metade do
+  // panteão: Anitta, Neymar, Pelé, Xuxa, Ivete, Ronaldinho. A intenção
+  // original ("Marilia" sozinho casaria com qualquer homônima) continua
+  // coberta, só que pelas checagens que já existem abaixo e são melhores:
+  // `labelMatched` (o rótulo do Wikidata tem que bater com a busca), `isHuman`
+  // (P31=Q5) e a exigência de retrato (P18). Sobra aqui só um piso de tamanho
+  // pra não consultar fragmento.
+  if (cleaned.length < 4) {
     return { isHuman: false, photo: null }
   }
 

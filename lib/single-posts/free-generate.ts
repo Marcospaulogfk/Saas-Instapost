@@ -1,6 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { generateBrandImageForRole } from "@/lib/generation/image"
-import { editNanoBanana } from "@/lib/generation/nano-banana"
+import {
+  editNanoBanana,
+  generateNanoBanana,
+} from "@/lib/generation/nano-banana"
 import {
   POST_UNICO_BITMAP,
   POST_UNICO_FOTO_REAL,
@@ -10,6 +13,7 @@ import {
   buildSpecFromLayout,
   extractTextLayout,
 } from "./extract-layout"
+import { fetchImageAsBase64 } from "@/lib/generation/fetch-image"
 import { searchWikimediaPerson } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import { composeSpec } from "./compose"
@@ -244,9 +248,38 @@ async function resolvePhotoUrl(
       // e Paixão". Entidade que não é gente (obra, lugar, empresa) rende fundo
       // melhor via cena gerada do que via imagem de enciclopédia.
       const real = await searchWikimediaPerson(e)
-      // Foto real (Wikimedia) não gera imagem por IA → não custa token.
-      if (real?.url)
-        return { url: real.url, referenceUrl: null, costUsd: 0, quality: null }
+      // A foto crua do Wikimedia NÃO vira o post: ela entra como referência
+      // no nano-banana, que monta a arte em volta do rosto verdadeiro.
+      //
+      // Antes ela ia direto pro `composeSpec` — o único componente que sabia
+      // pôr texto sobre uma foto crua —, e era de lá que saía o layout ruim.
+      // Assim a peça de pessoa real ganha o mesmo padrão de arte das outras,
+      // some a composição do caminho, e o rosto continua sendo o rosto certo.
+      if (real?.url && photoPrompt) {
+        // BASE64 OBRIGATÓRIO: o Fal baixa `image_urls` do lado dele e NÃO
+        // consegue baixar upload.wikimedia.org (mesmo bloqueio que derrubou a
+        // Anthropic no compose). Com a URL crua o modelo gerava SEM referência
+        // — saiu outra pessoa no lugar da Marília — ou devolvia 422. Com a
+        // imagem inline, a identidade sai pixel-fiel (testado em 21/08/2026).
+        const inline = await fetchImageAsBase64(real.url)
+        if (!inline) throw new Error(
+          "Não foi possível baixar a foto de referência. Tente gerar de novo.",
+        )
+        const art = await editNanoBanana(
+          `Photo edit task. The input photo shows a real person (${e}) — keep them PIXEL-FAITHFUL: same face, same hair, same features, same identity, instantly recognizable. Do not replace, restyle or beautify them.
+
+Edit only the surroundings, following this design brief:
+${photoPrompt}`,
+          `data:${inline.mediaType};base64,${inline.data}`,
+        )
+        return {
+          url: art.url,
+          referenceUrl: null,
+          costUsd: art.costUsd,
+          quality: "pro",
+          bitmap: true,
+        }
+      }
     } catch {
       // segue pro fallback de IA
     }
@@ -257,7 +290,13 @@ async function resolvePhotoUrl(
       // referência sai do modelo de imagem — que compõe layout melhor que
       // qualquer estimativa — e a clean plate remove o texto pra tipografia
       // HTML editável entrar por cima, na posição transcrita da referência.
-      const img = await generateBrandImageForRole(photoPrompt, "cover")
+      // ESTRITO: nano-banana ou nada. `generateBrandImageForRole` cai pro
+      // Flux quando o nano falha, e Flux devolve quality "normal" — o que
+      // derruba o teste de bitmap abaixo e joga a peça na composição livre,
+      // que entrega layout ruim. `generateNanoBanana` já tem retries internos
+      // com backoff; se ele desiste, a geração inteira desiste junto.
+      const nano = await generateNanoBanana(photoPrompt, "pro")
+      const img = { ...nano, quality: "pro" as const }
       // MODO BITMAP/HÍBRIDO: a referência completa é a arte. Se a clean plate
       // sair, o layout vira camadas editáveis medidas por visão (híbrido);
       // se falhar, o post fica no bitmap puro (edição cirúrgica).
@@ -316,10 +355,21 @@ async function resolvePhotoUrl(
       // Fallback Flux (sem edit disponível): usa a geração direto como fundo.
       return { url: img.url, referenceUrl: null, costUsd: img.costUsd, quality: img.quality }
     } catch (err) {
-      console.warn("[free-generate] geração de imagem falhou:", err)
+      // NÃO engole: engolir aqui fazia a execução seguir pro fim da função e
+      // devolver url:null, que vira composição livre. Sem exceções.
+      console.error("[free-generate] geração de imagem falhou:", err)
+      throw new Error(
+        "Não foi possível gerar a arte do post. Tente gerar de novo.",
+      )
     }
   }
-  return { url: null, referenceUrl: null, costUsd: 0, quality: null }
+  // Sem photo_prompt não há arte possível no padrão do produto, e cair na
+  // composição tipográfica significaria entregar layout ruim. Falha explícita:
+  // a rota devolve erro e NÃO debita token (ver route.ts — o débito só ocorre
+  // depois do sucesso).
+  throw new Error(
+    "Não foi possível gerar a arte do post (o modelo não devolveu prompt de imagem). Tente gerar de novo.",
+  )
 }
 
 function getClient(): Anthropic {
@@ -534,10 +584,65 @@ const COPY_TOOL_SCHEMA = {
     },
     caption: { type: "string" },
     photo_prompt: { type: "string" },
-    image_entity: { type: "string" },
+    image_entity: {
+      type: "string",
+      description:
+        'Nome EXATO da pessoa pública real de quem a capa fala, ou "" (string vazia) se a capa não fala de ninguém real. OBRIGATÓRIO — responda sempre, nem que seja "".',
+    },
     rationale: { type: "string" },
   },
-  required: ["skeleton_id", "content", "caption", "rationale"],
+  // `image_entity` é obrigatório porque como opcional ele vinha vazio
+  // justamente quando importava: num post com "Warren Buffett" no briefing, o
+  // modelo ignorou o campo e a peça saiu com um sósia gerado por IA ao lado do
+  // nome verdadeiro. Campo obrigatório é respondido; campo opcional enterrado
+  // em orientação de prompt, não.
+  required: [
+    "skeleton_id",
+    "content",
+    "caption",
+    "rationale",
+    "image_entity",
+  ],
+}
+
+/**
+ * Copy com RETRY quando vem sem `photo_prompt`.
+ *
+ * Sem prompt de imagem não há arte possível no padrão do produto, e a única
+ * saída seria a composição livre — que não pode mais entregar peça. O que
+ * sobrava era erro na cara do usuário por um sorteio ruim do modelo: UX ruim
+ * pra uma coisa que o sistema resolve sozinho repetindo.
+ *
+ * Uma volta só, e o custo dela é o de uma copy (~US$0,03): duas seguidas sem
+ * prompt de imagem é sinal de briefing problemático, não de azar, e aí o erro
+ * é a resposta honesta.
+ */
+async function generateCopyComRetry(
+  brand: PostBrand,
+  briefing: string,
+  candidates: SkeletonImpl[],
+): Promise<{ parsed: SkeletonResponse; usage: Anthropic.Messages.Usage }> {
+  const first = await generateCopy(brand, briefing, candidates)
+  if (first.parsed.photo_prompt?.trim()) return first
+
+  console.warn("[free-generate] copy veio sem photo_prompt — repetindo uma vez")
+  const second = await generateCopy(brand, briefing, candidates)
+  return {
+    parsed: second.parsed,
+    // Soma os dois usos: a volta perdida também foi paga, e esconder isso
+    // falsearia justamente a medição de custo que a gente acabou de montar.
+    usage: {
+      ...second.usage,
+      input_tokens: first.usage.input_tokens + second.usage.input_tokens,
+      output_tokens: first.usage.output_tokens + second.usage.output_tokens,
+      cache_creation_input_tokens:
+        (first.usage.cache_creation_input_tokens ?? 0) +
+        (second.usage.cache_creation_input_tokens ?? 0),
+      cache_read_input_tokens:
+        (first.usage.cache_read_input_tokens ?? 0) +
+        (second.usage.cache_read_input_tokens ?? 0),
+    },
+  }
 }
 
 /** Chama o Claude pra gerar copy (content + caption + photo_prompt) de um skeleton. */
@@ -620,6 +725,26 @@ function bitmapSpec(url: string): FreePostSpec {
   }
 }
 
+/**
+ * TRAVA FINAL: a composição livre não pode entregar peça enquanto o produto
+ * for nano-banana.
+ *
+ * Os fallbacks que levavam até ela já estão fechados um a um (Flux, ausência
+ * de photo_prompt, erro de imagem engolido), mas fechar caminho a caminho é
+ * frágil: basta alguém abrir um novo. Esta função é a garantia estrutural —
+ * com `POST_UNICO_BITMAP` ligado, chegar aqui fora do modo bitmap é bug, e a
+ * resposta é falhar em voz alta em vez de entregar layout ruim.
+ *
+ * Com a flag desligada, o comportamento antigo volta inteiro.
+ */
+function assertPodeCompor(bitmap: boolean, photoUrl: string | null): void {
+  if (POST_UNICO_BITMAP && !(bitmap && photoUrl)) {
+    throw new Error(
+      "Não foi possível gerar a arte do post no padrão esperado. Tente gerar de novo.",
+    )
+  }
+}
+
 export async function generateFreeSpec({
   brand,
   briefing,
@@ -630,7 +755,7 @@ export async function generateFreeSpec({
 
   // Sorteia candidatos; a IA escolhe entre eles pela vibe do briefing.
   const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
-  const { parsed, usage } = await generateCopy(brand, briefing, candidates)
+  const { parsed, usage } = await generateCopyComRetry(brand, briefing, candidates)
 
   // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
   const skeleton =
@@ -644,6 +769,7 @@ export async function generateFreeSpec({
 
   // Composição livre com o skeleton como rede de segurança — mesma política
   // de buildApprovedSpec. No modo bitmap a arte já está pronta: nada a compor.
+  assertPodeCompor(!!resolved.bitmap, photoUrl)
   const composed =
     resolved.bitmap && photoUrl
       ? null
@@ -715,7 +841,7 @@ export async function generateFreeText({
   const t0 = performance.now()
 
   const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
-  const { parsed, usage } = await generateCopy(brand, briefing, candidates)
+  const { parsed, usage } = await generateCopyComRetry(brand, briefing, candidates)
 
   // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
   parsed.skeleton_id = (
@@ -769,6 +895,7 @@ export async function buildApprovedSpec({
   // Composição livre: a IA monta o layout inteiro (ver compose.ts). O skeleton
   // escolhido na etapa de texto vira rede de segurança — se a composição falhar
   // ou vier inválida, o post sai no layout pré-composto em vez de quebrar.
+  assertPodeCompor(!!resolved.bitmap, photoUrl)
   const composed =
     resolved.bitmap && photoUrl
       ? null

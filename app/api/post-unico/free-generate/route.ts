@@ -6,8 +6,10 @@ import {
   generateFreeText,
   buildApprovedSpec,
 } from "@/lib/single-posts/free-generate"
+import { logGenerationUsage } from "@/lib/generation/usage-log"
 import type { PostBrand } from "@/lib/single-posts/types"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
+import type { UsageStageRecord } from "@/lib/single-posts/free-generate"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -15,9 +17,9 @@ export const maxDuration = 60
 /**
  * Débito best-effort. Nunca lança — tokens não quebram geração.
  *
- * O post único custa `tokenCostForSinglePost()` (29) no TETO, cobrado em duas
+ * O post único custa `tokenCostForSinglePost()` no TETO, cobrado em duas
  * parcelas conforme o que é realmente entregue:
- *   - texto (4) na etapa que chama o Claude;
+ *   - texto + composição (`TOKEN_COST.singlePostText`) na etapa do Claude;
  *   - imagem (25 capa / 2 se caiu pro Flux / 0 se veio foto real do Wikimedia).
  *
  * Editar o post depois é sempre grátis — não há débito em edição.
@@ -38,6 +40,33 @@ async function debitBestEffort(
 /** Débito da imagem conforme a qualidade REAL entregue (null = foto real, grátis). */
 function imageCost(quality: "normal" | "pro" | null): number {
   return quality ? tokenCostForImage(quality) : 0
+}
+
+/**
+ * Grava o custo de API de cada etapa. Best-effort igual ao débito: o log é
+ * observabilidade de COGS, e uma tabela ausente (migration 0017 pendente) não
+ * pode custar ao usuário a peça que ele já pagou.
+ *
+ * `tokensCharged` vai só na PRIMEIRA etapa de propósito — repetir o valor em
+ * cada linha inflaria a receita ao somar a coluna, e é justamente a razão
+ * dessas linhas existirem: cruzar COGS com o que foi cobrado.
+ */
+async function logUsageBestEffort(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  stages: UsageStageRecord[],
+  ctx: { userId?: string; brandId?: string | null; tokensCharged: number },
+): Promise<void> {
+  for (const [i, s] of stages.entries()) {
+    await logGenerationUsage(supabase, {
+      stage: s.stage,
+      usage: s.usage,
+      attempts: s.attempts,
+      approvedOnAttempt: s.approvedOnAttempt,
+      userId: ctx.userId ?? null,
+      brandId: ctx.brandId ?? null,
+      tokensCharged: i === 0 ? ctx.tokensCharged : 0,
+    })
+  }
 }
 
 interface RequestBody {
@@ -98,7 +127,13 @@ export async function POST(req: Request) {
         briefing: body.briefing?.trim() || null,
       })
       // Só a imagem: o texto já foi debitado na etapa text_only.
-      await debitBestEffort(supabase, user?.id, imageCost(result.image_quality))
+      const cobrado = imageCost(result.image_quality)
+      await debitBestEffort(supabase, user?.id, cobrado)
+      await logUsageBestEffort(supabase, result.usage_stages, {
+        userId: user?.id,
+        brandId: body.brand.id,
+        tokensCharged: cobrado,
+      })
       return NextResponse.json({
         spec: result.spec,
         rationale: result.rationale,
@@ -133,7 +168,12 @@ export async function POST(req: Request) {
         forceSkeletonId: body.skeleton_id ?? null,
         excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
       })
-      await debitBestEffort(supabase, user?.id, TOKEN_COST.textOnly)
+      await debitBestEffort(supabase, user?.id, TOKEN_COST.singlePostText)
+      await logUsageBestEffort(supabase, result.usage_stages, {
+        userId: user?.id,
+        brandId: body.brand.id,
+        tokensCharged: TOKEN_COST.singlePostText,
+      })
       return NextResponse.json({
         skeleton_id: result.skeleton_id,
         content: result.content,
@@ -159,11 +199,13 @@ export async function POST(req: Request) {
       excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
     })
     // Gera texto + imagem numa tacada só → cobra as duas parcelas.
-    await debitBestEffort(
-      supabase,
-      user?.id,
-      TOKEN_COST.textOnly + imageCost(result.image_quality),
-    )
+    const cobrado = TOKEN_COST.singlePostText + imageCost(result.image_quality)
+    await debitBestEffort(supabase, user?.id, cobrado)
+    await logUsageBestEffort(supabase, result.usage_stages, {
+      userId: user?.id,
+      brandId: body.brand.id,
+      tokensCharged: cobrado,
+    })
     return NextResponse.json({
       spec: result.spec,
       rationale: result.rationale,

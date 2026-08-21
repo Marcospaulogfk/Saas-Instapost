@@ -7,7 +7,8 @@
 //
 // Moeda = token. O usuário escolhe, por carrossel, se quer imagem de IA na
 // CAPA e/ou nos DEMAIS slides — e cada escolha queima tokens:
-//   - roteiro + legenda (sempre)                          =  4 tokens
+//   - roteiro + legenda de CARROSSEL (sempre)              =  4 tokens
+//   - texto de POST ÚNICO (mesma conta, ver singlePostText) =  4 tokens
 //   - imagem de CAPA (Nano Banana 2 / Gemini 3.1 Flash)    = 25 tokens
 //   - imagem por slide de miolo (Flux Schnell)             =  2 tokens
 //
@@ -33,6 +34,49 @@
 export const TOKEN_COST = {
   /** Roteiro + legenda. Cobrado sempre, mesmo sem imagem nenhuma. */
   textOnly: 4,
+  /**
+   * Texto + COMPOSIÇÃO de um POST ÚNICO. Separado do `textOnly` porque a peça
+   * de 1 slide não faz o mesmo trabalho que o roteiro de um carrossel:
+   *
+   *   - carrossel: o modelo escreve copy e o layout vem de template pronto;
+   *   - post único: o modelo escreve copy E COMPÕE o layout do zero
+   *     (lib/single-posts/compose.ts), num loop de até 4 tentativas.
+   *
+   * Compor custa mais que preencher, e até 20/08/2026 esse custo era cobrado
+   * como se fosse igual — os 4 tokens do carrossel pagavam também a
+   * composição. Era o furo de margem do produto.
+   *
+   * ===================================================================
+   * MEDIÇÃO de 20-21/08/2026 (via generation_usage), cache FRIO:
+   *
+   *   copy (generateFreeText), cache frio ......... US$ 0,032
+   *   composeSpec, 2 tentativas, cache frio ....... US$ 0,086
+   *   ------------------------------------------------------
+   *   total do lado Claude ........................ US$ 0,118
+   *
+   * O teto de COGS por token da tabela acima é R$ 0,016069
+   * (= R$0,466 / 29 tokens). A US$ 0,118 ≈ R$ 0,64, a composição sozinha
+   * consumiria ~40 tokens de orçamento — não 8.
+   *
+   * DECISÃO (21/08/2026): fica em 4, igual ao carrossel.
+   *
+   * A conta acima é do caminho de COMPOSIÇÃO — e o produto não usa mais esse
+   * caminho: com `POST_UNICO_FOTO_REAL = false`, todo post único vai pro
+   * nano-banana (bitmap), onde o `composeSpec` NÃO roda. O que sobra do lado
+   * Claude é só a copy, que com cache quente dá ~4,7 tokens de COGS — ou seja,
+   * exatamente o que os 4 tokens já cobriam.
+   *
+   * A constante continua SEPARADA do `textOnly` de propósito: no dia em que a
+   * composição voltar a ser caminho de produto, o preço do post único sobe
+   * aqui sem arrastar carrossel, inspirações e pricing junto. Nesse dia, a
+   * medição diz ~20 tokens com cache quente (copy + compose).
+   *
+   * Antes de mexer, olhe a série real — uma amostra não é distribuição:
+   *   select stage, count(*), avg(cost_usd), avg(attempts)
+   *     from generation_usage group by stage;
+   * ===================================================================
+   */
+  singlePostText: 4,
   /** Imagem de CAPA — Nano Banana 2 (Gemini 3.1 Flash Image), ~US$0,08. */
   imageCover: 25,
   /** Imagem de slide de miolo — Flux Schnell, ~US$0,003. */
@@ -217,7 +261,7 @@ export function tokenCostForRole(role: "cover" | "slide"): number {
  * custa crédito e regenera o design do zero.
  */
 export function tokenCostForSinglePost(): number {
-  return TOKEN_COST.textOnly + TOKEN_COST.imageCover
+  return TOKEN_COST.singlePostText + TOKEN_COST.imageCover
 }
 
 /**
