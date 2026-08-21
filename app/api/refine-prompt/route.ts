@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -143,7 +144,7 @@ async function refine(
   userMessage: string,
   system: string,
 ): Promise<string> {
-  const MODEL = "claude-sonnet-4-6"
+  const MODEL = MODEL_MECANICO
   const MAX_TOKENS = 1500
 
   // O system prompt é fixo por registro; cachear pega as gerações seguintes.

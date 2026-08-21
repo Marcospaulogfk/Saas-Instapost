@@ -18,6 +18,7 @@
  * grátis — a experiência do carrossel, com o visual do bitmap.
  */
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 import { imageBlockFor } from "@/lib/generation/fetch-image"
 import type { SkeletonContent } from "./skeletons"
 import type {
@@ -166,7 +167,7 @@ Pra CADA texto da lista que aparecer na arte, MEÇA com precisão:
 Texto da lista que NÃO aparece na arte: não inclua. Não invente itens fora da lista.`
 
   const res = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_MECANICO,
     max_tokens: 3000,
     temperature: 0,
     tools: [LAYOUT_TOOL],

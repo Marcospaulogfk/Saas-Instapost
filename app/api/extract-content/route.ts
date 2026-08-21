@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 import { extractFromUrl } from "@/lib/extract-url"
 import { createClient } from "@/lib/supabase/server"
 
@@ -228,7 +229,7 @@ CONTEXTO DO POST:
 Gere o briefing estruturado seguindo as regras. Responda só com o JSON.`
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: MODEL_MECANICO,
       max_tokens: 1600,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],

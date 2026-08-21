@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { sanitizeCopyDeep } from "@/lib/copy/sanitize"
 import { regrasCopy } from "@/lib/copy/regras"
+import { MODEL_ESCRITOR, MODEL_MECANICO } from "@/lib/generation/models"
+import { computeCostUsd } from "@/lib/generation/usage-log"
 
 // =============================================================================
 // Schemas (structured outputs — guarantee JSON validity)
@@ -446,20 +448,16 @@ function getClient(): Anthropic {
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 }
 
-function computeCost(usage: {
-  input_tokens: number
-  output_tokens: number
-  cache_creation_input_tokens?: number | null
-  cache_read_input_tokens?: number | null
-}): ClaudeMetrics["costUsd"] {
-  // Sonnet 4.6 pricing
-  const inputCost = (usage.input_tokens * 3) / 1_000_000
-  const outputCost = (usage.output_tokens * 15) / 1_000_000
-  const cacheCreateCost =
-    ((usage.cache_creation_input_tokens ?? 0) * 3.75) / 1_000_000
-  const cacheReadCost =
-    ((usage.cache_read_input_tokens ?? 0) * 0.3) / 1_000_000
-  return inputCost + outputCost + cacheCreateCost + cacheReadCost
+function computeCost(
+  usage: {
+    input_tokens: number
+    output_tokens: number
+    cache_creation_input_tokens?: number | null
+    cache_read_input_tokens?: number | null
+  },
+  model: string,
+): ClaudeMetrics["costUsd"] {
+  return computeCostUsd(usage, model)
 }
 
 function extractText(
@@ -565,7 +563,7 @@ ${abordagemBrief}`
 
   const start = performance.now()
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_ESCRITOR,
     // Escala com o número de slides — 20 slides não cabem em 8192.
     max_tokens: Math.min(32000, 8192 + Math.max(0, input.nSlides - 7) * 1200),
     thinking: { type: "disabled" },
@@ -611,7 +609,7 @@ ${abordagemBrief}`
       cacheCreationInputTokens:
         response.usage.cache_creation_input_tokens ?? 0,
       cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-      costUsd: computeCost(response.usage),
+      costUsd: computeCost(response.usage, MODEL_ESCRITOR),
     },
   }
 }
@@ -647,11 +645,10 @@ Devolva o JSON com a identidade analisada.`
 
   const start = performance.now()
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_MECANICO,
     max_tokens: 1500,
     thinking: { type: "disabled" },
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: BRAND_SCHEMA },
     },
     system: BRAND_SYSTEM_PROMPT,
@@ -678,7 +675,7 @@ Devolva o JSON com a identidade analisada.`
       cacheCreationInputTokens:
         response.usage.cache_creation_input_tokens ?? 0,
       cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-      costUsd: computeCost(response.usage),
+      costUsd: computeCost(response.usage, MODEL_MECANICO),
     },
   }
 }
@@ -728,11 +725,10 @@ Devolva o JSON do plano editorial com as ideias distribuídas nas datas.`
 
   const start = performance.now()
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_MECANICO,
     max_tokens: 4096,
     thinking: { type: "disabled" },
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: EDITORIAL_PLAN_SCHEMA },
     },
     system: [
@@ -767,7 +763,7 @@ Devolva o JSON do plano editorial com as ideias distribuídas nas datas.`
       cacheCreationInputTokens:
         response.usage.cache_creation_input_tokens ?? 0,
       cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-      costUsd: computeCost(response.usage),
+      costUsd: computeCost(response.usage, MODEL_MECANICO),
     },
   }
 }
@@ -857,11 +853,10 @@ export async function planejarChatTurn(
 
   const start = performance.now()
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_MECANICO,
     max_tokens: 1200,
     thinking: { type: "disabled" },
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: PLANEJAR_CHAT_SCHEMA },
     },
     system: [
@@ -891,7 +886,7 @@ export async function planejarChatTurn(
       cacheCreationInputTokens:
         response.usage.cache_creation_input_tokens ?? 0,
       cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-      costUsd: computeCost(response.usage),
+      costUsd: computeCost(response.usage, MODEL_MECANICO),
     },
   }
 }
@@ -920,7 +915,7 @@ export async function analyzeLogoColors(
 
   const start = performance.now()
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
+    model: MODEL_MECANICO,
     max_tokens: 512,
     system: LOGO_COLOR_SYSTEM_PROMPT,
     messages: [
@@ -965,7 +960,7 @@ export async function analyzeLogoColors(
       cacheCreationInputTokens:
         response.usage.cache_creation_input_tokens ?? 0,
       cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-      costUsd: computeCost(response.usage),
+      costUsd: computeCost(response.usage, MODEL_MECANICO),
     },
   }
 }

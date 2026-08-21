@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_ESCRITOR } from "@/lib/generation/models"
 import { buildPalette, isLight } from "./palette"
 import { contrastRatio, relativeLuminance } from "@/lib/color-contrast"
 import { imageBlockFor } from "@/lib/generation/fetch-image"
@@ -1703,7 +1704,7 @@ export async function composeSpec({
     let response: Anthropic.Messages.Message
     try {
       response = await client.messages.create({
-        model: "claude-sonnet-4-6",
+        model: MODEL_ESCRITOR,
         max_tokens: 8000,
         // A direção sorteada é o guard-rail; a temperatura fica no meio do
         // caminho — alta o bastante pra variar a execução, baixa o bastante

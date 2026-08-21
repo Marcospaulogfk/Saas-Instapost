@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { MODEL_ESCRITOR } from "@/lib/generation/models"
 import type {
   BrandInfo,
   EditorialCarousel,
@@ -594,7 +595,7 @@ Gere um carrossel editorial completo no formato JSON.`
 
   console.log('📝 [Editorial] Chamando Anthropic Claude…')
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: MODEL_ESCRITOR,
     max_tokens: 4000,
     // O SYSTEM_PROMPT tem ~6.7k tokens e é IDÊNTICO entre gerações (todo dado
     // do pedido vai na mensagem do usuário) — cachear corta ~90% do custo de

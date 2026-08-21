@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 
 export const runtime = "nodejs"
 export const maxDuration = 30
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: MODEL_MECANICO,
       max_tokens: 400,
       system: `Você é editor de fotografia de uma revista. Recebe uma imagem e o texto que ela vai ilustrar, e decide se a imagem SERVE.
 

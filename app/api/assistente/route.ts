@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 import { createClient } from "@/lib/supabase/server"
 import { getActiveBrand } from "@/lib/data/queries"
 
@@ -123,7 +124,7 @@ export async function POST(req: Request) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: MODEL_MECANICO,
       max_tokens: 700,
       temperature: 0.7,
       system: [

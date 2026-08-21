@@ -15,6 +15,7 @@
 // =====================================================================
 
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 import { extractFromUrl } from "@/lib/extract-url"
 import { IDEIAS_POR_RODADA } from "./custo"
 import type {
@@ -26,7 +27,7 @@ import type {
   IdeiaObjetivo,
 } from "./tipos"
 
-const MODEL = "claude-sonnet-4-6"
+const MODEL = MODEL_MECANICO
 /** Teto de saída. Segura o custo da rodada (ver custo.ts). */
 const MAX_TOKENS = 2200
 /** Quanto de conteúdo de terceiro entra no prompt. */

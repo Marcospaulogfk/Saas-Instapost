@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_ESCRITOR } from "@/lib/generation/models"
+import { computeCostUsd } from "@/lib/generation/usage-log"
 import { generateBrandImage } from "@/lib/generation/image"
 import type { Plan } from "@/lib/tokens"
 import { POST_TEMPLATES, getTemplate } from "./catalog"
@@ -129,12 +131,7 @@ function computeCost(usage: {
   cache_creation_input_tokens?: number | null
   cache_read_input_tokens?: number | null
 }): number {
-  // Sonnet 4.6 pricing
-  const inputCost = (usage.input_tokens * 3) / 1_000_000
-  const outputCost = (usage.output_tokens * 15) / 1_000_000
-  const cacheCreate = ((usage.cache_creation_input_tokens ?? 0) * 3.75) / 1_000_000
-  const cacheRead = ((usage.cache_read_input_tokens ?? 0) * 0.3) / 1_000_000
-  return inputCost + outputCost + cacheCreate + cacheRead
+  return computeCostUsd(usage, MODEL_ESCRITOR)
 }
 
 function buildPrompt(
@@ -233,7 +230,7 @@ export async function generatePostContent(
   const client = getClient()
   const t0 = performance.now()
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_ESCRITOR,
     max_tokens: 1024,
     // ~4,2k tokens fixos entre chamadas → cacheia (ver lib/tokens.ts).
     system: [

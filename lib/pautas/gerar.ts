@@ -6,16 +6,17 @@
  * so paga quando decide materializar uma pauta em post (29 tokens, cobrados
  * no wizard de criacao via lib/tokens.ts). NAO acoplar debito aqui.
  *
- * Por isso o pedido roda barato: `effort: low`, sem thinking, sem busca web,
+ * Por isso o pedido roda barato: sem thinking, sem busca web,
  * e o system prompt fixo entra com cache_control ephemeral — o mesmo padrao
  * de lib/generation/claude.ts e app/api/refine-prompt/route.ts.
  */
 
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_MECANICO } from "@/lib/generation/models"
 import type { PostFormato, PostObjetivo } from "@/lib/planejar"
 import { DIA_SEMANA_LABEL, type PautaGerada, type PautaRede } from "./types"
 
-const MODEL = "claude-sonnet-4-6"
+const MODEL = MODEL_MECANICO
 
 /** Um slot da grade: data fixa + o que acontece naquele dia. */
 export interface SlotPauta {
@@ -166,8 +167,8 @@ ${slotsTxt}`
     // ~180 tokens por pauta + folga do envelope JSON.
     max_tokens: Math.min(16000, 1200 + input.slots.length * 260),
     thinking: { type: "disabled" },
+    // Sem `effort`: Haiku 4.5 rejeita o parâmetro (400).
     output_config: {
-      effort: "low",
       format: { type: "json_schema", schema: PAUTAS_SCHEMA },
     },
     system: [

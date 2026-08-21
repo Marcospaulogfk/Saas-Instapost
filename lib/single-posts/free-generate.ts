@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
+import { MODEL_ESCRITOR } from "@/lib/generation/models"
 import { generateBrandImageForRole } from "@/lib/generation/image"
 import {
   editNanoBanana,
@@ -633,7 +634,7 @@ async function generateCopy(
   const client = getClient()
   const userPrompt = buildUserPrompt(brand, briefing, candidates)
   const response = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL_ESCRITOR,
     // Com os `bullets` (3-4 itens de rótulo + frase) a resposta passou do teto
     // anterior de 1500 e chegava cortada no meio.
     max_tokens: 3000,

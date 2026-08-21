@@ -15,6 +15,7 @@
 // =====================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { MODEL_ESCRITOR, PRICE_BY_MODEL, priceFor } from "@/lib/generation/models"
 
 /**
  * Preço vigente do Sonnet 4.6, em USD por milhão de tokens.
@@ -24,12 +25,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
  * chances de o custo real divergir do custo medido — que é exatamente o buraco
  * que esta instrumentação fecha.
  */
-export const PRICE_PER_MTOK = {
-  input: 3,
-  output: 15,
-  cacheWrite: 3.75,
-  cacheRead: 0.3,
-} as const
+export const PRICE_PER_MTOK = PRICE_BY_MODEL[MODEL_ESCRITOR]
 
 export interface UsageLike {
   input_tokens: number
@@ -38,14 +34,17 @@ export interface UsageLike {
   cache_read_input_tokens?: number | null
 }
 
-/** Custo em USD de uma chamada, pela tabela vigente. */
-export function computeCostUsd(usage: UsageLike): number {
+/** Custo em USD de uma chamada, pela tabela do MODELO que rodou. */
+export function computeCostUsd(
+  usage: UsageLike,
+  model: string = MODEL_ESCRITOR,
+): number {
+  const p = priceFor(model)
   return (
-    (usage.input_tokens * PRICE_PER_MTOK.input) / 1_000_000 +
-    (usage.output_tokens * PRICE_PER_MTOK.output) / 1_000_000 +
-    ((usage.cache_creation_input_tokens ?? 0) * PRICE_PER_MTOK.cacheWrite) /
-      1_000_000 +
-    ((usage.cache_read_input_tokens ?? 0) * PRICE_PER_MTOK.cacheRead) / 1_000_000
+    (usage.input_tokens * p.input) / 1_000_000 +
+    (usage.output_tokens * p.output) / 1_000_000 +
+    ((usage.cache_creation_input_tokens ?? 0) * p.cacheWrite) / 1_000_000 +
+    ((usage.cache_read_input_tokens ?? 0) * p.cacheRead) / 1_000_000
   )
 }
 
@@ -97,12 +96,14 @@ export async function logGenerationUsage(
       user_id: input.userId ?? null,
       brand_id: input.brandId ?? null,
       stage: input.stage,
-      model: input.model ?? "claude-sonnet-4-6",
+      model: input.model ?? MODEL_ESCRITOR,
       input_tokens: input.usage.input_tokens,
       output_tokens: input.usage.output_tokens,
       cache_creation_input_tokens: input.usage.cache_creation_input_tokens ?? 0,
       cache_read_input_tokens: input.usage.cache_read_input_tokens ?? 0,
-      cost_usd: Number(computeCostUsd(input.usage).toFixed(6)),
+      cost_usd: Number(
+        computeCostUsd(input.usage, input.model ?? MODEL_ESCRITOR).toFixed(6),
+      ),
       attempts: input.attempts ?? 1,
       approved_on_attempt: input.approvedOnAttempt ?? null,
       tokens_charged: input.tokensCharged ?? 0,
