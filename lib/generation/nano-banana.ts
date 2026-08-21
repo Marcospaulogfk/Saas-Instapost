@@ -23,11 +23,12 @@ export interface NanoBananaResult {
 /**
  * Modelos do Fal.ai pra Nano Banana / Gemini Image.
  *
- * O modelo de CAPA é o `nano-banana-2` (Gemini 3.1 Flash Image), NÃO o
- * `nano-banana-pro`. Não é economia com perda: no leaderboard do arena o
- * nano-banana-2 pontua 1264 (rank 7) contra 1246 do pro (rank 12) — ele é ao
- * mesmo tempo metade do preço (US$0,08 vs 0,15) e melhor avaliado. O pro é
- * dominado nos dois eixos.
+ * Decisão de produto (21/08/2026, CUSTOS-IA-MARGEM): a CAPA usa o
+ * `nano-banana` simples (~US$0,04), não o `nano-banana-2` (~US$0,08). A capa
+ * era o item mais caro da geração (R$0,42) e a margem do plano depende dela.
+ * Histórico: o -2 pontua melhor no arena (1264 vs 1246 do pro), mas o simples
+ * é metade do preço e a decisão foi preço. Pra voltar ao -2 sem deploy:
+ * FAL_NANO_BANANA_COVER_MODEL=fal-ai/nano-banana-2.
  *
  * Override via env: FAL_NANO_BANANA_MODEL (normal) /
  * FAL_NANO_BANANA_COVER_MODEL (capa; FAL_NANO_BANANA_PRO_MODEL ainda é lido
@@ -38,7 +39,7 @@ const NANO_BANANA_MODEL =
 const NANO_BANANA_COVER_MODEL =
   process.env.FAL_NANO_BANANA_COVER_MODEL ||
   process.env.FAL_NANO_BANANA_PRO_MODEL ||
-  "fal-ai/nano-banana-2"
+  "fal-ai/nano-banana"
 
 /**
  * Resolução da capa. É o parâmetro mais caro do produto inteiro: o Fal cobra
@@ -210,8 +211,14 @@ export async function generateNanoBanana(
     width: image.width ?? 1080,
     height: image.height ?? 1350,
     // Fal.ai: nano-banana normal ~$0.039 · nano-banana-2 ~$0.08 em 1K
-    // (2K = 1,5× = $0.12 — ver COVER_RESOLUTION acima).
-    costUsd: isCover ? (COVER_RESOLUTION === "2K" ? 0.12 : 0.08) : 0.039,
+    // (2K = 1,5× = $0.12 — ver COVER_RESOLUTION acima). O custo segue o
+    // MODELO resolvido, não o slot: capa no nano-banana simples custa 0.039.
+    costUsd:
+      model === "fal-ai/nano-banana"
+        ? 0.039
+        : COVER_RESOLUTION === "2K"
+          ? 0.12
+          : 0.08,
     ms,
     model,
   }

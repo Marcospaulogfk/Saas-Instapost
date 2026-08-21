@@ -123,43 +123,20 @@ export async function POST(req: Request) {
       fonte: fonte || undefined,
     }
 
-    let result = await generateContent(baseInput)
+    const result = await generateContent(baseInput)
 
-    // Validação em código da capa. O prompt PEDE o sujeito nomeado e proíbe
-    // abrir com "Você", mas regra de prompt o modelo ignora (foi o que produziu
-    // "VOCÊ TORCEU PELA VILÃ", sem nomear a série). Vale pra qualquer registro
-    // vindo de link: capa editorial é capa de sujeito, nunca de conceito.
-    // Uma regeração corretiva, e só uma: se falhar de novo, segue com o
-    // resultado (capa imperfeita é melhor que geração quebrada).
+    // Guard da capa em modo SÓ LOG. A regeração corretiva foi removida em
+    // 21/08/2026 (CUSTOS-IA-MARGEM): custava +R$0,08 em ~30% das gerações e
+    // não resolveu a qualidade percebida (copy seguia sendo reprovada com ela
+    // ligada). O log fica pra medir a taxa real de capa sem sujeito; a
+    // correção de verdade é no prompt do escritor, não em chamada extra.
     if (registro) {
       const cover = result.data.slides?.[0]
       const motivo = cover ? motivoRejeicaoCapa(cover, protagonista) : null
       if (cover && motivo) {
         console.warn(
-          `[editorial/generate-script] capa rejeitada ("${cover.title}"): ${motivo}`,
+          `[editorial/generate-script] capa sem sujeito (só log, sem retry): "${cover.title}": ${motivo}`,
         )
-        const retry = await generateContent({
-          ...baseInput,
-          rejectedCover: cover.title,
-          rejectedCoverReason: motivo,
-        })
-        result = {
-          ...retry,
-          metrics: {
-            ...retry.metrics,
-            ms: result.metrics.ms + retry.metrics.ms,
-            inputTokens: result.metrics.inputTokens + retry.metrics.inputTokens,
-            outputTokens:
-              result.metrics.outputTokens + retry.metrics.outputTokens,
-            cacheCreationInputTokens:
-              result.metrics.cacheCreationInputTokens +
-              retry.metrics.cacheCreationInputTokens,
-            cacheReadInputTokens:
-              result.metrics.cacheReadInputTokens +
-              retry.metrics.cacheReadInputTokens,
-            costUsd: result.metrics.costUsd + retry.metrics.costUsd,
-          },
-        }
       }
     }
 

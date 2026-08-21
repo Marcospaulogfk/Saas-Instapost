@@ -112,19 +112,15 @@ CONTEXTO:
 - Objetivo: ${body.objetivo ?? "engajar"}
 - Abordagem: ${body.abordagem ?? "—"}
 
-Antes de expandir, PESQUISE na web pra entender de que assunto/entidade o briefing realmente trata (não assuma pelo seu conhecimento prévio — termos podem ser recentes ou ambíguos). Depois expanda usando a estrutura definida, baseado nos fatos reais que encontrar.`
+Expanda usando a estrutura definida, a partir do que o briefing diz. Se o briefing cita um fato, número ou entidade que você não conhece com segurança, NÃO invente detalhes: mantenha o que o usuário escreveu e marque o ponto como [a confirmar] em vez de completar com suposição.`
 
-    const { text, grounded } = await refineWithGrounding(
-      client,
-      userMessage,
-      buildSystemPrompt(body.registro),
-    )
+    const text = await refine(client, userMessage, buildSystemPrompt(body.registro))
 
     if (!text) {
       return NextResponse.json({ error: "IA não retornou texto" }, { status: 500 })
     }
 
-    return NextResponse.json({ refined: text, grounded, ms: 0 })
+    return NextResponse.json({ refined: text, grounded: false, ms: 0 })
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"
     console.error("[refine-prompt]", err)
@@ -133,74 +129,37 @@ Antes de expandir, PESQUISE na web pra entender de que assunto/entidade o briefi
 }
 
 /**
- * Roda o refino com a ferramenta de busca web da Anthropic (grounding).
- * Se a busca web não estiver disponível na conta (erro da API), faz fallback
- * automático pra geração sem ferramenta — o prompt anti-alucinação continua valendo.
+ * Refino do briefing em UMA chamada, sem ferramenta de busca.
+ *
+ * Decisão de produto (21/08/2026, CUSTOS-IA-MARGEM): a busca web rodava em toda
+ * geração (até 3 buscas + releitura dos resultados em cada pause_turn) e
+ * custava R$0,44 por geração, mais que o próprio roteiro. Não é opt-in nem
+ * toggle: o custo não existe mais. No modo link a página já é a fonte; no
+ * modo do-zero o briefing do usuário é a fonte. O prompt anti-alucinação
+ * continua valendo e a resposta mantém `grounded: false` pra compatibilidade.
  */
-async function refineWithGrounding(
+async function refine(
   client: Anthropic,
   userMessage: string,
   system: string,
-): Promise<{ text: string; grounded: boolean }> {
+): Promise<string> {
   const MODEL = "claude-sonnet-4-6"
   const MAX_TOKENS = 1500
-  // web_search é um server tool da Anthropic (cobrado por busca).
-  const webSearchTool = { type: "web_search_20250305", name: "web_search", max_uses: 3 }
 
-  // O refino roda em TODA geração (é automático no "Gerar"), e o system prompt
-  // é fixo por registro — os dados do pedido vão na mensagem do usuário. Cachear aqui pega
-  // as 3 chamadas abaixo, inclusive os reenvios de pause_turn, que repetem o
-  // mesmo prefixo várias vezes na MESMA geração.
+  // O system prompt é fixo por registro; cachear pega as gerações seguintes.
   const systemBlocks: Anthropic.TextBlockParam[] = [
     { type: "text", text: system, cache_control: { type: "ephemeral" } },
   ]
 
-  const extractText = (content: Anthropic.ContentBlock[]) =>
-    content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim()
-
-  try {
-    const messages: Anthropic.MessageParam[] = [
-      { role: "user", content: userMessage },
-    ]
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: systemBlocks,
-      tools: [webSearchTool] as any,
-      messages,
-    })
-    // Server tools podem pausar (pause_turn) — reenvia até concluir.
-    let guard = 0
-    while (response.stop_reason === "pause_turn" && guard < 4) {
-      messages.push({ role: "assistant", content: response.content })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      response = await client.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        system: systemBlocks,
-        tools: [webSearchTool] as any,
-        messages,
-      })
-      guard++
-    }
-    return { text: extractText(response.content), grounded: true }
-  } catch (err) {
-    // Busca web indisponível/não habilitada → fallback sem ferramenta.
-    console.warn(
-      "[refine-prompt] web search falhou, fallback sem grounding:",
-      err instanceof Error ? err.message : err,
-    )
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: systemBlocks,
-      messages: [{ role: "user", content: userMessage }],
-    })
-    return { text: extractText(response.content), grounded: false }
-  }
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: MAX_TOKENS,
+    system: systemBlocks,
+    messages: [{ role: "user", content: userMessage }],
+  })
+  return response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim()
 }

@@ -621,22 +621,13 @@ function CriarWizard() {
         .filter(Boolean)
         .join("\n")
 
-      // GROUNDING no modo link. Se falhar, segue com o briefing extraído —
-      // grounding nunca bloqueia a geração. O resultado é COMPLEMENTO, nunca
-      // substituto: quando a reescrita do refine substituía a extração, nome
-      // do protagonista e fonte não sobreviviam (caso "VOCÊ TORCEU PELA VILÃ"
-      // sem citar a série).
-      const grounded = await refinarComIA(
-        [extraido, estrutura].filter(Boolean).join("\n"),
-        meta.registro,
-      )
-      const text = [
-        extraido,
-        estrutura,
-        grounded ? `PESQUISA ADICIONAL (contexto da web):\n${grounded}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n\n")
+      // MODO LINK NÃO PASSA PELO REFINE (decisão 21/08/2026, CUSTOS-IA-MARGEM):
+      // a página colada já é a fonte. Sem busca web, o refine só reescreveria
+      // o que a extração acima já estruturou, cobrando uma chamada a mais. O
+      // escritor recebe o extraído + a estrutura direto.
+      const text = [extraido, estrutura].filter(Boolean).join("
+
+")
       return { text, link: meta }
     }
     // `refined` cobre o refino automático da mesma submissão (o state

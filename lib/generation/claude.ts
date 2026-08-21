@@ -167,10 +167,9 @@ BOM:  "Seu concorrente responde em 5 minutos, você em 2 dias"
 **3b. QUANDO O BRIEFING É NOTÍCIA (fato apurado, prêmio, lançamento, dado novo, alguém fez algo).**
 Aqui a copy muda de registro: não é slogan de marca, é manchete. Regras próprias:
 - A CAPA carrega FATO + PROTAGONISTA + FONTE. Nunca deixe o protagonista pro subtítulo — se o post é sobre alguém, o nome dessa pessoa aparece na capa.
-- Estrutura de manchete de revista, que é a que performa nesse registro:
-  \`[o fenômeno nomeado, com o apelido entre aspas quando houver] : [pergunta "por que"/"como" OU a tese]\`
-  Ex: "O 'tênis de pai' que virou febre entre os jovens: como a New Balance voltou a ser o tênis da moda da Geração Z?"
-- **Neste registro o limite de 6-9 palavras NÃO se aplica**: manchete de análise funciona com 15-25 palavras, porque entrega assunto e promessa ao mesmo tempo. Use os dois-pontos como dobradiça.
+- A capa NOMEIA o sujeito (pessoa, marca, produto, obra) e entrega a promessa ou a tese. A forma é livre: afirmação, pergunta, contraste, citação, número. NÃO existe molde fixo; varie a construção entre gerações e NUNCA use a mesma estrutura nos 3 hooks. Dois-pontos é uma opção entre várias, não o padrão.
+  Ex (formas diferentes, todas válidas): "Como a New Balance virou o tênis da Geração Z sem mudar o tênis" / "A New Balance não ficou jovem. A Geração Z é que envelheceu o gosto." / "Por que o 'tênis de pai' da New Balance esgotou três vezes em 2026"
+- **Neste registro o limite de 6-9 palavras NÃO se aplica**: manchete de análise funciona com 15-25 palavras, porque entrega assunto e promessa ao mesmo tempo.
 - Atribuição obrigatória quando o fato depende de uma fonte ("segundo a Wallpaper*", "a Folha apurou").
 - Separe fato de leitura: o fato vai na capa, a interpretação vai no corpo.
 - PROIBIDO transformar o fato em slogan publicitário. "30 ESCRITÓRIOS NO MUNDO. UM É DE SÃO PAULO." é bom slogan e manchete ruim: sonega quem premiou, quem foi premiado e por quê.
@@ -680,7 +679,7 @@ Motivo: quem vê a capa no feed precisa saber em 1 segundo de QUEM/DO QUE se tra
       }${
         input.registro === "noticia"
           ? `
-- Capa em formato manchete de revista com dois-pontos, 15-25 palavras. O teto de 6-9 palavras NÃO vale pra essa capa.`
+- Capa em formato manchete de revista, 15-25 palavras, com o sujeito nomeado. Forma livre (sem molde de dois-pontos obrigatório). O teto de 6-9 palavras NÃO vale pra essa capa.`
           : `
 - Registro ${input.registro}: mantenha a capa curta e afiada (6-12 palavras), mas com o nome do sujeito dentro. Não é manchete de jornal, é frase de crítica/ensaio, e mesmo assim precisa do nome.`
       }
