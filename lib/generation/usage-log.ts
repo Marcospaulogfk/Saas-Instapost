@@ -53,6 +53,10 @@ export type UsageStage =
   | "post_unico_compose"
   | "post_unico_layout"
   | "carousel_copy"
+  /** /api/refine-prompt: organiza o briefing do modo do-zero (migration 0018). */
+  | "refine_briefing"
+  /** /api/extract-content: leitura estruturada do link (migration 0018). */
+  | "extract_link"
   | "outro"
 
 export interface LogUsageInput {
@@ -68,6 +72,11 @@ export interface LogUsageInput {
   /** Tokens do PRODUTO cobrados do usuário nesta ação (lib/tokens.ts). */
   tokensCharged?: number
   durationMs?: number
+  /**
+   * Observações da etapa (coluna jsonb, migration 0018). Só é enviada quando
+   * definida, pra que stages antigos continuem gravando antes da migration.
+   */
+  meta?: Record<string, unknown>
 }
 
 /**
@@ -111,6 +120,7 @@ export async function logGenerationUsage(
         typeof input.durationMs === "number"
           ? Math.round(input.durationMs)
           : null,
+      ...(input.meta ? { meta: input.meta } : {}),
     })
 
     if (error) {

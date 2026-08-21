@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import { MODEL_MECANICO } from "@/lib/generation/models"
+import { logGenerationUsage } from "@/lib/generation/usage-log"
+import { createClient } from "@/lib/supabase/server"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -115,7 +117,15 @@ CONTEXTO:
 
 Expanda usando a estrutura definida, a partir do que o briefing diz. Se o briefing cita um fato, número ou entidade que você não conhece com segurança, NÃO invente detalhes: mantenha o que o usuário escreveu e marque o ponto como [a confirmar] em vez de completar com suposição.`
 
-    const text = await refine(client, userMessage, buildSystemPrompt(body.registro))
+    const start = performance.now()
+    const { text, usage } = await refine(
+      client,
+      userMessage,
+      buildSystemPrompt(body.registro),
+    )
+    // Medidor de COGS (etapa 5, 21/08/2026): era a etapa mais cara e a única
+    // sem medida no banco. Best-effort, nunca bloqueia a resposta.
+    await logRefineUsage(usage, performance.now() - start)
 
     if (!text) {
       return NextResponse.json({ error: "IA não retornou texto" }, { status: 500 })
@@ -143,7 +153,7 @@ async function refine(
   client: Anthropic,
   userMessage: string,
   system: string,
-): Promise<string> {
+): Promise<{ text: string; usage: Anthropic.Usage }> {
   const MODEL = MODEL_MECANICO
   const MAX_TOKENS = 1500
 
@@ -158,9 +168,28 @@ async function refine(
     system: systemBlocks,
     messages: [{ role: "user", content: userMessage }],
   })
-  return response.content
+  const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("\n")
     .trim()
+  return { text, usage: response.usage }
+}
+
+async function logRefineUsage(usage: Anthropic.Usage, ms: number): Promise<void> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    await logGenerationUsage(supabase, {
+      stage: "refine_briefing",
+      model: MODEL_MECANICO,
+      usage,
+      userId: user?.id ?? null,
+      durationMs: ms,
+    })
+  } catch (err) {
+    console.warn("[refine-prompt] log de uso falhou:", err)
+  }
 }

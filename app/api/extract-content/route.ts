@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { MODEL_MECANICO } from "@/lib/generation/models"
 import { extractFromUrl } from "@/lib/extract-url"
 import { createClient } from "@/lib/supabase/server"
+import { logGenerationUsage } from "@/lib/generation/usage-log"
 
 const OG_BUCKET = "editorial-uploads"
 const OG_MAX_BYTES = 10 * 1024 * 1024
@@ -228,12 +229,15 @@ CONTEXTO DO POST:
 
 Gere o briefing estruturado seguindo as regras. Responda só com o JSON.`
 
+    const start = performance.now()
     const response = await client.messages.create({
       model: MODEL_MECANICO,
       max_tokens: 1600,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     })
+    // Medidor de COGS (etapa 5, 21/08/2026). Best-effort.
+    await logExtractUsage(response.usage, performance.now() - start)
 
     const block = response.content.find((b) => b.type === "text")
     if (!block || block.type !== "text") {
@@ -277,5 +281,23 @@ Gere o briefing estruturado seguindo as regras. Responda só com o JSON.`
     const message = err instanceof Error ? err.message : "erro desconhecido"
     console.error("[extract-content]", err)
     return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+async function logExtractUsage(usage: Anthropic.Usage, ms: number): Promise<void> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    await logGenerationUsage(supabase, {
+      stage: "extract_link",
+      model: MODEL_MECANICO,
+      usage,
+      userId: user?.id ?? null,
+      durationMs: ms,
+    })
+  } catch (err) {
+    console.warn("[extract-content] log de uso falhou:", err)
   }
 }
