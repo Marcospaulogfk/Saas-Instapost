@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk"
+import { REGRA_TRAVESSAO, sanitizeCopyDeep } from "@/lib/copy/sanitize"
 
 // =============================================================================
 // Schemas (structured outputs — guarantee JSON validity)
@@ -151,7 +152,7 @@ BOM:  "Você manda 27 propostas e fecha 3" / "Esse jeito de vender morreu em 201
 
 **2. Uma ideia por slide.** Subtitle tensiona o título — não repete. Body aprofunda — não enfeita.
 
-**2b. SUBTITLE — proibido suspense vazio.** Subtitle de "mistério genérico" é a maior bandeira vermelha de IA. NUNCA use (nem variações): "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo", "Você não está pronto pra isso", "A verdade que escondem de você". Teste: se o subtitle serve pra QUALQUER título de QUALQUER nicho, ele é ruim — reescreva.
+**2b. Proibido suspense vazio, em QUALQUER campo.** Frase de "mistério genérico" é a maior bandeira vermelha de IA. NUNCA use, nem variações, nem no title, nem no subtitle, nem no body, nem na legenda: "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo", "Isso muda tudo", "Você não está pronto pra isso", "A verdade que escondem de você", "E é aí que mora o perigo". Teste: se a frase serve pra QUALQUER título de QUALQUER nicho, ela é ruim, reescreva com o conteúdo concreto que ela está substituindo.
 RUIM: title "Seu site tá falando mal de você" + subtitle "E você nem percebeu ainda." (vago, encaixa em tudo)
 BOM:  title "Seu site tá falando mal de você" + subtitle "O visitante decide em 5 segundos se confia." (concreto, adiciona informação)
 BOM:  title "Você posta e ninguém curte" + subtitle "→ 3 erros de estrutura que matam o alcance" (promessa específica)
@@ -167,7 +168,7 @@ BOM:  "Seu concorrente responde em 5 minutos, você em 2 dias"
 Aqui a copy muda de registro: não é slogan de marca, é manchete. Regras próprias:
 - A CAPA carrega FATO + PROTAGONISTA + FONTE. Nunca deixe o protagonista pro subtítulo — se o post é sobre alguém, o nome dessa pessoa aparece na capa.
 - Estrutura de manchete de revista, que é a que performa nesse registro:
-  \`[o fenômeno nomeado — com o apelido entre aspas quando houver] : [pergunta "por que"/"como" OU a tese]\`
+  \`[o fenômeno nomeado, com o apelido entre aspas quando houver] : [pergunta "por que"/"como" OU a tese]\`
   Ex: "O 'tênis de pai' que virou febre entre os jovens: como a New Balance voltou a ser o tênis da moda da Geração Z?"
 - **Neste registro o limite de 6-9 palavras NÃO se aplica**: manchete de análise funciona com 15-25 palavras, porque entrega assunto e promessa ao mesmo tempo. Use os dois-pontos como dobradiça.
 - Atribuição obrigatória quando o fato depende de uma fonte ("segundo a Wallpaper*", "a Folha apurou").
@@ -192,9 +193,11 @@ PROIBIDO (bandeira vermelha de IA, NUNCA usar): "Descubra", "Conheça", "Saiba m
 
 **6. PT-BR coloquial culto.** Sem gerundismo, sem "podemos te ajudar".
 
-**7. Pontuação natural.** Encadeia ideias com vírgula — NÃO quebra toda oração numa frase separada terminada em ponto. Evita o staccato robótico: "Não é nicho. É três em cada quatro." soa de IA — prefira "Não é nicho — já são três em cada quatro." ou "Não é nicho: três em cada quatro." Ponto final separa ideias DIFERENTES, não pedaços da mesma frase. Antes de entregar, RELEIA cada body: se duas "frases" vizinhas compartilham o mesmo sujeito ou completam a mesma ideia, junte com vírgula ou travessão.
+**7. Pontuação natural.** Encadeia ideias com vírgula, NÃO quebra toda oração numa frase separada terminada em ponto. Evita o staccato robótico: "Não é nicho. É três em cada quatro." soa de IA; prefira "Não é nicho: já são três em cada quatro." Ponto final separa ideias DIFERENTES, não pedaços da mesma frase. Antes de entregar, RELEIA cada body: se duas "frases" vizinhas compartilham o mesmo sujeito ou completam a mesma ideia, junte com vírgula ou dois-pontos.
 RUIM: "A audiência chegou. O site espantou. É assim que oportunidade vira estatística." (staccato, 3 pontos na mesma ideia)
-BOM:  "A audiência chegou, o site espantou — e a oportunidade virou estatística de rejeição."
+BOM:  "A audiência chegou, o site espantou, e a oportunidade virou estatística de rejeição."
+
+**7c. ${REGRA_TRAVESSAO}**
 
 **7b. BODY carrega informação, não decoração.** Cada body precisa de pelo menos 1 elemento concreto: dado do briefing, exemplo, consequência prática ou mecanismo ("como/por quê"). Body que só reescreve o título com outras palavras = rejeitado.
 
@@ -339,7 +342,7 @@ Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa 
 # PROFUNDIDADE EDITORIAL (anti-superficialidade)
 
 Conteúdo raso é a segunda maior bandeira de IA (depois do clichê). Em CADA carrossel:
-- Vá além do óbvio: explique o MECANISMO (como/por que acontece), não só o fenômeno. "Postar todo dia não adianta" é raso; "o algoritmo pontua retenção por impressão — 10 posts medianos derrubam a média que 2 bons construíram" tem mecanismo.
+- Vá além do óbvio: explique o MECANISMO (como/por que acontece), não só o fenômeno. "Postar todo dia não adianta" é raso; "o algoritmo pontua retenção por impressão: 10 posts medianos derrubam a média que 2 bons construíram" tem mecanismo.
 - Traga pelo menos 1 consequência de segunda ordem, trade-off ou contraponto honesto ("isso funciona, MAS custa X"). Opinião com nuance > lista de obviedades.
 - Cada slide intermediário AVANÇA o raciocínio — reformular o mesmo ponto com outras palavras em 2 slides é rejeitado.
 - Teste final: um especialista do nicho salvaria esse carrossel? Se a resposta é "não, ele já sabe tudo isso", aprofunde o ângulo antes de entregar.
@@ -413,6 +416,7 @@ const EDITORIAL_PLAN_SYSTEM_PROMPT = `Você é um(a) estrategista de conteúdo s
 # REGRAS
 
 - PROIBIDO clichê de IA: "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "Transforme sua vida", "Não perca", "Aproveite agora".
+- PROIBIDO travessão ("—" ou "–") em qualquer campo. Use vírgula, dois-pontos ou ponto. É o tique que mais denuncia texto de IA em português.
 - PT-BR coloquial culto. Sem gerundismo.
 - O número de ideias DEVE bater com o pedido.
 - Datas SEMPRE dentro da janela [data_inicio, data_fim] informada.
@@ -444,6 +448,23 @@ export interface GenerationInput {
    * Quando presente, o novo roteiro deve ser substancialmente diferente.
    */
   avoidTitles?: string[]
+  /**
+   * Registro editorial detectado na extração do link. Quando "noticia", as
+   * regras de manchete do system prompt deixam de depender de inferência —
+   * o user message liga o bloco explicitamente, com nome e fonte reais.
+   */
+  registro?: string
+  /** Entidade protagonista da notícia (nome exato da extração). */
+  protagonista?: string
+  /** Fonte do fato (ex: "revista Wallpaper*"). */
+  fonte?: string
+  /**
+   * Capa rejeitada pela validação em código (sem o nome do sujeito, ou abrindo
+   * com pronome vazio). Presente = regeração corretiva.
+   */
+  rejectedCover?: string
+  /** Por que a capa foi rejeitada — vai no prompt da regeração. */
+  rejectedCoverReason?: string
 }
 
 /**
@@ -634,6 +655,45 @@ export async function generateContent(
     ? ABORDAGEM_BRIEF[input.abordagem]
     : null
 
+  // Briefing vindo de link: o registro é DADO (detectado na extração), não
+  // inferência. Deixar o modelo adivinhar falhava — depois do refine-prompt o
+  // briefing parecia copy de funil e o bloco de manchete nunca disparava.
+  //
+  // A exigência de NOMEAR o sujeito vale pra todo registro: capa de conteúdo
+  // editorial é capa de sujeito, nunca de conceito. Só o FORMATO de manchete
+  // longa é exclusivo de notícia (numa crítica ela soaria burocrática).
+  const noticiaBlock = input.registro
+    ? `
+
+ESTE BRIEFING VEIO DE UM ARTIGO. Registro detectado na extração: ${input.registro.toUpperCase()} (é dado, não inferência sua).${
+        input.protagonista
+          ? `
+
+⚠️ SUJEITO OBRIGATÓRIO NA CAPA: o title do slide 0 DEVE nomear "${input.protagonista}". Nomear só no subtítulo NÃO vale, e pronome ("ela", "ele", "a vilã", "uma brasileira") NÃO substitui o nome.
+Motivo: quem vê a capa no feed precisa saber em 1 segundo de QUEM/DO QUE se trata. Capa que descreve sem nomear ("Você torceu pela vilã a temporada toda") não recruta nem o fã do assunto, porque ele não sabe que é sobre o que ele gosta. Se houver uma obra/série/produto que dá reconhecimento ainda mais imediato que o protagonista, cite os dois.`
+          : ""
+      }${
+        input.fonte
+          ? `
+- O fato depende de fonte: credite "${input.fonte}" na capa ou no subtítulo dela.`
+          : ""
+      }${
+        input.registro === "noticia"
+          ? `
+- Capa em formato manchete de revista com dois-pontos, 15-25 palavras. O teto de 6-9 palavras NÃO vale pra essa capa.`
+          : `
+- Registro ${input.registro}: mantenha a capa curta e afiada (6-12 palavras), mas com o nome do sujeito dentro. Não é manchete de jornal, é frase de crítica/ensaio, e mesmo assim precisa do nome.`
+      }
+- Se o briefing trouxer uma "Headline de Impacto" pronta que não nomeia o sujeito, DESCARTE-A.`
+    : ""
+
+  const rejectedCoverBlock = input.rejectedCover
+    ? `
+
+CAPA REJEITADA PELA VALIDAÇÃO AUTOMÁTICA: "${input.rejectedCover}"
+Motivo: ${input.rejectedCoverReason ?? "não nomeia o sujeito do post"}. Reescreva a capa corrigindo exatamente isso, mantendo o restante do roteiro no mesmo nível.`
+    : ""
+
   const avoidBlock =
     input.avoidTitles && input.avoidTitles.length
       ? `
@@ -662,7 +722,7 @@ CONTEXTO:
 ABORDAGEM ESCOLHIDA PELO USUÁRIO — ela define a ESTRUTURA e o REGISTRO do texto (dois carrosséis sobre o mesmo tema com abordagens diferentes precisam ficar claramente diferentes):
 ${abordagemBrief}`
       : ""
-  }${avoidBlock}`
+  }${noticiaBlock}${rejectedCoverBlock}${avoidBlock}`
 
   const start = performance.now()
   const response = await client.messages.create({
@@ -697,7 +757,10 @@ ${abordagemBrief}`
   }
 
   const raw = extractText(response.content)
-  const data = parseJson<ClaudeResponse>(raw)
+  // Travessão some aqui, não no prompt: a regra existe no system prompt, mas
+  // num roteiro de 7 slides o modelo escorrega em pelo menos um. Ver
+  // lib/copy/sanitize.ts.
+  const data = sanitizeCopyDeep(parseJson<ClaudeResponse>(raw))
 
   return {
     data,
@@ -854,7 +917,7 @@ Devolva o JSON do plano editorial com as ideias distribuídas nas datas.`
   }
 
   const raw = extractText(response.content)
-  const data = parseJson<EditorialPlanResponse>(raw)
+  const data = sanitizeCopyDeep(parseJson<EditorialPlanResponse>(raw))
 
   return {
     data,
@@ -904,6 +967,7 @@ const PLANEJAR_CHAT_SYSTEM_PROMPT = `Você é um(a) estrategista de conteúdo qu
 - action "generate": briefing suficiente. "message" = frase curta confirmando que vai montar o plano (mencione 1 detalhe concreto da conversa pra mostrar que ouviu). "brief" = briefing COMPLETO e estruturado pro gerador de cronograma (objetivo do cliente, público/recorte, temas e datas a destacar, restrições/pedidos específicos, ritmo). "horizonDays" = dias do plano (7, 14 ou 30 conforme a conversa; default 7). "count" = quantidade de posts coerente com o ritmo pedido e o horizonte (ex: 3/semana em 14 dias = 6).
 
 - PROIBIDO clichê de IA ("Perfeito!", "Ótima escolha!", "Com certeza!" em toda mensagem). Varie o registro.
+- PROIBIDO travessão ("—" ou "–"). Use vírgula, dois-pontos ou ponto.
 - NÃO use aspas duplas dentro das strings.`
 
 export interface PlanejarChatInput {
@@ -977,7 +1041,7 @@ export async function planejarChatTurn(
   }
 
   const raw = extractText(response.content)
-  const data = parseJson<PlanejarChatTurn>(raw)
+  const data = sanitizeCopyDeep(parseJson<PlanejarChatTurn>(raw))
 
   return {
     data,

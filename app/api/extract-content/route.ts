@@ -84,7 +84,7 @@ Devolva APENAS um objeto JSON válido, sem cercas de código, sem comentário, c
   "fonte": "quem afirma/premia/publicou o fato (ex: 'revista Wallpaper*'), ou '' se o texto não depende de uma fonte",
   "registro": "noticia | educativo | opiniao | case",
   "entidades": [
-    { "nome": "nome próprio EXATO como aparece no texto", "tipo": "person|work|org|place", "papel": "protagonista|citado" }
+    { "nome": "nome próprio EXATO como aparece no texto", "tipo": "person|work|org|place", "papel": "protagonista|citado|autor" }
   ],
   "obras": ["nome de obra, projeto, produto ou peça concreta citada"],
   "numeros": [ { "valor": "60 m²", "contexto": "área da Casa Contêiner" } ],
@@ -95,6 +95,8 @@ Devolva APENAS um objeto JSON válido, sem cercas de código, sem comentário, c
 REGRAS:
 - Seja específico e fiel ao conteúdo da página. NÃO invente fatos, números ou nomes que não estão no texto.
 - \`entidades\`: no máximo 6, protagonista primeiro. Copie o nome EXATAMENTE como está escrito (com acento). Não normalize, não abrevie, não "corrija".
+- ⚠️ QUEM ESCREVEU A PÁGINA NÃO É O ASSUNTO DA PÁGINA. O jornalista, crítico, colunista, redator ou editor que ASSINA o texto NUNCA recebe papel "protagonista". Se o nome aparece só como assinatura ("Por Fulano"), byline, bio de autor, crédito de foto, perfil do site ou linha de redação, marque papel "autor" — ou omita. O protagonista é sempre quem o texto FALA SOBRE, nunca quem o texto ESCREVEU. Errar isso põe o nome do jornalista na capa do post como se a notícia fosse sobre ele.
+- \`papel\` "protagonista": reserve pra 1 entidade (no máximo 2) — o sujeito real do texto. Todo o resto é "citado".
 - \`vocabulario_visual\`: 4 a 8 itens. Só coisas que dá pra FOTOGRAFAR. Nada de abstração ("inovação", "excelência").
 - \`sujeito_visual\`: se a matéria é sobre uma pessoa por causa de algo que ela FEZ, o sujeito visual é a OBRA, não a pessoa — a obra sempre rende capa melhor e não corre risco de virar retrato de estranho.
 - Arrays vazios quando não houver material: \`[]\`. String vazia: \`""\`. Nunca preencha por preencher.
@@ -118,6 +120,30 @@ interface StructuredBriefing {
   numeros: Array<{ valor: string; contexto: string }>
   vocabulario_visual: string[]
   sujeito_visual: string
+}
+
+/**
+ * Remove a assinatura da matéria da lista de entidades.
+ *
+ * O modelo às vezes lê o byline como sujeito e devolve o crítico do site como
+ * "protagonista" — e aí a capa do post sai anunciando o jornalista em vez do
+ * assunto. A regra do prompt cobre o caso comum; isto cobre o resto: entidade
+ * com papel "autor" cai fora, e sobra de papel "protagonista" vira "citado"
+ * (só o primeiro é de fato o sujeito).
+ */
+function sanitizeEntidades(
+  entidades: Array<{ nome?: string; tipo?: string; papel?: string }>,
+): Array<{ nome?: string; tipo?: string; papel?: string }> {
+  const limpas = entidades.filter(
+    (e) => e?.nome?.trim() && e.papel !== "autor",
+  )
+  let jaTemProtagonista = false
+  return limpas.map((e) => {
+    if (e.papel !== "protagonista") return e
+    if (jaTemProtagonista) return { ...e, papel: "citado" }
+    jaTemProtagonista = true
+    return e
+  })
 }
 
 /** Tolera cerca de código e texto solto em volta do JSON. */
@@ -240,7 +266,7 @@ Gere o briefing estruturado seguindo as regras. Responda só com o JSON.`
       tese: parsed?.tese ?? "",
       fonte: parsed?.fonte ?? "",
       registro: parsed?.registro ?? "noticia",
-      entidades: parsed?.entidades ?? [],
+      entidades: sanitizeEntidades(parsed?.entidades ?? []),
       obras: parsed?.obras ?? [],
       numeros: parsed?.numeros ?? [],
       vocabulario_visual: parsed?.vocabulario_visual ?? [],

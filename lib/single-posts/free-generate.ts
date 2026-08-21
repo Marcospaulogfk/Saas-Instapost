@@ -14,6 +14,7 @@ import {
   extractTextLayout,
 } from "./extract-layout"
 import { fetchImageAsBase64 } from "@/lib/generation/fetch-image"
+import { REGRA_TRAVESSAO, sanitizeCopyDeep } from "@/lib/copy/sanitize"
 import { searchWikimediaPerson } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import { composeSpec } from "./compose"
@@ -57,9 +58,11 @@ Um post = uma ideia. Se tem subtitle, ele tensiona o título — não repete.
 RUIM: "Seu site tá falando mal de você" + "E você nem percebeu ainda."
 BOM:  "Seu site tá falando mal de você" + "O visitante decide em 5 segundos se confia."
 
-**3. Frases que cabem no Insta — curtas, com ritmo.**
-6-9 palavras no título. Body em 1-2 frases. Sem ponto-e-vírgula, sem dois-pontos no meio.
-⚠️ Pontuação natural: encadeie ideias com vírgula/travessão — ponto final só separa ideias DIFERENTES. "A audiência chegou. O site espantou." é staccato robótico; prefira "A audiência chegou, o site espantou."
+**3. Frases que cabem no Insta, curtas e com ritmo.**
+6-9 palavras no título. Body em 1-2 frases.
+⚠️ Pontuação natural: encadeie ideias com vírgula. Ponto final só separa ideias DIFERENTES. "A audiência chegou. O site espantou." é staccato robótico; prefira "A audiência chegou, o site espantou."
+
+**3b. ${REGRA_TRAVESSAO}**
 
 **4. Verbos vivos, sem clichê.**
 PROIBIDO usar (são bandeira vermelha de IA): "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora".
@@ -686,7 +689,12 @@ async function generateCopy(
   if (!block || block.type !== "tool_use") {
     throw new Error("Claude não retornou a copy estruturada")
   }
-  return { parsed: block.input as SkeletonResponse, usage: response.usage }
+  // Travessão fora, inclusive dos textos citados dentro do photo_prompt (eles
+  // viram tipografia no bitmap). Ver lib/copy/sanitize.ts.
+  return {
+    parsed: sanitizeCopyDeep(block.input as SkeletonResponse),
+    usage: response.usage,
+  }
 }
 
 /**

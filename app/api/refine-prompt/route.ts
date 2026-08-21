@@ -4,7 +4,28 @@ import Anthropic from "@anthropic-ai/sdk"
 export const runtime = "nodejs"
 export const maxDuration = 60
 
-const SYSTEM_PROMPT = `Você é copy + diretor de arte sênior tipo Wieden+Kennedy / Pentagram. Vai receber uma ideia bruta de post e EXPANDIR pra um prompt estruturado que vai virar input pra outra IA gerar arte+copy.
+/**
+ * O system prompt muda com o REGISTRO do briefing. No registro "noticia" o
+ * slot de headline vira manchete de revista (15-25 palavras, protagonista +
+ * fonte) — antes ele sugeria sempre um slogan de 6-9 palavras, e esse slogan
+ * pré-pronto contaminava a capa do carrossel gerado depois (caso "VOCÊ TORCEU
+ * PELA VILÃ": hook curto sem nomear a série, herdado daqui).
+ */
+function buildSystemPrompt(registro?: string): string {
+  const isNoticia = registro === "noticia"
+
+  const headlineSlot = isNoticia
+    ? `**Headline de Impacto (Hook):**
+* [MANCHETE DE REVISTA com 15-25 palavras — NÃO slogan curto. Ela DEVE nomear o protagonista do fato (pessoa, obra, série, marca) e creditar a fonte quando o fato depende dela. Estrutura: "[sujeito/fenômeno nomeado]: [pergunta por que/como OU tese]". Esconder o nome do protagonista é erro grave]`
+    : `**Headline de Impacto (Hook):**
+* [Sugestão de 1 frase forte de gancho — específica, não chavão. 6-9 palavras. Usa só o que o usuário disse, sem fato novo]`
+
+  const noticiaRules = isNoticia
+    ? `
+- REGISTRO NOTÍCIA: o briefing relata um fato apurado. NUNCA remova nomes próprios do briefing — todo ponto-chave sobre o fato nomeia o sujeito explicitamente (nada de "a vilã", "uma brasileira", "o profissional" quando o nome existe no briefing). Se o briefing traz linhas "Fato central:", "Fonte do fato:" ou "Entidades:", os nomes delas são inegociáveis no output.`
+    : ""
+
+  return `Você é copy + diretor de arte sênior tipo Wieden+Kennedy / Pentagram. Vai receber uma ideia bruta de post e EXPANDIR pra um prompt estruturado que vai virar input pra outra IA gerar arte+copy.
 
 # REGRA ZERO — NÃO INVENTAR (a mais importante)
 
@@ -24,8 +45,7 @@ O briefing do usuário é a ÚNICA fonte de verdade. Você expande a FORMA (tom,
 **Tom de Voz:**
 * [3-5 adjetivos separados por vírgula que descrevem o tom — ex: Profissional, provocativo, disruptivo]
 
-**Headline de Impacto (Hook):**
-* [Sugestão de 1 frase forte de gancho — específica, não chavão. 6-9 palavras. Usa só o que o usuário disse, sem fato novo]
+${headlineSlot}
 
 **Ângulo Editorial:**
 * [Qual perspectiva o post toma? — ex: contracorrente, manifesto, pergunta provocativa, bastidor]
@@ -44,16 +64,20 @@ O briefing do usuário é a ÚNICA fonte de verdade. Você expande a FORMA (tom,
 # OUTRAS REGRAS
 
 - NUNCA use clichês de IA: "Descubra", "Conheça", "Saiba mais", "Transforme sua vida", "Você merece", "Faça parte", "Vem com a gente".
+- PROIBIDO travessão ("—" ou "–") em qualquer trecho de copy sugerida (hook, CTA, pontos-chave). Use vírgula, dois-pontos ou ponto. O travessão é o tique que mais denuncia texto de IA em português, e o que você sugere aqui é copiado pela IA seguinte.
 - Pra tópicos abstratos (tech, business, finanças), a Direção Visual NUNCA pode ser metáfora literal (ships drifting apart, hands letting go, broken chain). Sempre concreto: prédio corporativo, sala de reunião, ambientes editoriais — mas sem inventar marca/produto.
-- Português brasileiro coloquial culto. Sem gerundismo.
+- Português brasileiro coloquial culto. Sem gerundismo.${noticiaRules}
 
 Devolva APENAS o texto estruturado acima — sem JSON, sem fence, sem explicação extra.`
+}
 
 interface RequestBody {
   briefing: string
   formato?: string
   objetivo?: string
   abordagem?: string | null
+  /** Registro editorial vindo da extração do link (noticia/educativo/opiniao/case). */
+  registro?: string
 }
 
 export async function POST(req: Request) {
@@ -93,7 +117,7 @@ Antes de expandir, PESQUISE na web pra entender de que assunto/entidade o briefi
     const { text, grounded } = await refineWithGrounding(
       client,
       userMessage,
-      SYSTEM_PROMPT,
+      buildSystemPrompt(body.registro),
     )
 
     if (!text) {
@@ -123,8 +147,8 @@ async function refineWithGrounding(
   // web_search é um server tool da Anthropic (cobrado por busca).
   const webSearchTool = { type: "web_search_20250305", name: "web_search", max_uses: 3 }
 
-  // O refino roda em TODA geração (é automático no "Gerar"), e o SYSTEM_PROMPT
-  // é fixo — os dados do pedido vão na mensagem do usuário. Cachear aqui pega
+  // O refino roda em TODA geração (é automático no "Gerar"), e o system prompt
+  // é fixo por registro — os dados do pedido vão na mensagem do usuário. Cachear aqui pega
   // as 3 chamadas abaixo, inclusive os reenvios de pause_turn, que repetem o
   // mesmo prefixo várias vezes na MESMA geração.
   const systemBlocks: Anthropic.TextBlockParam[] = [

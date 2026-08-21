@@ -71,6 +71,22 @@ const LiquidEther = dynamic(() => import("@/components/backgrounds/liquid-ether"
 
 type StepId = 1 | 2 | 3 | 4 | 5
 
+/**
+ * O que a página de origem entregou no modo link: a foto do artigo (capa
+ * candidata, grátis) + a estrutura que orienta copy e direção de arte.
+ * `protagonista` e `registro` seguem até o generate-script — lá viram
+ * instrução dura de manchete e validação em código da capa.
+ */
+type LinkMeta = {
+  ogImage: string | null
+  sujeitoVisual: string
+  registro: string
+  fonte: string
+  protagonista: string
+  entidades: Array<{ nome?: string; tipo?: string; papel?: string }>
+  vocabularioVisual: string[]
+}
+
 // === Recomendação de templates por objetivo + abordagem ===
 // Mapeia o que o usuário quer (objetivo/abordagem) pras categorias de template
 // que combinam. v1 rule-based; depois dá pra cruzar com o nicho da marca.
@@ -342,18 +358,7 @@ function CriarWizard() {
 
   // --- Etapa de aprovação (carrossel) ---
   const [carouselDraft, setCarouselDraft] = useState<CarouselDraft | null>(null)
-  /**
-   * O que a página de origem entregou no modo link: a foto do artigo (capa
-   * candidata, grátis) + a estrutura que orienta a direção de arte.
-   */
-  const [linkMeta, setLinkMeta] = useState<{
-    ogImage: string | null
-    sujeitoVisual: string
-    registro: string
-    fonte: string
-    entidades: Array<{ nome?: string; tipo?: string; papel?: string }>
-    vocabularioVisual: string[]
-  } | null>(null)
+  const [linkMeta, setLinkMeta] = useState<LinkMeta | null>(null)
   const [carouselLoading, setCarouselLoading] = useState(false)
   const [carouselErr, setCarouselErr] = useState<string | null>(null)
   const [carouselApproving, setCarouselApproving] = useState(false)
@@ -503,9 +508,13 @@ function CriarWizard() {
    * o retorno é usado pelo fluxo de geração automática, que não pode esperar
    * o setState de `promptRefinado` propagar.
    */
-  async function refinarComIA(sourceText?: string): Promise<string | null> {
+  async function refinarComIA(
+    sourceText?: string,
+    registro?: string,
+  ): Promise<string | null> {
     // `sourceText` cobre o modo link, onde o briefing não vem do textarea e sim
-    // da análise da página.
+    // da análise da página. `registro` idem: no link o refino muda de template
+    // (manchete em vez de slogan) quando a página é notícia.
     const base = (sourceText ?? briefing).trim()
     if (base.length < 10) {
       setRefineErr("Briefing precisa ter pelo menos 10 chars")
@@ -522,6 +531,7 @@ function CriarWizard() {
           formato: formato?.id ?? "post-portrait",
           objetivo,
           abordagem,
+          registro,
         }),
       })
       const data = await res.json()
@@ -548,7 +558,9 @@ function CriarWizard() {
    * gerar (sem etapa separada de "Analisar link") — a tela de carregamento de
    * "Revisando roteiro" cobre extração + geração num fluxo só.
    */
-  async function resolveBriefing(refined?: string | null): Promise<string> {
+  async function resolveBriefing(
+    refined?: string | null,
+  ): Promise<{ text: string; link: LinkMeta | null }> {
     if (comoCriar === "link") {
       const url = linkUrl.trim()
       const res = await fetch("/api/extract-content", {
@@ -565,31 +577,37 @@ function CriarWizard() {
       if (!res.ok) throw new Error(data.error ?? "erro ao analisar o link")
       const extraido = (data.briefing ?? "").trim()
 
+      const entidades: Array<{ nome?: string; tipo?: string; papel?: string }> =
+        Array.isArray(data.entidades) ? data.entidades : []
+      // Protagonista = a entidade que a capa é obrigada a nomear no registro
+      // notícia. A extração já ordena com a protagonista primeiro.
+      const protagonista =
+        entidades.find((e) => e?.papel === "protagonista")?.nome ??
+        entidades[0]?.nome ??
+        ""
+
       // Guarda o que a página entregou de graça: a foto de capa e a estrutura
-      // (entidades, obra, vocabulário visual). Antes tudo isso era descartado e
-      // a arte era gerada sem saber do que o artigo falava.
-      setLinkMeta({
+      // (entidades, obra, vocabulário visual). É devolvido também pro caller —
+      // esperar o setState propagar perderia a corrida com a geração.
+      const meta: LinkMeta = {
         ogImage: typeof data.og_image === "string" ? data.og_image : null,
         sujeitoVisual: data.sujeito_visual ?? "",
         registro: data.registro ?? "noticia",
         fonte: data.fonte ?? "",
-        entidades: Array.isArray(data.entidades) ? data.entidades : [],
+        protagonista,
+        entidades,
         vocabularioVisual: Array.isArray(data.vocabulario_visual)
           ? data.vocabulario_visual
           : [],
-      })
+      }
+      setLinkMeta(meta)
 
-      // GROUNDING no modo link. O fluxo que mais precisa de contexto externo
-      // (link sobre alguém que o modelo não conhece) era justamente o único
-      // que pulava a busca web. Se falhar, segue com o briefing extraído —
-      // grounding nunca bloqueia a geração.
-      const contexto = [
-        extraido,
+      const estrutura = [
         data.tese ? `Fato central: ${data.tese}` : "",
         data.fonte ? `Fonte do fato: ${data.fonte}` : "",
-        Array.isArray(data.entidades) && data.entidades.length
-          ? `Entidades: ${data.entidades
-              .map((e: { nome?: string }) => e?.nome)
+        entidades.length
+          ? `Entidades: ${entidades
+              .map((e) => e?.nome)
               .filter(Boolean)
               .join(", ")}`
           : "",
@@ -603,12 +621,27 @@ function CriarWizard() {
         .filter(Boolean)
         .join("\n")
 
-      const grounded = await refinarComIA(contexto)
-      return (grounded ?? extraido).trim()
+      // GROUNDING no modo link. Se falhar, segue com o briefing extraído —
+      // grounding nunca bloqueia a geração. O resultado é COMPLEMENTO, nunca
+      // substituto: quando a reescrita do refine substituía a extração, nome
+      // do protagonista e fonte não sobreviviam (caso "VOCÊ TORCEU PELA VILÃ"
+      // sem citar a série).
+      const grounded = await refinarComIA(
+        [extraido, estrutura].filter(Boolean).join("\n"),
+        meta.registro,
+      )
+      const text = [
+        extraido,
+        estrutura,
+        grounded ? `PESQUISA ADICIONAL (contexto da web):\n${grounded}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n")
+      return { text, link: meta }
     }
     // `refined` cobre o refino automático da mesma submissão (o state
     // `promptRefinado` ainda não propagou nesse ponto).
-    return (refined ?? promptRefinado ?? briefing).trim()
+    return { text: (refined ?? promptRefinado ?? briefing).trim(), link: null }
   }
 
   /** Mapeia os slots do skeleton pros 3 campos editáveis da aprovação. */
@@ -642,7 +675,7 @@ function CriarWizard() {
     setApprovalLoading(true)
     goToStep(5)
     try {
-      const finalBriefing = await resolveBriefing(refined)
+      const { text: finalBriefing } = await resolveBriefing(refined)
       const res = await fetch("/api/post-unico/free-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -719,7 +752,7 @@ function CriarWizard() {
     setCarouselLoading(true)
     goToStep(5)
     try {
-      const finalBriefing = await resolveBriefing(refined)
+      const { text: finalBriefing, link } = await resolveBriefing(refined)
       // Regeração ("gerar novo roteiro"): manda os títulos do roteiro atual
       // pra IA produzir uma versão realmente diferente (não variação cosmética).
       const avoidTitles = carouselDraft?.slides?.length
@@ -738,6 +771,11 @@ function CriarWizard() {
           colors: wizardBrand.brand_colors,
           desiredSlides: formato.slides ?? 7,
           avoidTitles,
+          // Registro + protagonista + fonte da extração do link: no servidor
+          // viram instrução dura de manchete e validação em código da capa.
+          registro: link?.registro,
+          protagonista: link?.protagonista || undefined,
+          fonte: link?.fonte || undefined,
         }),
       })
       const data = await res.json()
