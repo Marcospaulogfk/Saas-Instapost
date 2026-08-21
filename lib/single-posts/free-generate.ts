@@ -272,7 +272,9 @@ ${photoPrompt}`,
       // derruba o teste de bitmap abaixo e joga a peça na composição livre,
       // que entrega layout ruim. `generateNanoBanana` já tem retries internos
       // com backoff; se ele desiste, a geração inteira desiste junto.
-      const nano = await generateNanoBanana(photoPrompt, "pro")
+      // "bitmap" = nano-banana-2 (arte completa com texto). O rótulo interno
+      // continua "pro" porque é o enum gravado em image_quality.
+      const nano = await generateNanoBanana(photoPrompt, "bitmap")
       const img = { ...nano, quality: "pro" as const }
       // MODO BITMAP/HÍBRIDO: a referência completa é a arte. Se a clean plate
       // sair, o layout vira camadas editáveis medidas por visão (híbrido);

@@ -40,6 +40,14 @@ const NANO_BANANA_COVER_MODEL =
   process.env.FAL_NANO_BANANA_COVER_MODEL ||
   process.env.FAL_NANO_BANANA_PRO_MODEL ||
   "fal-ai/nano-banana"
+/**
+ * BITMAP do post único: a arte inteira, com a tipografia renderizada dentro
+ * da imagem. Aqui o nano-banana-2 fica (decisão 21/08): texto chapado no
+ * bitmap é onde o modelo simples mais perde. O /edit (edição cirúrgica e
+ * clean plate) segue o mesmo modelo porque só existe nesse fluxo.
+ */
+const NANO_BANANA_BITMAP_MODEL =
+  process.env.FAL_NANO_BANANA_BITMAP_MODEL || "fal-ai/nano-banana-2"
 
 /**
  * Resolução da capa. É o parâmetro mais caro do produto inteiro: o Fal cobra
@@ -58,7 +66,12 @@ const COVER_RESOLUTION = process.env.FAL_NANO_BANANA_RESOLUTION ?? "1K"
  * Qualidade solicitada. O gate de plano (canUseNanoBananaPro) deve ser
  * aplicado ANTES desta chamada — aqui só escolhemos o modelo.
  */
-export type NanoBananaQuality = "normal" | "pro"
+/**
+ * - normal: miolo/cenas comuns (nano-banana simples)
+ * - pro:    CAPA do carrossel (nano-banana simples desde 21/08)
+ * - bitmap: arte completa do post único (nano-banana-2)
+ */
+export type NanoBananaQuality = "normal" | "pro" | "bitmap"
 
 /**
  * Gera imagem usando Nano Banana (Gemini Image) via Fal.ai.
@@ -91,7 +104,7 @@ export async function editNanoBanana(
   ensureConfigured()
   const start = performance.now()
   const model =
-    process.env.FAL_NANO_BANANA_EDIT_MODEL || `${NANO_BANANA_COVER_MODEL}/edit`
+    process.env.FAL_NANO_BANANA_EDIT_MODEL || `${NANO_BANANA_BITMAP_MODEL}/edit`
 
   let result: Awaited<ReturnType<typeof fal.subscribe>> | null = null
   let lastError: unknown
@@ -154,8 +167,13 @@ export async function generateNanoBanana(
   ensureConfigured()
   const start = performance.now()
 
-  const isCover = quality === "pro"
-  const model = isCover ? NANO_BANANA_COVER_MODEL : NANO_BANANA_MODEL
+  const isCover = quality === "pro" || quality === "bitmap"
+  const model =
+    quality === "bitmap"
+      ? NANO_BANANA_BITMAP_MODEL
+      : quality === "pro"
+        ? NANO_BANANA_COVER_MODEL
+        : NANO_BANANA_MODEL
 
   // Retry com backoff, espelhando o pipeline do carrossel
   // (lib/editorial/ai-images.ts): um 429/timeout transitório do Fal não pode
