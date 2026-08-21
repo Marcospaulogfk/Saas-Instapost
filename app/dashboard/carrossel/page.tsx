@@ -31,6 +31,8 @@ interface PendingGeneration {
   /** Imagens de IA que o usuário marcou no wizard (capa / demais slides).
    *  Ausente = payload antigo → gera tudo, como antes. */
   imageChoice?: ImageChoice
+  /** Foto do artigo de origem (modo link) — candidata nº1 de capa. */
+  coverPhotoUrl?: string | null
 }
 
 function handleFromBrand(name?: string): string {
@@ -220,6 +222,7 @@ export default function CarrosselEditorPage() {
         const result = await generateCarouselImages(
           claudeSlides,
           payload.imageChoice ?? { cover: true, slides: true },
+          { coverPhotoUrl: payload.coverPhotoUrl ?? null },
         )
         setSlides(result)
         setStatus("ready")

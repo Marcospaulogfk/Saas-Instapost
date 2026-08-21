@@ -2,7 +2,10 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { generateBrandImage, getUserPlan } from "@/lib/generation/image"
 import { searchUnsplash } from "@/lib/generation/unsplash"
-import { searchWikimedia } from "@/lib/generation/wikimedia"
+import {
+  searchWikimedia,
+  searchWikimediaEntity,
+} from "@/lib/generation/wikimedia"
 import { debitTokens, tokenCostForImage } from "@/lib/tokens"
 
 export const runtime = "nodejs"
@@ -16,6 +19,23 @@ interface RequestBody {
   mode: "ai" | "unsplash" | "wikimedia"
   prompt?: string
   query?: string
+  /**
+   * Busca ESTRITA: só devolve foto quando o nome que voltou corresponde ao nome
+   * pedido. Todo chamador AUTOMÁTICO (pipeline) precisa passar `strict: true`.
+   * Sem isso a busca larga devolve o primeiro palpite — foi assim que um post
+   * sobre a arquiteta Marilia Pellegrini recebeu a foto de outra pessoa.
+   * A busca manual do editor (usuário digita e VÊ o resultado) fica sem strict.
+   */
+  strict?: boolean
+  /** Trava de veracidade: a entidade foi declarada como PESSOA (P31=Q5 + P18). */
+  requireHuman?: boolean
+  /** Marca/empresa pode cair pro logo quando não há foto. */
+  allowLogo?: boolean
+  /**
+   * Texto do post. Descarta HOMÔNIMO: "Casa das Palmeiras" bate com um palacete
+   * em Lagos, Portugal — nome idêntico, coisa diferente.
+   */
+  context?: string
 }
 
 export async function POST(req: Request) {
@@ -77,7 +97,13 @@ export async function POST(req: Request) {
     }
 
     if (body.mode === "wikimedia") {
-      const result = await searchWikimedia(query)
+      const result = body.strict
+        ? await searchWikimediaEntity(query, {
+            requireHuman: body.requireHuman,
+            allowLogo: body.allowLogo,
+            context: body.context,
+          })
+        : await searchWikimedia(query)
       if (!result) {
         return NextResponse.json(
           {
