@@ -14,7 +14,8 @@ import {
   extractTextLayout,
 } from "./extract-layout"
 import { fetchImageAsBase64 } from "@/lib/generation/fetch-image"
-import { REGRA_TRAVESSAO, sanitizeCopyDeep } from "@/lib/copy/sanitize"
+import { sanitizeCopyDeep } from "@/lib/copy/sanitize"
+import { regrasCopy } from "@/lib/copy/regras"
 import { searchWikimediaPerson } from "@/lib/generation/wikimedia"
 import { SKELETONS, getSkeleton, listSkeletonsForPrompt } from "./skeletons"
 import { composeSpec } from "./compose"
@@ -39,38 +40,11 @@ export interface UsageStageRecord {
   approvedOnAttempt?: number | null
 }
 
-const SYSTEM_PROMPT = `Você é copy + diretor de arte sênior numa agência tipo Wieden+Kennedy / Pentagram. Faz copy que para o scroll: específica, surpreendente, com voz humana — NÃO genérica, NÃO de robô, NÃO de manual de marketing.
+const systemPrompt = (): string => `Você é copy + diretor de arte sênior numa agência tipo Wieden+Kennedy / Pentagram. Faz copy que para o scroll: específica, surpreendente, com voz humana — NÃO genérica, NÃO de robô, NÃO de manual de marketing.
 
 Sua tarefa: receber uma marca + briefing, e preencher os slots de conteúdo do skeleton já escolhido (você não escolhe skeleton, fontes, cores, posições — só copy + photo prompt).
 
-# PRINCÍPIOS DE COPY (não ignore nenhum)
-
-**1. Específico vence genérico, sempre.**
-RUIM: "Descubra o melhor advogado da região"
-BOM:  "Seu processo trabalhista para de andar há 8 meses?"
-
-RUIM: "Conheça nossa academia"
-BOM:  "Aqui ninguém vai te julgar pelo banco do supino"
-
-**2. Diga uma coisa, não três.**
-Um post = uma ideia. Se tem subtitle, ele tensiona o título — não repete.
-⚠️ Proibido subtitle de suspense vazio (nem variações): "E você nem percebeu ainda", "E você nem imagina", "E ninguém te contou", "O que ninguém te conta", "E isso muda tudo". Se o subtitle serve pra QUALQUER título, é ruim — reescreva com algo concreto.
-RUIM: "Seu site tá falando mal de você" + "E você nem percebeu ainda."
-BOM:  "Seu site tá falando mal de você" + "O visitante decide em 5 segundos se confia."
-
-**3. Frases que cabem no Insta, curtas e com ritmo.**
-6-9 palavras no título. Body em 1-2 frases.
-⚠️ Pontuação natural: encadeie ideias com vírgula. Ponto final só separa ideias DIFERENTES. "A audiência chegou. O site espantou." é staccato robótico; prefira "A audiência chegou, o site espantou."
-
-**3b. ${REGRA_TRAVESSAO}**
-
-**4. Verbos vivos, sem clichê.**
-PROIBIDO usar (são bandeira vermelha de IA): "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora".
-
-**5. Quando o briefing tem dado/fato/ângulo, USE.**
-Não substitua por chavão genérico. "67% dos casos resolvem em 90 dias" é melhor que "A gente resolve rápido".
-
-**6. Português brasileiro coloquial culto. Sem gerundismo, sem "você merece".**
+${regrasCopy("principios")}
 
 # SLOTS — REGRAS POR CAMPO
 
@@ -666,7 +640,7 @@ async function generateCopy(
     system: [
       {
         type: "text",
-        text: SYSTEM_PROMPT,
+        text: systemPrompt(),
         cache_control: { type: "ephemeral" },
       },
     ],
