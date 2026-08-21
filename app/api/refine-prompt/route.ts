@@ -19,7 +19,7 @@ function buildSystemPrompt(registro?: string): string {
 
   const headlineSlot = isNoticia
     ? `**Headline de Impacto (Hook):**
-* [MANCHETE DE REVISTA com 15-25 palavras — NÃO slogan curto. Ela DEVE nomear o protagonista do fato (pessoa, obra, série, marca) e creditar a fonte quando o fato depende dela. Estrutura: "[sujeito/fenômeno nomeado]: [pergunta por que/como OU tese]". Esconder o nome do protagonista é erro grave]`
+* [MANCHETE DE REVISTA com 15-25 palavras, NÃO slogan curto. Ela DEVE nomear o protagonista do fato (pessoa, obra, série, marca) e creditar a fonte quando o fato depende dela. Forma livre: afirmação, pergunta, contraste ou número; sem molde fixo de dois-pontos. Esconder o nome do protagonista é erro grave]`
     : `**Headline de Impacto (Hook):**
 * [Sugestão de 1 frase forte de gancho — específica, não chavão. 6-9 palavras. Usa só o que o usuário disse, sem fato novo]`
 
