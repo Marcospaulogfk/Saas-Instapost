@@ -28,7 +28,7 @@ export const maxDuration = 120
  * }
  *
  * Resposta:
- * { project_title, caption, slides: ClaudeSlide[], metrics }
+ * { project_title, caption, hook_alternatives, slides: ClaudeSlide[], metrics }
  */
 interface RequestBody {
   topic?: string
@@ -107,6 +107,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       project_title: result.data.project_title,
       caption: result.data.caption ?? "",
+      // Os 2 hooks de capa descartados (arquétipos diferentes do escolhido) —
+      // o usuário troca a capa sem pagar outra geração de roteiro.
+      hook_alternatives: result.data.hook_alternatives ?? [],
       slides: result.data.slides,
       metrics: result.metrics,
     })

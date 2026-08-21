@@ -26,6 +26,12 @@ export interface CarouselDraft {
   slides: ClaudeSlide[]
   /** Legenda do Instagram (caption + hashtags). */
   caption: string
+  /**
+   * Hooks de capa descartados, de arquétipos diferentes do escolhido. O NYT
+   * testa até 8 manchetes por matéria; aqui o usuário troca a capa com um
+   * clique, sem pagar outra geração de roteiro.
+   */
+  hookAlternatives?: string[]
 }
 
 export function CarouselApprovalStep({
@@ -132,6 +138,36 @@ export function CarouselApprovalStep({
                     placeholder="Título do slide"
                     className="text-sm font-semibold"
                   />
+
+                  {/* Hooks alternativos: só na capa, e só os que diferem do
+                      título atual. Um clique troca — sem regerar o roteiro. */}
+                  {i === 0 &&
+                    (draft.hookAlternatives ?? []).filter(
+                      (h) => h && h.trim() && h.trim() !== slide.title.trim(),
+                    ).length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-[11px] font-semibold text-text-muted mb-1.5">
+                          Outros ganchos para esta capa
+                        </p>
+                        <div className="space-y-1.5">
+                          {(draft.hookAlternatives ?? [])
+                            .filter(
+                              (h) =>
+                                h && h.trim() && h.trim() !== slide.title.trim(),
+                            )
+                            .map((alt, k) => (
+                              <button
+                                key={k}
+                                type="button"
+                                onClick={() => onSlideChange(0, { title: alt })}
+                                className="w-full text-left rounded-lg border border-border-subtle bg-background-tertiary/40 px-3 py-2 text-xs text-text-secondary hover:border-brand-500/40 hover:text-text-primary transition-colors"
+                              >
+                                {alt}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
 
                 {/* Subtítulo */}

@@ -1,7 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { generateBrandImageForRole } from "@/lib/generation/image"
 import { editNanoBanana } from "@/lib/generation/nano-banana"
-import { POST_UNICO_BITMAP, POST_UNICO_HIBRIDO } from "@/lib/features"
+import {
+  POST_UNICO_BITMAP,
+  POST_UNICO_FOTO_REAL,
+  POST_UNICO_HIBRIDO,
+} from "@/lib/features"
 import {
   buildSpecFromLayout,
   extractTextLayout,
@@ -13,6 +17,22 @@ import type { PostBrand } from "./types"
 import type { FreePostSpec } from "./free-spec"
 import type { GenerateMetrics } from "./generate"
 import type { SkeletonContent, SkeletonImpl } from "./skeletons"
+import type { UsageLike, UsageStage } from "@/lib/generation/usage-log"
+
+/**
+ * Uso de uma etapa de geração, pro log de custo.
+ *
+ * A geração devolve o uso QUEBRADO POR ETAPA em vez de um total: um número só
+ * responde "custou X" e nenhuma das perguntas que interessam — se o caro é a
+ * copy ou o compositor, se o loop de 4 tentativas se paga. Quem grava é a
+ * rota (é lá que existem supabase e user); aqui a gente só carrega o dado.
+ */
+export interface UsageStageRecord {
+  stage: UsageStage
+  usage: UsageLike
+  attempts?: number
+  approvedOnAttempt?: number | null
+}
 
 const SYSTEM_PROMPT = `Você é copy + diretor de arte sênior numa agência tipo Wieden+Kennedy / Pentagram. Faz copy que para o scroll: específica, surpreendente, com voz humana — NÃO genérica, NÃO de robô, NÃO de manual de marketing.
 
@@ -58,7 +78,7 @@ Não substitua por chavão genérico. "67% dos casos resolvem em 90 dias" é mel
 - **ghost_word**: 1 substantivo uppercase tema do post (fica gigante de fundo). Ex: "FORÇA", "JUSTIÇA".
 - **outline_word**: 1 palavra do title pra efeito vazado — escolha a com mais impacto visual.
 - **highlight_words**: 1-2 palavras que JÁ aparecem no body/title (mesma capitalização exata).
-- **bullets**: exatamente **3** itens \`{ label, text }\` que sustentam a tese do título. \`label\` = 2-4 palavras, o rótulo do ponto (ex: "Uma década de base", "Reconhecimento oficial"). \`text\` = 1 frase de até **10 palavras** com o fato concreto — frase mais longa não cabe na arte e é cortada. Cada item traz uma informação NOVA — não reformule o título nem repita o body. Preencha sempre que o briefing tiver matéria pra isso (trajetória, números, etapas, critérios, motivos); é o que dá densidade de revista à arte. Só deixe vazio quando o post for de uma frase só (manifesto, pergunta provocativa, oferta seca).
+- **bullets**: exatamente **3** itens \`{ label, text }\` que sustentam a tese do título. \`label\` = 2-4 palavras, o rótulo do ponto (ex: "Menos desperdício", "Prazo mais curto"). \`text\` = 1 frase de até **10 palavras** com o fato concreto — frase mais longa não cabe na arte e é cortada. Cada item traz uma informação NOVA — não reformule o título nem repita o body. Preencha sempre que o briefing tiver matéria pra isso (trajetória, números, etapas, critérios, motivos); é o que dá densidade de revista à arte. Só deixe vazio quando o post for de uma frase só (manifesto, pergunta provocativa, oferta seca).
 
 # PHOTO PROMPT — o DESIGN COMPLETO do post (sempre em INGLÊS)
 
@@ -76,12 +96,29 @@ Então: descreva um design finalizado, bonito, denso — não uma foto.
    "athletic woman mid-kick emerging from dark haze at bottom", "macro of
    product on marble slab, top third"). Sem metáfora clichê (ships, puzzle,
    lightbulb, rocket, scales); tema abstrato pede cena editorial-concreta.
+
+   ⚠️ **REGRA DO SUJEITO.** Se o briefing nomeia uma OBRA, PRODUTO, EDIFÍCIO,
+   LUGAR ou PEÇA concreta, o sujeito da imagem é ESSA COISA — nunca uma pessoa
+   anônima fazendo o trabalho relacionado a ela. "Profissional genérico numa
+   mesa em luz baixa" é o clichê mais caro que existe aqui: um post sobre uma
+   arquiteta premiada é a CASA que ela construiu, não alguém numa escrivaninha.
+
+   ⚠️ **TRAVA DE VERACIDADE.** Se o post é sobre uma pessoa REAL nomeada, só há
+   duas saídas: a foto real dela (via photo_entity, que o sistema busca e
+   valida) ou uma imagem SEM pessoa nenhuma. JAMAIS descreva uma pessoa
+   inventada num post sobre alguém real — isso põe o retrato de uma estranha ao
+   lado de um nome verdadeiro, e é erro editorial, não questão de gosto. Na
+   dúvida, tire a pessoa do quadro.
+
+   Declare sempre onde o texto vai pousar: "amplo espaço negativo no terço
+   superior para tipografia". Sem isso o modelo centraliza o assunto e não
+   sobra lugar pra manchete.
 3. **A tipografia do design, com os TEXTOS REAIS dos slots** (title, kicker,
    subtitle curto, os RÓTULOS dos bullets, cta) — em português, entre aspas,
    com hierarquia: qual é gigante, qual é apoio, onde cada um senta.
-   Ex: headline "QUANTO MAIS GLOBAL, MAIS BRASILEIRA" bold condensed white,
-   upper left; kicker pill "WALLPAPER 2026"; three bullet rows with small
-   icons and labels "...", "...", "..."; CTA button "Ver o portfólio".
+   Ex: headline "O CAFÉ CARO SAI MAIS BARATO" bold condensed white,
+   upper left; kicker pill "CONTAS DA PADARIA"; three bullet rows with small
+   icons and labels "...", "...", "..."; CTA button "Ver a planilha".
    ⚠️ SÓ TEXTO GRANDE E MÉDIO: o modelo de imagem embaralha letra miúda.
    NUNCA peça as frases descritivas dos bullets nem parágrafos pequenos na
    arte — na imagem entram só headline, kicker, subtitle de 1 linha, os
@@ -105,7 +142,7 @@ Um feed onde todo post tem o mesmo esqueleto denuncia IA — alterne.
 
 ## Exemplo
 
-"Instagram post design, 1080x1350 vertical, in Brazilian Portuguese. Dramatic night photograph of a modern concrete house with warm interior light emerging from lush dark foliage, occupying the right half. Deep navy-black background fading clean on the left. Bold condensed white headline 'QUANTO MAIS GLOBAL, MAIS BRASILEIRA' upper left with the word 'GLOBAL' in electric blue; small blue pill label 'WALLPAPER 2026' above it; elegant thin italic serif line '30 escritórios do mundo. Um é de São Paulo.' below; three compact rows lower left with small circular blue icons and bold labels 'Uma década de base', '60 m² no mundo', 'Natureza no projeto'; small outlined button 'Ver o portfólio'. Palette: near-black navy, electric blue #1668E3, warm amber highlights, white. Premium social media design, professional typography, cohesive lighting, high production value."
+"Instagram post design, 1080x1350 vertical, in Brazilian Portuguese. Macro photograph of freshly roasted coffee beans spilling across a dark slate slab, hard side light raking across the grain, occupying the lower right. Warm near-black background fading clean toward the upper left. Bold condensed white headline 'O CAFÉ CARO SAI MAIS BARATO' upper left with the word 'BARATO' in amber; small amber pill label 'CONTAS DA PADARIA' above it; elegant thin italic serif line 'Cada xícara ruim custa um cliente que não volta.' below; three compact rows lower left with small circular amber icons and bold labels 'Grão fresco rende mais', 'Menos desperdício', 'Ticket médio maior'; small outlined button 'Ver a planilha'. Palette: near-black brown, amber #C8862B, warm cream highlights, white. Premium social media design, professional typography, cohesive lighting, high production value."
 
 # CAPTION (legenda do post — OBRIGATÓRIA)
 
@@ -148,7 +185,7 @@ o olho, a legenda entrega o contexto e o argumento completos. Regras:
 
 Preencha "image_entity" com o NOME EXATO de algo REAL cuja FOTO de verdade ilustra o post melhor que uma arte de IA. O sistema busca a foto real (Wikipedia, grátis).
 
-⚠️ SÓ para PESSOA pública real, citada pelo nome (ator, atleta, músico, CEO, artista — ex: "Tom Cruise", "Anitta", "Marília Pellegrini"). O sistema valida que a entidade é humana e tem foto; qualquer outra coisa é descartada. Post sobre filme/série → a PESSOA protagonista.
+⚠️ SÓ para PESSOA pública real, citada pelo nome (ator, atleta, músico, CEO, artista — ex: "Tom Cruise", "Anitta", "Gilberto Gil"). O sistema valida que a entidade é humana e tem foto; qualquer outra coisa é descartada. Post sobre filme/série → a PESSOA protagonista.
 
 ❌ Deixe vazio pra: lugar, produto, empresa, negócio local, oferta, conceito — nesses casos a cena gerada é sempre melhor que imagem de enciclopédia.
 
@@ -194,7 +231,11 @@ async function resolvePhotoUrl(
   entity: string | null | undefined,
   photoPrompt: string | null | undefined,
 ): Promise<ResolvedPhoto> {
-  const e = (entity ?? "").trim()
+  // POST ÚNICO É NANO-BANANA. A entidade real só é consultada com a flag
+  // ligada (hoje desligada, ver lib/features.ts): sem esse guard, bastava a
+  // copy citar uma pessoa pública pra peça desviar do bitmap e cair no
+  // compositor de camadas — que entrega arte pior, custa mais e cobra menos.
+  const e = POST_UNICO_FOTO_REAL ? (entity ?? "").trim() : ""
   if (e) {
     try {
       // SÓ pessoa real com foto validada (P31=Q5 + P18 + proporção de foto).
@@ -327,6 +368,8 @@ export interface FreeGenerateResult {
    */
   image_quality: "normal" | "pro" | null
   metrics: GenerateMetrics & { totalCostUsd: number }
+  /** Uso por etapa — a rota grava em generation_usage. */
+  usage_stages: UsageStageRecord[]
 }
 
 /**
@@ -345,6 +388,8 @@ export interface FreeGenerateTextResult {
   image_entity: string | null
   rationale: string
   metrics: GenerateMetrics & { totalCostUsd: number }
+  /** Uso por etapa — a rota grava em generation_usage. */
+  usage_stages: UsageStageRecord[]
 }
 
 interface TextOnlyOpts {
@@ -622,7 +667,21 @@ export async function generateFreeSpec({
 
   const ms = performance.now() - t0
   const claudeCost = computeCost(usage) + (composed ? computeCost(composed.usage) : 0)
+  const usage_stages: UsageStageRecord[] = [
+    { stage: "post_unico_copy", usage },
+    ...(composed
+      ? [
+          {
+            stage: "post_unico_compose" as const,
+            usage: composed.usage,
+            attempts: composed.attempts,
+            approvedOnAttempt: composed.approvedOnAttempt,
+          },
+        ]
+      : []),
+  ]
   return {
+    usage_stages,
     spec: { ...spec, rationale: parsed.rationale },
     rationale: parsed.rationale,
     skeleton_id: parsed.skeleton_id,
@@ -666,6 +725,7 @@ export async function generateFreeText({
   const ms = performance.now() - t0
   const claudeCost = computeCost(usage)
   return {
+    usage_stages: [{ stage: "post_unico_copy", usage }],
     skeleton_id: parsed.skeleton_id,
     content: parsed.content,
     caption: parsed.caption ?? "",
@@ -734,6 +794,16 @@ export async function buildApprovedSpec({
   const ms = performance.now() - t0
 
   return {
+    usage_stages: composed
+      ? [
+          {
+            stage: "post_unico_compose",
+            usage: composed.usage,
+            attempts: composed.attempts,
+            approvedOnAttempt: composed.approvedOnAttempt,
+          },
+        ]
+      : [],
     spec: { ...spec, rationale },
     rationale,
     skeleton_id: skeletonId,

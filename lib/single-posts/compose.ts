@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { buildPalette, isLight } from "./palette"
 import { contrastRatio, relativeLuminance } from "@/lib/color-contrast"
+import { imageBlockFor } from "@/lib/generation/fetch-image"
 import type { PostBrand } from "./types"
 import type { FreeBlock, FreePostSpec, FreeTextBlock } from "./free-spec"
 import type { SkeletonContent } from "./skeletons"
@@ -212,22 +213,22 @@ Marca com acento #1668E3, foto disponível, 3 itens. Note: foto numa zona, TODO 
   {"type":"stack","direction":"column","gap":"min(3cqw,15px)","z":2,
    "position":{"left":"52%","right":"6cqw","top":"8%"},
    "children":[
-    {"type":"pill","text":"RECONHECIMENTO","bg":"#1668E3","fg":"#FFFFFF",
+    {"type":"pill","text":"MERCADO","bg":"#1668E3","fg":"#FFFFFF",
      "font":"inter_bold","font_size":"min(2.3cqw,12px)","letter_spacing":"0.12em"},
-    {"type":"text","text":"São Paulo entre as 30 que refazem a arquitetura",
+    {"type":"text","text":"O cafe caro sai mais barato no fim do mes",
      "font":"anton","font_size":"min(7cqw,48px)","color":"#0A0A0F",
      "text_transform":"uppercase","line_height":1.02,
-     "highlights":["São","Paulo"],"highlight_color":"#1668E3"},
+     "highlights":["mais","barato"],"highlight_color":"#1668E3"},
     {"type":"divider","color":"#D8D3CC","thickness":2,"position":{"width":"18cqw"}},
-    {"type":"text","text":"Marília Pellegrini entrou no mapa global.",
+    {"type":"text","text":"Grao fresco rende mais xicara por quilo.",
      "font":"inter","font_size":"min(3.2cqw,18px)","color":"#4B5563","line_height":1.4},
     {"type":"stack","direction":"row","gap":"min(2.4cqw,12px)","align":"start","children":[
       {"type":"icon","name":"star","color":"#FFFFFF","size":"min(3.4cqw,18px)",
        "background":"#1668E3","padding":"min(1.8cqw,9px)"},
       {"type":"stack","direction":"column","gap":"min(0.8cqw,4px)","children":[
-        {"type":"text","text":"Uma década de base","font":"inter_bold",
+        {"type":"text","text":"Menos desperdicio","font":"inter_bold",
          "font_size":"min(3.1cqw,17px)","color":"#0A0A0F","line_height":1.2},
-        {"type":"text","text":"Formada no Studio Arthur Casas antes do escritório próprio.",
+        {"type":"text","text":"Moer na hora corta ate 20% de perda no po.",
          "font":"inter","font_size":"min(2.7cqw,15px)","color":"#4B5563","line_height":1.35}
       ]}
     ]}
@@ -1251,6 +1252,14 @@ function sumUsages(usages: Anthropic.Messages.Usage[]): Anthropic.Messages.Usage
 export interface ComposeResult {
   spec: FreePostSpec
   usage: Anthropic.Messages.Usage
+  /** Quantas chamadas ao modelo o loop gastou (1..MAX_COMPOSE_ATTEMPTS). */
+  attempts: number
+  /**
+   * Tentativa em que a crítica aprovou. `null` = estourou o teto e entregou a
+   * menos ruim. É a série que decide se `MAX_COMPOSE_ATTEMPTS = 4` se paga:
+   * sem ela, baixar o teto é chute.
+   */
+  approvedOnAttempt: number | null
 }
 
 export interface ComposeOpts {
@@ -1395,8 +1404,172 @@ const COMPOSE_TOOL: Anthropic.Messages.Tool = {
   },
 }
 
-/** Quantas vezes o compositor tenta até entregar uma peça aprovada. */
-const MAX_COMPOSE_ATTEMPTS = 4
+/**
+ * RETRY POR PATCH — a tentativa 2+ corrige, não reescreve.
+ *
+ * Até aqui toda reprovação pedia "reenvie o spec COMPLETO": o modelo regerava
+ * os ~700 tokens inteiros pra mudar um `top` — e output é o token mais caro da
+ * tabela (US$15/Mtok contra US$3 do input). Com o patch a volta custa ~200
+ * tokens em vez de ~700, e o que já estava aprovado não corre risco de ser
+ * reescrito pior (o modelo não "erra diferente" num bloco que ninguém pediu
+ * pra mexer).
+ *
+ * Os índices vêm do spec JÁ SANEADO (ver `blockInventory`), não do que o
+ * modelo emitiu: `buildSpec` descarta bloco inválido, então os dois arrays
+ * podem divergir — e um índice fora de fase corromperia a peça em silêncio.
+ */
+const PATCH_TOOL: Anthropic.Messages.Tool = {
+  name: "corrigir_blocos",
+  description:
+    "Corrige APENAS os pontos reprovados da composição anterior. Não reenvie o spec inteiro — mexa só no que a revisão apontou.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      replace: {
+        type: "array",
+        description:
+          "Blocos a substituir. `index` é a posição no inventário que veio na revisão. `block` é o bloco COMPLETO já corrigido.",
+        items: {
+          type: "object",
+          properties: { index: { type: "number" }, block: { type: "object" } },
+          required: ["index", "block"],
+        },
+      },
+      remove: {
+        type: "array",
+        items: { type: "number" },
+        description: "Índices de blocos a remover (ex: bloco sobrando).",
+      },
+      append: {
+        type: "array",
+        items: { type: "object" },
+        description: "Blocos novos a acrescentar no fim.",
+      },
+      background: {
+        type: "object",
+        description: "SÓ se o fundo foi reprovado. Senão omita.",
+      },
+      ghost: {
+        type: "object",
+        description: "SÓ se o ghost foi reprovado. Senão omita.",
+      },
+      rationale: { type: "string" },
+    },
+  },
+}
+
+interface BlockPatch {
+  replace?: { index?: number; block?: unknown }[]
+  remove?: number[]
+  append?: unknown[]
+  background?: unknown
+  ghost?: unknown
+  rationale?: string
+}
+
+/**
+ * Lista os blocos com o índice que o modelo deve usar no patch. Sai do spec
+ * saneado — é ele que a gente tem em mãos pra aplicar a correção.
+ */
+export function blockInventory(spec: FreePostSpec): string {
+  return spec.blocks
+    .map((b, i) => {
+      const rec = b as unknown as Record<string, unknown>
+      const kind = String(rec.type ?? "?")
+      const label =
+        typeof rec.text === "string"
+          ? ` "${rec.text.replace(/\n/g, " ").slice(0, 40)}"`
+          : typeof rec.url === "string"
+            ? " (imagem)"
+            : typeof rec.shape === "string"
+              ? ` (${String(rec.shape)})`
+              : ""
+      return `${i}. ${kind}${label}`
+    })
+    .join("\n")
+}
+
+/**
+ * Aplica o patch sobre o spec anterior e devolve o objeto CRU — quem sanea é
+ * o `buildSpec` de sempre, então patch e composição inteira passam pela mesma
+ * porta. Índice inválido é ignorado em vez de derrubar a peça.
+ */
+export function applyBlockPatch(
+  base: FreePostSpec,
+  patch: BlockPatch,
+): Record<string, unknown> {
+  const blocks: unknown[] = [...(base.blocks as unknown[])]
+
+  for (const r of patch.replace ?? []) {
+    const i = r?.index
+    if (
+      typeof i === "number" &&
+      Number.isInteger(i) &&
+      i >= 0 &&
+      i < blocks.length &&
+      r.block &&
+      typeof r.block === "object"
+    ) {
+      blocks[i] = r.block
+    }
+  }
+
+  // Decrescente: remover de trás pra frente não desloca o que ainda falta.
+  const remove = [...new Set(patch.remove ?? [])]
+    .filter((i) => Number.isInteger(i) && i >= 0 && i < blocks.length)
+    .sort((a, b) => b - a)
+  for (const i of remove) blocks.splice(i, 1)
+
+  for (const b of patch.append ?? []) {
+    if (b && typeof b === "object") blocks.push(b)
+  }
+
+  return {
+    version: 1,
+    background: patch.background ?? base.background,
+    blocks,
+    ghost: patch.ghost ?? base.ghost,
+    rationale: patch.rationale ?? base.rationale,
+  }
+}
+
+/**
+ * Move o breakpoint de cache pro fim da conversa: tira o marcador da volta
+ * anterior e põe no bloco recém-acrescentado. Sem tirar o antigo a gente
+ * estouraria os 4 breakpoints da API já na terceira tentativa.
+ */
+export function moveCacheBreakpoint(
+  messages: Anthropic.Messages.MessageParam[],
+): void {
+  for (const m of messages.slice(1)) {
+    if (!Array.isArray(m.content)) continue
+    for (const b of m.content) {
+      if (b && typeof b === "object" && "cache_control" in b) {
+        delete (b as { cache_control?: unknown }).cache_control
+      }
+    }
+  }
+  const last = messages[messages.length - 1]
+  if (last && Array.isArray(last.content) && last.content.length) {
+    const tail = last.content[last.content.length - 1] as {
+      cache_control?: unknown
+    }
+    tail.cache_control = { type: "ephemeral" }
+  }
+}
+
+/**
+ * Quantas vezes o compositor tenta até entregar uma peça aprovada.
+ *
+ * Continua 4 por padrão: baixar o teto sem a distribuição real de
+ * `approved_on_attempt` (ver migration 0017) é degradar arte no escuro. Mas
+ * agora sai por env — quando o dado disser que a 3ª e a 4ª volta não pagam,
+ * `COMPOSE_MAX_ATTEMPTS=2` resolve sem deploy de código.
+ */
+const MAX_COMPOSE_ATTEMPTS = Math.min(
+  6,
+  Math.max(1, Number(process.env.COMPOSE_MAX_ATTEMPTS) || 4),
+)
 
 export async function composeSpec({
   brand,
@@ -1425,32 +1598,54 @@ export async function composeSpec({
   // ROTA B2: com referência, o compositor VÊ o design pronto ([1]) e o fundo
   // limpo ([2]) e transcreve o layout. Sem referência mas com foto, vê a cena
   // e posiciona nas zonas limpas. Sem foto, tipográfico puro.
-  const imageBlocks: Anthropic.Messages.ContentBlockParam[] = []
-  if (referenceUrl) {
-    imageBlocks.push({
-      type: "image" as const,
-      source: { type: "url" as const, url: referenceUrl },
-    })
-  }
-  if (photoUrl) {
-    imageBlocks.push({
-      type: "image" as const,
-      source: { type: "url" as const, url: photoUrl },
-    })
-  }
+  //
+  // As imagens vão INLINE (base64), não por URL: a Anthropic não baixa
+  // upload.wikimedia.org, e o erro voltava como falha de rede — o loop queimava
+  // as 3 tentativas e devolvia null, jogando toda peça de foto real no
+  // skeleton. Ver lib/generation/fetch-image.ts. Se o download falhar,
+  // `imageBlockFor` degrada pro bloco de URL (comportamento antigo).
+  const imageBlocks: Anthropic.Messages.ContentBlockParam[] = (
+    await Promise.all(
+      [referenceUrl, photoUrl]
+        .filter((u): u is string => !!u)
+        .map((u) => imageBlockFor(u)),
+    )
+  ).map((b) => b as Anthropic.Messages.ContentBlockParam)
+  // CACHE INCREMENTAL — o item mais caro da fatura, não o system prompt.
+  // O system (~5k tokens) já era cacheado, mas as IMAGENS e a conversa
+  // acumulada iam CRUAS em toda tentativa: 2 imagens de ~1,9k tokens cada,
+  // reenviadas nas 4 voltas, davam mais que o output inteiro do loop.
+  // Um breakpoint no fim da mensagem inicial congela imagens + prompt; outro,
+  // MÓVEL (ver `moveCacheBreakpoint`), congela o que já foi corrigido a cada
+  // volta. A API aceita 4 breakpoints — usamos 3 (system + inicial + móvel).
   const messages: Anthropic.Messages.MessageParam[] = [
     {
       role: "user",
-      content: imageBlocks.length
-        ? [...imageBlocks, { type: "text" as const, text: promptText }]
-        : promptText,
+      content: [
+        ...imageBlocks,
+        {
+          type: "text" as const,
+          text: promptText,
+          cache_control: { type: "ephemeral" as const },
+        },
+      ],
     },
   ]
   const usages: Anthropic.Messages.Usage[] = []
   let best: { spec: FreePostSpec; issues: string[] } | null = null
+  // Última composição RENDERIZÁVEL — é sobre ela que o patch da próxima volta
+  // é aplicado. Diferente de `best`: aqui interessa a mais RECENTE (a que o
+  // modelo tem no contexto), não a menos ruim.
+  let lastSpec: FreePostSpec | null = null
   // Erro de rede não é reprovação: repete a MESMA tentativa (a conversa não
   // muda) em vez de abortar o loop — abortar entregava a última reprovada.
   let networkErrors = 0
+  // Só dá pra pedir patch se existe uma composição anterior pra corrigir. Se a
+  // 1ª tentativa vier irrenderizável, a 2ª recompõe do zero em vez de tentar
+  // remendar o que não existe.
+  let canPatch = false
+  // Pendências da volta anterior — alimenta a parada por estagnação.
+  let prevIssueCount: number | null = null
 
   let attempt = 1
   while (attempt <= MAX_COMPOSE_ATTEMPTS) {
@@ -1473,8 +1668,14 @@ export async function composeSpec({
         // Tool use em vez de JSON em bloco de texto: os textos aprovados vêm
         // cheios de aspas e travessões, e uma aspas não escapada derrubava o
         // parse — o post caía calado no skeleton.
-        tools: [COMPOSE_TOOL],
-        tool_choice: { type: "tool", name: "entregar_composicao" },
+        //
+        // As DUAS tools vão sempre no array (elas moram no prefixo cacheado,
+        // então listar as duas é de graça); quem muda por tentativa é só o
+        // `tool_choice`: compõe do zero na 1ª, corrige por patch nas demais.
+        tools: [COMPOSE_TOOL, PATCH_TOOL],
+        tool_choice: canPatch
+          ? { type: "tool", name: "corrigir_blocos" }
+          : { type: "tool", name: "entregar_composicao" },
         messages,
       })
     } catch (err) {
@@ -1499,7 +1700,21 @@ export async function composeSpec({
       break
     }
 
-    const spec = buildSpec(block.input, brand, photoUrl)
+    // Patch entra pela MESMA porta da composição inteira: aplica sobre o spec
+    // anterior e sanea com `buildSpec`. Se o modelo devolveu patch mas não há
+    // base (não deveria acontecer — `canPatch` guarda isso), trata como falha
+    // de composição em vez de renderizar lixo.
+    // Anotado: `lastSpec` recebe `spec` no fim da volta, então sem o tipo
+    // explícito o TS entra em ciclo (raw → spec → lastSpec → raw).
+    const raw: unknown =
+      block.name === "corrigir_blocos"
+        ? lastSpec
+          ? applyBlockPatch(lastSpec, block.input as BlockPatch)
+          : null
+        : block.input
+    const spec: FreePostSpec | null = raw
+      ? buildSpec(raw, brand, photoUrl)
+      : null
     const vocabulary = [
       ...Object.values(content).flatMap((v) =>
         Array.isArray(v)
@@ -1527,7 +1742,12 @@ export async function composeSpec({
       console.info(
         `[compose] aprovado na tentativa ${attempt} — ${spec.rationale ?? "sem rationale"}`,
       )
-      return { spec, usage: sumUsages(usages) }
+      return {
+        spec,
+        usage: sumUsages(usages),
+        attempts: attempt,
+        approvedOnAttempt: attempt,
+      }
     }
     console.info(
       `[compose] tentativa ${attempt} reprovada (${issues.length}):`,
@@ -1536,7 +1756,33 @@ export async function composeSpec({
     if (spec && (best === null || issues.length < best.issues.length)) {
       best = { spec, issues }
     }
+    if (spec) lastSpec = spec
+
+    // PARADA POR ESTAGNAÇÃO. O retry só se paga enquanto converge: se a volta
+    // corrigiu tanto quanto quebrou (contagem não caiu), a seguinte tende a
+    // trocar seis por meia dúzia — e cada volta é uma chamada cheia. Sai com a
+    // melhor tentativa em vez de gastar o teto até o fim.
+    //
+    // Regra deliberadamente conservadora: exige uma volta já feita, então a
+    // 1ª→2ª sempre acontece. Quem corta o teto é a série de
+    // `approved_on_attempt`; isto aqui só evita o caso claro de não-melhora.
+    if (spec && prevIssueCount !== null && issues.length >= prevIssueCount) {
+      console.info(
+        `[compose] estagnou na tentativa ${attempt} (${prevIssueCount} → ${issues.length} pendências) — entregando a melhor`,
+      )
+      break
+    }
+    prevIssueCount = issues.length
+
     if (attempt < MAX_COMPOSE_ATTEMPTS) {
+      // Com base renderizável a próxima volta CORRIGE (patch, ~200 tokens de
+      // output); sem base, recompõe do zero. O inventário de índices só faz
+      // sentido no primeiro caso.
+      canPatch = lastSpec !== null
+      const lista = issues.map((s, i) => `${i + 1}. ${s}`).join("\n")
+      const instrucao = canPatch
+        ? `Corrija TODOS os pontos com a tool \`corrigir_blocos\`, mexendo SÓ nos blocos envolvidos — não reenvie o que já está bom.\n\nCOMPOSIÇÃO ATUAL (use estes índices em replace/remove):\n${blockInventory(lastSpec as FreePostSpec)}`
+        : "Reenvie o spec COMPLETO pela tool `entregar_composicao` seguindo o schema — todo bloco fora de stack precisa de position."
       messages.push(
         { role: "assistant", content: response.content },
         {
@@ -1545,26 +1791,29 @@ export async function composeSpec({
             {
               type: "tool_result",
               tool_use_id: block.id,
-              content: `REVISÃO REPROVADA — ${issues.length} problema(s):\n${issues
-                .map((s, i) => `${i + 1}. ${s}`)
-                .join(
-                  "\n",
-                )}\n\nCorrija TODOS os pontos mantendo o que já está bom, e reenvie o spec COMPLETO pela tool.`,
+              content: `REVISÃO REPROVADA — ${issues.length} problema(s):\n${lista}\n\n${instrucao}`,
             },
           ],
         },
       )
+      moveCacheBreakpoint(messages)
     }
     attempt++
   }
 
   // Nenhuma tentativa saiu perfeita: devolve a menos ruim — continua melhor
   // que cair no skeleton. As pendências ficam no log pra calibrar a crítica.
+  const spent = usages.length
   if (best) {
     console.warn(
       `[compose] entregando melhor tentativa com ${best.issues.length} pendência(s)`,
     )
-    return { spec: best.spec, usage: sumUsages(usages) }
+    return {
+      spec: best.spec,
+      usage: sumUsages(usages),
+      attempts: spent,
+      approvedOnAttempt: null,
+    }
   }
   return null
 }

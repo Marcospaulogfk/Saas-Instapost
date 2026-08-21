@@ -342,6 +342,18 @@ function CriarWizard() {
 
   // --- Etapa de aprovação (carrossel) ---
   const [carouselDraft, setCarouselDraft] = useState<CarouselDraft | null>(null)
+  /**
+   * O que a página de origem entregou no modo link: a foto do artigo (capa
+   * candidata, grátis) + a estrutura que orienta a direção de arte.
+   */
+  const [linkMeta, setLinkMeta] = useState<{
+    ogImage: string | null
+    sujeitoVisual: string
+    registro: string
+    fonte: string
+    entidades: Array<{ nome?: string; tipo?: string; papel?: string }>
+    vocabularioVisual: string[]
+  } | null>(null)
   const [carouselLoading, setCarouselLoading] = useState(false)
   const [carouselErr, setCarouselErr] = useState<string | null>(null)
   const [carouselApproving, setCarouselApproving] = useState(false)
@@ -491,8 +503,11 @@ function CriarWizard() {
    * o retorno é usado pelo fluxo de geração automática, que não pode esperar
    * o setState de `promptRefinado` propagar.
    */
-  async function refinarComIA(): Promise<string | null> {
-    if (briefing.trim().length < 10) {
+  async function refinarComIA(sourceText?: string): Promise<string | null> {
+    // `sourceText` cobre o modo link, onde o briefing não vem do textarea e sim
+    // da análise da página.
+    const base = (sourceText ?? briefing).trim()
+    if (base.length < 10) {
       setRefineErr("Briefing precisa ter pelo menos 10 chars")
       return null
     }
@@ -503,7 +518,7 @@ function CriarWizard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          briefing: briefing.trim(),
+          briefing: base,
           formato: formato?.id ?? "post-portrait",
           objetivo,
           abordagem,
@@ -515,7 +530,9 @@ function CriarWizard() {
         return null
       }
       const refined = typeof data.refined === "string" ? data.refined : null
-      if (refined) setPromptRefinado(refined)
+      // No modo link o refino é grounding, não substituição do textarea — não
+      // sobrescreve o campo que o usuário vê.
+      if (refined && !sourceText) setPromptRefinado(refined)
       return refined
     } catch (err) {
       setRefineErr(err instanceof Error ? err.message : "erro de rede")
@@ -546,7 +563,48 @@ function CriarWizard() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "erro ao analisar o link")
-      return (data.briefing ?? "").trim()
+      const extraido = (data.briefing ?? "").trim()
+
+      // Guarda o que a página entregou de graça: a foto de capa e a estrutura
+      // (entidades, obra, vocabulário visual). Antes tudo isso era descartado e
+      // a arte era gerada sem saber do que o artigo falava.
+      setLinkMeta({
+        ogImage: typeof data.og_image === "string" ? data.og_image : null,
+        sujeitoVisual: data.sujeito_visual ?? "",
+        registro: data.registro ?? "noticia",
+        fonte: data.fonte ?? "",
+        entidades: Array.isArray(data.entidades) ? data.entidades : [],
+        vocabularioVisual: Array.isArray(data.vocabulario_visual)
+          ? data.vocabulario_visual
+          : [],
+      })
+
+      // GROUNDING no modo link. O fluxo que mais precisa de contexto externo
+      // (link sobre alguém que o modelo não conhece) era justamente o único
+      // que pulava a busca web. Se falhar, segue com o briefing extraído —
+      // grounding nunca bloqueia a geração.
+      const contexto = [
+        extraido,
+        data.tese ? `Fato central: ${data.tese}` : "",
+        data.fonte ? `Fonte do fato: ${data.fonte}` : "",
+        Array.isArray(data.entidades) && data.entidades.length
+          ? `Entidades: ${data.entidades
+              .map((e: { nome?: string }) => e?.nome)
+              .filter(Boolean)
+              .join(", ")}`
+          : "",
+        Array.isArray(data.obras) && data.obras.length
+          ? `Obras citadas: ${data.obras.join(", ")}`
+          : "",
+        Array.isArray(data.vocabulario_visual) && data.vocabulario_visual.length
+          ? `Vocabulário visual: ${data.vocabulario_visual.join(", ")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+
+      const grounded = await refinarComIA(contexto)
+      return (grounded ?? extraido).trim()
     }
     // `refined` cobre o refino automático da mesma submissão (o state
     // `promptRefinado` ainda não propagou nesse ponto).
@@ -691,6 +749,9 @@ function CriarWizard() {
         projectTitle: data.project_title ?? "",
         slides: Array.isArray(data.slides) ? data.slides : [],
         caption: data.caption ?? "",
+        hookAlternatives: Array.isArray(data.hook_alternatives)
+          ? data.hook_alternatives
+          : [],
       })
     } catch (err) {
       setCarouselErr(err instanceof Error ? err.message : "erro de rede")
@@ -723,6 +784,9 @@ function CriarWizard() {
           colors: wizardBrand.brand_colors,
           brandName: wizardBrand.name,
           handle: wizardBrand.instagram_handle,
+          // Foto do artigo de origem: vira a capa se a proporção servir. É a
+          // imagem certa, é grátis e poupa os 25 tokens da capa.
+          coverPhotoUrl: linkMeta?.ogImage ?? null,
           autoRun: true,
           ts: Date.now(),
         }),
