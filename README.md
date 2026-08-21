@@ -8,8 +8,10 @@
 - Node.js 18+ instalado
 - pnpm ou npm
 - Conta no GitHub
-- Conta no Supabase
-- Conta no Vercel (opcional pra deploy)
+- Conta no Supabase (banco e auth)
+
+> **Deploy:** o app roda em VPS da Hetzner com Coolify, e o auto-deploy dispara no push
+> da branch `feature/template-editorial`. Detalhes em [`DEPLOY.md`](DEPLOY.md).
 
 ### 2. Instalar dependências
 ```bash
