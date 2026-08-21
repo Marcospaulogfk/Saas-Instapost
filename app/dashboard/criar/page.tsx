@@ -540,8 +540,8 @@ function CriarWizard() {
         return null
       }
       const refined = typeof data.refined === "string" ? data.refined : null
-      // No modo link o refino é grounding, não substituição do textarea — não
-      // sobrescreve o campo que o usuário vê.
+      // Só o modo do-zero passa por aqui (o modo link não usa o refine desde
+      // 21/08). Não sobrescreve o textarea quando há texto de origem.
       if (refined && !sourceText) setPromptRefinado(refined)
       return refined
     } catch (err) {
@@ -625,9 +625,7 @@ function CriarWizard() {
       // a página colada já é a fonte. Sem busca web, o refine só reescreveria
       // o que a extração acima já estruturou, cobrando uma chamada a mais. O
       // escritor recebe o extraído + a estrutura direto.
-      const text = [extraido, estrutura].filter(Boolean).join("
-
-")
+      const text = [extraido, estrutura].filter(Boolean).join("\n\n")
       return { text, link: meta }
     }
     // `refined` cobre o refino automático da mesma submissão (o state

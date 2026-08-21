@@ -9,7 +9,7 @@
 // CAPA e/ou nos DEMAIS slides — e cada escolha queima tokens:
 //   - roteiro + legenda de CARROSSEL (sempre)              =  4 tokens
 //   - texto de POST ÚNICO (mesma conta, ver singlePostText) =  4 tokens
-//   - imagem de CAPA (Nano Banana 2 / Gemini 3.1 Flash)    = 25 tokens
+//   - imagem de CAPA (Nano Banana, ~US$0,04 desde 21/08)     = 25 tokens
 //   - imagem por slide de miolo (Flux Schnell)             =  2 tokens
 //
 // A capa é o único slide que justifica modelo caro: é ela que para o scroll.
@@ -77,7 +77,7 @@ export const TOKEN_COST = {
    * ===================================================================
    */
   singlePostText: 4,
-  /** Imagem de CAPA — Nano Banana 2 (Gemini 3.1 Flash Image), ~US$0,08. */
+  /** Imagem de CAPA. Nano Banana simples (~US$0,04) desde 21/08/2026; o preço em tokens ficou, a margem subiu. */
   imageCover: 25,
   /** Imagem de slide de miolo — Flux Schnell, ~US$0,003. */
   imageSlide: 2,

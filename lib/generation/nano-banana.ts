@@ -135,7 +135,13 @@ export async function editNanoBanana(
     url: image.url,
     width: image.width ?? 1080,
     height: image.height ?? 1350,
-    costUsd: COVER_RESOLUTION === "2K" ? 0.12 : 0.08,
+    // Segue o modelo resolvido (o /edit do nano-banana simples custa o mesmo
+    // que a geração dele).
+    costUsd: model.startsWith("fal-ai/nano-banana/")
+      ? 0.039
+      : COVER_RESOLUTION === "2K"
+        ? 0.12
+        : 0.08,
     ms,
     model,
   }

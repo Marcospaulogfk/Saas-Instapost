@@ -218,7 +218,7 @@ SEMPRE preencha image_prompt também (é o fallback) e, quando a entidade for \`
 
 # CAPTION (legenda do Instagram, OBRIGATÓRIA, campo "caption")
 
-Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa cola embaixo do carrossel. Parágrafos separados por \n\n.
+Além do texto que vai NOS slides, escreva a legenda (\`caption\`) que a pessoa cola embaixo do carrossel. Parágrafos separados por \\n\\n.
 
 ${regrasCopy("legenda")}
 
@@ -311,13 +311,6 @@ export interface GenerationInput {
   protagonista?: string
   /** Fonte do fato (ex: "revista Wallpaper*"). */
   fonte?: string
-  /**
-   * Capa rejeitada pela validação em código (sem o nome do sujeito, ou abrindo
-   * com pronome vazio). Presente = regeração corretiva.
-   */
-  rejectedCover?: string
-  /** Por que a capa foi rejeitada — vai no prompt da regeração. */
-  rejectedCoverReason?: string
 }
 
 /**
@@ -540,13 +533,6 @@ Motivo: quem vê a capa no feed precisa saber em 1 segundo de QUEM/DO QUE se tra
 - Se o briefing trouxer uma "Headline de Impacto" pronta que não nomeia o sujeito, DESCARTE-A.`
     : ""
 
-  const rejectedCoverBlock = input.rejectedCover
-    ? `
-
-CAPA REJEITADA PELA VALIDAÇÃO AUTOMÁTICA: "${input.rejectedCover}"
-Motivo: ${input.rejectedCoverReason ?? "não nomeia o sujeito do post"}. Reescreva a capa corrigindo exatamente isso, mantendo o restante do roteiro no mesmo nível.`
-    : ""
-
   const avoidBlock =
     input.avoidTitles && input.avoidTitles.length
       ? `
@@ -575,7 +561,7 @@ CONTEXTO:
 ABORDAGEM ESCOLHIDA PELO USUÁRIO — ela define a ESTRUTURA e o REGISTRO do texto (dois carrosséis sobre o mesmo tema com abordagens diferentes precisam ficar claramente diferentes):
 ${abordagemBrief}`
       : ""
-  }${noticiaBlock}${rejectedCoverBlock}${avoidBlock}`
+  }${noticiaBlock}${avoidBlock}`
 
   const start = performance.now()
   const response = await client.messages.create({
