@@ -1676,32 +1676,16 @@ function Step3({
             className="border-0 bg-transparent pl-11 pr-4 pt-4 text-[15px] leading-relaxed resize-none shadow-none focus-visible:ring-0"
           />
           {/* Escolha de imagens de IA — só no carrossel: no post único a
-              imagem única JÁ é a capa, não há miolo pra decidir. */}
+              imagem única JÁ é a capa, não há miolo pra decidir. Seletor
+              explícito de 3 opções (feedback 22/08: os dois chips antigos
+              eram pequenos demais e ninguém entendia que "sem imagem" existia). */}
           {!isPostUnico && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle px-3 py-2.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                Imagens de IA
-              </span>
-              <ImagemToggle
-                ativo={imageChoice.cover}
-                label="Capa"
-                custo={TOKEN_COST.imageCover}
-                onClick={() =>
-                  onImageChoice({ ...imageChoice, cover: !imageChoice.cover })
-                }
-              />
-              <ImagemToggle
-                ativo={imageChoice.slides}
-                label="Demais slides"
-                custo={TOKEN_COST.imageSlide * Math.max(0, formato.slides - 1)}
-                onClick={() =>
-                  onImageChoice({ ...imageChoice, slides: !imageChoice.slides })
-                }
-              />
-              <span className="ml-auto font-mono text-[11px] text-text-secondary tabular-nums">
-                {custoTokens} tokens
-              </span>
-            </div>
+            <ImagemSeletor
+              choice={imageChoice}
+              onChange={onImageChoice}
+              slides={formato.slides}
+              total={custoTokens}
+            />
           )}
 
           <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
@@ -2121,38 +2105,115 @@ function StyleStep({
  * O custo fica no rótulo de propósito: é a única forma de o usuário aprender
  * que a capa pesa 12× um slide de miolo antes de gastar.
  */
-function ImagemToggle({
-  ativo,
-  label,
-  custo,
-  onClick,
+type ImagemModo = "nenhuma" | "capa" | "todas"
+
+function imagemModo(c: ImageChoice): ImagemModo {
+  if (c.cover && c.slides) return "todas"
+  if (c.cover) return "capa"
+  return "nenhuma"
+}
+
+/**
+ * Seletor de imagens de IA do carrossel: 3 opções excludentes, cada uma com
+ * o custo em tokens. Substitui os dois chips "Capa / Demais slides", que
+ * eram pequenos e não deixavam claro que "só texto" era uma opção (o modo
+ * mais barato, 4 tokens). Preço vem de TOKEN_COST — nunca recalcular aqui.
+ */
+function ImagemSeletor({
+  choice,
+  onChange,
+  slides,
+  total,
 }: {
-  ativo: boolean
-  label: string
-  custo: number
-  onClick: () => void
+  choice: ImageChoice
+  onChange: (v: ImageChoice) => void
+  slides: number
+  total: number
 }) {
+  const modo = imagemModo(choice)
+  const miolo = Math.max(0, slides - 1)
+  const opcoes: {
+    id: ImagemModo
+    label: string
+    desc: string
+    custo: number
+    value: ImageChoice
+  }[] = [
+    {
+      id: "nenhuma",
+      label: "Sem imagem",
+      desc: "Só texto e layout. Você adiciona fotos depois.",
+      custo: TOKEN_COST.textOnly,
+      value: { cover: false, slides: false },
+    },
+    {
+      id: "capa",
+      label: "Só na capa",
+      desc: "A arte que para o scroll. Miolo só com texto.",
+      custo: TOKEN_COST.textOnly + TOKEN_COST.imageCover,
+      value: { cover: true, slides: false },
+    },
+    {
+      id: "todas",
+      label: "Capa + todos os slides",
+      desc: `Uma imagem por slide (${miolo} no miolo).`,
+      custo:
+        TOKEN_COST.textOnly +
+        TOKEN_COST.imageCover +
+        TOKEN_COST.imageSlide * miolo,
+      value: { cover: true, slides: true },
+    },
+  ]
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={ativo}
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors ${
-        ativo
-          ? "border-brand-500/60 bg-brand-500/10 text-brand-200"
-          : "border-border-subtle text-text-secondary hover:border-border-medium"
-      }`}
-    >
-      <span
-        className={`grid h-3.5 w-3.5 place-items-center rounded-[4px] border ${
-          ativo ? "border-brand-500 bg-brand-500" : "border-border-medium"
-        }`}
-      >
-        {ativo && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} />}
-      </span>
-      {label}
-      <span className="text-text-muted tabular-nums">+{custo}</span>
-    </button>
+    <div className="border-t border-border-subtle px-3 py-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+          Imagens geradas por IA
+        </span>
+        <span className="font-mono text-[12px] font-semibold text-text-primary tabular-nums">
+          {total} tokens
+        </span>
+      </div>
+      <div role="radiogroup" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {opcoes.map((o) => {
+          const ativo = modo === o.id
+          return (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={ativo}
+              onClick={() => onChange(o.value)}
+              className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                ativo
+                  ? "border-brand-500/70 bg-brand-500/10"
+                  : "border-border-subtle hover:border-border-medium"
+              }`}
+            >
+              <span className="flex w-full items-center justify-between gap-2">
+                <span
+                  className={`text-[13px] font-semibold ${
+                    ativo ? "text-brand-100" : "text-text-primary"
+                  }`}
+                >
+                  {o.label}
+                </span>
+                <span
+                  className={`font-mono text-[11px] tabular-nums ${
+                    ativo ? "text-brand-200" : "text-text-muted"
+                  }`}
+                >
+                  {o.custo} tk
+                </span>
+              </span>
+              <span className="text-[11px] leading-snug text-text-secondary">
+                {o.desc}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
