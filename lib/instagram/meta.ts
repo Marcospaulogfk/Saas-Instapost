@@ -1,6 +1,6 @@
 /**
  * Integração REAL com a API do Instagram — fluxo "Instagram API with Instagram
- * Login" (scopes instagram_business_basic + instagram_business_content_publish).
+ * Login" (scopes business_basic + content_publish + manage_insights).
  *
  * Só roda no server (usa o App Secret). Endpoints:
  *   - Authorize: https://www.instagram.com/oauth/authorize
@@ -14,7 +14,8 @@
  *   INSTAGRAM_REDIRECT_URI  — opcional; default {origin}/api/instagram/callback
  */
 
-const GRAPH_VERSION = "v21.0"
+// v22+: `impressions` saiu, `views` entrou (insights dependem disso).
+const GRAPH_VERSION = "v23.0"
 const GRAPH = `https://graph.instagram.com`
 
 export function isInstagramConfigured(): boolean {
@@ -22,7 +23,7 @@ export function isInstagramConfigured(): boolean {
 }
 
 export function instagramScopes(): string {
-  return "instagram_business_basic,instagram_business_content_publish"
+  return "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights"
 }
 
 export function redirectUri(origin: string): string {
@@ -173,4 +174,221 @@ export async function publishCarousel(
     accessToken,
   )
   return graphPost(igUserId, "media_publish", { creation_id: parent.id }, accessToken)
+}
+
+// ── Token de longa duração: renovação ───────────────────────────────────────
+
+/**
+ * Renova um token de longa duração (só funciona com ≥24h de vida e ainda
+ * válido). Devolve o novo token + validade (≈60 dias de novo).
+ */
+export async function refreshLongLivedToken(accessToken: string): Promise<LongToken> {
+  const p = new URLSearchParams({
+    grant_type: "ig_refresh_token",
+    access_token: accessToken,
+  })
+  const res = await fetch(`${GRAPH}/refresh_access_token?${p.toString()}`)
+  const data = await res.json()
+  if (!res.ok || !data?.access_token) {
+    throw new Error(data?.error?.message || "falha ao renovar o token do Instagram")
+  }
+  return { access_token: data.access_token, expiresInSec: data.expires_in ?? 60 * 24 * 3600 }
+}
+
+// ── Insights (instagram_business_manage_insights) ───────────────────────────
+
+async function graphGet<T>(path: string, params: Record<string, string>, accessToken: string): Promise<T> {
+  const p = new URLSearchParams({ ...params, access_token: accessToken })
+  const res = await fetch(`${GRAPH}/${GRAPH_VERSION}/${path}?${p.toString()}`)
+  const data = await res.json()
+  if (!res.ok || data?.error) {
+    throw new Error(data?.error?.message || `falha em GET ${path}`)
+  }
+  return data as T
+}
+
+export interface InstagramProfile {
+  igUserId: string
+  username: string
+  name: string | null
+  profilePictureUrl: string | null
+  followersCount: number
+  followsCount: number
+  mediaCount: number
+}
+
+/** Perfil completo da conta conectada (contadores incluídos). */
+export async function getInstagramProfileFull(accessToken: string): Promise<InstagramProfile> {
+  const d = await graphGet<Record<string, unknown>>(
+    "me",
+    { fields: "user_id,username,name,profile_picture_url,followers_count,follows_count,media_count" },
+    accessToken,
+  )
+  return {
+    igUserId: String(d.user_id ?? d.id),
+    username: String(d.username ?? ""),
+    name: (d.name as string) ?? null,
+    profilePictureUrl: (d.profile_picture_url as string) ?? null,
+    followersCount: Number(d.followers_count ?? 0),
+    followsCount: Number(d.follows_count ?? 0),
+    mediaCount: Number(d.media_count ?? 0),
+  }
+}
+
+/** Métricas da CONTA no período (somatório). Chaves = nome da métrica na Meta. */
+export type AccountInsights = Partial<
+  Record<
+    | "reach"
+    | "views"
+    | "accounts_engaged"
+    | "total_interactions"
+    | "likes"
+    | "comments"
+    | "saves"
+    | "shares"
+    | "profile_links_taps",
+    number
+  >
+>
+
+interface InsightRow {
+  name: string
+  total_value?: { value: number }
+  values?: Array<{ value: number; end_time?: string }>
+}
+
+/**
+ * Insights da conta nos últimos `days` dias. `impressions` foi removida pela
+ * Meta (v22) — `views` é a substituta. Cada métrica falhando derruba a chamada
+ * inteira na API, então pedimos em dois lotes: o núcleo (sempre disponível) e
+ * o extra (pode faltar em conta pequena), e o extra é best-effort.
+ */
+export async function getAccountInsights(
+  igUserId: string,
+  accessToken: string,
+  days = 30,
+): Promise<AccountInsights> {
+  const until = Math.floor(Date.now() / 1000)
+  const since = until - days * 24 * 3600
+  const base = {
+    period: "day",
+    metric_type: "total_value",
+    since: String(since),
+    until: String(until),
+  }
+  const out: AccountInsights = {}
+  const collect = (rows: InsightRow[]) => {
+    for (const r of rows) {
+      const v = r.total_value?.value ?? r.values?.reduce((s, x) => s + (x.value ?? 0), 0)
+      if (typeof v === "number") out[r.name as keyof AccountInsights] = v
+    }
+  }
+  const core = await graphGet<{ data: InsightRow[] }>(
+    `${igUserId}/insights`,
+    { ...base, metric: "reach,views,accounts_engaged,total_interactions" },
+    accessToken,
+  )
+  collect(core.data ?? [])
+  try {
+    const extra = await graphGet<{ data: InsightRow[] }>(
+      `${igUserId}/insights`,
+      { ...base, metric: "likes,comments,saves,shares,profile_links_taps" },
+      accessToken,
+    )
+    collect(extra.data ?? [])
+  } catch {
+    // conta sem histórico/seguidores suficientes: segue só com o núcleo
+  }
+  return out
+}
+
+/** Série diária de seguidores (Meta só entrega pra contas com ≥100 seguidores). */
+export async function getFollowerSeries(
+  igUserId: string,
+  accessToken: string,
+  days = 30,
+): Promise<Array<{ date: string; value: number }>> {
+  const until = Math.floor(Date.now() / 1000)
+  const since = until - Math.min(days, 30) * 24 * 3600
+  try {
+    const r = await graphGet<{ data: InsightRow[] }>(
+      `${igUserId}/insights`,
+      { metric: "follower_count", period: "day", since: String(since), until: String(until) },
+      accessToken,
+    )
+    return (r.data?.[0]?.values ?? []).map((v) => ({
+      date: (v.end_time ?? "").slice(0, 10),
+      value: v.value ?? 0,
+    }))
+  } catch {
+    return []
+  }
+}
+
+export interface InstagramMedia {
+  id: string
+  caption: string | null
+  mediaType: "IMAGE" | "CAROUSEL_ALBUM" | "VIDEO" | string
+  mediaUrl: string | null
+  thumbnailUrl: string | null
+  permalink: string
+  timestamp: string
+  likeCount: number
+  commentsCount: number
+}
+
+/** Últimas publicações do feed da conta. */
+export async function getRecentMedia(
+  accessToken: string,
+  limit = 24,
+): Promise<InstagramMedia[]> {
+  const r = await graphGet<{ data: Array<Record<string, unknown>> }>(
+    "me/media",
+    {
+      fields:
+        "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count",
+      limit: String(limit),
+    },
+    accessToken,
+  )
+  return (r.data ?? []).map((m) => ({
+    id: String(m.id),
+    caption: (m.caption as string) ?? null,
+    mediaType: String(m.media_type ?? ""),
+    mediaUrl: (m.media_url as string) ?? null,
+    thumbnailUrl: (m.thumbnail_url as string) ?? null,
+    permalink: String(m.permalink ?? ""),
+    timestamp: String(m.timestamp ?? ""),
+    likeCount: Number(m.like_count ?? 0),
+    commentsCount: Number(m.comments_count ?? 0),
+  }))
+}
+
+export type MediaInsights = Partial<
+  Record<"reach" | "views" | "saved" | "likes" | "comments" | "shares" | "total_interactions", number>
+>
+
+/**
+ * Insights de UMA publicação. Best-effort: mídia antiga ou tipo sem suporte
+ * devolve null em vez de derrubar a lista.
+ */
+export async function getMediaInsights(
+  mediaId: string,
+  accessToken: string,
+): Promise<MediaInsights | null> {
+  try {
+    const r = await graphGet<{ data: InsightRow[] }>(
+      `${mediaId}/insights`,
+      { metric: "reach,views,saved,likes,comments,shares,total_interactions" },
+      accessToken,
+    )
+    const out: MediaInsights = {}
+    for (const row of r.data ?? []) {
+      const v = row.total_value?.value ?? row.values?.[0]?.value
+      if (typeof v === "number") out[row.name as keyof MediaInsights] = v
+    }
+    return out
+  } catch {
+    return null
+  }
 }

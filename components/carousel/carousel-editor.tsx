@@ -59,6 +59,7 @@ import {
   type ElementOverride,
 } from "@/components/carousel/editable-overrides"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
+import { renderNodeToPng, uploadPngDataUrl } from "@/lib/instagram/render-upload"
 
 /** Nome de arquivo a partir do título do slide (NN- pra manter ordem no zip). */
 function slideFileName(s: PreviewSlide, i: number): string {
@@ -1030,6 +1031,38 @@ export function CarouselEditor({
     )
   }
 
+  /**
+   * Artes finais pra PUBLICAR no Instagram: mesmo percurso do ZIP (cada slide
+   * renderizado no preview a 1080px), mas em vez de baixar, hospeda e devolve
+   * as URLs públicas que a API da Meta exige. Antes disso o botão mandava a
+   * foto de fundo crua (slide.image.url), sem título nem marca.
+   * Diferente do ZIP, aqui um slide que falha derruba tudo: carrossel pela
+   * metade no feed é pior que erro.
+   */
+  async function renderSlidesForPublish(): Promise<string[]> {
+    if (!previewRef.current || slides.length === 0) return []
+    const prevSelected = selected
+    const urls: string[] = []
+    try {
+      for (let i = 0; i < slides.length; i++) {
+        setSelected(i)
+        await whenVisible()
+        await waitPreviewImages()
+        if (!previewRef.current) throw new Error("preview indisponível")
+        const dataUrl = await renderNodeToPng(
+          previewRef.current,
+          1080,
+          format === "stories" ? 1920 : 1350,
+        )
+        urls.push(await uploadPngDataUrl(dataUrl, `${slideFileName(slides[i], i)}.png`))
+      }
+      return urls
+    } finally {
+      setSelected(prevSelected)
+      setExportPaused(false)
+    }
+  }
+
   // Exporta TODOS os slides num único .zip. Percorre os slides no preview
   // visível (cada um renderiza no previewRef) e captura o PNG de cada.
   // Robusto: espera a imagem carregar de verdade (sem timer fixo) e um slide
@@ -1172,9 +1205,8 @@ export function CarouselEditor({
           </Button>
         )}
         <PublishToInstagram
-          imageUrls={slides
-            .map((s) => s.image.url)
-            .filter((u): u is string => !!u)}
+          getImageUrls={renderSlidesForPublish}
+          imageCount={slides.length}
           caption={caption ?? ""}
         />
         <Button

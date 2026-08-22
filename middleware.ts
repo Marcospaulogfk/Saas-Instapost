@@ -24,6 +24,10 @@ const PROTECTED_PREFIXES = [
 const PUBLIC_API_PREFIXES = [
   "/api/webhooks", // chamado por provedor externo (Cakto); valida segredo próprio
   "/api/proxy-image", // proxy de imagem, já limitado por allowlist de host
+  // Callbacks da Meta (desautorização e exclusão de dados): sem sessão, a
+  // autenticidade é o HMAC do signed_request com o App Secret.
+  "/api/instagram/deauthorize",
+  "/api/instagram/data-deletion",
 ]
 
 // === Split de domínio ===
@@ -49,7 +53,8 @@ const LEGACY_HOSTS = new Set([
 const LEGACY_KEEP_PREFIXES = ["/auth", "/api"]
 
 // Caminhos que PERMANECEM no domínio raiz (landing). Todo o resto é do app.
-const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade"]
+// /instagram = página pública de exclusão de dados (exigida pela Meta).
+const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade", "/instagram"]
 // Arquivos/rotas que DEVEM ser servidos na raiz (SEO): o Google busca
 // robots.txt e sitemap.xml no apex — redirecionar pro subdomínio prejudica.
 const MARKETING_EXACT = new Set(["/", "/robots.txt", "/sitemap.xml"])

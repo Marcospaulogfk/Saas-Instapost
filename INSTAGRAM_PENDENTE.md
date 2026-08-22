@@ -1,54 +1,45 @@
-# Publicar no Instagram — PENDENTE (handoff entre sessões)
+# Instagram (publicar + métricas) — estado e pendências
 
-> Status em 2026-07-10. A integração REAL está **codada, deployada e configurada**
-> em produção. O que falta é **100% do lado do painel da Meta** (permissão + testers
-> + App Review) — não tem mais código obrigatório pra publicar em dev mode.
+> Atualizado em 2026-08-22. Código completo pra publicar e ler métricas; o que
+> segura é o App Review da Meta, que exige virar **Tech Provider** (irreversível).
 
-## ✅ Já feito
-- **Código** (fluxo "Instagram API with Instagram Login"):
-  - `lib/instagram/meta.ts` — authorize URL, troca de code, token de longa duração,
-    perfil e `publishCarousel` (containers por imagem → CAROUSEL → media_publish).
-  - `app/api/instagram/{connect,callback,status,publish}/route.ts`.
-  - `components/instagram/publish-to-instagram.tsx` — ligado nos endpoints reais
-    (sem env → mostra "em configuração", não simula).
-  - Scopes: `instagram_business_basic,instagram_business_content_publish`.
-- **Banco:** migration `0011_instagram_connections.sql` **aplicada em produção**
-  (tabela `instagram_connections`, token por usuário, RLS própria).
-- **Coolify (produção), variáveis setadas:**
-  - `INSTAGRAM_APP_ID=1642022093558678` ← **Instagram app ID** (NÃO é o app-level
-    1503563704849302; o de Instagram Login é diferente).
-  - `INSTAGRAM_REDIRECT_URI=https://app.syncpost.com.br/api/instagram/callback`
-  - `INSTAGRAM_APP_SECRET` = chave secreta do app do Instagram (colada pelo Marcos;
-    NÃO fica no repo; foi/serve rotacionar).
-- **Deploy no ar** (branch `feature/template-editorial`). Verificado:
-  `GET https://app.syncpost.com.br/api/instagram/status` → `{"connected":false,"configured":true}`
-  (config reconhecida).
+## Código (feito)
+- OAuth "Instagram API with Instagram Login", scopes
+  `instagram_business_basic, instagram_business_content_publish, instagram_business_manage_insights`
+  (`lib/instagram/meta.ts`, Graph v23.0).
+- Publicar: `components/instagram/publish-to-instagram.tsx` renderiza a ARTE FINAL
+  (html-to-image → upload → URL pública) na hora do clique, no carrossel e no post
+  único. Antes ia a foto de fundo crua. Id da mídia publicada fica em
+  `instagram_publications` (migration **0019 — aplicar em prod**).
+- Token de 60 dias renovado automaticamente a <10 dias do vencimento
+  (`lib/instagram/connection.ts`).
+- Métricas: `GET /api/instagram/insights` + página `/dashboard/instagram`
+  (perfil, alcance/views/engajamento 30d, série de seguidores, últimos posts com
+  insights, selo "SyncPost" no que saiu daqui). Nada persistido.
+- Callbacks exigidos pelo App Review (públicos, validam HMAC do signed_request):
+  `POST /api/instagram/deauthorize` e `POST /api/instagram/data-deletion`.
+  Página pública: `/instagram/exclusao-de-dados`.
+- `/api/instagram/connect?returnTo=` volta pra página de origem.
+- Privacidade cita insights e exclusão de dados.
 
-## ⏳ PENDENTE (do lado da Meta — conta do Marcos: developers.facebook.com, app "SyncPost" id 1503563704849302)
-1. **Permissão de publicar:** *Permissões e recursos* → adicionar
-   **`instagram_business_content_publish`** (o "Add all required permissions" do card
-   de mensagens NÃO adiciona essa). Sem ela conecta mas não publica.
-2. **Redirect URI no Meta:** conferir que `https://app.syncpost.com.br/api/instagram/callback`
-   está salvo em *Configuração da API com login do Instagram → OAuth redirect URIs*.
-   (Marcos disse que colou — reconferir.)
-3. **Política de privacidade:** *Configurações do app → Básico* → URL =
-   `https://syncpost.com.br/privacidade` (a Meta exige pra publicar/App Review).
-4. **Testadores (modo dev):** *Funções do app → Testadores do Instagram* → adicionar a
-   conta IG que vai publicar (Business/Creator + vinculada a Página) e **aceitar o
-   convite** dentro do Instagram. Em dev mode, SÓ contas testadoras publicam — inclusive
-   a do próprio Marcos. (Decisão do Marcos: NÃO colocar a conta do CLIENTE como tester.)
-5. **App Review + verificação de negócio:** necessário pra publicar em contas de
-   CLIENTES sem serem testers (produção geral). Leva alguns dias. É o gate final.
+## Painel da Meta (app SyncPost 1503563704849302 · IG app 1642022093558678)
+Feito em 22/08: permissões basic + content_publish + manage_insights em "Pronto
+para teste"; redirect URI confere; testador `nexuscontent_ai` cadastrado.
 
-## 🔜 Próximo teste (quando 1–4 estiverem prontos)
-- Logar no app → editor do carrossel → **Publicar no Instagram → Conectar Instagram**
-  → login IG (conta testadora) → volta `?ig=ok` conectado → **Publicar agora**.
-- Verificar o post no feed da conta. As imagens já são URLs públicas (fal.media), então
-  o container da Meta consegue baixá-las.
+Pendente (na ordem):
+1. Confirmar no Instagram que `nexuscontent_ai` ACEITOU o convite de testador.
+2. Configurações do login da empresa → preencher
+   - URL de desautorização: `https://app.syncpost.com.br/api/instagram/deauthorize`
+   - URL de exclusão de dados: `https://app.syncpost.com.br/api/instagram/data-deletion`
+3. Configurações básicas: Termos → `https://syncpost.com.br/termos`;
+   Exclusão de dados (instruções) → `https://syncpost.com.br/instagram/exclusao-de-dados`;
+   Categoria do app (vazia).
+4. Teste real em dev mode: conectar (reconectar se já estava, pro scope de insights
+   entrar) → publicar carrossel e post → abrir /dashboard/instagram.
+5. Decidir/iniciar **Tech Provider** + verificação da empresa (MEI WebSync).
+6. Screencast (roteiro em APP_REVIEW_INSTAGRAM.md) e submeter content_publish +
+   manage_insights JUNTOS numa submissão só.
+7. Publicar o app (botão "Publicar" já liberado).
 
-## Observações técnicas
-- O `callback` valida CSRF via cookie `ig_oauth_state` e salva token de longa duração
-  (~60 dias) em `instagram_connections`. Renovação automática do token NÃO está
-  implementada (TODO futuro: refresh antes de expirar).
-- Se o "Conectar" der erro, checar: redirect URI idêntico ao registrado, permissão
-  content_publish concedida, e conta é tester.
+## Deploy
+- Coolify: nenhuma env nova. Aplicar migration 0019.

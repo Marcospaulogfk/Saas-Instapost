@@ -5,9 +5,18 @@ import { Loader2, Instagram, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Props {
-  /** URLs públicas das imagens dos slides (na ordem). */
-  imageUrls: string[]
+  /**
+   * Produz as URLs PÚBLICAS das artes finais, na ordem, só na hora de
+   * publicar. É callback (e não lista pronta) porque a arte final só existe
+   * como HTML no preview: o editor renderiza em PNG, hospeda e devolve as
+   * URLs. Lança com mensagem legível se algo falhar.
+   */
+  getImageUrls: () => Promise<string[]>
+  /** Quantas imagens vão ser publicadas (só pra mostrar no modal). */
+  imageCount: number
   caption: string
+  /** Rótulo do conteúdo na mensagem de sucesso. */
+  kind?: "carrossel" | "post"
 }
 
 interface Status {
@@ -22,10 +31,15 @@ interface Status {
  * Se o app da Meta ainda não está configurado (env ausente), mostra estado
  * honesto de "em configuração" em vez de simular.
  */
-export function PublishToInstagram({ imageUrls, caption }: Props) {
+export function PublishToInstagram({
+  getImageUrls,
+  imageCount,
+  caption,
+  kind = "carrossel",
+}: Props) {
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
-  const [busy, setBusy] = useState<"publish" | "disconnect" | null>(null)
+  const [busy, setBusy] = useState<"render" | "publish" | "disconnect" | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,9 +70,16 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
   }, [open])
 
   async function handlePublish() {
-    setBusy("publish")
+    setBusy("render")
     setError(null)
     try {
+      // Primeiro a arte final vira PNG hospedado; só então a Meta recebe.
+      const imageUrls = await getImageUrls()
+      if (!imageUrls.length) {
+        setError("Nenhuma imagem pronta pra publicar.")
+        return
+      }
+      setBusy("publish")
       const res = await fetch("/api/instagram/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,10 +147,10 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                   <Check className="w-6 h-6 text-emerald-400" />
                 </div>
                 <p className="text-sm text-text-primary font-medium">
-                  Publicado no Instagram ✅
+                  Publicado no Instagram
                 </p>
                 <p className="text-xs text-text-secondary">
-                  O carrossel foi enviado pra sua conta. Pode levar alguns
+                  O {kind} foi enviado pra sua conta. Pode levar alguns
                   segundos pra aparecer no feed.
                 </p>
                 <Button type="button" className="w-full" onClick={reset}>
@@ -143,7 +164,7 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
             ) : !status.configured ? (
               <div className="space-y-2 py-2">
                 <p className="text-sm text-text-primary">
-                  Publicação direta em configuração 🛠️
+                  Publicação direta em configuração
                 </p>
                 <p className="text-xs text-text-secondary">
                   Estamos finalizando a integração oficial com a Meta. Por
@@ -161,7 +182,10 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                   type="button"
                   className="w-full"
                   onClick={() => {
-                    window.location.href = "/api/instagram/connect"
+                    // returnTo: o callback devolve pra ESTA página (o post
+                    // único não pode cair no editor de carrossel).
+                    const back = window.location.pathname + window.location.search
+                    window.location.href = `/api/instagram/connect?returnTo=${encodeURIComponent(back)}`
                   }}
                 >
                   <Instagram className="w-4 h-4 mr-1.5" />
@@ -194,16 +218,21 @@ export function PublishToInstagram({ imageUrls, caption }: Props) {
                 </div>
 
                 <p className="text-xs text-text-secondary">
-                  {imageUrls.length} imagem(ns) + legenda prontos pra publicar.
+                  {imageCount} imagem(ns) + legenda prontos pra publicar.
                 </p>
 
                 <Button
                   type="button"
                   className="w-full"
                   onClick={handlePublish}
-                  disabled={busy !== null || imageUrls.length === 0}
+                  disabled={busy !== null || imageCount === 0}
                 >
-                  {busy === "publish" ? (
+                  {busy === "render" ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      Preparando as artes…
+                    </>
+                  ) : busy === "publish" ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                       Publicando…

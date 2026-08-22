@@ -156,11 +156,20 @@ export default function PrivacidadePage() {
           </p>
           <p>
             <strong className="text-foreground">Permissões solicitadas:</strong>{' '}
-            <code>instagram_business_basic</code> (ler o perfil básico da conta conectada) e{' '}
-            <code>instagram_business_content_publish</code> (publicar conteúdo em seu nome).
+            <code>instagram_business_basic</code> (ler o perfil básico da conta conectada),{' '}
+            <code>instagram_business_content_publish</code> (publicar conteúdo em seu nome) e{' '}
+            <code>instagram_business_manage_insights</code> (ler as métricas da sua conta e das suas
+            publicações, como alcance, visualizações, curtidas, comentários, salvamentos e seguidores).
             Só publicamos na <strong className="text-foreground">sua própria conta</strong>, apenas o
             conteúdo que você criou, e somente após você clicar explicitamente em “Publicar agora”. Nunca
             publicamos, curtimos, comentamos ou seguimos automaticamente.
+          </p>
+          <p>
+            <strong className="text-foreground">Métricas:</strong> as métricas são lidas da Meta no
+            momento em que você abre a página de métricas no SyncPost e exibidas apenas para você. Guardamos
+            o identificador das publicações feitas pelo SyncPost para associar cada métrica ao conteúdo
+            correspondente. Não usamos essas métricas para treinar modelos nem para qualquer finalidade
+            fora da sua própria conta.
           </p>
           <p>
             <strong className="text-foreground">Como revogar o acesso:</strong> você pode desconectar o
@@ -168,6 +177,16 @@ export default function PrivacidadePage() {
             o que remove o token armazenado. Você também pode revogar o acesso do lado do Instagram em{' '}
             <em>Configurações → Apps e sites</em>. Ao desconectar, deixamos de ter qualquer acesso à sua
             conta.
+          </p>
+          <p>
+            <strong className="text-foreground">Exclusão dos dados do Instagram:</strong> quando você
+            remove o SyncPost em <em>Apps e sites</em> do Instagram, a Meta nos avisa e apagamos
+            imediatamente o token e os dados de conexão. Você também pode pedir a exclusão a qualquer
+            momento em{' '}
+            <a href="/instagram/exclusao-de-dados" className="text-primary hover:underline">
+              nexuscontentai.com.br/instagram/exclusao-de-dados
+            </a>
+            .
           </p>
           <p>
             O uso dos dados do Instagram segue os{' '}

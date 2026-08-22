@@ -30,12 +30,19 @@ export async function GET(req: Request) {
   const url = buildAuthorizeUrl(origin, state)
 
   const res = NextResponse.redirect(url)
-  res.cookies.set("ig_oauth_state", state, {
+  const cookieOpts = {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     maxAge: 600,
     path: "/",
-  })
+  }
+  res.cookies.set("ig_oauth_state", state, cookieOpts)
+  // Pra onde voltar depois do OAuth. Só caminho relativo do próprio app —
+  // nada de open redirect via query.
+  const returnTo = new URL(req.url).searchParams.get("returnTo") ?? ""
+  if (returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    res.cookies.set("ig_oauth_return", returnTo, cookieOpts)
+  }
   return res
 }

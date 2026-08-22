@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CalendarPlus,
   LayoutTemplate,
+  Instagram,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -25,6 +26,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { name: "Planejar", href: "/dashboard/planejar", icon: CalendarPlus, badge: "IA" },
   { name: "Biblioteca", href: "/dashboard/projetos", icon: Library },
   { name: "Calendário", href: "/dashboard/calendario", icon: CalendarDays },
+  { name: "Instagram", href: "/dashboard/instagram", icon: Instagram },
 ]
 
 /** Configuração da conta — grupo "Outros", separado por rótulo na sidebar. */

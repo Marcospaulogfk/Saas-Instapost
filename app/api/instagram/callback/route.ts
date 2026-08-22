@@ -16,8 +16,29 @@ export const runtime = "nodejs"
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const origin = url.origin
-  const back = (status: string) =>
-    NextResponse.redirect(`${origin}/dashboard/carrossel?ig=${status}`)
+  const cookies = Object.fromEntries(
+    (req.headers.get("cookie") ?? "")
+      .split(";")
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .map((c) => {
+        const i = c.indexOf("=")
+        return [c.slice(0, i), decodeURIComponent(c.slice(i + 1))]
+      }),
+  )
+  // Volta pra página que iniciou o OAuth (cookie do /connect); o editor de
+  // carrossel é só o fallback.
+  const ret = cookies.ig_oauth_return ?? ""
+  const returnPath =
+    ret.startsWith("/") && !ret.startsWith("//") ? ret : "/dashboard/carrossel"
+  const back = (status: string) => {
+    const u = new URL(returnPath, origin)
+    u.searchParams.set("ig", status)
+    const res = NextResponse.redirect(u.toString())
+    res.cookies.set("ig_oauth_state", "", { maxAge: 0, path: "/" })
+    res.cookies.set("ig_oauth_return", "", { maxAge: 0, path: "/" })
+    return res
+  }
 
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
@@ -25,12 +46,7 @@ export async function GET(req: Request) {
   if (err || !code) return back("erro")
 
   // CSRF: state tem que bater com o cookie setado no /connect.
-  const cookieState = req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((c) => c.trim())
-    .find((c) => c.startsWith("ig_oauth_state="))
-    ?.split("=")[1]
+  const cookieState = cookies.ig_oauth_state
   if (!state || !cookieState || state !== cookieState) return back("erro")
 
   try {
@@ -55,9 +71,7 @@ export async function GET(req: Request) {
       updated_at: new Date().toISOString(),
     })
 
-    const res = back("ok")
-    res.cookies.set("ig_oauth_state", "", { maxAge: 0, path: "/" })
-    return res
+    return back("ok")
   } catch (e) {
     console.error("[instagram/callback]", e)
     return back("erro")

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { publishCarousel } from "@/lib/instagram/meta"
+import { getValidConnection } from "@/lib/instagram/connection"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -30,32 +31,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Sem sessão." }, { status: 401 })
   }
 
-  const { data: conn } = await supabase
-    .from("instagram_connections")
-    .select("ig_user_id, access_token, token_expires_at")
-    .eq("user_id", user.id)
-    .single()
-
+  let conn
+  try {
+    conn = await getValidConnection(supabase, user.id)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "conexão inválida"
+    return NextResponse.json({ ok: false, error: message }, { status: 401 })
+  }
   if (!conn) {
     return NextResponse.json(
       { ok: false, error: "Conta do Instagram não conectada." },
       { status: 400 },
     )
   }
-  if (conn.token_expires_at && new Date(conn.token_expires_at).getTime() < Date.now()) {
-    return NextResponse.json(
-      { ok: false, error: "Conexão expirada — reconecte o Instagram." },
-      { status: 401 },
-    )
-  }
 
   try {
-    const result = await publishCarousel(
-      conn.ig_user_id,
-      conn.access_token,
-      imageUrls,
-      caption,
-    )
+    const result = await publishCarousel(conn.igUserId, conn.accessToken, imageUrls, caption)
+    // Registro do que saiu daqui: é o que liga métrica a conteúdo gerado.
+    // Best-effort (migration 0019): falha aqui não desfaz a publicação.
+    await supabase
+      .from("instagram_publications")
+      .insert({
+        user_id: user.id,
+        ig_user_id: conn.igUserId,
+        ig_media_id: result.id,
+        caption,
+        image_count: imageUrls.length,
+      })
+      .then(({ error }) => {
+        if (error) console.warn("[instagram/publish] registro falhou", error.message)
+      })
     return NextResponse.json({ ok: true, id: result.id })
   } catch (e) {
     const message = e instanceof Error ? e.message : "erro ao publicar"
