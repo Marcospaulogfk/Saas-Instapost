@@ -7,6 +7,7 @@ import {
   searchWikimediaEntity,
 } from "@/lib/generation/wikimedia"
 import { debitTokens, tokenCostForImage } from "@/lib/tokens"
+import { logImageUsage } from "@/lib/generation/usage-log"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -81,6 +82,14 @@ export async function POST(req: Request) {
           // ignorado — tokens nunca quebram geração
         }
       }
+      // Medidor de COGS da imagem (22/08). Best-effort.
+      await logImageUsage(supabase, {
+        stage: "image_post_unico",
+        model: result.quality === "pro" ? "fal-ai/nano-banana-2" : "fal-ai/flux/schnell",
+        costUsd: result.costUsd,
+        userId: user?.id ?? null,
+        tokensCharged: user ? tokenCostForImage(result.quality) : 0,
+      })
 
       return NextResponse.json({
         url: result.url,

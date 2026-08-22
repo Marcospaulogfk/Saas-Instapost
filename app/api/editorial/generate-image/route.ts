@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateEditorialImageForRole } from '@/lib/editorial/ai-images'
 import { debitTokens, tokenCostForImage } from '@/lib/tokens'
+import { logImageUsage } from '@/lib/generation/usage-log'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -64,19 +65,31 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    const { url, quality } = await generateEditorialImageForRole(
+    const t0 = performance.now()
+    const { url, quality, costUsd, model } = await generateEditorialImageForRole(
       { prompt, style, aspectRatio },
       role,
     )
 
     // Débito best-effort (só se logado). Nunca bloqueia a geração.
+    const cobrado = tokenCostForImage(quality)
     if (user) {
       try {
-        await debitTokens(supabase, user.id, tokenCostForImage(quality))
+        await debitTokens(supabase, user.id, cobrado)
       } catch {
         // ignorado — tokens nunca quebram geração
       }
     }
+    // Medidor de COGS da imagem (22/08): a capa é o item mais caro do
+    // carrossel e não era gravada. Best-effort, nunca bloqueia.
+    await logImageUsage(supabase, {
+      stage: role === 'cover' ? 'image_cover' : 'image_slide',
+      model,
+      costUsd,
+      userId: user?.id ?? null,
+      tokensCharged: user ? cobrado : 0,
+      durationMs: performance.now() - t0,
+    })
 
     const ms = Math.round(performance.now() - start)
     return NextResponse.json({ success: true, url, ms, quality })

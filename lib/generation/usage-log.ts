@@ -57,6 +57,11 @@ export type UsageStage =
   | "refine_briefing"
   /** /api/extract-content: leitura estruturada do link (migration 0018). */
   | "extract_link"
+  /** Imagens (Fal.ai), migration 0018. Tokens ficam 0; o que vale é cost_usd. */
+  | "image_cover"
+  | "image_slide"
+  | "image_post_unico"
+  | "image_edit"
   | "outro"
 
 export interface LogUsageInput {
@@ -77,6 +82,33 @@ export interface LogUsageInput {
    * definida, pra que stages antigos continuem gravando antes da migration.
    */
   meta?: Record<string, unknown>
+  /**
+   * Custo já conhecido (imagens da Fal.ai, que não têm tokens). Quando
+   * definido, substitui o cálculo pela tabela de preço por modelo.
+   */
+  costUsd?: number
+}
+
+const ZERO_USAGE: UsageLike = { input_tokens: 0, output_tokens: 0 }
+
+/**
+ * Atalho pra gravar uma imagem gerada (Fal.ai). Best-effort como o resto.
+ * `model` é o id da Fal (ex.: fal-ai/nano-banana), `costUsd` o preço que o
+ * gerador devolveu.
+ */
+export async function logImageUsage(
+  supabase: SupabaseClient,
+  input: {
+    stage: Extract<UsageStage, `image_${string}`>
+    model: string
+    costUsd: number
+    userId?: string | null
+    brandId?: string | null
+    tokensCharged?: number
+    durationMs?: number
+  },
+): Promise<boolean> {
+  return logGenerationUsage(supabase, { ...input, usage: ZERO_USAGE })
 }
 
 /**
@@ -111,7 +143,9 @@ export async function logGenerationUsage(
       cache_creation_input_tokens: input.usage.cache_creation_input_tokens ?? 0,
       cache_read_input_tokens: input.usage.cache_read_input_tokens ?? 0,
       cost_usd: Number(
-        computeCostUsd(input.usage, input.model ?? MODEL_ESCRITOR).toFixed(6),
+        (
+          input.costUsd ?? computeCostUsd(input.usage, input.model ?? MODEL_ESCRITOR)
+        ).toFixed(6),
       ),
       attempts: input.attempts ?? 1,
       approved_on_attempt: input.approvedOnAttempt ?? null,

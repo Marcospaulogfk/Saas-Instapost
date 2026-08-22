@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { debitTokens, tokenCostForImage, TOKEN_COST } from "@/lib/tokens"
+import { logImageUsage } from "@/lib/generation/usage-log"
 import {
   generateFreeSpec,
   generateFreeText,
@@ -54,7 +55,13 @@ function imageCost(quality: "normal" | "pro" | null): number {
 async function logUsageBestEffort(
   supabase: Awaited<ReturnType<typeof createClient>>,
   stages: UsageStageRecord[],
-  ctx: { userId?: string; brandId?: string | null; tokensCharged: number },
+  ctx: {
+    userId?: string
+    brandId?: string | null
+    tokensCharged: number
+    /** Imagem da Fal.ai gerada nesta chamada (null = foto real / sem imagem). */
+    image?: { quality: "normal" | "pro" | null; costUsd: number }
+  },
 ): Promise<void> {
   for (const [i, s] of stages.entries()) {
     await logGenerationUsage(supabase, {
@@ -65,6 +72,20 @@ async function logUsageBestEffort(
       userId: ctx.userId ?? null,
       brandId: ctx.brandId ?? null,
       tokensCharged: i === 0 ? ctx.tokensCharged : 0,
+    })
+  }
+  // Imagem (Fal.ai): até 22/08 não era gravada em lugar nenhum, e é o item
+  // mais caro do post único. tokensCharged só vai aqui quando não houve
+  // etapa de texto (modo só-imagem), pra não somar receita duas vezes.
+  if (ctx.image && ctx.image.quality) {
+    await logImageUsage(supabase, {
+      stage: "image_post_unico",
+      model:
+        ctx.image.quality === "pro" ? "fal-ai/nano-banana-2" : "fal-ai/flux/schnell",
+      costUsd: ctx.image.costUsd,
+      userId: ctx.userId ?? null,
+      brandId: ctx.brandId ?? null,
+      tokensCharged: stages.length === 0 ? ctx.tokensCharged : 0,
     })
   }
 }
@@ -133,6 +154,7 @@ export async function POST(req: Request) {
         userId: user?.id,
         brandId: body.brand.id,
         tokensCharged: cobrado,
+        image: { quality: result.image_quality, costUsd: result.image_cost_usd },
       })
       return NextResponse.json({
         spec: result.spec,
@@ -205,6 +227,7 @@ export async function POST(req: Request) {
       userId: user?.id,
       brandId: body.brand.id,
       tokensCharged: cobrado,
+        image: { quality: result.image_quality, costUsd: result.image_cost_usd },
     })
     return NextResponse.json({
       spec: result.spec,

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { generateImagesForSlide } from '@/lib/editorial/ai-images'
 import { getUserPlan } from '@/lib/generation/image'
 import { debitTokens, tokenCostForImage } from '@/lib/tokens'
+import { logImageUsage } from '@/lib/generation/usage-log'
 import type { EditorialSlide } from '@/components/templates/editorial/editorial.types'
 
 export const runtime = 'nodejs'
@@ -36,6 +37,16 @@ export async function POST(request: Request) {
       } catch {
         // ignorado — tokens nunca quebram geração
       }
+    }
+    // Medidor de COGS por imagem (22/08). Best-effort.
+    for (const r of results) {
+      await logImageUsage(supabase, {
+        stage: r.quality === 'pro' ? 'image_cover' : 'image_slide',
+        model: r.model,
+        costUsd: r.costUsd,
+        userId: user?.id ?? null,
+        tokensCharged: user ? tokenCostForImage(r.quality) : 0,
+      })
     }
 
     return NextResponse.json({ success: true, images: results.map((r) => r.url) })

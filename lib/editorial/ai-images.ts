@@ -99,6 +99,10 @@ export type EditorialImageQuality = 'normal' | 'pro'
 export interface EditorialImageForPlanResult {
   url: string
   quality: EditorialImageQuality
+  /** Custo em USD devolvido pelo gerador (pra generation_usage). */
+  costUsd: number
+  /** Id do modelo na Fal.ai. */
+  model: string
 }
 
 /** Papel do slide na peça — é ele que decide o modelo, não o plano. */
@@ -130,7 +134,7 @@ export async function generateEditorialImageForRole(
       const style = params.style || 'cinematic'
       const enhanced = `${params.prompt}, ${STYLE_PROMPTS[style]}, high quality, 4k`
       const r = await generateNanoBanana(enhanced, 'pro')
-      return { url: r.url, quality: 'pro' }
+      return { url: r.url, quality: 'pro', costUsd: r.costUsd, model: r.model }
     } catch (err) {
       console.warn(
         '[editorial] Nano Banana 2 falhou na capa, fallback Schnell:',
@@ -140,7 +144,8 @@ export async function generateEditorialImageForRole(
     }
   }
   const url = await generateEditorialImage(params)
-  return { url, quality: 'normal' }
+  // Flux Schnell: ~US$0,003 por imagem (mesmo número de lib/generation/fal.ts).
+  return { url, quality: 'normal', costUsd: 0.003, model: 'fal-ai/flux/schnell' }
 }
 
 /**

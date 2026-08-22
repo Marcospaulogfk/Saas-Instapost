@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { debitTokens, TOKEN_COST } from "@/lib/tokens"
 import { editNanoBanana } from "@/lib/generation/nano-banana"
+import { logImageUsage } from "@/lib/generation/usage-log"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -93,6 +94,15 @@ export async function POST(req: Request) {
         // tokens nunca quebram a edição
       }
     }
+    // Medidor de COGS da edição (22/08). Best-effort.
+    await logImageUsage(supabase, {
+      stage: "image_edit",
+      model: result.model,
+      costUsd: result.costUsd,
+      userId: user?.id ?? null,
+      tokensCharged: user?.id ? TOKEN_COST.imageCover : 0,
+      durationMs: result.ms,
+    })
     return NextResponse.json({ url: result.url, ms: result.ms })
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"

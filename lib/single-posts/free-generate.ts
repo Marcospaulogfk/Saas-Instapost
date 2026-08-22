@@ -24,6 +24,7 @@ import type { PostBrand } from "./types"
 import type { FreePostSpec } from "./free-spec"
 import type { GenerateMetrics } from "./generate"
 import type { SkeletonContent, SkeletonImpl } from "./skeletons"
+import { computeCostUsd } from "@/lib/generation/usage-log"
 import type { UsageLike, UsageStage } from "@/lib/generation/usage-log"
 
 /**
@@ -366,11 +367,7 @@ function computeCost(usage: {
   cache_creation_input_tokens?: number | null
   cache_read_input_tokens?: number | null
 }): number {
-  const inputCost = (usage.input_tokens * 3) / 1_000_000
-  const outputCost = (usage.output_tokens * 15) / 1_000_000
-  const cacheCreate = ((usage.cache_creation_input_tokens ?? 0) * 3.75) / 1_000_000
-  const cacheRead = ((usage.cache_read_input_tokens ?? 0) * 0.3) / 1_000_000
-  return inputCost + outputCost + cacheCreate + cacheRead
+  return computeCostUsd(usage, MODEL_ESCRITOR)
 }
 
 interface GenerateOpts {
@@ -397,6 +394,8 @@ export interface FreeGenerateResult {
    * se a foto veio da Wikimedia / não houve imagem. Pro débito de tokens.
    */
   image_quality: "normal" | "pro" | null
+  /** Custo em USD da imagem (Fal.ai); 0 quando foto real ou sem imagem. */
+  image_cost_usd: number
   metrics: GenerateMetrics & { totalCostUsd: number }
   /** Uso por etapa — a rota grava em generation_usage. */
   usage_stages: UsageStageRecord[]
@@ -800,6 +799,7 @@ export async function generateFreeSpec({
     photo_url: photoUrl,
     content: parsed.content,
     image_quality: resolved.quality,
+    image_cost_usd: resolved.costUsd,
     metrics: {
       ms,
       inputTokens: usage.input_tokens,
@@ -923,6 +923,7 @@ export async function buildApprovedSpec({
     photo_url: photoUrl,
     content,
     image_quality: resolved.quality,
+    image_cost_usd: resolved.costUsd,
     metrics: {
       ms,
       inputTokens: composed?.usage.input_tokens ?? 0,

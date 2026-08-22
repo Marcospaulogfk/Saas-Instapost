@@ -10,6 +10,14 @@
 --   carousel_copy   -> ja existia no check, mas NUNCA era gravado; passa a
 --                      ser gravado pelo /api/editorial/generate-script
 --
+-- Stages de IMAGEM (Fal.ai): ate aqui so chamadas Anthropic eram medidas e
+-- a capa (o item mais caro da geracao) passava em branco. Tokens ficam 0 e
+-- cost_usd recebe o preco que o gerador devolveu; `model` e o id da Fal.
+--   image_cover       -> capa do carrossel
+--   image_slide       -> miolo do carrossel
+--   image_post_unico  -> arte completa do post unico (bitmap)
+--   image_edit        -> edicao cirurgica do bitmap (/edit)
+--
 -- Nova coluna `meta` (jsonb): observacoes da etapa que nao merecem coluna
 -- propria. Primeiro uso: { cover_rejected: bool, cover_reason: text,
 -- registro: text } na linha de carousel_copy, pra medir a taxa real de capa
@@ -30,6 +38,10 @@ alter table public.generation_usage
     'carousel_copy',
     'refine_briefing',
     'extract_link',
+    'image_cover',
+    'image_slide',
+    'image_post_unico',
+    'image_edit',
     'outro'
   ));
 
