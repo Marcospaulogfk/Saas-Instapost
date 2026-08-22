@@ -173,7 +173,7 @@ ${regrasCopy("principios", "capa", "estrutura", "profundidade")}
 - **title**: frase principal, segue capitalização do template. 6-9 palavras (exceto capa de notícia, ver regras de capa).
 - **highlight_words**: 1-2 palavras que JÁ aparecem em title (mesma capitalização exata).
 - **subtitle**: complemento OPCIONAL (max 12 palavras) que tensiona o título; pode ser "".
-- **body**: parágrafo OPCIONAL (1-2 frases curtas, max 25 palavras); pode ser "".
+- **body**: parágrafo com 2-3 frases (30-45 palavras) nos templates editorial e hybrid; 1-2 frases (max 25) no cinematic. A última frase é a PONTE pro próximo slide (ver estrutura). Pode ser "" só na capa, se o subtitle já cumprir o papel.
 - **cta_badge**: badge curto (NOVO, VIRAL, ESTUDO 01); pode ser "".
 - **hook_alternatives** (raiz do JSON): array de 2 strings, a capa completa em cada um, de arquétipos diferentes do title do slide 0 (ver método dos 6 hooks).
 

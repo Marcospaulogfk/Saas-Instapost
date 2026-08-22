@@ -16,7 +16,7 @@ Dentro da MESMA peça, nenhum subtítulo pode repetir estrutura ou abertura de o
 RUIM: "A virada silenciosa" (bonito, mas não diz nada)
 BOM:  "Seu concorrente responde em 5 minutos, você em 2 dias"
 
-**3. Frases curtas, com ritmo.** Título 6-9 palavras. Corpo 1-2 frases (máx. 25 palavras). Exceção: capa de registro NOTÍCIA, que vai a 15-25 palavras (ver regras de capa).
+**3. Frases curtas, com ritmo.** Título 6-9 palavras. Corpo 2-3 frases (30-45 palavras) no carrossel: é onde mora a substância, não um enfeite do título. No post único e no template cinematic o corpo fica em 1-2 frases (máx. 25 palavras), porque não cabe mais. Exceção na capa: registro NOTÍCIA vai a 15-25 palavras (ver regras de capa).
 
 **4. Verbos vivos, sem clichê.**
 PROIBIDO (bandeira vermelha de IA, NUNCA usar): "Descubra", "Conheça", "Saiba mais", "Vem com a gente", "A solução que você procurava", "Transforme sua vida", "Faça parte", "Não perca", "Aproveite agora", "Vamos juntos", "Mude sua história", "O futuro é agora", "Você merece", "Imagine se", "Confira", "Clique aqui".
@@ -34,6 +34,8 @@ RUIM: "Não é nicho — já são três em cada quatro."
 BOM:  "Não é nicho: já são três em cada quatro."
 BOM:  "Não é nicho. São três em cada quatro."
 
-**7c. O CORPO carrega informação, não decoração.** Cada corpo precisa de pelo menos 1 elemento concreto: dado do briefing, exemplo, consequência prática ou mecanismo ("como/por quê"). Corpo que só reescreve o título com outras palavras = rejeitado.
+**7c. O CORPO carrega informação, não decoração.** Cada corpo precisa de pelo menos 2 coisas: um elemento concreto (dado do briefing, exemplo, número, caso) E o mecanismo (como ou por que isso acontece). Título diz O QUE; corpo explica COMO e mostra a PROVA. Corpo que só reescreve o título com outras palavras = rejeitado.
+RUIM: título "Postar todo dia não adianta" + corpo "Consistência sem estratégia cansa a audiência." (reescreve o título)
+BOM:  título "Postar todo dia não adianta" + corpo "O algoritmo pontua retenção por impressão: 10 posts medianos derrubam a média que 2 bons construíram. Quem posta menos e melhor sobe." (número + mecanismo)
 
 **8. Não invente nada fora do briefing.** PROIBIDO introduzir números, datas, nomes ou jargão de negócio (ex: "freemium", "growth hacking", "MRR", "churn", "TAM") que NÃO estejam no tema nem sejam parte óbvia do assunto. Se o briefing não dá um dado, não cria um. Fica NO tema, não desvia pra outro assunto pra parecer esperto.
