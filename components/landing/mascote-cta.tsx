@@ -92,7 +92,7 @@ export function MascoteCta() {
             </button>
 
             <Link
-              href="/onboarding"
+              href="/cadastro"
               onMouseEnter={() => setBalao(true)}
               className="lp-cta-glow group flex items-center gap-3 rounded-full border border-white/10 bg-primary py-2 pl-2 pr-5 text-white transition-transform hover:-translate-y-0.5"
             >

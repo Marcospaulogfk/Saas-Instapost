@@ -240,16 +240,22 @@ function MockExport() {
 }
 
 function MockEstilos() {
+  /* Os nomes são os mesmos que aparecem no seletor do editor
+     (STYLE_OPTIONS em components/carousel/carousel-editor.tsx): o visitante
+     encontra na plataforma exatamente o que viu aqui. Antes eram 6 nomes
+     inventados, enquanto a copy ao lado prometia 8. */
   const estilos = [
-    { n: "Dark vibrante", bg: "#0B0B10", fg: "#5595F1" },
-    { n: "Minimal suíço", bg: "#F5F2EC", fg: "#0E0E0E" },
-    { n: "Editorial", bg: "#151020", fg: "#E8DCC8" },
-    { n: "Bold color", bg: "#1668E3", fg: "#FFFFFF" },
-    { n: "Foto full", bg: "#2A1D18", fg: "#FFD9B0" },
-    { n: "Grid técnico", bg: "#0E1116", fg: "#7FE3C0" },
+    { n: "Gradiente", bg: "#0B0B10", fg: "#5595F1" },
+    { n: "Minimal", bg: "#F5F2EC", fg: "#0E0E0E" },
+    { n: "Revista", bg: "#151020", fg: "#E8DCC8" },
+    { n: "MyPostFlow", bg: "#1668E3", fg: "#FFFFFF" },
+    { n: "Wesley", bg: "#2A1D18", fg: "#FFD9B0" },
+    { n: "Bolo", bg: "#FAF8F5", fg: "#0E0E0E" },
+    { n: "Seamless", bg: "#0E1116", fg: "#7FE3C0" },
+    { n: "Perfil", bg: "#FFFFFF", fg: "#1668E3" },
   ]
   return (
-    <div className="grid grid-cols-3 gap-2.5">
+    <div className="grid grid-cols-4 gap-2.5">
       {estilos.map((e, i) => (
         <motion.div
           key={e.n}

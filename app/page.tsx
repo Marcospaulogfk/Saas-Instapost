@@ -113,7 +113,7 @@ const NAV_ITEMS: CardNavItem[] = [
     links: [
       { label: "Ver planos", href: "#planos" },
       { label: "Comparação completa", href: "/pricing" },
-      { label: "Testar grátis", href: "/onboarding" },
+      { label: "Testar grátis", href: "/cadastro" },
     ],
   },
   {
@@ -147,9 +147,19 @@ const CENARIOS = {
   ],
 }
 
-// Vídeo de prova da seção "Quem usa". Troque o arquivo em /public/videos.
+/* O bloco "daqui a 90 dias" nomeava dezembro no texto e envelhecia sozinho.
+   Calcula no render: como a página é estática, o mês acompanha o rebuild. */
+const MES_EM_90_DIAS = new Date(Date.now() + 90 * 864e5).toLocaleDateString(
+  "pt-BR",
+  { month: "long" },
+)
+
+// Vídeo de prova da seção "Quem usa". Enquanto `src` estiver vazio o bloco
+// inteiro não renderiza — o arquivo ainda não existe e o player caía no
+// fallback "Vídeo indisponível". Grave a VSL, jogue em /public/videos e
+// preencha o src aqui pra seção voltar.
 const VIDEO_PROVA = {
-  src: "/videos/depoimento.mp4",
+  src: "",
   poster: "/dashboard-ambient.png",
 }
 
@@ -166,7 +176,7 @@ export default function HomePage() {
       <div className="lp-topbar-flow text-white text-center px-4 py-2">
         <p className="font-mono text-[11px] uppercase tracking-[0.14em]">
           <TrendingUp className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
-          Carrossel completo — copy, design e imagem — em menos de 3 minutos
+          Seu primeiro carrossel completo é grátis — sem cartão, em 3 minutos
         </p>
       </div>
 
@@ -200,21 +210,21 @@ export default function HomePage() {
                   <span className="lp-ring-pulse absolute inline-flex h-full w-full rounded-full bg-primary" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
                 </span>
-                Engine de carrosséis · Nano Banana 2 + Flux
+                Engine de conteúdo · Nano Banana 2 + Flux
               </span>
             </Reveal>
 
             <h1 className="lp-display text-[2.7rem] md:text-[4.2rem] leading-[1.02] mb-6">
-              <RevealWords text="Carrosséis que param o feed," highlight={[2, 3, 4]} />
+              <RevealWords text="A IA que aprende a sua marca" highlight={[5, 6]} />
               <br />
-              <RevealWords text="em 3 minutos" highlight={[1, 2]} />
+              <RevealWords text="e entrega o post em 3 minutos" highlight={[4, 5, 6]} />
               <span className="lp-caret inline-block w-[0.45em] h-[0.8em] align-[-0.02em] bg-primary ml-2" aria-hidden />
             </h1>
 
             <Reveal delay={0.35}>
               <p className="text-lg text-text-secondary max-w-xl mb-9 leading-relaxed">
-                A IA que aprende a sua marca e entrega o carrossel pronto pra postar —
-                roteiro, design e imagem no seu estilo.{" "}
+                Carrossel, post único ou peça avulsa: roteiro, design e imagem no
+                território visual da sua marca.{" "}
                 <span className="text-foreground font-medium">
                   Sem Canva. Sem designer. Sem perder horas.
                 </span>
@@ -228,8 +238,8 @@ export default function HomePage() {
                   size="lg"
                   className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-13 px-7 rounded-full text-[15px]"
                 >
-                  <Link href="/onboarding">
-                    Quero criar carrosséis virais
+                  <Link href="/cadastro">
+                    Criar meu primeiro carrossel grátis
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
@@ -247,7 +257,7 @@ export default function HomePage() {
               </div>
 
               <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-                Sem cartão · Acesso imediato · Cancela quando quiser
+                1 carrossel completo grátis · Sem cartão · Cancela em 1 clique
               </p>
             </Reveal>
 
@@ -341,7 +351,7 @@ export default function HomePage() {
               size="lg"
               className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-8 rounded-full"
             >
-              <Link href="/onboarding">
+              <Link href="/cadastro">
                 Quero parar de perder tempo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -371,8 +381,8 @@ export default function HomePage() {
               size="lg"
               className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-8 rounded-full"
             >
-              <Link href="/onboarding">
-                Criar meu primeiro carrossel
+              <Link href="/cadastro">
+                Criar meu primeiro carrossel — grátis
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
@@ -484,6 +494,16 @@ export default function HomePage() {
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               1 carrossel completo grátis, sem cartão. Sem fidelidade, cobrança em BRL.
             </p>
+            {/* Estes selos existiam só em /pricing. O visitante da landing
+                decidia sem saber que tem garantia — e a garantia é o que os
+                dois concorrentes usam como fecho. */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
+              <span>Garantia de 7 dias</span>
+              <span aria-hidden>·</span>
+              <span>Cancele quando quiser</span>
+              <span aria-hidden>·</span>
+              <span>Cobrança em BRL</span>
+            </div>
           </Reveal>
 
           <PricingCards />
@@ -510,6 +530,7 @@ export default function HomePage() {
           </Reveal>
 
           {/* Vídeo em destaque + o que ele prova */}
+          {VIDEO_PROVA.src && (
           <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-12 items-center mb-16">
             <Reveal from="left">
               <VideoProva
@@ -545,6 +566,7 @@ export default function HomePage() {
               </div>
             </Reveal>
           </div>
+          )}
 
           <Reveal delay={0.1}>
             <DepoimentosCarousel />
@@ -594,7 +616,7 @@ export default function HomePage() {
                   asChild
                   className="mt-8 h-11 w-fit rounded-full bg-[#0B0B0F] px-6 text-white shadow-[0_10px_24px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5 hover:bg-[#0B0B0F]/90"
                 >
-                  <Link href="/onboarding">
+                  <Link href="/cadastro">
                     Criar conta grátis
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
@@ -631,7 +653,7 @@ export default function HomePage() {
           <Reveal className="text-center mb-14">
             <SectionLabel>Daqui a 90 dias</SectionLabel>
             <h2 className="lp-display text-3xl md:text-[3rem] leading-[1.08] mt-4 mb-4">
-              Os dois feeds que você pode ter em dezembro
+              Os dois feeds que você pode ter em {MES_EM_90_DIAS}
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               A diferença entre eles não é talento nem orçamento. É ter decidido hoje.
@@ -684,8 +706,8 @@ export default function HomePage() {
               size="lg"
               className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-12 px-8 rounded-full"
             >
-              <Link href="/onboarding">
-                Começar o primeiro carrossel
+              <Link href="/cadastro">
+                Começar o primeiro carrossel grátis
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
@@ -714,7 +736,7 @@ export default function HomePage() {
                   size="lg"
                   className="lp-cta-glow bg-primary text-white hover:bg-primary/90 h-13 px-9 rounded-full text-[15px]"
                 >
-                  <Link href="/onboarding">
+                  <Link href="/cadastro">
                     Começar grátis agora
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>

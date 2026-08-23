@@ -78,7 +78,7 @@ export function LpNav() {
               size="sm"
               className="lp-cta-glow bg-primary text-white hover:bg-primary/90 rounded-full px-5"
             >
-              <Link href="/onboarding">Começar grátis</Link>
+              <Link href="/cadastro">Começar grátis</Link>
             </Button>
             <button
               onClick={() => setAberto(true)}
@@ -125,7 +125,7 @@ export function LpNav() {
             ))}
             <div className="pt-4 flex flex-col gap-3">
               <Button asChild size="lg" className="bg-primary text-white rounded-full h-12">
-                <Link href="/onboarding" onClick={() => setAberto(false)}>
+                <Link href="/cadastro" onClick={() => setAberto(false)}>
                   Começar grátis
                 </Link>
               </Button>

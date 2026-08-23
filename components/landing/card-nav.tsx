@@ -34,7 +34,7 @@ const BARRA = 60
 export function CardNav({
   items,
   ctaLabel = "Começar grátis",
-  ctaHref = "/onboarding",
+  ctaHref = "/cadastro",
   className = "",
 }: CardNavProps) {
   const [aberto, setAberto] = useState(false)

@@ -207,7 +207,7 @@ export function CalculadoraCusto() {
         </div>
 
         <Link
-          href="/onboarding"
+          href="/cadastro"
           className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-7 text-[15px] font-medium text-background transition hover:opacity-90"
         >
           Testar de graça antes de decidir

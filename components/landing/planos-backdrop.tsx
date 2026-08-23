@@ -4,7 +4,8 @@ import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 
 /*
- * Fundo da seção de planos: mural 3D de peças reais feitas na plataforma
+ * Fundo da seção de planos: mural 3D de exemplos de arte (ver aviso em
+ * proof-wall.tsx — são referências de design, não output da engine)
  * subindo devagar atrás dos cards. Mesmo tratamento do hero — só entra no
  * cliente, no desktop, e fora de prefers-reduced-motion; em tudo que sobra a
  * seção fica com o fundo liso de sempre.

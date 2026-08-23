@@ -16,10 +16,25 @@ import { Button } from "@/components/ui/button"
  */
 const PLANOS = [
   {
+    name: "Grátis",
+    price: 0,
+    tag: "Pra decidir com a sua marca na tela",
+    perDay: "Sem cartão",
+    cta: "Começar por aqui",
+    feats: [
+      "45 tokens, uma vez",
+      "≈ 1 carrossel completo com capa de IA",
+      "1 marca configurada",
+      "Com marca d'água",
+    ],
+    popular: false,
+  },
+  {
     name: "Starter",
     price: 47,
     tag: "Pra quem está começando",
     perDay: "~R$ 1,57/dia",
+    cta: "Testar grátis primeiro",
     feats: [
       "300 tokens / mês",
       "≈ 7 carrosséis completos ou 75 roteiros",
@@ -33,6 +48,7 @@ const PLANOS = [
     price: 97,
     tag: "O favorito de quem posta todo dia",
     perDay: "~R$ 3,23/dia",
+    cta: "Testar grátis primeiro",
     feats: [
       "1.000 tokens / mês",
       "≈ 24 carrosséis completos ou 250 roteiros",
@@ -48,6 +64,7 @@ const PLANOS = [
     price: 247,
     tag: "Pra agências e operações",
     perDay: "~R$ 8,23/dia",
+    cta: "Testar grátis primeiro",
     feats: [
       "3.000 tokens / mês",
       "≈ 73 carrosséis completos ou 750 roteiros",
@@ -107,7 +124,9 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
 
         <div className="flex items-baseline gap-1 mb-1">
           <span className="lp-display text-4xl tabular-nums">R$ {plano.price}</span>
-          <span className="font-mono text-xs text-text-muted">/mês</span>
+          {plano.price > 0 && (
+            <span className="font-mono text-xs text-text-muted">/mês</span>
+          )}
         </div>
         <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted mb-6">
           {plano.perDay}
@@ -121,7 +140,7 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
               : "border border-hairline-strong bg-transparent hover:border-primary hover:text-primary"
           }`}
         >
-          <Link href="/onboarding">Começar agora</Link>
+          <Link href="/cadastro">{plano.cta}</Link>
         </Button>
 
         <ul className="space-y-3">
@@ -140,7 +159,7 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
 export function PricingCards() {
   return (
     <>
-      <div className="grid md:grid-cols-3 gap-6 items-start">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
         {PLANOS.map((p, i) => (
           <Card key={p.name} plano={p} index={i} />
         ))}
