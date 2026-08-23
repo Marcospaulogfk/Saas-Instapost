@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Plus, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { listBrands, getProfile } from "@/lib/data/queries"
+import { listBrands, getProfile, tokensDisponiveis } from "@/lib/data/queries"
 import { getSinglePost } from "@/lib/single-posts/queries"
 import { generateMonogram } from "@/lib/single-posts/palette"
 import { toPostFormat } from "@/lib/single-posts/formats"
@@ -106,7 +106,9 @@ export default async function EditorPostUnicoPage({
   return (
     <EditorClient
       brands={editorBrands}
-      balance={profile?.credits ?? 0}
+      // Saldo TOTAL (plano + avulso + bônus): é o balde que o débito atômico
+      // consome. Só `credits` matava o botão de quem tinha bônus de indicação.
+      balance={tokensDisponiveis(profile)}
       initialPost={initialPost}
     />
   )

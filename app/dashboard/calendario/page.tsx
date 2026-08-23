@@ -10,6 +10,7 @@ import {
   X,
   Trash2,
   Info,
+  Filter,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,7 +32,6 @@ import {
 import type { PautaScheduledPost } from "@/lib/pautas/types"
 import { CalendarioInteligenteCard } from "./calendario-inteligente"
 import { PipelinePautas } from "./pipeline-pautas"
-import Link from "next/link"
 
 const MESES_LONG = [
   "Janeiro",
@@ -196,7 +196,7 @@ export default function CalendarioPage() {
             <h1 className="text-2xl font-bold text-text-primary">Calendário Editorial</h1>
           </div>
           <p className="text-sm text-text-secondary">
-            Planeje e organize seus conteúdos por dia e horário.
+            Planeje, vincule e agende seus conteúdos.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -236,47 +236,49 @@ export default function CalendarioPage() {
         </p>
       </div>
 
-      {/* Filtros + counts */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        {STATUS_FILTERS.map((f) => {
-          const count = f.id === "todos" ? scheduled.length : counts[f.id]
-          return (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFilterStatus(f.id)}
-              className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-colors ${
-                filterStatus === f.id
-                  ? "bg-brand-600 border-brand-600 text-white"
-                  : "border-border-subtle text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${f.color}`} />
-              {count} {f.label.toLowerCase()}
-            </button>
-          )
-        })}
+      {/* Contadores à esquerda, filtro à direita — o desenho que o Marcos
+          pediu de referência. Cada contador continua clicável: ele É o filtro,
+          e o botão da direita só volta pra "todos". */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-4">
+          {STATUS_FILTERS.filter((f) => f.id !== "todos").map((f) => {
+            const count = counts[f.id as PostStatus]
+            const ativo = filterStatus === f.id
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilterStatus(ativo ? "todos" : f.id)}
+                className={`flex items-center gap-1.5 text-[13px] transition-colors ${
+                  ativo
+                    ? "text-text-primary font-semibold"
+                    : "text-text-muted hover:text-text-secondary"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${f.color}`} />
+                {count} {f.label.toLowerCase()}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setFilterStatus("todos")}
+          className={`flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-lg border transition-colors ${
+            filterStatus === "todos"
+              ? "border-border-subtle text-text-secondary"
+              : "border-brand-600 text-text-primary"
+          }`}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          {filterStatus === "todos"
+            ? "Todos"
+            : STATUS_FILTERS.find((f) => f.id === filterStatus)?.label}
+        </button>
       </div>
 
       {/* Calendário Inteligente — pauta grátis (0 tokens); o post é que cobra. */}
       <CalendarioInteligenteCard brandId={brandId} onSaved={refetch} />
-
-      {/* Planejador IA banner — superfície chapada + hairline (sem gradiente/glow, DESIGN.md §6) */}
-      <Link
-        href="/dashboard/planejar"
-        className="w-full mb-4 rounded-xl border border-border-subtle bg-background-secondary/50 hover:border-border-accent text-text-primary p-4 flex items-center gap-3 transition-colors text-left"
-      >
-        <div className="w-10 h-10 rounded-lg bg-brand-600/15 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-5 h-5 text-brand-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">Planejar com IA</p>
-          <p className="text-[11px] text-text-muted">
-            Um papo rápido e a IA monta seu cronograma da semana, baseado na sua marca
-          </p>
-        </div>
-        <ChevronRight className="w-5 h-5 text-text-muted" />
-      </Link>
 
       {/* Grid mensal */}
       <div className="rounded-xl border border-border-subtle overflow-hidden bg-background-secondary/30">

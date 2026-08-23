@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateEditorialImageForRole } from '@/lib/editorial/ai-images'
-import { debitTokens, tokenCostForImage } from '@/lib/tokens'
+import { debitTokens, getAvailableTokens, tokenCostForImage, tokenCostForRole } from '@/lib/tokens'
 import { logImageUsage } from '@/lib/generation/usage-log'
 
 export const runtime = 'nodejs'
@@ -65,6 +65,27 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser()
 
+    // Portão de saldo: o PAPEL do slide já define o preço antes de gerar
+    // (capa 20 / miolo 2), então dá pra barrar com o número exato. Sem isso a
+    // imagem sairia de graça: o débito é atômico e roda depois da geração.
+    // Se a capa cair pro Flux o débito real vem menor que o portão, o que só
+    // erra pro lado seguro do usuário (ele tinha saldo pro caro).
+    if (user) {
+      const custoEstimado = tokenCostForRole(role)
+      const saldoDisponivel = await getAvailableTokens(supabase, user.id)
+      if (saldoDisponivel < custoEstimado) {
+        return NextResponse.json(
+          {
+            error: 'Tokens insuficientes para esta geração.',
+            code: 'sem_saldo',
+            needed: custoEstimado,
+            available: saldoDisponivel,
+          },
+          { status: 402 },
+        )
+      }
+    }
+
     const t0 = performance.now()
     const { url, quality, costUsd, model } = await generateEditorialImageForRole(
       { prompt, style, aspectRatio },
@@ -75,7 +96,19 @@ export async function POST(request: Request) {
     const cobrado = tokenCostForImage(quality)
     if (user) {
       try {
-        await debitTokens(supabase, user.id, cobrado)
+        const debit = await debitTokens(supabase, user.id, cobrado, {
+          kind: 'debit_image',
+          refType: 'editorial_slide',
+          title: role === 'cover' ? 'Imagem de capa gerada' : 'Imagem de slide gerada',
+        })
+        if (!debit.ok) {
+          // Imagem entregue sem cobrar.
+          console.warn(
+            `[editorial/generate-image] débito de tokens falhou: user=${user.id} ` +
+              `amount=${cobrado} debited=${debit.debited}` +
+              (debit.error ? ` (${debit.error})` : ''),
+          )
+        }
       } catch {
         // ignorado — tokens nunca quebram geração
       }

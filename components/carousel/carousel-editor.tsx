@@ -9,7 +9,6 @@ import {
   Building2,
   Upload,
   Link as LinkIcon,
-  ChevronRight,
   Save,
   Check,
   Undo2,
@@ -25,9 +24,12 @@ import {
   PaintBucket,
   Palette,
   Move,
+  Layers,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { saveCarouselV2 } from "@/app/actions/carousel"
-import { Logo } from "@/components/brand/logo"
+import { EditorSection as Section } from "@/components/editor/editor-section"
 import { CAROUSEL_FONTS, fontClassById } from "./carousel-fonts"
 import { extractPalette } from "@/lib/carousel/extract-palette"
 import { Button } from "@/components/ui/button"
@@ -60,6 +62,25 @@ import {
 } from "@/components/carousel/editable-overrides"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 import { renderNodeToPng, uploadPngDataUrl } from "@/lib/instagram/render-upload"
+import {
+  PanelTopBar,
+  ElementsPanel,
+  HistoryPanel,
+  BlockEditorShell,
+  type PanelMode,
+  type HistoryEntry,
+  type BlockTab,
+} from "@/components/carousel/block-panel"
+import {
+  BLOCK_LIMIT,
+  BLOCK_TYPE_LABEL,
+  clampBlock,
+  createBlock,
+  slideDesignHeight,
+  type BlockType,
+  type SlideBlock,
+} from "@/components/carousel/slide-blocks"
+import { isLightColor } from "@/lib/color-contrast"
 
 /** Nome de arquivo a partir do título do slide (NN- pra manter ordem no zip). */
 function slideFileName(s: PreviewSlide, i: number): string {
@@ -75,6 +96,16 @@ function slideFileName(s: PreviewSlide, i: number): string {
 }
 
 /** Cores de fundo predefinidas pro slide (swatches). */
+/** Degradês prontos pro fundo do slide (from → to, ângulo). */
+const GRADIENT_PRESETS: { label: string; from: string; to: string; angle: number }[] = [
+  { label: "Meia-noite", from: "#0B0B14", to: "#1E1B4B", angle: 160 },
+  { label: "Oceano", from: "#0F172A", to: "#0E7490", angle: 150 },
+  { label: "Brasa", from: "#1A0A0A", to: "#B91C1C", angle: 160 },
+  { label: "Floresta", from: "#052E16", to: "#166534", angle: 150 },
+  { label: "Pôr do sol", from: "#7C2D12", to: "#F59E0B", angle: 135 },
+  { label: "Névoa", from: "#F8FAFC", to: "#CBD5E1", angle: 160 },
+]
+
 const BG_PRESETS: { label: string; value: string }[] = [
   { label: "Preto", value: "#0a0a0e" },
   { label: "Grafite", value: "#17161d" },
@@ -100,52 +131,326 @@ const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
   { value: "perfil", label: "Perfil (post/tweet)" },
 ]
 
-/** Seção colapsável (accordion) do editor lateral.
- *  Aceita modo CONTROLADO (open/onToggle) — usado pela seleção no canvas pra
- *  abrir a seção certa automaticamente — com fallback pro estado interno. */
-function Section({
-  icon: Icon,
-  title,
-  defaultOpen = false,
-  open: openProp,
-  onToggle,
-  id,
-  children,
+/** Propriedades do bloco selecionado — painel "Editar <tipo>" em abas, como o Elementor. */
+function BlockProps({
+  block,
+  tab,
+  textRef,
+  accent,
+  slideH,
+  onPatch,
+  onPickImage,
+  onDuplicate,
+  onDelete,
+  onReorder,
+  onApplyAll,
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  defaultOpen?: boolean
-  open?: boolean
-  onToggle?: () => void
-  id?: string
-  children: React.ReactNode
+  block: SlideBlock
+  tab: BlockTab
+  textRef: React.RefObject<HTMLTextAreaElement | null>
+  accent: string
+  slideH: number
+  onPatch: (patch: Partial<SlideBlock>) => void
+  onPickImage: () => void
+  onDuplicate: () => void
+  onDelete: () => void
+  onReorder: (dir: "front" | "back") => void
+  onApplyAll: () => void
 }) {
-  const [internalOpen, setInternalOpen] = useState(defaultOpen)
-  const open = openProp ?? internalOpen
-  const setOpen = (fn: (v: boolean) => boolean) =>
-    onToggle ? onToggle() : setInternalOpen(fn)
+  const patch = (o: Record<string, unknown>) => onPatch(o as Partial<SlideBlock>)
+  const choice = <T extends string>(
+    label: string,
+    options: Array<[T, string]>,
+    value: T,
+    onPick: (v: T) => void,
+  ) => (
+    <div className="flex items-center gap-1">
+      <span className="text-[11px] text-text-secondary w-16 flex-shrink-0">{label}</span>
+      {options.map(([v, text]) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onPick(v)}
+          className={`h-7 px-2.5 rounded-md text-[11px] border transition-colors ${
+            value === v
+              ? "border-brand-500 text-brand-300 bg-brand-500/10"
+              : "border-border-subtle text-text-muted hover:border-border-medium"
+          }`}
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  )
+  const colorRow = (label: string, value: string | undefined, key: string, fallback: string) => (
+    <div className="flex items-center gap-2">
+      <span className="text-[11px] text-text-secondary w-16 flex-shrink-0">{label}</span>
+      <input
+        type="color"
+        value={value || fallback}
+        onChange={(e) => patch({ [key]: e.target.value })}
+        className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
+      />
+      <Input
+        value={value || ""}
+        onChange={(e) => patch({ [key]: e.target.value || undefined })}
+        placeholder={fallback}
+        className="h-8 flex-1 font-mono text-[11px]"
+      />
+    </div>
+  )
+  const group = (title: string, children: React.ReactNode) => (
+    <div className="space-y-3 pb-3 border-b border-white/[0.06] last:border-0">
+      <div className="text-[11px] font-semibold text-white/80">{title}</div>
+      {children}
+    </div>
+  )
+  const isText = block.type === "heading" || block.type === "text"
+  const hasText = isText || block.type === "pill" || block.type === "brand"
+
+  // ── CONTEÚDO: o que o bloco mostra ──
+  if (tab === "conteudo") {
+    return (
+      <div className="space-y-3">
+        {(isText || block.type === "pill") &&
+          group(
+            BLOCK_TYPE_LABEL[block.type],
+            <div>
+              <Label className="text-xs">Texto</Label>
+              <Textarea
+                ref={textRef}
+                value={block.text}
+                rows={block.type === "pill" ? 1 : 4}
+                onChange={(e) => patch({ text: e.target.value })}
+                className="text-sm"
+              />
+            </div>,
+          )}
+        {block.type === "image" &&
+          group(
+            "Imagem",
+            <>
+              <Button type="button" variant="outline" size="sm" className="w-full" onClick={onPickImage}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {block.url ? "Trocar imagem" : "Enviar imagem"}
+              </Button>
+              {choice(
+                "Ajuste",
+                [["cover", "Preencher"], ["contain", "Caber"]],
+                block.fit ?? "cover",
+                (f) => patch({ fit: f }),
+              )}
+              {block.url && (
+                <>
+                  <SliderRow label="Posição ←→" value={block.posX ?? 50} onChange={(v) => patch({ posX: v })} />
+                  <SliderRow label="Posição ↑↓" value={block.posY ?? 50} onChange={(v) => patch({ posY: v })} />
+                </>
+              )}
+            </>,
+          )}
+        {block.type === "brand" &&
+          group(
+            "Marca",
+            <>
+              <div>
+                <Label className="text-xs">Nome</Label>
+                <Input value={block.name} onChange={(e) => patch({ name: e.target.value })} className="h-8 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">@handle</Label>
+                <Input value={block.handle} onChange={(e) => patch({ handle: e.target.value })} className="h-8 text-sm" />
+              </div>
+              {choice(
+                "Avatar",
+                [["on", "Mostrar"], ["off", "Esconder"]],
+                block.showAvatar === false ? "off" : "on",
+                (v) => patch({ showAvatar: v === "on" }),
+              )}
+              {choice(
+                "Selo",
+                [["on", "Verificado"], ["off", "Sem selo"]],
+                block.verified === false ? "off" : "on",
+                (v) => patch({ verified: v === "on" }),
+              )}
+              <Button type="button" variant="outline" size="sm" className="w-full" onClick={onPickImage}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {block.avatar ? "Trocar foto do avatar" : "Enviar foto do avatar"}
+              </Button>
+            </>,
+          )}
+        {block.type === "shape" &&
+          group(
+            "Forma",
+            choice(
+              "Forma",
+              [["rect", "Retângulo"], ["circle", "Círculo"]],
+              block.shape,
+              (f) => patch({ shape: f }),
+            ),
+          )}
+        {block.type === "pill" &&
+          group(
+            "Estilo da tag",
+            choice(
+              "Estilo",
+              [["dark", "Escura"], ["light", "Clara"], ["accent", "Cor da marca"]],
+              block.variant,
+              (v) => patch({ variant: v, color: v === "accent" ? accent : undefined }),
+            ),
+          )}
+        {block.type === "divider" && (
+          <p className="text-[11px] text-text-muted">
+            O divisor não tem conteúdo. Cor e espessura ficam na aba Estilo.
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // ── ESTILO: aparência ──
+  if (tab === "estilo") {
+    return (
+      <div className="space-y-3">
+        {hasText &&
+          group(
+            "Tipografia",
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-text-secondary w-16 flex-shrink-0">Fonte</span>
+                <select
+                  value={block.font ?? ""}
+                  onChange={(e) => patch({ font: e.target.value || undefined })}
+                  className="h-8 flex-1 rounded-md border border-border-subtle bg-transparent text-[12px] px-2 text-text-primary"
+                >
+                  <option value="" className="bg-black">Fonte do carrossel</option>
+                  {CAROUSEL_FONTS.map((f) => (
+                    <option key={f.id} value={f.id} className="bg-black">
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {isText && (
+                <>
+                  <SliderRow
+                    label="Tamanho"
+                    min={8}
+                    max={72}
+                    value={block.size ?? (block.type === "heading" ? 30 : 14)}
+                    onChange={(v) => patch({ size: v })}
+                  />
+                  <SliderRow
+                    label="Peso"
+                    min={300}
+                    max={900}
+                    value={block.weight ?? (block.type === "heading" ? 800 : 500)}
+                    onChange={(v) => patch({ weight: Math.round(v / 100) * 100 })}
+                  />
+                  {choice(
+                    "Alinhar",
+                    [["left", "Esq."], ["center", "Centro"], ["right", "Dir."]],
+                    block.align ?? "left",
+                    (a) => patch({ align: a }),
+                  )}
+                </>
+              )}
+            </>,
+          )}
+        {group(
+          "Cores",
+          <>
+            {(isText || block.type === "brand" || block.type === "divider") &&
+              colorRow("Cor", block.color, "color", block.type === "divider" ? accent : "#ffffff")}
+            {isText && colorRow("Tarja", block.fill, "fill", "#000000")}
+            {block.type === "shape" && (
+              <>
+                {colorRow("Preench.", block.fill, "fill", accent)}
+                {colorRow("Borda", block.stroke, "stroke", "#ffffff")}
+              </>
+            )}
+            {block.type === "pill" && block.variant === "accent" && colorRow("Cor", block.color, "color", accent)}
+            <SliderRow
+              label="Opacidade"
+              min={10}
+              max={100}
+              value={Math.round((block.opacity ?? 1) * 100)}
+              onChange={(v) => patch({ opacity: v === 100 ? undefined : v / 100 })}
+            />
+          </>,
+        )}
+        {group(
+          "Efeitos",
+          <>
+            {choice(
+              "Sombra",
+              [["off", "Sem"], ["on", "Suave"]],
+              block.shadow ? "on" : "off",
+              (v) => patch({ shadow: v === "on" ? true : undefined }),
+            )}
+            {(block.type === "image" || (block.type === "shape" && block.shape === "rect") || isText) && (
+              <SliderRow
+                label="Cantos"
+                min={0}
+                max={block.type === "image" ? 200 : 120}
+                value={block.radius ?? (block.type === "image" ? 12 : block.type === "shape" ? 16 : 0)}
+                onChange={(v) => patch({ radius: v })}
+              />
+            )}
+            {block.type === "divider" && (
+              <SliderRow label="Espessura" min={1} max={20} value={block.thickness ?? 3} onChange={(v) => patch({ thickness: v })} />
+            )}
+          </>,
+        )}
+      </div>
+    )
+  }
+
+  // ── AVANÇADO: geometria, ordem, ações ──
   return (
-    <div
-      id={id}
-      className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden"
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left hover:bg-white/[0.04] transition-colors"
-      >
-        <Icon className="w-4 h-4 text-brand-400 flex-shrink-0" />
-        <span className="text-[13px] font-medium text-text-primary flex-1 truncate">
-          {title}
-        </span>
-        <ChevronRight
-          className={`w-4 h-4 text-text-muted transition-transform ${open ? "rotate-90" : ""}`}
-        />
-      </button>
-      {open && (
-        <div className="px-3.5 pb-3.5 pt-1 space-y-3 border-t border-border-subtle">
-          {children}
-        </div>
+    <div className="space-y-3">
+      {group(
+        "Posição e tamanho",
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <SliderRow label="X" min={0} max={420 - block.w} value={block.x} onChange={(v) => patch({ x: v })} />
+            <SliderRow label="Y" min={0} max={slideH - block.h} value={block.y} onChange={(v) => patch({ y: v })} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <SliderRow label="Largura" min={16} max={420} value={block.w} onChange={(v) => patch({ w: v })} />
+            <SliderRow label="Altura" min={16} max={slideH} value={block.h} onChange={(v) => patch({ h: v })} />
+          </div>
+          <SliderRow label="Rotação" min={-180} max={180} value={block.rot ?? 0} onChange={(v) => patch({ rot: v === 0 ? undefined : v })} />
+        </>,
+      )}
+      {group(
+        "Camada",
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => onReorder("front")}>
+            Trazer pra frente
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => onReorder("back")}>
+            Enviar pra trás
+          </Button>
+        </div>,
+      )}
+      {group(
+        "Ações",
+        <>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={onApplyAll}>
+            <Layers className="w-3.5 h-3.5 mr-1.5" />
+            Aplicar em todos os slides
+          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={onDuplicate}>
+              <Copy className="w-3.5 h-3.5 mr-1.5" />
+              Duplicar
+            </Button>
+            <Button type="button" variant="outline" size="sm" className="text-red-400 hover:text-red-300" onClick={onDelete}>
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Excluir
+            </Button>
+          </div>
+        </>,
       )}
     </div>
   )
@@ -451,25 +756,74 @@ export function CarouselEditor({
     title: string
     style: EditorialStyle
     format: "feed" | "stories"
+    /** Rótulo humano da mudança (painel Histórico, estilo Elementor). */
+    label: string
   }
   const historyRef = useRef<Snapshot[]>([])
   const histIndexRef = useRef(-1)
   const travelingRef = useRef(false)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  // Espelho da pilha pro painel Histórico (ref não re-renderiza).
+  const [histEntries, setHistEntries] = useState<HistoryEntry[]>([])
+  const [histCurrent, setHistCurrent] = useState(0)
+  const syncHistoryUi = () => {
+    setHistEntries(historyRef.current.map((h, i) => ({ label: h.label, index: i })))
+    setHistCurrent(histIndexRef.current)
+  }
+
+  /** Descreve a diferença entre dois snapshots (1 frase curta). */
+  function describeChange(prev: Snapshot, next: Snapshot): string {
+    if (prev.title !== next.title) return "Título do carrossel"
+    if (prev.style !== next.style) return "Estilo do post"
+    if (prev.format !== next.format) return `Formato: ${next.format === "feed" ? "Feed" : "Stories"}`
+    if (prev.slides.length < next.slides.length) return "Slide adicionado"
+    if (prev.slides.length > next.slides.length) return "Slide removido"
+    for (let i = 0; i < next.slides.length; i++) {
+      const a = prev.slides[i]
+      const b = next.slides[i]
+      if (a === b) continue
+      const n = `Slide ${String(i + 1).padStart(2, "0")}`
+      if (a.title !== b.title) return `${n}: título`
+      if (a.subtitle !== b.subtitle || a.body !== b.body) return `${n}: texto`
+      if (a.cta_badge !== b.cta_badge) return `${n}: tag`
+      if (a.highlight_words !== b.highlight_words) return `${n}: destaques`
+      if (a.bg !== b.bg || a.bgGradient !== b.bgGradient) return `${n}: fundo`
+      if (a.glow !== b.glow) return `${n}: glow`
+      if (a.image !== b.image) {
+        if (a.image.url !== b.image.url) return `${n}: imagem`
+        return `${n}: enquadramento da foto`
+      }
+      if (a.blocks !== b.blocks) {
+        const la = a.blocks?.length ?? 0
+        const lb = b.blocks?.length ?? 0
+        if (lb > la) {
+          const added = b.blocks?.find((x) => !a.blocks?.some((y) => y.id === x.id))
+          return `${n}: bloco ${added ? BLOCK_TYPE_LABEL[added.type].toLowerCase() : ""} adicionado`
+        }
+        if (lb < la) return `${n}: bloco excluído`
+        const changed = b.blocks?.find((x, k) => x !== a.blocks?.[k])
+        return `${n}: bloco ${changed ? BLOCK_TYPE_LABEL[changed.type].toLowerCase() : ""} editado`
+      }
+      if (a.el !== b.el) return `${n}: elemento ajustado`
+      return `${n}: editado`
+    }
+    return "Edição"
+  }
 
   useEffect(() => {
     if (travelingRef.current) {
       travelingRef.current = false
       return
     }
-    const snap: Snapshot = { slides, title, style, format }
+    const snap: Snapshot = { slides, title, style, format, label: "Carrossel gerado" }
     if (histIndexRef.current === -1) {
       historyRef.current = [snap]
       histIndexRef.current = 0
     } else {
       // corta a "cauda" de refazer e empurra o novo estado
       historyRef.current = historyRef.current.slice(0, histIndexRef.current + 1)
+      snap.label = describeChange(historyRef.current[histIndexRef.current], snap)
       historyRef.current.push(snap)
       histIndexRef.current = historyRef.current.length - 1
       setDirty(true)
@@ -481,6 +835,8 @@ export function CarouselEditor({
     }
     setCanUndo(histIndexRef.current > 0)
     setCanRedo(histIndexRef.current < historyRef.current.length - 1)
+    syncHistoryUi()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, title, style, format])
 
   function applySnapshot(s: Snapshot) {
@@ -499,6 +855,7 @@ export function CarouselEditor({
     setCanUndo(histIndexRef.current > 0)
     setCanRedo(true)
     setDirty(true)
+    syncHistoryUi()
   }
 
   function redo() {
@@ -508,6 +865,19 @@ export function CarouselEditor({
     setCanUndo(true)
     setCanRedo(histIndexRef.current < historyRef.current.length - 1)
     setDirty(true)
+    syncHistoryUi()
+  }
+
+  /** Painel Histórico: pula direto pra um estado da pilha. */
+  function jumpToHistory(index: number) {
+    if (index < 0 || index >= historyRef.current.length) return
+    if (index === histIndexRef.current) return
+    histIndexRef.current = index
+    applySnapshot(historyRef.current[index])
+    setCanUndo(index > 0)
+    setCanRedo(index < historyRef.current.length - 1)
+    setDirty(true)
+    syncHistoryUi()
   }
 
   // Atalhos: Ctrl/Cmd+Z = desfazer · Ctrl/Cmd+Shift+Z (ou Ctrl+Y) = refazer.
@@ -570,6 +940,112 @@ export function CarouselEditor({
     setSelection(null)
   }, [selected, style, format])
 
+  // ── PAINEL ESTILO ELEMENTOR: Elementos / Editar / Histórico ─────────────
+  const [panelMode, setPanelMode] = useState<PanelMode>("editar")
+  const [blockTab, setBlockTab] = useState<BlockTab>("conteudo")
+  const blockTextRef = useRef<HTMLTextAreaElement>(null)
+  // Bloco de imagem aguardando o file picker (image-replace num bloco).
+  const blockImageTargetRef = useRef<string | null>(null)
+
+  const designH = slideDesignHeight(format)
+  const currentBlocks = slides[selected]?.blocks ?? []
+
+  function setBlocks(updater: (list: SlideBlock[]) => SlideBlock[]) {
+    setSlides((prev) =>
+      prev.map((s, i) => {
+        if (i !== selected) return s
+        const next = updater(s.blocks ?? [])
+        return { ...s, blocks: next.length ? next : undefined }
+      }),
+    )
+  }
+
+  /** Adiciona um bloco (no centro, ou centralizado em `at`) e abre o painel dele. */
+  function addBlock(type: BlockType, at?: { x: number; y: number }) {
+    const list = slides[selected]?.blocks ?? []
+    if (list.length >= BLOCK_LIMIT) return
+    const bg = slides[selected]?.bg
+    const onDark = bg ? !isLightColor(bg) : style !== "minimal"
+    const accent = colors[0] || "#1668E3"
+    const z = list.reduce((m, b) => Math.max(m, b.z), 0) + 1
+    const created = createBlock(type, {
+        slideH: designH,
+        z,
+        accent,
+        onDark,
+        brand: {
+          name: brandValue || "Sua marca",
+          handle: handleValue || "@marca",
+          avatar: avatarUrl || undefined,
+          initials: avatarInitials || undefined,
+        },
+      })
+    const b = clampBlock(
+      at
+        ? { ...created, x: Math.round(at.x - created.w / 2), y: Math.round(at.y - created.h / 2) }
+        : created,
+      designH,
+    )
+    setBlocks((l) => [...l, b])
+    setSelection({ key: b.id, type: "block" })
+    // Como no Elementor: soltou/adicionou → o painel vira "Editar <tipo>".
+    setPanelMode("bloco")
+    setBlockTab("conteudo")
+    if (type === "image") {
+      blockImageTargetRef.current = b.id
+      window.setTimeout(() => fileInputRef.current?.click(), 80)
+    }
+  }
+
+  function patchBlock(id: string, patch: Partial<SlideBlock>) {
+    setBlocks((l) =>
+      l.map((b) => (b.id === id ? clampBlock({ ...b, ...patch } as SlideBlock, designH) : b)),
+    )
+  }
+
+  function deleteBlock(id: string) {
+    setBlocks((l) => l.filter((b) => b.id !== id))
+    setSelection((sel) => (sel?.key === id ? null : sel))
+    setPanelMode((m) => (m === "bloco" ? "editar" : m))
+  }
+
+  function duplicateBlock(id: string) {
+    const list = slides[selected]?.blocks ?? []
+    const src = list.find((b) => b.id === id)
+    if (!src || list.length >= BLOCK_LIMIT) return
+    const z = list.reduce((m, b) => Math.max(m, b.z), 0) + 1
+    const copy = clampBlock(
+      { ...src, id: Math.random().toString(36).slice(2, 10), x: src.x + 16, y: src.y + 16, z },
+      designH,
+    )
+    setBlocks((l) => [...l, copy])
+    setSelection({ key: copy.id, type: "block" })
+  }
+
+  /** Copia o bloco pra TODOS os outros slides (mesma posição; ids novos). */
+  function applyBlockToAll(id: string) {
+    const src = slides[selected]?.blocks?.find((b) => b.id === id)
+    if (!src) return
+    setSlides((prev) =>
+      prev.map((sl, i) => {
+        if (i === selected) return sl
+        const list = sl.blocks ?? []
+        if (list.length >= BLOCK_LIMIT) return sl
+        const z = list.reduce((m, b) => Math.max(m, b.z), 0) + 1
+        const copy = { ...src, id: Math.random().toString(36).slice(2, 10), z }
+        return { ...sl, blocks: [...list, copy] }
+      }),
+    )
+  }
+
+  function reorderBlock(id: string, dir: "front" | "back") {
+    setBlocks((l) => {
+      const zs = l.map((b) => b.z)
+      const z = dir === "front" ? Math.max(...zs) + 1 : Math.min(...zs) - 1
+      return l.map((b) => (b.id === id ? { ...b, z } : b))
+    })
+  }
+
   function scrollToSection(id: string) {
     // espera a section abrir (render) antes de rolar
     window.setTimeout(() => {
@@ -582,14 +1058,21 @@ export function CarouselEditor({
   /** Clique no canvas → seleciona e abre a section certa na sidebar. */
   function handleCanvasSelect(sel: EditorSelection | null) {
     setSelection(sel)
-    if (!sel) return
+    if (!sel) {
+      if (panelMode === "bloco") setPanelMode("editar")
+      return
+    }
     if (sel.type === "background") {
+      if (panelMode === "bloco") setPanelMode("editar")
       openSection("fundo")
       scrollToSection("fundo")
     } else if (sel.type === "image") {
       openSection("imagem")
       scrollToSection("imagem")
+    } else if (sel.type === "block") {
+      setPanelMode("bloco")
     } else {
+      if (panelMode === "bloco") setPanelMode("editar")
       openSection("elemento")
       openSection("conteudo")
       scrollToSection("elemento")
@@ -620,6 +1103,11 @@ export function CarouselEditor({
         handleTextEdit(sel)
         break
       case "color":
+        if (sel.type === "block") {
+          setPanelMode("bloco")
+          setBlockTab("estilo")
+          break
+        }
         openSection("elemento")
         scrollToSection("elemento")
         window.setTimeout(() => elementColorRef.current?.focus(), 140)
@@ -645,7 +1133,27 @@ export function CarouselEditor({
         })
         break
       case "image-replace":
+        blockImageTargetRef.current = sel.type === "block" ? sel.key : null
         fileInputRef.current?.click()
+        break
+      case "block-duplicate":
+        duplicateBlock(sel.key)
+        break
+      case "block-front":
+        reorderBlock(sel.key, "front")
+        break
+      case "block-back":
+        reorderBlock(sel.key, "back")
+        break
+      case "block-delete":
+        deleteBlock(sel.key)
+        break
+      case "block-apply-all":
+        applyBlockToAll(sel.key)
+        break
+      case "hide":
+        patchElement(sel.key, { hidden: true })
+        setSelection(null)
         break
       case "image-adjust":
         openSection("imagem")
@@ -683,6 +1191,22 @@ export function CarouselEditor({
 
   /** Duplo clique em texto no canvas → foca o campo certo na sidebar. */
   function handleTextEdit(sel: EditorSelection) {
+    // Rodapé (marca/@handle/arrasta/contador) não tem campo próprio na
+    // section de conteúdo — abre a identidade/elemento em vez do subtítulo.
+    if (sel.type === "block") {
+      setPanelMode("bloco")
+      setBlockTab("conteudo")
+      window.setTimeout(() => {
+        blockTextRef.current?.focus()
+        blockTextRef.current?.select()
+      }, 140)
+      return
+    }
+    if (sel.type === "meta") {
+      openSection("elemento")
+      scrollToSection("elemento")
+      return
+    }
     openSection("conteudo")
     scrollToSection("conteudo")
     window.setTimeout(() => {
@@ -698,8 +1222,18 @@ export function CarouselEditor({
   }
 
   const selectedOverride =
-    selection && selection.type !== "background" && selection.type !== "image"
+    selection &&
+    selection.type !== "background" &&
+    selection.type !== "image" &&
+    selection.type !== "block"
       ? (slide.el?.[selection.key] ?? {})
+      : null
+  const hiddenKeys = Object.entries(slide.el ?? {})
+    .filter(([, o]) => o.hidden)
+    .map(([k]) => k)
+  const selectedBlock =
+    selection?.type === "block"
+      ? (currentBlocks.find((b) => b.id === selection.key) ?? null)
       : null
 
   // Identidade Visual: editar uma cor da paleta ou extrair da imagem do slide.
@@ -798,7 +1332,13 @@ export function CarouselEditor({
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error || "erro no upload")
-      setImageUrl(data.url, "ai")
+      const target = blockImageTargetRef.current
+      blockImageTargetRef.current = null
+      if (target) {
+        const tb = slides[selected]?.blocks?.find((b) => b.id === target)
+        if (tb?.type === "brand") patchBlock(target, { avatar: data.url } as Partial<SlideBlock>)
+        else patchBlock(target, { url: data.url } as Partial<SlideBlock>)
+      } else setImageUrl(data.url, "ai")
     } catch (err) {
       setImgError(err instanceof Error ? err.message : "erro no upload")
     } finally {
@@ -1031,6 +1571,10 @@ export function CarouselEditor({
     )
   }
 
+  // Exporta TODOS os slides num único .zip. Percorre os slides no preview
+  // visível (cada um renderiza no previewRef) e captura o PNG de cada.
+  // Robusto: espera a imagem carregar de verdade (sem timer fixo) e um slide
+  // com erro NÃO derruba o zip inteiro — ele é pulado e reportado no final.
   /**
    * Artes finais pra PUBLICAR no Instagram: mesmo percurso do ZIP (cada slide
    * renderizado no preview a 1080px), mas em vez de baixar, hospeda e devolve
@@ -1063,10 +1607,6 @@ export function CarouselEditor({
     }
   }
 
-  // Exporta TODOS os slides num único .zip. Percorre os slides no preview
-  // visível (cada um renderiza no previewRef) e captura o PNG de cada.
-  // Robusto: espera a imagem carregar de verdade (sem timer fixo) e um slide
-  // com erro NÃO derruba o zip inteiro — ele é pulado e reportado no final.
   async function handleExportAllZip() {
     if (!previewRef.current || slides.length === 0) return
     setZipBusy(true)
@@ -1280,6 +1820,8 @@ export function CarouselEditor({
                       onTextEdit={handleTextEdit}
                       onMenuAction={handleMenuAction}
                       hasStyleClipboard={styleClipboard !== null}
+                      onBlockPatch={patchBlock}
+                      onBlockDrop={(type, x, y) => addBlock(type, { x, y })}
                     />
                   ) : (
                   <button
@@ -1386,9 +1928,51 @@ export function CarouselEditor({
 
       {/* Sidebar de edição — coluna cheia à ESQUERDA (do topo ao fim) */}
       <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto">
-          <div className="px-1 pb-5">
-            <Logo size={28} variant="content" />
-          </div>
+          <PanelTopBar
+            mode={panelMode}
+            onMode={setPanelMode}
+            historyCount={histEntries.length}
+          />
+          {panelMode === "elementos" && (
+            <ElementsPanel count={currentBlocks.length} onAdd={addBlock} />
+          )}
+          {panelMode === "historico" && (
+            <HistoryPanel entries={histEntries} current={histCurrent} onJump={jumpToHistory} />
+          )}
+          {panelMode === "bloco" && selectedBlock && (
+            <BlockEditorShell
+              title={`Editar ${BLOCK_TYPE_LABEL[selectedBlock.type]}`}
+              tab={blockTab}
+              onTab={setBlockTab}
+              onBack={() => {
+                setPanelMode("editar")
+                setSelection(null)
+              }}
+            >
+              <BlockProps
+                block={selectedBlock}
+                tab={blockTab}
+                textRef={blockTextRef}
+                accent={colors[0] || "#1668E3"}
+                slideH={designH}
+                onPatch={(patch) => patchBlock(selectedBlock.id, patch)}
+                onPickImage={() => {
+                  blockImageTargetRef.current = selectedBlock.id
+                  fileInputRef.current?.click()
+                }}
+                onDuplicate={() => duplicateBlock(selectedBlock.id)}
+                onDelete={() => deleteBlock(selectedBlock.id)}
+                onReorder={(dir) => reorderBlock(selectedBlock.id, dir)}
+                onApplyAll={() => applyBlockToAll(selectedBlock.id)}
+              />
+            </BlockEditorShell>
+          )}
+          {panelMode === "bloco" && !selectedBlock && (
+            <p className="text-xs text-text-muted px-1">
+              Selecione um bloco no slide pra editar.
+            </p>
+          )}
+          <div className={panelMode === "editar" ? "space-y-3" : "hidden"}>
           <a
             href="/dashboard/projetos"
             className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
@@ -1765,23 +2349,38 @@ export function CarouselEditor({
                     patchElement(selection.key, { dy: v === 0 ? undefined : v })
                   }
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() =>
-                    patchElement(selection.key, {
-                      dx: undefined,
-                      dy: undefined,
-                      scale: undefined,
-                      color: undefined,
-                    })
-                  }
-                >
-                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />
-                  Restaurar padrão
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      patchElement(selection.key, { hidden: true })
+                      setSelection(null)
+                    }}
+                    title="Esconde este elemento do layout (pra trocar por um bloco seu, por exemplo)"
+                  >
+                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />
+                    Ocultar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      patchElement(selection.key, {
+                        dx: undefined,
+                        dy: undefined,
+                        scale: undefined,
+                        color: undefined,
+                        hidden: undefined,
+                      })
+                    }
+                  >
+                    <Undo2 className="w-3.5 h-3.5 mr-1.5" />
+                    Restaurar
+                  </Button>
+                </div>
                 <p className="text-[10px] text-text-muted">
                   Arraste o elemento direto no slide. O canto roxo redimensiona.
                   Esc desseleciona.
@@ -1796,6 +2395,27 @@ export function CarouselEditor({
             open={!!openSections.conteudo}
             onToggle={() => toggleSection("conteudo")}
           >
+            {hiddenKeys.length > 0 && (
+              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-2.5 space-y-1.5">
+                <div className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5">
+                  <EyeOff className="w-3 h-3" /> Elementos ocultos neste slide
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {hiddenKeys.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => patchElement(k, { hidden: undefined })}
+                      className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[11px] text-white/70 hover:text-white hover:border-white/30"
+                      title="Mostrar de novo"
+                    >
+                      <Eye className="w-3 h-3" />
+                      {EDITABLE_TYPE_LABEL[k.split("-")[0] as EditableType] ?? k}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="space-y-3">
               <div>
                 <Label className="text-xs">Título</Label>
@@ -1908,9 +2528,96 @@ export function CarouselEditor({
                 className="h-9 flex-1 font-mono text-xs"
               />
             </div>
+            {/* Degradê: sobrepõe a cor sólida; o "from" define claro/escuro. */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-text-secondary">Degradê</span>
+                {slide.bgGradient && (
+                  <button
+                    type="button"
+                    onClick={() => patchSlide({ bgGradient: undefined })}
+                    className="text-[11px] text-text-muted hover:text-text-primary"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {GRADIENT_PRESETS.map((g) => {
+                  const active =
+                    slide.bgGradient?.from.toLowerCase() === g.from.toLowerCase() &&
+                    slide.bgGradient?.to.toLowerCase() === g.to.toLowerCase()
+                  return (
+                    <button
+                      key={g.label}
+                      type="button"
+                      title={g.label}
+                      onClick={() => patchSlide({ bgGradient: { from: g.from, to: g.to, angle: g.angle } })}
+                      style={{ backgroundImage: `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})` }}
+                      className={`w-8 h-8 rounded-lg border transition-all ${
+                        active
+                          ? "ring-2 ring-brand-500 ring-offset-2 ring-offset-black border-transparent"
+                          : "border-white/15 hover:border-white/40"
+                      }`}
+                    />
+                  )
+                })}
+              </div>
+              {slide.bgGradient && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["from", "to"] as const).map((k) => (
+                      <div key={k} className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={slide.bgGradient?.[k] ?? "#000000"}
+                          onChange={(e) =>
+                            patchSlide({ bgGradient: { ...slide.bgGradient!, [k]: e.target.value } })
+                          }
+                          className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
+                          title={k === "from" ? "Cor inicial" : "Cor final"}
+                        />
+                        <Input
+                          value={slide.bgGradient?.[k] ?? ""}
+                          onChange={(e) =>
+                            patchSlide({ bgGradient: { ...slide.bgGradient!, [k]: e.target.value } })
+                          }
+                          className="h-8 flex-1 font-mono text-[11px]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <SliderRow
+                    label="Ângulo"
+                    min={0}
+                    max={360}
+                    value={slide.bgGradient.angle}
+                    onChange={(v) => patchSlide({ bgGradient: { ...slide.bgGradient!, angle: v } })}
+                  />
+                </>
+              )}
+            </div>
+            {(style === "gradient" || style === "seamless") && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-[11px] font-medium text-text-secondary w-16 flex-shrink-0">Glow</span>
+                <input
+                  type="color"
+                  value={slide.glow || colors[0] || "#1668E3"}
+                  onChange={(e) => patchSlide({ glow: e.target.value })}
+                  className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
+                  title="Cor do brilho radial"
+                />
+                <Input
+                  value={slide.glow || ""}
+                  onChange={(e) => patchSlide({ glow: e.target.value || undefined })}
+                  placeholder="Cor da marca"
+                  className="h-8 flex-1 font-mono text-[11px]"
+                />
+              </div>
+            )}
             <p className="text-[10px] text-text-muted">
-              Aplica nos slides de conteúdo (as capas mantêm a foto). O texto
-              ajusta o contraste sozinho.
+              Vale pra capa e pros slides de conteúdo. O texto ajusta o contraste
+              sozinho pela cor inicial.
             </p>
           </Section>
 
@@ -2091,6 +2798,7 @@ export function CarouselEditor({
             />
           </div>
           </Section>
+          </div>
       </aside>
     </div>
   )

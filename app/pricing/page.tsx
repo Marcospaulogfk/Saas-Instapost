@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { isBillingCycle, type BillingCycle as Cycle } from "@/lib/billing/plans"
 import { PricingHeader } from "@/components/pricing/pricing-header"
 import { BillingToggle } from "@/components/pricing/billing-toggle"
 import { PricingCards } from "@/components/pricing/pricing-cards"
@@ -11,30 +13,46 @@ import { FinalCTA } from "@/components/pricing/final-cta"
 import { TrustFooter } from "@/components/pricing/trust-footer"
 import { EnterpriseCard } from "@/components/pricing/enterprise-card"
 
-export type BillingCycle = "monthly" | "quarterly" | "semiannual" | "annual"
+/**
+ * Ciclos e preços vêm de lib/billing/plans.ts (só mensal e anual; o anual
+ * mexe no preço, não nos tokens). Esta página não guarda número nenhum.
+ */
+export type BillingCycle = Cycle
 
-export const cycles = {
-  monthly: { discount: 0, period: 1, label: "/mês", suffix: "Cobrado mensalmente" },
-  quarterly: { discount: 0.17, period: 3, label: "/mês", suffix: "Cobrado a cada 3 meses" },
-  semiannual: { discount: 0.30, period: 6, label: "/mês", suffix: "Cobrado a cada 6 meses" },
-  annual: { discount: 0.40, period: 12, label: "/mês", suffix: "Cobrado anualmente" }
-}
+function PricingPageInner() {
+  const params = useSearchParams()
+  const cicloInicial = params.get("ciclo")
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>(
+    isBillingCycle(cicloInicial) ? cicloInicial : "monthly",
+  )
+  const cancelado = params.get("checkout") === "cancelado"
 
-export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly")
+  useEffect(() => {
+    const c = params.get("ciclo")
+    if (isBillingCycle(c)) setBillingCycle(c)
+  }, [params])
 
   return (
     <main className="min-h-screen bg-background">
       <PricingHeader />
       <BillingToggle selected={billingCycle} onSelect={setBillingCycle} />
-      <PricingCards billingCycle={billingCycle} />
+      {cancelado && (
+        <p className="mx-auto mb-6 max-w-xl rounded-lg border border-border bg-card px-4 py-3 text-center text-sm text-muted-foreground">
+          Checkout cancelado. Nada foi cobrado; escolha um plano quando quiser.
+        </p>
+      )}
+      <PricingCards
+        billingCycle={billingCycle}
+        autoStartPlan={params.get("plano")}
+      />
 
       <div className="max-w-3xl mx-auto px-4 pt-6 text-center">
         <p className="text-xs text-muted-foreground">
-          Tokens sao a moeda do Nexus Content: roteiro + legenda = 4 tokens,
-          imagem de capa = 25, imagem por slide = 2. Voce decide em cada
-          carrossel se quer imagem de IA — sem imagem, um carrossel custa 4
-          tokens. A capa roda em Nano Banana 2 em todos os planos.
+          Tokens são a moeda do Nexus Content: roteiro + legenda do carrossel
+          = 8 tokens, capa = 20, imagem por slide = 2, post único = 29. Você
+          decide em cada peça se quer imagem de IA. Editar o que foi gerado é
+          sempre grátis. Os tokens por mês são os mesmos no plano mensal e no
+          anual.
         </p>
       </div>
 
@@ -53,5 +71,14 @@ export default function PricingPage() {
       <FinalCTA />
       <TrustFooter />
     </main>
+  )
+}
+
+/** useSearchParams exige Suspense no build estático. */
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-background" />}>
+      <PricingPageInner />
+    </Suspense>
   )
 }

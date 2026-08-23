@@ -6,7 +6,11 @@ import {
   searchWikimedia,
   searchWikimediaEntity,
 } from "@/lib/generation/wikimedia"
-import { debitTokens, tokenCostForImage } from "@/lib/tokens"
+import {
+  debitTokens,
+  getAvailableTokens,
+  tokenCostForSinglePostImage,
+} from "@/lib/tokens"
 import { logImageUsage } from "@/lib/generation/usage-log"
 
 export const runtime = "nodejs"
@@ -72,12 +76,53 @@ export async function POST(req: Request) {
       } = await supabase.auth.getUser()
       const plan = await getUserPlan(supabase)
 
+      // ---------------------------------------------------------------
+      // Portão de saldo. O débito é atômico e roda DEPOIS da geração, então
+      // sem barrar aqui quem está zerado gera imagem de graça.
+      //
+      // A qualidade EFETIVA (e portanto o preço) só é conhecida depois: o
+      // plano pede "pro", mas o Nano Banana pode falhar e cair pro Flux, e aí
+      // se cobra preço de miolo. Por isso o portão usa o LIMITE INFERIOR
+      // ("normal"): nunca barra alguém que teria saldo pro que vai ser
+      // cobrado de fato. Quem passa aqui com pouco e recebe uma imagem "pro"
+      // pode ter o débito recusado, e isso vira warning no log, não geração
+      // infinita, porque a próxima chamada já encontra o saldo insuficiente.
+      // ---------------------------------------------------------------
+      if (user) {
+        const custoMinimo = tokenCostForSinglePostImage("normal")
+        const saldoDisponivel = await getAvailableTokens(supabase, user.id)
+        if (saldoDisponivel < custoMinimo) {
+          return NextResponse.json(
+            {
+              error: "Tokens insuficientes para esta geração.",
+              code: "sem_saldo",
+              needed: custoMinimo,
+              available: saldoDisponivel,
+            },
+            { status: 402 },
+          )
+        }
+      }
+
       const result = await generateBrandImage(prompt, plan)
 
       // Débito best-effort (só se logado). Nunca bloqueia a geração.
       if (user) {
         try {
-          await debitTokens(supabase, user.id, tokenCostForImage(result.quality))
+          const cobrado = tokenCostForSinglePostImage(result.quality)
+          const debit = await debitTokens(supabase, user.id, cobrado, {
+            kind: "debit_image",
+            refType: "single_post",
+            title: "Imagem do post único (nova geração)",
+          })
+          if (!debit.ok) {
+            // Imagem entregue sem cobrar (o portão usa o piso do custo).
+            console.warn(
+              `[post-unico/image] débito de tokens falhou: user=${user.id} ` +
+                `amount=${cobrado} debited=${debit.debited}` +
+                (debit.error ? ` (${debit.error})` : ""),
+            )
+          }
         } catch {
           // ignorado — tokens nunca quebram geração
         }
@@ -88,7 +133,7 @@ export async function POST(req: Request) {
         model: result.quality === "pro" ? "fal-ai/nano-banana-2" : "fal-ai/flux/schnell",
         costUsd: result.costUsd,
         userId: user?.id ?? null,
-        tokensCharged: user ? tokenCostForImage(result.quality) : 0,
+        tokensCharged: user ? tokenCostForSinglePostImage(result.quality) : 0,
       })
 
       return NextResponse.json({

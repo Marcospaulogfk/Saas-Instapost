@@ -77,7 +77,7 @@ export function NovaSidebar({ activeBrand, brands }: NovaSidebarProps) {
   }
 
   return (
-    <aside className="nv-sidebar-card hidden md:flex w-[248px] shrink-0 flex-col overflow-hidden px-4 pb-4 pt-7">
+    <aside className="nv-sidebar-card relative z-10 hidden md:flex w-[248px] shrink-0 flex-col overflow-hidden px-4 pb-4 pt-7">
       {/* Marca — logo + seletor de marca (fixos). A logo respira sozinha: o
           bloco seguinte só começa bem depois dela, senão vira um amontoado
           grudado no topo do cartão. */}

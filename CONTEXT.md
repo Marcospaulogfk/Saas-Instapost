@@ -261,7 +261,9 @@ telas/                        # PDFs/PNGs do BestContent AI (competitor, referê
 
 Schema em `supabase/migrations/*.sql`. Principais tabelas:
 
-- `profiles` (1:1 com auth.users) — créditos, plano
+- `users` (1:1 com auth.users) — baldes de tokens (`credits`, `topup_credits`, `referral_credits`), plano (`plan_id`, `plan_cycle`, `plan_renews_at`), ids do provedor de cobrança
+- `token_transactions` — extrato de tokens (0020) · `subscriptions` / `billing_events` — assinatura e idempotência do webhook
+- `referral_codes` / `referrals` — indicação (0014) · `affiliates` / `affiliate_referrals` / `affiliate_commissions` — afiliados (0021)
 - `brands` — multi-tenant; `brand_colors[]`, `instagram_handle`, `tone_of_voice`, `visual_style`
 - `projects` — carrosséis salvos
 - `slides` — slides do carrossel
@@ -269,6 +271,25 @@ Schema em `supabase/migrations/*.sql`. Principais tabelas:
 - `templates` — registry de templates (legacy)
 
 RLS habilitado em todas tabelas com user-scoped.
+
+### Tokens, cobrança, indicação e afiliados (22/08/2026)
+
+Fonte de verdade: `TOKENS-INDICACAO-AFILIADOS-rev3.docx` (decisões do Marcos na seção 10).
+
+- **Regra única:** plano recarrega todo mês e zera a sobra; bônus de indicação (`referral_credits`) e avulsos (`topup_credits`) não vencem; ordem de consumo plano → avulso → bônus; toda entrada/saída é uma linha em `token_transactions` (uma por PEÇA, nunca por slide).
+- **Tabela v2 (lib/tokens.ts):** roteiro 8 · capa do carrossel 20 · arte do post único 25 (post único = 29) · slide de miolo 2 · edição do bitmap 15 · pautas 4 após 3 grátis/dia · editar grátis · trial 45. O texto fica em 8 mesmo após o teste cego do escritor.
+- **Débito:** `debitTokens(client, userId, amount, { kind, refType, refId, title })` → RPC `apply_tokens` (atômico, tudo-ou-nada). Estorno: `refundTokens`. Grant (só service_role): RPC `grant_tokens`. Migration `0020_token_ledger_billing.sql` (requer 0014 aplicada antes).
+- **Planos/ciclos (lib/billing/plans.ts):** só mensal e anual (30% no preço, tokens iguais). Trimestral/semestral saíram.
+- **Cobrança (lib/billing):** camada neutra (`BillingProvider`); `lib/billing/asaas.ts` implementa (checkout hospedado `POST /checkouts` RECURRENT, Pix + cartão). `app/actions/billing.ts` abre checkout / cancela; `app/api/webhooks/asaas` → `lib/billing/apply.ts` (PAYMENT_CONFIRMED/RECEIVED concede; OVERDUE marca atraso, 5 dias de carência; REFUNDED cancela e tira tokens do plano; troca de plano preserva a sobra como avulso). Job diário `app/api/cron/renovacao` (CRON_SECRET) é a rede de segurança. Env: `ASAAS_API_KEY`, `ASAAS_ENV`, `ASAAS_WEBHOOK_TOKEN`, `CRON_SECRET`. A Cakto foi removida por completo.
+- **Saldo:** `getProfile()` devolve os três baldes; `tokensDisponiveis()` soma. Página `/dashboard/tokens` (saldo, preços, extrato, consumo, plano, cancelar). Chip do topo e Configurações > Plano leem a mesma fonte.
+- **Indicação:** `?ref=` em `/cadastro` vai em `options.data.ref_code` (e-mail) e em cookie `nx_ref` (Google: `app/auth/callback` chama `registrar_indicacao`). 100/45 tokens no 1º pagamento; não acumula com afiliado. Flag `INDICACAO_HABILITADA` (env `NEXT_PUBLIC_INDICACAO`), ligar só depois de 0014 + 0020 em prod.
+- **Ordem de deploy (obrigatória):** migrations 0014 → 0016 → 0020 → 0021 ANTES de qualquer redeploy. Sem a 0020 a RPC `apply_tokens` não existe, todo débito falha e a geração fica de graça. Arquivo pronto pra colar no SQL Editor: `APLICAR-EM-PRODUCAO.sql` na raiz.
+- **A conta Asaas é compartilhada com o EverReply** e webhook do Asaas é por CONTA, não por produto: `/api/webhooks/asaas` recebe cobrança dos dois. Pagamento que não resolve pra um usuário nosso é IGNORADO com 200 (`naoENosso` em `lib/billing/apply.ts`), nunca 500, senão o Asaas reenviaria pra sempre e penalizaria o webhook.
+- **Taxas reais da conta (22/08):** Pix R$1,99 por cobrança, cartão à vista 2,99% + R$0,49, boleto R$1,99, saque R$5,00, API grátis. Cartão só compensa em 32 dias; Pix em segundos. Promoção até 29/10/2026 derruba Pix/boleto pra R$0,99 e cartão à vista pra 1,99%.
+- **REGRA: `auth.uid() is null` NÃO significa service_role.** A chave anônima também tem uid null, e ela vai no bundle do browser. Guarda de função sensível é sempre por PAPEL (`auth.role() = 'service_role'`). Isso foi furo real em produção por alguns minutos em 22/08 (migration 0020), fechado pela 0022: qualquer visitante conseguia chamar `grant_tokens`/`refund_tokens` e se dar tokens.
+- **REGRA: `revoke ... from public` não tira EXECUTE de `anon`/`authenticated`.** O Supabase concede por DEFAULT PRIVILEGES, que não é herança de PUBLIC. Revogue pelos nomes, e SEMPRE depois do `create or replace` (que reaplica o default).
+- **Segurança do saldo:** `refund_tokens` é só service_role e `public.users` tem `revoke update` com grant apenas em (email, trial_used). Sem isso, RLS `users_update_own` deixava o usuário dar PATCH no próprio `credits`. Nunca reconceder UPDATE amplo nessa tabela.
+- **Afiliados:** feature do app (Asaas não tem programa nativo; tem split por `walletId`). Candidatura em `/afiliados`, aprovação em `/dashboard/admin/afiliados` (`ADMIN_EMAILS`), painel em `/dashboard/afiliados`, comissões em `affiliate_commissions` (migration 0021). Flag `AFILIADOS_HABILITADO` DESLIGADA em produção por decisão do Marcos; comissão/cookie/e-mail ainda indefinidos.
 
 ## Pendências conhecidas
 

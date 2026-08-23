@@ -10,6 +10,8 @@ export interface SinglePostInput {
   title: string
   raw_brief?: string | null
   content: PostContent
+  /** Miniatura da arte (PNG no Storage) — alimenta os cartoes da biblioteca. */
+  rendered_image_url?: string | null
 }
 
 export type CreateSinglePostResult =
@@ -41,6 +43,7 @@ export async function createSinglePost(
       title: input.title.trim() || "Post sem título",
       raw_brief: input.raw_brief?.trim() || null,
       content: input.content,
+      rendered_image_url: input.rendered_image_url ?? null,
     })
     .select("id")
     .single()

@@ -16,6 +16,8 @@ import {
 } from "./editorial-shared"
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
 import { proxiedImageUrl } from "@/lib/proxy-image"
+import { BlockLayer } from "./block-layer"
+import type { SlideBlock } from "./slide-blocks"
 import {
   applyElementOverrides,
   type SlideElementOverrides,
@@ -62,10 +64,17 @@ export interface PreviewSlide {
   cta_badge?: string
   /** Cor de fundo do slide (override). null/undefined = padrão do estilo. */
   bg?: string
+  /** Degradê de fundo (sobrepõe `bg`). `from` define a luminância do tema. */
+  bgGradient?: { from: string; to: string; angle: number }
+  /** Cor do glow radial nos estilos gradient/seamless. Vazio = accent. */
+  glow?: string
   /** Overrides por elemento do editor Canva-like (mover/escalar/cor).
    *  Chave = "<tipo>-<índice DOM>" (title-0, text-1...). Vazio = slide 100%
    *  idêntico ao gerado — nada é aplicado. */
   el?: SlideElementOverrides
+  /** Blocos livres adicionados pelo usuário (estilo Elementor). Vazio =
+   *  DOM idêntico ao gerado. Ver slide-blocks.ts / block-layer.tsx. */
+  blocks?: SlideBlock[]
   image: {
     url: string | null
     source: "ai" | "unsplash" | "wikimedia" | null
@@ -217,6 +226,22 @@ function SlidePreviewImpl({
     // aqui (no renderizador) pra valer em TODO lugar: filmstrip, export
     // PNG/ZIP, captura de capa e thumbnails.
     applyElementOverrides(root, slide.el)
+
+    // Fundo em DEGRADÊ: aplicado no nó raiz do layout (primeiro filho do
+    // wrapper de formato) — mesmo padrão pós-render dos overrides. Os layouts
+    // só setam backgroundColor inline, então backgroundImage é terreno livre;
+    // guardamos flag pra limpar quando o degradê é removido.
+    const layoutRoot = root.firstElementChild?.firstElementChild as HTMLElement | null
+    if (layoutRoot) {
+      const g = slide.bgGradient
+      if (g) {
+        layoutRoot.style.backgroundImage = `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})`
+        layoutRoot.dataset.editGradient = "1"
+      } else if (layoutRoot.dataset.editGradient) {
+        layoutRoot.style.backgroundImage = ""
+        delete layoutRoot.dataset.editGradient
+      }
+    }
   })
   // REGRA GLOBAL: o accent (cor das palavras destacadas) precisa ser legível
   // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
@@ -294,6 +319,8 @@ function SlidePreviewImpl({
       >
         {inner}
       </div>
+      {/* Blocos livres do usuário — camada aditiva, entra no export. */}
+      <BlockLayer blocks={slide.blocks} fontClass={fontClass} />
       {showDevBadges && slide.image.source && (
         <div
           className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider z-20 ${
@@ -465,24 +492,32 @@ function EditorialSlideRouter(props: RouterProps) {
 
   // Capas são todas sobre foto/fundo escuro (exceto minimal, branca); cada
   // split tem fundo fixo conhecido — o accent certo é escolhido por fundo.
+  // Fundo escolhido pelo usuário (slide.bg): vale pra capas e splits. Com
+  // degradê, a cor sólida vira o `from` (tema claro/escuro + base do layout);
+  // o degradê em si é pintado no SlidePreview (layout effect).
+  const bgOverride = slide.bgGradient?.from ?? slide.bg
+  const glow = slide.glow
   const basePropsDark = {
     totalSlides,
     orderIndex: slide.order_index,
     accent: accentOnDark,
     fontClass,
+    bgOverride,
+    glow,
   }
   const basePropsLight = {
     totalSlides,
     orderIndex: slide.order_index,
     accent: accentOnLight,
     fontClass,
+    bgOverride,
+    glow,
   }
 
   // Feature "Fundo do Slide": nos slides de TEXTO (splits), o usuário pode trocar
   // a cor de fundo. Quando há override, o accent precisa ser legível sobre ELE —
   // escolhe accentOnLight/accentOnDark pela luminância da cor escolhida. Sem
   // override, mantém o accent padrão do estilo (fallback).
-  const bgOverride = slide.bg
   const accentForBg = (fallback: string) =>
     bgOverride ? (isLightColor(bgOverride) ? accentOnLight : accentOnDark) : fallback
 
@@ -618,6 +653,7 @@ function EditorialSlideRouter(props: RouterProps) {
         {...basePropsDark}
         accent={accentForBg(accentOnDark)}
         bgOverride={bgOverride}
+        glow={glow}
         imageSlot={slot}
       />
     )
@@ -655,6 +691,7 @@ function EditorialSlideRouter(props: RouterProps) {
         slide={splitData}
         {...basePropsDark}
         bgOverride={bgOverride}
+        glow={glow}
         imageSlot={slot}
       />
     )
@@ -1137,7 +1174,7 @@ function HybridSlide({
       )}
 
       {/* CTA "arrasta pra cima" do Stories */}
-      <div className="absolute bottom-5 inset-x-0 flex flex-col items-center gap-1 z-10 text-white/85">
+      <div className="absolute bottom-5 inset-x-0 flex flex-col items-center gap-1 z-10 text-white/85" data-edit="meta">
         <span className="text-base">↑</span>
         <span className="text-[10px] uppercase tracking-wider font-medium">
           arrasta pra cima

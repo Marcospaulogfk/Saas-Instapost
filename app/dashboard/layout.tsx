@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { NovaSidebar } from "@/components/dashboard/nova/nova-sidebar"
 import { NovaTopBar } from "@/components/dashboard/nova/nova-topbar"
 import { AssistenteBolha } from "@/components/dashboard/assistente-bolha"
+import { IndicacaoBanner } from "@/components/dashboard/indicacao-banner"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
@@ -53,9 +54,14 @@ export default async function DashboardLayout({
   return (
     // Layout-CARTÃO (padrão EverReply): o canvas tem gutter (p-2) e a sidebar
     // flutua como painel arredondado, em vez de colar na borda com border-right.
-    <div className="dashboard-root nova-root dark relative flex h-screen gap-2 overflow-hidden p-2">
+    // `isolate`: o root vira contexto de empilhamento próprio, então o fundo em
+    // z-0 e o conteúdo em z-10 se resolvem AQUI dentro e nada do resto da
+    // página pode se meter no meio.
+    <div className="dashboard-root nova-root dark relative isolate flex h-screen gap-2 overflow-hidden p-2">
       <NovaSidebar activeBrand={activeBrand} brands={sidebarBrands} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Faixa de indicação — primeira coisa da coluna, acima do header. */}
+        <IndicacaoBanner />
         <NovaTopBar
           userName={displayName}
           userEmail={user.email ?? ""}
@@ -64,7 +70,10 @@ export default async function DashboardLayout({
           credits={profile?.credits ?? 0}
           planCreditsMonthly={profile?.plan_credits_monthly ?? 0}
           creditsUsedThisMonth={profile?.plan_credits_used_this_month ?? 0}
+          topupCredits={profile?.topup_credits ?? 0}
+          referralCredits={profile?.referral_credits ?? 0}
           subscriptionStatus={profile?.subscription_status ?? "trial"}
+          planId={profile?.plan_id ?? null}
           mobileNav={
             <MobileNav
               activeBrandName={activeBrand?.name ?? null}
@@ -77,7 +86,7 @@ export default async function DashboardLayout({
       </div>
       {/* Assistente em todas as telas do dashboard — o contexto de marca vem
           do servidor a cada request, entao a bolha nao precisa de props. */}
-      <AssistenteBolha />
+      <AssistenteBolha marcaAtiva={activeBrand?.name ?? null} />
     </div>
   )
 }

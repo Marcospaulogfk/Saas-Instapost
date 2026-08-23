@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { ArrowUp, Loader2, X } from "lucide-react"
+import { Loader2, Maximize2, Minimize2, Send, Trash2, X } from "lucide-react"
 
 /**
- * Assistente de conteúdo — bolha fixa presente em todo o dashboard.
+ * Nexus — assistente de conteúdo. Bolha fixa presente em todo o dashboard.
  *
  * Existe pra retenção: a pergunta que trava o social media não é "como uso o
  * editor", é "o que eu posto essa semana". Responder isso de graça, já ciente
@@ -50,8 +50,14 @@ const ATALHOS = [
   "Ideia de carrossel educativo",
 ]
 
-export function AssistenteBolha() {
+interface Props {
+  /** Nome da marca ativa — vira o subtítulo do cabeçalho do chat. */
+  marcaAtiva?: string | null
+}
+
+export function AssistenteBolha({ marcaAtiva = null }: Props) {
   const [aberto, setAberto] = useState(false)
+  const [ampliado, setAmpliado] = useState(false)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [rascunho, setRascunho] = useState("")
   const [carregando, setCarregando] = useState(false)
@@ -130,44 +136,57 @@ export function AssistenteBolha() {
 
   return (
     <>
-      {/* Bolha */}
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        aria-label={aberto ? "Fechar assistente" : "Abrir assistente"}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-border-subtle bg-background-secondary shadow-lg transition-transform hover:scale-105 active:scale-95"
-      >
-        {aberto ? (
-          <X className="h-5 w-5 text-text-primary" />
-        ) : (
-          <Image
-            src="/mascote-nexus.png"
-            alt=""
-            width={44}
-            height={44}
-            className="h-11 w-11 object-contain"
-            priority
-          />
-        )}
-      </button>
-
-      {/* Painel */}
-      {aberto && (
-        <div className="fixed bottom-24 right-5 z-50 flex h-[min(560px,calc(100vh-8rem))] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border-subtle bg-background-secondary shadow-2xl">
-          <header className="flex items-center gap-2.5 border-b border-border-subtle px-4 py-3">
+      {/* Bolha: mascote grande + CTA. Só o ícone não dizia o que era — quem
+          nunca clicou não descobria que ali mora um assistente. */}
+      {!aberto && (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          aria-label="Falar com o Nexus"
+          className="group fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-border-subtle bg-background-secondary/95 py-1.5 pl-1.5 pr-4 shadow-xl backdrop-blur transition-all hover:border-brand-500/60 hover:shadow-2xl active:scale-95"
+        >
+          <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
             <Image
               src="/mascote-nexus.png"
               alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 shrink-0 object-contain"
+              width={64}
+              height={64}
+              className="h-16 w-16 object-contain transition-transform group-hover:scale-105"
+              priority
             />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-text-primary">
-                Assistente
-              </p>
+            {/* Ponto de "disponível" — o mesmo sinal de chat de suporte. */}
+            <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full border-2 border-background-secondary bg-success" />
+          </span>
+          <span className="text-sm font-semibold text-text-primary">
+            Fale com o Nexus
+          </span>
+        </button>
+      )}
+
+      {/* Painel */}
+      {aberto && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex flex-col overflow-hidden rounded-2xl border border-border-subtle bg-background-secondary shadow-2xl ${
+            ampliado
+              ? "h-[calc(100vh-2.5rem)] w-[min(560px,calc(100vw-2.5rem))]"
+              : "h-[min(600px,calc(100vh-2.5rem))] w-[min(400px,calc(100vw-2.5rem))]"
+          }`}
+        >
+          <header className="flex items-center gap-2.5 border-b border-border-subtle bg-background-tertiary/40 px-4 py-3">
+            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600/15">
+              <Image
+                src="/mascote-nexus.png"
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+              />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background-secondary bg-success" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-text-primary">Nexus</p>
               <p className="truncate text-[11px] text-text-muted">
-                Ideias e estratégia da sua marca
+                {marcaAtiva ? `Assistente · ${marcaAtiva}` : "Assistente de conteúdo"}
               </p>
             </div>
             {mensagens.length > 0 && (
@@ -177,28 +196,61 @@ export function AssistenteBolha() {
                   setMensagens([])
                   setErro(null)
                 }}
-                className="ml-auto shrink-0 text-[11px] text-text-muted hover:text-text-primary"
+                aria-label="Limpar conversa"
+                title="Limpar conversa"
+                className="shrink-0 rounded-lg p-1.5 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
               >
-                Limpar
+                <Trash2 className="h-4 w-4" />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setAmpliado((v) => !v)}
+              aria-label={ampliado ? "Reduzir" : "Ampliar"}
+              title={ampliado ? "Reduzir" : "Ampliar"}
+              className="shrink-0 rounded-lg p-1.5 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
+            >
+              {ampliado ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAberto(false)}
+              aria-label="Fechar assistente"
+              title="Fechar"
+              className="shrink-0 rounded-lg p-1.5 text-text-muted transition-colors hover:bg-white/5 hover:text-text-primary"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3.5">
+          <div className="flex-1 space-y-3.5 overflow-y-auto px-4 py-4">
             {mensagens.length === 0 && (
               <div className="space-y-3">
-                <p className="text-sm leading-relaxed text-text-secondary">
-                  Pergunta o que quiser sobre o conteúdo da sua marca — pauta,
-                  ângulo, o que postar. Não falo de plano nem cobrança; isso é
-                  com o suporte.
-                </p>
-                <div className="space-y-1.5">
+                <div className="flex items-end gap-2">
+                  <Image
+                    src="/mascote-nexus.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 shrink-0 object-contain"
+                  />
+                  <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-background-tertiary/60 px-3.5 py-2.5 text-sm leading-relaxed text-text-secondary">
+                    Oi, eu sou o Nexus. Pergunta o que quiser sobre o conteúdo da
+                    sua marca — pauta, ângulo, o que postar. Não falo de plano nem
+                    cobrança; isso é com o suporte.
+                  </div>
+                </div>
+                <div className="space-y-1.5 pl-9">
                   {ATALHOS.map((a) => (
                     <button
                       key={a}
                       type="button"
                       onClick={() => void enviar(a)}
-                      className="block w-full rounded-lg border border-border-subtle px-3 py-2 text-left text-xs text-text-secondary transition-colors hover:border-brand-500/50 hover:text-text-primary"
+                      className="block w-full rounded-xl border border-border-subtle px-3 py-2 text-left text-xs text-text-secondary transition-colors hover:border-brand-500/50 hover:text-text-primary"
                     >
                       {a}
                     </button>
@@ -207,27 +259,31 @@ export function AssistenteBolha() {
               </div>
             )}
 
-            {mensagens.map((m, i) => (
-              <div
-                key={i}
-                className={
-                  m.role === "user" ? "flex justify-end" : "flex justify-start"
-                }
-              >
-                <div
-                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                    m.role === "user"
-                      ? "bg-brand-600 text-white"
-                      : "bg-background-tertiary/60 text-text-secondary"
-                  }`}
-                >
-                  {m.role === "assistant" ? comNegrito(m.content) : m.content}
+            {mensagens.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="flex justify-end">
+                  <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 px-3.5 py-2.5 text-sm leading-relaxed text-white">
+                    {m.content}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div key={i} className="flex items-end gap-2">
+                  <Image
+                    src="/mascote-nexus.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 shrink-0 object-contain"
+                  />
+                  <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-background-tertiary/60 px-3.5 py-2.5 text-sm leading-relaxed text-text-secondary">
+                    {comNegrito(m.content)}
+                  </div>
+                </div>
+              ),
+            )}
 
             {carregando && (
-              <div className="flex items-center gap-2 text-xs text-text-muted">
+              <div className="flex items-center gap-2 pl-9 text-xs text-text-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Pensando...
               </div>
@@ -250,17 +306,17 @@ export function AssistenteBolha() {
                   }
                 }}
                 rows={1}
-                placeholder="Pergunte alguma coisa"
-                className="max-h-28 flex-1 resize-none rounded-xl border border-border-subtle bg-background-tertiary/40 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-500/60 focus:outline-none"
+                placeholder="Digite sua mensagem..."
+                className="max-h-28 flex-1 resize-none rounded-full border border-border-subtle bg-background-tertiary/40 px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-500/60 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => void enviar(rascunho)}
                 disabled={!rascunho.trim() || carregando}
                 aria-label="Enviar"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white transition-colors hover:bg-brand-500 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-500 disabled:opacity-40"
               >
-                <ArrowUp className="h-4 w-4" />
+                <Send className="h-4 w-4" />
               </button>
             </div>
           </div>

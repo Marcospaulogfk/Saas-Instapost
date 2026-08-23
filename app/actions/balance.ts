@@ -1,6 +1,6 @@
 "use server"
 
-import { getProfile } from "@/lib/data/queries"
+import { getProfile, tokensDisponiveis } from "@/lib/data/queries"
 
 /**
  * Saldo de tokens pro preview de custo do wizard.
@@ -12,11 +12,17 @@ import { getProfile } from "@/lib/data/queries"
  *
  * Devolve `null` quando não há sessão: o preview some em vez de mostrar zero
  * (a geração sem login roda, só não debita).
+ *
+ * O número é o saldo TOTAL (plano + avulso + bônus), o mesmo que o débito
+ * atômico consome. Antes devolvia só `credits`: quem estava com o balde do
+ * plano zerado mas com 100 de bônus de indicação via "saldo insuficiente" e
+ * o botão de gerar morto, enquanto o `apply_tokens` teria debitado o bônus
+ * sem reclamar.
  */
 export async function getTokenBalance(): Promise<number | null> {
   try {
     const { profile } = await getProfile()
-    return profile?.credits ?? null
+    return profile ? tokensDisponiveis(profile) : null
   } catch {
     return null
   }

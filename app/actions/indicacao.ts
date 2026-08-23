@@ -5,7 +5,7 @@
 // Server actions do programa INDIQUE E GANHE.
 //
 // Nada aqui credita token. Crédito é EXCLUSIVIDADE do webhook de
-// pagamento (app/api/webhooks/cakto), via RPC que só o service_role pode
+// pagamento (app/api/webhooks/asaas → lib/billing/apply.ts), via RPC que só o service_role pode
 // executar. Aqui só se cria o código e se registra o VÍNCULO (pending).
 // =====================================================================
 

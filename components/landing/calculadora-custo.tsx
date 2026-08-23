@@ -4,26 +4,27 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { ArrowRight, Check } from "lucide-react"
+import { PLAN_TOKENS, TOKEN_COST, tokenCostForCarousel, tokenCostForSinglePost } from "@/lib/tokens"
+import { PLAN_PRICE_MONTHLY } from "@/lib/billing/plans"
 
 /*
  * "Faça as contas" virou calculadora: o visitante monta o próprio volume e vê
  * três linhas de custo pro MESMO resultado — agência, freelas + IAs avulsas, e
  * o plano do Nexus que dá conta desse volume.
  *
- * Os números do Nexus não são chutados: saem da mesma tabela de tokens dos
- * planos (roteiro 4 + capa 25 + 2 por slide de miolo → carrossel completo de
- * 7 slides ≈ 41 tokens; sem imagem de IA, 4). Mexeu em lib/tokens.ts? Reveja
- * TOKENS_* aqui também.
+ * Os números do Nexus são CALCULADOS de lib/tokens.ts e lib/billing/plans.ts,
+ * nunca escritos à mão: quando a tabela de tokens mudou (v2, 22/08/2026) as
+ * cópias soltas na landing viraram promessa falsa.
  */
 
-const TOKENS_CARROSSEL_COM_IMAGEM = 41
-const TOKENS_CARROSSEL_SEM_IMAGEM = 4
-const TOKENS_POST_UNICO = 29
+const TOKENS_CARROSSEL_COM_IMAGEM = tokenCostForCarousel(7, { cover: true, slides: true })
+const TOKENS_CARROSSEL_SEM_IMAGEM = TOKEN_COST.textOnly
+const TOKENS_POST_UNICO = tokenCostForSinglePost()
 
 const PLANOS = [
-  { nome: "Starter", preco: 47, tokens: 300 },
-  { nome: "Pro", preco: 97, tokens: 1000 },
-  { nome: "Studio", preco: 247, tokens: 3000 },
+  { nome: "Starter", preco: PLAN_PRICE_MONTHLY.starter, tokens: PLAN_TOKENS.starter },
+  { nome: "Pro", preco: PLAN_PRICE_MONTHLY.pro, tokens: PLAN_TOKENS.pro },
+  { nome: "Studio", preco: PLAN_PRICE_MONTHLY.studio, tokens: PLAN_TOKENS.studio },
 ]
 
 /* Referências de mercado — assinaturas cheias em BRL, arredondadas. */
@@ -207,7 +208,7 @@ export function CalculadoraCusto() {
         </div>
 
         <Link
-          href="/onboarding"
+          href="/cadastro"
           className="mt-2 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-foreground px-7 text-[15px] font-medium text-background transition hover:opacity-90"
         >
           Testar de graça antes de decidir

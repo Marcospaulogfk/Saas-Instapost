@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { debitTokens, TOKEN_COST } from "@/lib/tokens"
+import { debitTokens, getAvailableTokens, TOKEN_COST } from "@/lib/tokens"
 import { editNanoBanana } from "@/lib/generation/nano-banana"
 import { logImageUsage } from "@/lib/generation/usage-log"
 
@@ -18,7 +18,7 @@ export const maxDuration = 60
  * arte idêntico. Várias trocas viajam numa chamada só = um débito só.
  *
  * Custo: 1 edição de imagem = mesmo preço de gerar a capa (TOKEN_COST
- * .imageCover, 25) — o Fal cobra o mesmo pra gen e pra edit. O concorrente
+ * .editBitmap, 15; custa o mesmo que gerar mas o usuário percebe como correção, decisão 22/08). O concorrente
  * cobra 6 créditos regenerando a peça INTEIRA e sem garantia de manter o
  * design; aqui o design fica.
  */
@@ -78,6 +78,24 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Portão de saldo: o preço da edição é FIXO e conhecido antes de chamar o
+  // nano-banana. Sem esta checagem a edição sairia de graça, porque o débito
+  // é atômico e só acontece depois da imagem pronta.
+  if (user?.id) {
+    const saldoDisponivel = await getAvailableTokens(supabase, user.id)
+    if (saldoDisponivel < TOKEN_COST.editBitmap) {
+      return NextResponse.json(
+        {
+          error: "Tokens insuficientes para esta geração.",
+          code: "sem_saldo",
+          needed: TOKEN_COST.editBitmap,
+          available: saldoDisponivel,
+        },
+        { status: 402 },
+      )
+    }
+  }
+
   const prompt =
     "Edit this social media design. " +
     changes
@@ -89,7 +107,19 @@ export async function POST(req: Request) {
     const result = await editNanoBanana(prompt, url)
     if (user?.id) {
       try {
-        await debitTokens(supabase, user.id, TOKEN_COST.imageCover)
+        const debit = await debitTokens(supabase, user.id, TOKEN_COST.editBitmap, {
+          kind: "debit_edit_bitmap",
+          refType: "single_post",
+          title: "Edição cirúrgica da arte do post único",
+        })
+        if (!debit.ok) {
+          // Edição entregue sem cobrar (saldo caiu entre o portão e o débito).
+          console.warn(
+            `[post-unico/edit-bitmap] débito de tokens falhou: user=${user.id} ` +
+              `amount=${TOKEN_COST.editBitmap} debited=${debit.debited}` +
+              (debit.error ? ` (${debit.error})` : ""),
+          )
+        }
       } catch {
         // tokens nunca quebram a edição
       }
@@ -100,7 +130,7 @@ export async function POST(req: Request) {
       model: result.model,
       costUsd: result.costUsd,
       userId: user?.id ?? null,
-      tokensCharged: user?.id ? TOKEN_COST.imageCover : 0,
+      tokensCharged: user?.id ? TOKEN_COST.editBitmap : 0,
       durationMs: result.ms,
     })
     return NextResponse.json({ url: result.url, ms: result.ms })

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { PenLine, Layers, LayoutTemplate, CalendarPlus, ChevronRight, Crown, Check, Gift } from "lucide-react"
+import { PenLine, Layers, LayoutTemplate, CalendarDays, ChevronRight, Crown, Check, Gift } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
 import { INDICACAO_HABILITADA, POST_UNICO_HABILITADO } from "@/lib/features"
@@ -21,7 +21,7 @@ const ACTIONS: QuickAction[] = [
   // token. Ela agora só abre carrossel salvo (?id=).
   { label: "Criar carrossel", sub: "Editorial de vários slides", href: "/dashboard/criar?tipo=carrossel&step=2", icon: Layers, tile: "nv-tile-blue" },
   { label: "Explorar templates", sub: "Modelos prontos pra editar", href: "/dashboard/templates", icon: LayoutTemplate, tile: "nv-tile-orange" },
-  { label: "Planejar com IA", sub: "Calendário de conteúdo", href: "/dashboard/planejar", icon: CalendarPlus, tile: "nv-tile-green" },
+  { label: "Calendário editorial", sub: "Pautas com IA e agendamento", href: "/dashboard/calendario", icon: CalendarDays, tile: "nv-tile-green" },
 ]
 
 export function NovaQuickActions() {

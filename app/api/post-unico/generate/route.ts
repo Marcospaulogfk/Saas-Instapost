@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getUserPlan } from "@/lib/generation/image"
-import { debitTokens, tokenCostForImage, TOKEN_COST } from "@/lib/tokens"
+import {
+  debitTokens,
+  getAvailableTokens,
+  tokenCostForSinglePostImage,
+  TOKEN_COST,
+} from "@/lib/tokens"
 import { getTemplate } from "@/lib/single-posts/catalog"
 import { generatePostContent, pickBestTemplate } from "@/lib/single-posts/generate"
 import type { PostBrand, PostCategory } from "@/lib/single-posts/types"
@@ -58,6 +63,34 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser()
   const plan = await getUserPlan(supabase)
 
+  // -------------------------------------------------------------------
+  // Portão de saldo (só pra quem está logado; sem sessão nada é cobrado).
+  //
+  // Sem isto a peça sai de graça: o débito é atômico e roda DEPOIS da
+  // geração, então saldo curto = nada debitado e nada bloqueado.
+  // O custo é ESTIMADO por baixo: o texto é certo, mas quantas imagens o
+  // template vai gerar (e em que qualidade) só se sabe depois. Cobra-se o
+  // piso: texto + uma imagem na qualidade mais barata quando o template pede
+  // foto. O débito real, mais adiante, pode ser maior.
+  // -------------------------------------------------------------------
+  if (user) {
+    const custoMinimo =
+      TOKEN_COST.singlePostText +
+      (template.needs_photo ? tokenCostForSinglePostImage("normal") : 0)
+    const saldoDisponivel = await getAvailableTokens(supabase, user.id)
+    if (saldoDisponivel < custoMinimo) {
+      return NextResponse.json(
+        {
+          error: "Tokens insuficientes para esta geração.",
+          code: "sem_saldo",
+          needed: custoMinimo,
+          available: saldoDisponivel,
+        },
+        { status: 402 },
+      )
+    }
+  }
+
   try {
     const result = await generatePostContent(
       body.brand,
@@ -70,10 +103,23 @@ export async function POST(req: Request) {
     if (user) {
       try {
         const imageTokens =
-          result.image_counts.normal * tokenCostForImage("normal") +
-          result.image_counts.pro * tokenCostForImage("pro")
+          result.image_counts.normal * tokenCostForSinglePostImage("normal") +
+          result.image_counts.pro * tokenCostForSinglePostImage("pro")
         const tokensToDebit = TOKEN_COST.singlePostText + imageTokens
-        await debitTokens(supabase, user.id, tokensToDebit)
+        const debit = await debitTokens(supabase, user.id, tokensToDebit, {
+          kind: "debit_single_post",
+          refType: "single_post",
+          refId: null,
+          title: "Post único",
+        })
+        if (!debit.ok) {
+          // Peça entregue sem cobrar (o portão usa o piso do custo).
+          console.warn(
+            `[post-unico/generate] débito de tokens falhou: user=${user.id} ` +
+              `amount=${tokensToDebit} debited=${debit.debited}` +
+              (debit.error ? ` (${debit.error})` : ""),
+          )
+        }
       } catch {
         // ignorado — tokens nunca quebram geração
       }

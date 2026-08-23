@@ -35,6 +35,24 @@ function unwrapBrand(brand: RawSinglePostRow["brand"]): { id: string; name: stri
   return { id: "", name: "" }
 }
 
+/**
+ * Miniatura dos posts salvos ANTES de o save passar a gravar
+ * `rendered_image_url` — a coluna nunca era escrita e a biblioteca inteira
+ * caía no gradiente de fallback.
+ *
+ * Só vale pro modo bitmap (arte inteira numa imagem, sem camadas por cima):
+ * ali a foto de fundo É a peça. Em post de camadas a foto é só um pedaço, e
+ * mostrar ela como miniatura enganaria — esses ganham thumb no próximo save.
+ */
+function legacyThumb(content: unknown): string | null {
+  const spec = (content as { _free_spec?: unknown } | null)?._free_spec as
+    | { blocks?: unknown[]; background?: { kind?: string; photo_url?: string } }
+    | undefined
+  if (!spec || (spec.blocks?.length ?? 0) > 0) return null
+  const url = spec.background?.kind === "photo" ? spec.background.photo_url : null
+  return url && /^https?:\/\//.test(url) ? url : null
+}
+
 function rowToRecord(row: RawSinglePostRow): SinglePostRecord {
   const brand = unwrapBrand(row.brand)
   return {
@@ -45,7 +63,7 @@ function rowToRecord(row: RawSinglePostRow): SinglePostRecord {
     title: row.title,
     raw_brief: row.raw_brief,
     content: (row.content as PostContent) ?? {},
-    rendered_image_url: row.rendered_image_url,
+    rendered_image_url: row.rendered_image_url ?? legacyThumb(row.content),
     status: row.status as SinglePostRecord["status"],
     created_at: row.created_at,
     updated_at: row.updated_at,

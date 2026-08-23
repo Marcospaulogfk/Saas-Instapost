@@ -67,6 +67,71 @@ async function hostImageBlocks(blocks: FreeBlock[]): Promise<FreeBlock[]> {
   )
 }
 
+/**
+ * Espera as imagens do nó terminarem de decodificar.
+ *
+ * Sem isso a miniatura sai com o buraco da foto: o auto-save dispara no mesmo
+ * ciclo em que o spec chega ao estado, muito antes do <img> da arte carregar.
+ */
+async function waitImages(node: HTMLElement, timeoutMs = 6000): Promise<void> {
+  const imgs = Array.from(node.querySelectorAll("img"))
+  if (!imgs.length) return
+  const pendentes = imgs.map(
+    (img) =>
+      new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) return resolve()
+        img.addEventListener("load", () => resolve(), { once: true })
+        img.addEventListener("error", () => resolve(), { once: true })
+      }),
+  )
+  await Promise.race([
+    Promise.all(pendentes),
+    new Promise<void>((r) => setTimeout(r, timeoutMs)),
+  ])
+}
+
+/** Largura da miniatura salva na biblioteca — leve o bastante pra uma grade
+ *  de 12 cartões e nítida o bastante em tela retina. */
+const THUMB_WIDTH = 540
+
+/**
+ * Captura a arte visível e hospeda no Storage — é isso que vira a miniatura
+ * dos cartões (`single_posts.rendered_image_url`).
+ *
+ * Best-effort por decisão: falha aqui NUNCA pode derrubar o save. Antes desta
+ * função a coluna nunca era escrita e toda a biblioteca mostrava só o gradiente
+ * de fallback.
+ *
+ * REGRA GLOBAL: o nó capturado precisa estar visível — passar um nó offscreen
+ * (fixed + left negativo) devolve PNG 100% transparente, sem erro.
+ */
+export async function captureSpecThumb(
+  node: HTMLElement | null | undefined,
+  format: PostFormat,
+): Promise<string | null> {
+  if (!node) return null
+  try {
+    const art = (node.querySelector("[data-post-canvas]") as HTMLElement | null) ?? node
+    await waitImages(art)
+    const def = POST_FORMATS[format] ?? POST_FORMATS.post
+    const { toPng } = await import("html-to-image")
+    const dataUrl = await toPng(art, {
+      cacheBust: true,
+      includeQueryParams: true,
+      canvasWidth: THUMB_WIDTH,
+      canvasHeight: Math.round((THUMB_WIDTH * def.height) / def.width),
+      pixelRatio: 1,
+    })
+    const hosted = await maybeUploadDataUrl(dataUrl)
+    // Upload falhou → maybeUploadDataUrl devolve a própria data URL. Guardar
+    // base64 de uma imagem inteira numa coluna de texto é pior que não ter
+    // miniatura, então descarta.
+    return hosted.startsWith("data:") ? null : hosted
+  } catch {
+    return null
+  }
+}
+
 export interface SaveSinglePostParams {
   brandId: string
   spec: FreePostSpec
@@ -80,6 +145,11 @@ export interface SaveSinglePostParams {
   /** Textos pintados NA arte (modo bitmap) — alimentam a edição cirúrgica
    * na reedição. Null fora do modo bitmap. */
   bitmapTexts?: Record<string, unknown> | null
+  /**
+   * Nó do preview na tela — capturado pra gerar a miniatura da biblioteca.
+   * Opcional: sem ele o post salva do mesmo jeito, só sem thumb nova.
+   */
+  previewNode?: HTMLElement | null
   /** Id de um save anterior — presente = update em vez de insert. */
   savedId: string | null
 }
@@ -106,6 +176,7 @@ export async function saveSinglePost(
     format,
     photoUrl,
     bitmapTexts,
+    previewNode,
     savedId,
   } = params
 
@@ -144,12 +215,17 @@ export async function saveSinglePost(
     ...(bitmapTexts ? { _bitmap_texts: bitmapTexts } : {}),
   } as unknown as PostContent
 
+  // Miniatura da biblioteca. Roda antes do insert/update pra ir junto no mesmo
+  // registro; `null` (captura falhou) não sobrescreve a thumb que já existe.
+  const thumbUrl = await captureSpecThumb(previewNode, format)
+
   try {
     if (savedId) {
       const res = await updateSinglePost(savedId, {
         title,
         raw_brief: briefing || null,
         content,
+        ...(thumbUrl ? { rendered_image_url: thumbUrl } : {}),
       })
       if (!res.ok) return { ok: false, error: res.error }
       return { ok: true, postId: savedId }
@@ -160,6 +236,7 @@ export async function saveSinglePost(
       title,
       raw_brief: briefing || null,
       content,
+      rendered_image_url: thumbUrl,
     })
     if (!res.ok) return { ok: false, error: res.error }
     return { ok: true, postId: res.postId }
@@ -177,20 +254,29 @@ export async function saveSinglePost(
  * REGRA GLOBAL: o nó capturado precisa estar visível na tela. Passar um nó
  * offscreen (fixed + left negativo) faz o PNG sair 100% transparente, sem erro.
  */
-export async function exportSpecToPng(
+export async function renderSpecToPng(
   node: HTMLElement,
   format: PostFormat = "post",
-): Promise<void> {
+): Promise<string> {
   const art = (node.querySelector("[data-post-canvas]") as HTMLElement | null) ?? node
   const def = POST_FORMATS[format] ?? POST_FORMATS.post
+  await waitImages(art)
   const { toPng } = await import("html-to-image")
-  const dataUrl = await toPng(art, {
+  return toPng(art, {
     cacheBust: true,
     includeQueryParams: true,
     canvasWidth: def.width,
     canvasHeight: def.height,
     pixelRatio: 1,
   })
+}
+
+/** Mesmo render acima, mas dispara o download no navegador. */
+export async function exportSpecToPng(
+  node: HTMLElement,
+  format: PostFormat = "post",
+): Promise<void> {
+  const dataUrl = await renderSpecToPng(node, format)
   const a = document.createElement("a")
   a.href = dataUrl
   a.download = `post-unico-${format}-${Date.now()}.png`

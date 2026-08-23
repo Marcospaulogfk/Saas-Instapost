@@ -53,6 +53,10 @@ import {
   Pencil,
   RotateCcw,
   Trash2,
+  BringToFront,
+  SendToBack,
+  EyeOff,
+  Layers,
 } from "lucide-react"
 import {
   collectEditableNodes,
@@ -60,6 +64,13 @@ import {
   type EditableType,
   type ElementOverride,
 } from "./editable-overrides"
+import {
+  BLOCK_MIN_SIZE,
+  BLOCK_TYPE_LABEL,
+  type BlockType,
+  type SlideBlock,
+} from "./slide-blocks"
+import { BLOCK_DRAG_MIME } from "./block-panel"
 
 const REF_W = 420
 const SNAP_PX = 6 // tolerância do snap (px do container)
@@ -89,6 +100,14 @@ export type MenuAction =
   | "bg-default"
   | "slide-duplicate"
   | "slide-delete"
+  // blocos livres (estilo Elementor)
+  | "block-duplicate"
+  | "block-front"
+  | "block-back"
+  | "block-delete"
+  | "block-apply-all"
+  // oculta o elemento nativo do layout (ElementOverride.hidden)
+  | "hide"
 
 type AlignH = "left" | "center" | "right"
 type AlignV = "top" | "middle" | "bottom"
@@ -138,11 +157,17 @@ export interface EditableSlideCanvasProps {
   onMenuAction: (action: MenuAction, sel: EditorSelection) => void
   /** Há estilo copiado (habilita "Colar estilo"). */
   hasStyleClipboard: boolean
+  /** Commit de mover/redimensionar um bloco livre (1x por gesto). */
+  onBlockPatch: (id: string, patch: Partial<SlideBlock>) => void
+  /** Widget do catálogo solto no slide → cria o bloco naquele ponto (design px). */
+  onBlockDrop: (type: BlockType, x: number, y: number) => void
 }
 
 /** Prioridade de hit-test: menor número ganha (badge por cima da imagem etc). */
 const HIT_PRIORITY: Record<EditableType, number> = {
+  block: -1,
   badge: 0,
+  meta: 0,
   text: 1,
   title: 2,
   image: 3,
@@ -163,7 +188,15 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     onTextEdit,
     onMenuAction,
     hasStyleClipboard,
+    onBlockPatch,
+    onBlockDrop,
   } = props
+  const blockOf = (key: string) => slide.blocks?.find((b) => b.id === key)
+  /** Rótulo do chip: blocos mostram o tipo real ("Bloco · Título"). */
+  const chipLabel = (key: string, type: EditableType) =>
+    type === "block"
+      ? `Bloco · ${BLOCK_TYPE_LABEL[blockOf(key)?.type ?? "text"]}`
+      : EDITABLE_TYPE_LABEL[type]
 
   const scale = width / REF_W
   const height = width * (format === "stories" ? 16 / 9 : 5 / 4)
@@ -173,8 +206,9 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 
   const [hover, setHover] = useState<Box | null>(null)
   const [selBox, setSelBox] = useState<Box | null>(null)
-  const [guides, setGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false })
-  const [dropActive, setDropActive] = useState(false)
+  // Guias de snap: posição em px do container (null = sem guia).
+  const [guides, setGuides] = useState<{ v: number | null; h: number | null }>({ v: null, h: null })
+  const [dropActive, setDropActive] = useState<false | "file" | "block">(false)
   const [menu, setMenu] = useState<{ x: number; y: number; sel: EditorSelection } | null>(null)
 
   // ── Geometria ──────────────────────────────────────────────────────────
@@ -184,6 +218,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     if (!root || !container) return []
     const cRect = container.getBoundingClientRect()
     return collectEditableNodes(root)
+      .filter(({ node }) => !node.dataset.editHidden)
       .map(({ node, key, type }) => {
         const r = node.getBoundingClientRect()
         return {
@@ -235,7 +270,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 
   // ── Drag (elemento OU pan da foto OU handle de escala) ─────────────────
   const dragRef = useRef<{
-    mode: "element" | "pan" | "scale"
+    mode: "element" | "pan" | "scale" | "block" | "block-resize"
     key: string
     type: EditableType
     node: HTMLElement
@@ -280,6 +315,33 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       const hy = selBox.y + selBox.h
       if (Math.abs(px - hx) <= 10 && Math.abs(py - hy) <= 10) {
         const node = findNode(selection.key)
+        if (node && selection.type === "block") {
+          const b = blockOf(selection.key)
+          if (!b) return
+          dragRef.current = {
+            mode: "block-resize",
+            key: selection.key,
+            type: "block",
+            node,
+            startX: e.clientX,
+            startY: e.clientY,
+            startDx: b.x,
+            startDy: b.y,
+            baseLeft: selBox.x,
+            baseTop: selBox.y,
+            baseW: b.w,
+            baseH: b.h,
+            startScale: 1,
+            startPosX: 0,
+            startPosY: 0,
+            imgW: 0,
+            imgH: 0,
+            moved: false,
+          }
+          container.setPointerCapture(e.pointerId)
+          e.preventDefault()
+          return
+        }
         if (node) {
           const o = slide.el?.[selection.key]
           dragRef.current = {
@@ -318,7 +380,30 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     const node = findNode(hit.key)
     if (!node) return
 
-    if (hit.type === "image") {
+    if (hit.type === "block") {
+      const b = blockOf(hit.key)
+      if (!b) return
+      dragRef.current = {
+        mode: "block",
+        key: hit.key,
+        type: "block",
+        node,
+        startX: e.clientX,
+        startY: e.clientY,
+        startDx: b.x,
+        startDy: b.y,
+        baseLeft: hit.x,
+        baseTop: hit.y,
+        baseW: hit.w,
+        baseH: hit.h,
+        startScale: 1,
+        startPosX: 0,
+        startPosY: 0,
+        imgW: 0,
+        imgH: 0,
+        moved: false,
+      }
+    } else if (hit.type === "image") {
       // Pan da foto (só quando há foto com object-cover)
       if (!slide.image.url) return
       dragRef.current = {
@@ -388,6 +473,75 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     if (!d.moved && Math.abs(dxPx) < 3 && Math.abs(dyPx) < 3) return
     d.moved = true
 
+    if (d.mode === "block") {
+      // bloco livre: move left/top (design px) com clamp no slide + snap
+      let nx = d.startDx * scale + dxPx
+      let ny = d.startDy * scale + dyPx
+      nx = Math.max(0, Math.min(width - d.baseW, nx))
+      ny = Math.max(0, Math.min(height - d.baseH, ny))
+      // Snap: centro do slide + bordas/centros dos OUTROS elementos (blocos e
+      // nativos) — alinhamento entre blocos, como no Canva/Elementor.
+      const others = getBoxes().filter((b) => b.key !== d.key)
+      const xs = [width / 2, ...others.flatMap((b) => [b.x, b.x + b.w / 2, b.x + b.w])]
+      const ys = [height / 2, ...others.flatMap((b) => [b.y, b.y + b.h / 2, b.y + b.h])]
+      let gv: number | null = null
+      let gh: number | null = null
+      for (const gx of xs) {
+        for (const [off, mine] of [[0, nx], [d.baseW / 2, nx + d.baseW / 2], [d.baseW, nx + d.baseW]]) {
+          if (Math.abs(mine - gx) < SNAP_PX) {
+            nx = gx - off
+            gv = gx
+            break
+          }
+        }
+        if (gv != null) break
+      }
+      for (const gy of ys) {
+        for (const [off, mine] of [[0, ny], [d.baseH / 2, ny + d.baseH / 2], [d.baseH, ny + d.baseH]]) {
+          if (Math.abs(mine - gy) < SNAP_PX) {
+            ny = gy - off
+            gh = gy
+            break
+          }
+        }
+        if (gh != null) break
+      }
+      nx = Math.max(0, Math.min(width - d.baseW, nx))
+      ny = Math.max(0, Math.min(height - d.baseH, ny))
+      setGuides({ v: gv, h: gh })
+      const bx = Math.round(nx / scale)
+      const by = Math.round(ny / scale)
+      d.node.style.left = `${bx}px`
+      d.node.style.top = `${by}px`
+      ;(d as { liveX?: number }).liveX = bx
+      ;(d as { liveY?: number }).liveY = by
+      setSelBox({ key: d.key, type: d.type, x: nx, y: ny, w: d.baseW, h: d.baseH })
+      return
+    }
+    if (d.mode === "block-resize") {
+      // redimensiona a CAIXA (w/h reais) — Shift mantém a proporção
+      let nw = d.baseW + dxPx / scale
+      let nh = d.baseH + dyPx / scale
+      if (e.shiftKey) nh = nw * (d.baseH / d.baseW)
+      const maxW = width / scale - d.startDx
+      const maxH = height / scale - d.startDy
+      nw = Math.round(Math.max(BLOCK_MIN_SIZE, Math.min(maxW, nw)))
+      nh = Math.round(Math.max(BLOCK_MIN_SIZE, Math.min(maxH, nh)))
+      d.node.style.width = `${nw}px`
+      d.node.style.height = `${nh}px`
+      ;(d as { liveW?: number }).liveW = nw
+      ;(d as { liveH?: number }).liveH = nh
+      setSelBox({
+        key: d.key,
+        type: d.type,
+        x: d.baseLeft,
+        y: d.baseTop,
+        w: nw * scale,
+        h: nh * scale,
+      })
+      return
+    }
+
     if (d.mode === "element") {
       // clamp: o retângulo BASE + translate nunca sai do slide
       let nx = d.startDx * scale + dxPx
@@ -412,7 +566,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
         nx = 0
         ny = 0
       }
-      setGuides({ v, h })
+      setGuides({ v: v ? width / 2 : null, h: h ? height / 2 : null })
 
       // aplica direto no DOM (fluido) — commit só no soltar
       const designDx = nx / scale
@@ -468,11 +622,24 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     const container = containerRef.current
     const d = dragRef.current
     dragRef.current = null
-    setGuides({ v: false, h: false })
+    setGuides({ v: null, h: null })
     if (container?.hasPointerCapture(e.pointerId)) {
       container.releasePointerCapture(e.pointerId)
     }
     if (!d || !d.moved) return
+
+    if (d.mode === "block") {
+      const lx = (d as { liveX?: number }).liveX
+      const ly = (d as { liveY?: number }).liveY
+      if (lx != null && ly != null) onBlockPatch(d.key, { x: lx, y: ly })
+      return
+    }
+    if (d.mode === "block-resize") {
+      const lw = (d as { liveW?: number }).liveW
+      const lh = (d as { liveH?: number }).liveH
+      if (lw != null && lh != null) onBlockPatch(d.key, { w: lw, h: lh })
+      return
+    }
 
     if (d.mode === "element") {
       // lê o transform aplicado no DOM e commita (1 entrada de histórico)
@@ -512,7 +679,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     onSelect(sel)
     // clampa pro menu não vazar do canvas (overflow-hidden)
     const MENU_W = 224
-    const MENU_H = sel.type === "background" ? 190 : 280
+    const MENU_H = sel.type === "background" ? 190 : sel.type === "block" ? 360 : 310
     setMenu({
       x: Math.max(4, Math.min(px, width - MENU_W - 4)),
       y: Math.max(4, Math.min(py, height - MENU_H - 4)),
@@ -532,6 +699,22 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     const box = getBoxes().find((b) => b.key === sel.key)
     const node = findNode(sel.key)
     if (!box || !node) return
+    if (sel.type === "block") {
+      const b = blockOf(sel.key)
+      if (!b) return
+      const W = width / scale
+      const H = height / scale
+      const patch: Partial<SlideBlock> = {}
+      if (h === "left") patch.x = 8
+      if (h === "center") patch.x = Math.round((W - b.w) / 2)
+      if (h === "right") patch.x = Math.round(W - b.w - 8)
+      if (v === "top") patch.y = 8
+      if (v === "middle") patch.y = Math.round((H - b.h) / 2)
+      if (v === "bottom") patch.y = Math.round(H - b.h - 8)
+      onBlockPatch(sel.key, patch)
+      setMenu(null)
+      return
+    }
     const o = slide.el?.[sel.key]
     const curDx = (o?.dx ?? 0) * scale
     const curDy = (o?.dy ?? 0) * scale
@@ -559,6 +742,10 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     if (!hit) return
     if (hit.type === "image") {
       onImagePick()
+    } else if (hit.type === "block") {
+      const b = blockOf(hit.key)
+      if (b?.type === "image") onMenuAction("image-replace", { key: hit.key, type: "block" })
+      else onTextEdit({ key: hit.key, type: hit.type })
     } else {
       onTextEdit({ key: hit.key, type: hit.type })
     }
@@ -585,14 +772,27 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 
   // Drag-and-drop de arquivo de imagem direto no slide.
   function onDragOver(e: ReactDragEvent<HTMLDivElement>) {
-    if (e.dataTransfer.types.includes("Files")) {
+    if (e.dataTransfer.types.includes(BLOCK_DRAG_MIME)) {
       e.preventDefault()
-      setDropActive(true)
+      e.dataTransfer.dropEffect = "copy"
+      setDropActive("block")
+    } else if (e.dataTransfer.types.includes("Files")) {
+      e.preventDefault()
+      setDropActive("file")
     }
   }
   function onDrop(e: ReactDragEvent<HTMLDivElement>) {
     e.preventDefault()
     setDropActive(false)
+    const blockType = e.dataTransfer.getData(BLOCK_DRAG_MIME) as BlockType | ""
+    if (blockType) {
+      const container = containerRef.current
+      if (!container) return
+      const cRect = container.getBoundingClientRect()
+      // ponto solto → px de design (o bloco nasce centralizado nele)
+      onBlockDrop(blockType, (e.clientX - cRect.left) / scale, (e.clientY - cRect.top) / scale)
+      return
+    }
     const file = Array.from(e.dataTransfer.files).find((f) =>
       f.type.startsWith("image/"),
     )
@@ -628,6 +828,28 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
         return
       }
 
+      if (selection.type === "block") {
+        if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault()
+          onMenuAction("block-delete", selection)
+          return
+        }
+        if (!e.key.startsWith("Arrow")) return
+        e.preventDefault()
+        const b = blockOf(selection.key)
+        if (!b) return
+        const step = e.shiftKey ? 10 : 1
+        let { x, y } = b
+        if (e.key === "ArrowLeft") x -= step
+        if (e.key === "ArrowRight") x += step
+        if (e.key === "ArrowUp") y -= step
+        if (e.key === "ArrowDown") y += step
+        x = Math.max(0, Math.min(width / scale - b.w, x))
+        y = Math.max(0, Math.min(height / scale - b.h, y))
+        onBlockPatch(selection.key, { x: Math.round(x), y: Math.round(y) })
+        return
+      }
+
       if (selection.type === "image") return
       if (!e.key.startsWith("Arrow")) return
       e.preventDefault()
@@ -653,7 +875,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [onSelect, selection, slide.el, scale, width, height, getBoxes, onMenuAction, onOverride])
+  }, [onSelect, selection, slide.el, slide.blocks, scale, width, height, getBoxes, onMenuAction, onOverride, onBlockPatch])
 
   const cursor = dragRef.current
     ? dragRef.current.mode === "pan"
@@ -715,11 +937,11 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       {/* ── Overlay (chrome do editor — NUNCA vai pro export) ── */}
 
       {/* Guias de snap */}
-      {guides.v && (
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 z-30 w-px bg-cyan-400/90" />
+      {guides.v != null && (
+        <div className="pointer-events-none absolute inset-y-0 z-30 w-px bg-cyan-400/90" style={{ left: guides.v }} />
       )}
-      {guides.h && (
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 z-30 h-px bg-cyan-400/90" />
+      {guides.h != null && (
+        <div className="pointer-events-none absolute inset-x-0 z-30 h-px bg-cyan-400/90" style={{ top: guides.h }} />
       )}
 
       {/* Hover */}
@@ -729,7 +951,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
           style={{ left: hover.x - 2, top: hover.y - 2, width: hover.w + 4, height: hover.h + 4 }}
         >
           <span className="absolute -top-5 left-0 rounded bg-brand-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-            {EDITABLE_TYPE_LABEL[hover.type]}
+            {chipLabel(hover.key, hover.type)}
           </span>
         </div>
       )}
@@ -741,10 +963,37 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
           style={{ left: selBox.x - 2, top: selBox.y - 2, width: selBox.w + 4, height: selBox.h + 4 }}
         >
           <span className="absolute -top-5 left-0 rounded bg-brand-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-            {EDITABLE_TYPE_LABEL[selection.type as EditableType]}
+            {chipLabel(selection.key, selection.type as EditableType)}
           </span>
           {selection.type !== "image" && (
             <span className="absolute -bottom-[7px] -right-[7px] h-3.5 w-3.5 rounded-full border-2 border-white bg-brand-600 shadow" />
+          )}
+          {selection.type === "block" && (
+            <div
+              className="pointer-events-auto absolute -top-[26px] left-1/2 -translate-x-1/2 flex items-center rounded-md bg-brand-600 text-white shadow overflow-hidden"
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                title="Duplicar"
+                onClick={() => onMenuAction("block-duplicate", selection)}
+                className="h-6 w-6 flex items-center justify-center hover:bg-white/15"
+              >
+                <CopyPlus className="h-3 w-3" />
+              </button>
+              <span className="h-6 w-6 flex items-center justify-center opacity-80 cursor-move" title="Arraste o bloco pra mover">
+                <Move className="h-3 w-3" />
+              </span>
+              <button
+                type="button"
+                title="Excluir (Del)"
+                onClick={() => onMenuAction("block-delete", selection)}
+                className="h-6 w-6 flex items-center justify-center hover:bg-red-500"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
           )}
           {selection.type === "image" && slide.image.url && (
             <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-0.5 text-[9px] text-white">
@@ -765,9 +1014,15 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 
       {/* Drop de arquivo */}
       {dropActive && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-brand-600/25 backdrop-blur-[1px]">
+        <div
+          className={`pointer-events-none absolute inset-0 z-40 flex items-center justify-center ${
+            dropActive === "block"
+              ? "bg-brand-600/10 border-2 border-dashed border-brand-400 rounded-xl"
+              : "bg-brand-600/25 backdrop-blur-[1px]"
+          }`}
+        >
           <span className="rounded-lg bg-black/75 px-3 py-1.5 text-[12px] font-medium text-white">
-            Solte pra trocar a imagem
+            {dropActive === "block" ? "Solte o elemento aqui" : "Solte pra trocar a imagem"}
           </span>
         </div>
       )}
@@ -800,6 +1055,65 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                 disabled={props.total <= 1}
                 danger
               />
+            </>
+          ) : menu.sel.type === "block" ? (
+            <>
+              {(() => {
+                const b = blockOf(menu.sel.key)
+                const isImg = b?.type === "image"
+                const isText = b?.type === "heading" || b?.type === "text" || b?.type === "pill"
+                return (
+                  <>
+                    {isImg && (
+                      <MenuItem
+                        icon={ImageIcon}
+                        label={b?.url ? "Trocar imagem…" : "Adicionar imagem…"}
+                        shortcut="2×"
+                        onClick={() => menuAct("image-replace")}
+                      />
+                    )}
+                    {isText && (
+                      <MenuItem icon={Pencil} label="Editar texto…" shortcut="2×" onClick={() => menuAct("edit-text")} />
+                    )}
+                    <MenuItem icon={Paintbrush} label="Propriedades…" onClick={() => menuAct("color")} />
+                  </>
+                )
+              })()}
+              <MenuSep />
+              <div className="px-3 pb-1 pt-1.5">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-white/40">
+                  <Move className="h-3 w-3" /> Alinhar ao slide
+                </div>
+                <div className="flex items-center gap-1">
+                  {(
+                    [
+                      [AlignStartVertical, "Esquerda", "left", undefined],
+                      [AlignCenterVertical, "Centro", "center", undefined],
+                      [AlignEndVertical, "Direita", "right", undefined],
+                      [AlignStartHorizontal, "Topo", undefined, "top"],
+                      [AlignCenterHorizontal, "Meio", undefined, "middle"],
+                      [AlignEndHorizontal, "Fundo", undefined, "bottom"],
+                    ] as Array<[typeof Move, string, AlignH | undefined, AlignV | undefined]>
+                  ).map(([Icon, tip, h, v]) => (
+                    <button
+                      key={tip}
+                      type="button"
+                      title={tip}
+                      onClick={() => alignElement(menu.sel, h, v)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <MenuSep />
+              <MenuItem icon={CopyPlus} label="Duplicar bloco" onClick={() => menuAct("block-duplicate")} />
+              <MenuItem icon={BringToFront} label="Trazer pra frente" onClick={() => menuAct("block-front")} />
+              <MenuItem icon={SendToBack} label="Enviar pra trás" onClick={() => menuAct("block-back")} />
+              <MenuItem icon={Layers} label="Aplicar em todos os slides" onClick={() => menuAct("block-apply-all")} />
+              <MenuSep />
+              <MenuItem icon={Trash2} label="Excluir bloco" shortcut="Del" onClick={() => menuAct("block-delete")} danger />
             </>
           ) : menu.sel.type === "image" ? (
             <>
@@ -870,6 +1184,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                 disabled={!hasStyleClipboard}
               />
               <MenuSep />
+              <MenuItem icon={EyeOff} label="Ocultar elemento" onClick={() => menuAct("hide")} />
               <MenuItem
                 icon={RotateCcw}
                 label="Restaurar padrão"

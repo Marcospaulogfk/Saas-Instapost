@@ -28,15 +28,34 @@ interface NovaTopBarProps {
   credits: number
   planCreditsMonthly: number
   creditsUsedThisMonth: number
+  topupCredits?: number
+  referralCredits?: number
   subscriptionStatus: string
+  planId?: string | null
 }
 
-const PLAN_LABEL: Record<string, string> = {
-  trial: "Trial",
-  active: "Pro",
+const STATUS_LABEL: Record<string, string> = {
+  trial: "Teste grátis",
   past_due: "Atrasado",
   canceled: "Cancelado",
   incomplete: "Incompleto",
+}
+const PLANO_LABEL: Record<string, string> = {
+  starter: "Starter",
+  pro: "Pro",
+  studio: "Studio",
+}
+
+/** Nome do plano pelo plan_id (0020) ou, sem ele, pelo grant mensal. */
+function rotuloPlano(status: string, planId: string | null | undefined, planCreditsMonthly: number): string {
+  if (status === "active") {
+    if (planId && PLANO_LABEL[planId]) return PLANO_LABEL[planId]
+    if (planCreditsMonthly >= 3000) return "Studio"
+    if (planCreditsMonthly >= 1000) return "Pro"
+    if (planCreditsMonthly >= 300) return "Starter"
+    return "Ativo"
+  }
+  return STATUS_LABEL[status] ?? status
 }
 
 /**
@@ -53,10 +72,14 @@ export function NovaTopBar({
   credits,
   planCreditsMonthly,
   creditsUsedThisMonth,
+  topupCredits = 0,
+  referralCredits = 0,
   subscriptionStatus,
+  planId,
 }: NovaTopBarProps) {
   const router = useRouter()
-  const planLabel = PLAN_LABEL[subscriptionStatus] ?? subscriptionStatus
+  const planLabel = rotuloPlano(subscriptionStatus, planId, planCreditsMonthly)
+  const extras = Math.max(0, topupCredits) + Math.max(0, referralCredits)
 
   async function handleSignOut() {
     await signOut()
@@ -73,11 +96,13 @@ export function NovaTopBar({
           credits={credits}
           planCreditsMonthly={planCreditsMonthly}
           creditsUsedThisMonth={creditsUsedThisMonth}
+          extras={extras}
         />
         <UsageChipCompact
           credits={credits}
           planCreditsMonthly={planCreditsMonthly}
           creditsUsedThisMonth={creditsUsedThisMonth}
+          extras={extras}
         />
 
         {/* Busca (ainda placeholder — não há índice de busca no app) */}
@@ -164,9 +189,9 @@ export function NovaTopBar({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/pricing" className="cursor-pointer">
+              <Link href="/dashboard/tokens" className="cursor-pointer">
                 <CreditCard className="mr-2 h-3.5 w-3.5" />
-                Plano e cobrança
+                Tokens e plano
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -196,13 +221,15 @@ function UsageChip({
   credits,
   planCreditsMonthly,
   creditsUsedThisMonth,
+  extras = 0,
 }: {
   credits: number
   planCreditsMonthly: number
   creditsUsedThisMonth: number
+  extras?: number
 }) {
   const total = planCreditsMonthly > 0 ? planCreditsMonthly : credits + creditsUsedThisMonth
-  if (total <= 0) return null
+  if (total <= 0 && extras <= 0) return null
 
   const used = Math.max(0, Math.min(total, creditsUsedThisMonth))
   const pct = Math.min(100, Math.round((used / total) * 100))
@@ -237,6 +264,7 @@ function UsageChip({
         used={used}
         pct={pct}
         color={color}
+        extras={extras}
       />
     </Popover>
   )
@@ -251,13 +279,15 @@ function UsageChipCompact({
   credits,
   planCreditsMonthly,
   creditsUsedThisMonth,
+  extras = 0,
 }: {
   credits: number
   planCreditsMonthly: number
   creditsUsedThisMonth: number
+  extras?: number
 }) {
   const total = planCreditsMonthly > 0 ? planCreditsMonthly : credits + creditsUsedThisMonth
-  if (total <= 0) return null
+  if (total <= 0 && extras <= 0) return null
   const used = Math.max(0, Math.min(total, creditsUsedThisMonth))
   const pct = Math.min(100, Math.round((used / total) * 100))
   const color = pct >= 95 ? "#f87171" : pct >= 80 ? "#f6c35a" : "var(--nv-brand)"
@@ -288,8 +318,8 @@ function UsageChipCompact({
 
 /** Quanto custa cada ação, na mesma moeda do badge. Fonte: lib/tokens.ts. */
 const TABELA_CUSTOS: { acao: string; custo: string }[] = [
-  { acao: "Post único (texto + imagem)", custo: `${TOKEN_COST.singlePostText + TOKEN_COST.imageCover}` },
-  { acao: "Carrossel — roteiro + legenda", custo: `${TOKEN_COST.textOnly}` },
+  { acao: "Post único (texto + arte)", custo: `${TOKEN_COST.singlePostText + TOKEN_COST.singlePostImage}` },
+  { acao: "Carrossel: roteiro + legenda", custo: `${TOKEN_COST.textOnly}` },
   { acao: "Imagem de capa", custo: `${TOKEN_COST.imageCover}` },
   { acao: "Imagem de slide do miolo", custo: `${TOKEN_COST.imageSlide} cada` },
   { acao: "Editar o que já foi gerado", custo: "grátis" },
@@ -307,12 +337,15 @@ function SaldoPopoverContent({
   used,
   pct,
   color,
+  extras = 0,
 }: {
   restante: number
   total: number
   used: number
   pct: number
   color: string
+  /** Avulsos + bônus de indicação (não vencem). */
+  extras?: number
 }) {
   return (
     <PopoverContent align="end" className="w-72 p-0">
@@ -334,6 +367,14 @@ function SaldoPopoverContent({
         </span>
         <p className="mt-1.5 text-[11px] text-text-muted">
           {used.toLocaleString("pt-BR")} usados neste mês
+          {extras > 0 && (
+            <>
+              {" · "}
+              <span className="text-text-secondary">
+                +{extras.toLocaleString("pt-BR")} avulsos/bônus (não vencem)
+              </span>
+            </>
+          )}
         </p>
       </div>
 
@@ -359,10 +400,10 @@ function SaldoPopoverContent({
 
       <div className="border-t border-border-subtle p-3.5 pt-3">
         <Link
-          href="/pricing"
+          href="/dashboard/tokens"
           className="flex h-9 w-full items-center justify-center rounded-lg bg-brand-600 text-xs font-semibold text-white transition-colors hover:bg-brand-500"
         >
-          Ver planos
+          Ver extrato e planos
         </Link>
       </div>
     </PopoverContent>

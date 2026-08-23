@@ -39,6 +39,10 @@ interface CoverProps {
   orderIndex: number
   accent: string
   fontClass: string
+  /** Cor de fundo escolhida pelo usuario (slide.bg) - sobrepoe o fundo padrao da capa. */
+  bgOverride?: string
+  /** Cor do glow radial (estilos gradient/seamless). Vazio = accent. */
+  glow?: string
 }
 
 // ============================================================================
@@ -51,9 +55,11 @@ export function CoverWesleyGemini({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
         <Pill>{slide.handle || "@brand"}</Pill>
         <Pill>{slide.category || "Editorial"}</Pill>
@@ -114,9 +120,11 @@ export function CoverWesleyInternet({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -179,9 +187,11 @@ export function CoverWesleyLabios({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -243,9 +253,11 @@ export function CoverWesleyChurrasco({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -307,9 +319,11 @@ export function CoverBrandsdecodedMassive({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -380,9 +394,11 @@ export function CoverBrandsdecodedPortrait({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col"
+      style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -440,17 +456,20 @@ export function CoverGradientGlow({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
+  glow,
 }: CoverProps) {
+  const glowC = glow ?? accent
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#08080D" }}
+      style={{ backgroundColor: bgOverride ?? "#08080D" }}
     >
       {/* Glow radial do accent (assinatura do estilo) */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(ellipse 90% 55% at 20% 0%, ${accent}33 0%, transparent 60%), radial-gradient(ellipse 70% 45% at 90% 100%, ${accent}26 0%, transparent 65%)`,
+          backgroundImage: `radial-gradient(ellipse 90% 55% at 20% 0%, ${glowC}33 0%, transparent 60%), radial-gradient(ellipse 70% 45% at 90% 100%, ${glowC}26 0%, transparent 65%)`,
         }}
       />
 
@@ -513,10 +532,10 @@ export function CoverGradientGlow({
           <span
             className="text-[10px] uppercase tracking-[0.18em] font-semibold"
             style={{ color: mixWithWhite(accent, 0.35) }}
-          >
+           data-edit="meta">
             {String(orderIndex + 1).padStart(2, "0")} / {String(totalSlides).padStart(2, "0")}
           </span>
-          <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-white/60 font-semibold" data-edit="meta">
             arrasta →
           </span>
         </div>
@@ -538,16 +557,17 @@ export function CoverMinimalClean({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#FFFFFF" }}
+      style={{ backgroundColor: bgOverride ?? "#FFFFFF" }}
     >
       {/* Header texto puro */}
       <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
-        <span>{slide.handle || "@brand"}</span>
-        <span>{slide.category || "Editorial"}</span>
+        <span data-edit="meta">{slide.handle || "@brand"}</span>
+        <span data-edit="meta">{slide.category || "Editorial"}</span>
       </div>
 
       {/* ZONA DE TÍTULO — SÓLIDA (altura natural; nunca é cortada nem invadida).
@@ -600,10 +620,10 @@ export function CoverMinimalClean({
       <div className="flex-shrink-0 px-6 pt-3 pb-5">
         <div className="h-px w-full bg-black/10 mb-3" />
         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
-          <span className="tabular-nums">
+          <span className="tabular-nums" data-edit="meta">
             {String(orderIndex + 1).padStart(2, "0")} / {String(totalSlides).padStart(2, "0")}
           </span>
-          <span>arrasta →</span>
+          <span data-edit="meta">arrasta →</span>
         </div>
       </div>
 
@@ -623,12 +643,15 @@ export function CoverSeamlessFlow({
   orderIndex,
   accent,
   fontClass,
+  bgOverride,
+  glow,
 }: CoverProps) {
+  const glowC = glow ?? accent
   const ghost = String(orderIndex + 1).padStart(2, "0")
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
-      style={{ backgroundColor: "#0A0A12" }}
+      style={{ backgroundColor: bgOverride ?? "#0A0A12" }}
     >
       {/* FOTO como fundo full-bleed (preenche o slide inteiro) */}
       {slide.image.url ? (
@@ -654,13 +677,13 @@ export function CoverSeamlessFlow({
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${accent}33 0%, transparent 60%)`,
+          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${glowC}33 0%, transparent 60%)`,
         }}
       />
 
       {/* Header */}
       <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold" data-edit="meta">
           {slide.handle || "@brand"}
         </span>
         <span
@@ -707,7 +730,7 @@ export function CoverSeamlessFlow({
         <p
           className="text-[11px] uppercase tracking-[0.18em] font-bold"
           style={{ color: mixWithWhite(accent, 0.4) }}
-        >
+         data-edit="meta">
           arrasta →
         </p>
       </div>
@@ -726,10 +749,12 @@ export function CoverSeamlessFlow({
 export function CoverCardsGlass({
   slide,
   fontClass,
+  bgOverride,
 }: CoverProps) {
   const brand = slide.brand_label || "Nexus Content"
   return (
-    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-[#0E0E12]">
+    <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
+      style={{ backgroundColor: bgOverride ?? "#0E0E12" }}>
       {slide.image.url ? (
         <SmartSlideImage
           src={slide.image.url}
@@ -764,12 +789,12 @@ export function CoverCardsGlass({
       {/* Rodapé: marca + @handle (esquerda) · arrasta (direita) */}
       <div className="absolute bottom-4 left-6 right-6 z-10 flex items-end justify-between">
         <div className="leading-tight">
-          <div className="text-[13px] font-bold text-white">{brand}</div>
-          <div className="text-[11px] text-white/70">
+          <div className="text-[13px] font-bold text-white" data-edit="meta">{brand}</div>
+          <div className="text-[11px] text-white/70" data-edit="meta">
             {slide.handle || "@brand"}
           </div>
         </div>
-        <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-white/70">
+        <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-white/70" data-edit="meta">
           arrasta →
         </div>
       </div>

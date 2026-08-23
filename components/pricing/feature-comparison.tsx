@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
 
@@ -8,7 +9,7 @@ const featureGroups = [
     name: "GERACAO",
     features: [
       { name: "Tokens por mes", starter: "300", pro: "1.000", studio: "3.000" },
-      { name: "≈ imagens normais", starter: "60", pro: "200", studio: "600" },
+      { name: "≈ carrosséis só com capa", starter: "10", pro: "35", studio: "107" },
       { name: "Capa em Nano Banana 2", starter: true, pro: true, studio: true },
       { name: "Templates", starter: "5", pro: "20+ exclusivos", studio: "Todos + custom" },
     ],
@@ -91,8 +92,8 @@ export function FeatureComparison() {
           </thead>
           <tbody>
             {featureGroups.map((group) => (
-              <>
-                <tr key={group.name}>
+              <Fragment key={group.name}>
+                <tr>
                   <td
                     colSpan={4}
                     className="pt-8 pb-3 text-xs font-bold text-muted-foreground tracking-wider"
@@ -114,7 +115,7 @@ export function FeatureComparison() {
                     </td>
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>

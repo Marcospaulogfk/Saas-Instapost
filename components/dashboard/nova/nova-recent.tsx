@@ -148,7 +148,9 @@ function NovaRecentCard({ item }: { item: NovaRecentItem }) {
 }
 
 /** Quantos cartões ficam visíveis por página do carrossel. */
-const POR_PAGINA = 4
+/** Duas fileiras de 4 em tela larga. Com uma só, o cartão ficava bem mais
+ *  baixo que a coluna vizinha e sobrava um vazio enorme no meio do dashboard. */
+const POR_PAGINA = 8
 
 /**
  * Projetos recentes em CARROSSEL: mostra quantos cartões couberem na linha e
@@ -164,7 +166,7 @@ export function NovaRecent({ items }: { items: NovaRecentItem[] }) {
   const irPara = (p: number) => setPagina((p + totalPaginas) % totalPaginas)
 
   return (
-    <div className="nv-card nv-fade p-5 flex flex-col">
+    <div className="nv-card nv-fade p-5 flex h-full flex-col">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="text-[15px] font-semibold" style={{ color: "var(--nv-text)" }}>
           Projetos recentes
@@ -222,8 +224,13 @@ export function NovaRecent({ items }: { items: NovaRecentItem[] }) {
            190px é o que segura a altura, já que o preview é 4:5 e não pode ser
            recortado. */
         <div
-          className="grid gap-4"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}
+          className="grid flex-1 gap-4"
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+            // Sobra de altura vira respiro em cima e embaixo, não um buraco no
+            // fim do cartão.
+            alignContent: "center",
+          }}
         >
           {visiveis.map((item) => (
             <NovaRecentCard key={`${item.kind}-${item.id}`} item={item} />

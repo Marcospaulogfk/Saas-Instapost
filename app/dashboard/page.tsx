@@ -7,6 +7,7 @@ import {
 } from "@/components/dashboard/nova/nova-distribution"
 import { NovaRecent, type NovaRecentItem } from "@/components/dashboard/nova/nova-recent"
 import { NovaComunidade } from "@/components/dashboard/nova/nova-comunidade"
+import { NovaInsights } from "@/components/dashboard/nova/nova-insights"
 import {
   NovaQuickActions,
   NovaUpgradeCard,
@@ -20,6 +21,8 @@ import {
   listAllProjects,
   getDashboardCounts,
 } from "@/lib/data/queries"
+import { montarInsights } from "@/lib/dashboard/insights"
+import { getProximasDatas } from "@/lib/datas-comemorativas"
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -110,8 +113,8 @@ export default async function DashboardPage() {
     })),
   ]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    // 12 itens = 3 páginas de 4 no carrossel.
-    .slice(0, 12)
+    // 16 itens = 2 páginas cheias de 8 (duas fileiras de 4) no carrossel.
+    .slice(0, 16)
 
   // Perfil / saudação
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
@@ -160,6 +163,32 @@ export default async function DashboardPage() {
     { name: "Agendados", value: scheduledPosts.length, color: "#22c55e" },
   ]
 
+  // ---- Insights: leitura do estado real da conta ----
+  const agora = new Date()
+  const daquiA7 = new Date(agora)
+  daquiA7.setDate(agora.getDate() + 7)
+  const agendadosProximaSemana = scheduledPosts.filter((p) => {
+    const d = new Date(`${p.scheduled_date}T12:00:00`)
+    return d >= agora && d <= daquiA7
+  }).length
+  // spark.total é a janela de 7 dias já bucketizada — soma = peças da semana.
+  const criadosUltimos7 = spark.total.reduce((a, b) => a + b, 0)
+  const proxima = getProximasDatas(agora, 1)[0]
+  const insights = montarInsights({
+    totalConteudo: totalContent,
+    criadosUltimos7,
+    agendadosTotal: scheduledPosts.length,
+    agendadosProximaSemana,
+    marcaSemConteudo: marcasAtivas.find((m) => m.count === 0)?.name ?? null,
+    creditos: profile?.credits ?? 0,
+    // Data comemorativa só vira insight quando está perto o bastante pra dar
+    // tempo de produzir a peça.
+    proximaData:
+      proxima && proxima.daysAway <= 30
+        ? { nome: proxima.nome, emDias: proxima.daysAway }
+        : null,
+  })
+
   return (
     <div className="max-w-[1440px] mx-auto px-5 md:px-8 py-6 md:py-8 space-y-5">
       {/* Linha 1: hero + ações rápidas com a MESMA altura (grid items-stretch) */}
@@ -168,12 +197,22 @@ export default async function DashboardPage() {
         <NovaQuickActions />
       </div>
 
-      {/* Linha 2: projetos recentes (carrossel de 2) + distribuição ao lado.
-          A distribuição subiu do rodapé pra cá — o que você fez e de que tipo
-          lê melhor junto do que separado por meia página. */}
+      {/* Linha 2: projetos recentes (carrossel de 2) + insights e distribuição
+          ao lado.
+
+          `items-start`, NÃO `items-stretch`: com stretch, a coluna mais baixa
+          era esticada até a altura da outra — sobrava um vazio enorme embaixo
+          dos projetos recentes — e, pior, a coluna da direita passava a ter
+          altura FIXA. Como o texto do insight muda a cada slide do carrossel,
+          um insight mais longo que o do momento da medida estourava essa
+          altura e o cartão (overflow:hidden) cortava o próprio botão. Altura
+          natural resolve os dois de uma vez. */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 items-stretch">
         <NovaRecent items={recentItems} />
-        <NovaDistribution slices={distSlices} brands={marcasAtivas} />
+        <div className="flex h-full flex-col gap-5">
+          <NovaInsights items={insights} />
+          <NovaDistribution slices={distSlices} brands={marcasAtivas} />
+        </div>
       </div>
 
       {/* Vitrine por nicho — o formato do feed de comunidade, mas assumido

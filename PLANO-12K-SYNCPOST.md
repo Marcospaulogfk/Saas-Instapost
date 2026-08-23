@@ -1,6 +1,7 @@
 # PLANO 12K SYNCPOST — R$12.000/mês até 18/06/2027, só com SyncPost
 
 > v1 — 10/08/2026. Substitui o papel do SyncPost no antigo Desktop/PLANO-12K.md (que dividia a meta com EverReply/Upskills). Aqui a meta inteira é do SyncPost.
+> **Revisão 22/08/2026:** checkout do provedor anterior descartado; pagamento via Asaas (camada `lib/billing`), ciclos só mensal e anual (anual −30%), afiliados como feature do app com split do Asaas.
 > Docs irmãos: `ESTRATEGIA-OUTBOUND-FUNIL.md` (ICP, isca, cadência — continua valendo integralmente) · `ESTRATEGIA-MONETIZACAO.md` (planos/tokens).
 > **Ritual:** domingo à noite (30 min) → preencher o placar §6, ler a semana seguinte. Último domingo do mês → checkpoint mensal + detalhar as semanas do mês seguinte (detalhe fino só pro próximo mês; metas numéricas valem até junho).
 
@@ -14,7 +15,7 @@
 |---|---|---|
 | MRR SaaS (assinaturas) | R$ 9.000–10.000 | ~110–125 clientes ativos × ARPU ~R$85 (mix 50% Starter R$47 · 40% Pro R$97 · 10% Studio R$247) |
 | Concierge / done-for-you | R$ 1.800–3.000 | 3–4 contratos estilo Culturizese (R$600–997/mês) — conteúdo feito COM o SyncPost, ~2h/semana cada graças ao dogfood |
-| Anuais + avulsos no mês | R$ 500–1.500 | campanha anual −40% (caixa antecipado) + upgrades |
+| Anuais + avulsos no mês | R$ 500–1.500 | campanha anual −30% (caixa antecipado) + upgrades |
 | **Total** | **R$ 12.000+** | |
 
 **O que isso exige:** chegar a junho adicionando **25–30 clientes novos/mês líquidos**. Outbound solo entrega no máximo 5–8/mês (funil do doc de outbound). Os outros 2/3 têm que vir de **conteúdo orgânico + afiliados + PLG/SEO** — motores compostos que demoram 4–6 meses pra pagar. Por isso a ordem do plano: **produto destravado em agosto, conteúdo diário desde agosto, outbound em setembro, afiliados em novembro.** Quem começa o orgânico em novembro chega em junho com um perfil de 7 meses; quem começa hoje chega com 10 — e a pesquisa (Sebrae 2026) diz que autoridade orgânica leva 6–12 meses. Cada semana de atraso no conteúdo custa clientes em abril–junho.
@@ -49,7 +50,7 @@ A mLabs (líder da categoria no BR) paga 20% recorrente; nosso 40% da 1ª fatura
 - Trial de 1 carrossel sem fricção (a landing de TODOS os motores).
 - Páginas comparativas: /alternativa-galilai, /alternativa-canva, /alternativa-predis, /para/social-media, /para/dentistas — a GalilAI tem só ~49k visitas/mês; o espaço de busca está aberto.
 - Toque comportamental no dia 3–5 do trial via WhatsApp (maior lift de conversão: +38%).
-- Campanha anual −40% a partir de abr/27 (trava churn + antecipa caixa).
+- Campanha anual −30% a partir de abr/27 (trava churn + antecipa caixa).
 - Paid só por gatilho: ≥10 depoimentos E MRR ≥R$4k → teste R$500/mês (mar/27 na melhor hipótese).
 
 ### Linha de serviço — Concierge (o colchão de caixa)
@@ -64,15 +65,15 @@ Clientes = ativos no fim do mês, líquidos de churn. Caixa = MRR + concierge + 
 
 | Mês | Tema | Novos (brutos) | Clientes | MRR fim do mês | Caixa | Marco do mês |
 |---|---|---|---|---|---|---|
-| **Ago/26** | Produto destravado + conteúdo ligado | 0 | 0 | R$ 0 | R$ 600 | Checkout Cakto + trial redondo + lado-a-lado GalilAI · 15+ vídeos publicados · chip e domínios aquecendo |
+| **Ago/26** | Produto destravado + conteúdo ligado | 0 | 0 | R$ 0 | R$ 600 | Checkout Asaas + trial redondo + lado-a-lado GalilAI · 15+ vídeos publicados · chip e domínios aquecendo |
 | **Set/26** | Outbound piloto | 3 | 3 | R$ 250 | R$ 850 | Cadência A/B rodando (15/dia) · 1º pagante · 2º concierge fechado |
 | **Out/26** | Calibragem A/B | 5 | 7–8 | R$ 650 | R$ 1.500 | Nicho vencedor decidido · 20 vídeos/mês em regime · 2 páginas SEO no ar |
-| **Nov/26** | Afiliados ligados | 8 | 14–15 | R$ 1.250 | R$ 2.200 | Programa 40/20 no ar · primeiros depoimentos (1–2 meses grátis por vídeo) · 1º vídeo >10k views |
+| **Nov/26** | Afiliados ligados | 8 | 14–15 | R$ 1.250 | R$ 2.200 | Programa 40/20 no ar (feature do app + split do Asaas) · primeiros depoimentos (1–2 meses grátis por vídeo) · 1º vídeo >10k views |
 | **Dez/26** | Prova social | 10 | 22–24 | R$ 1.950 | R$ 3.000 | 5 depoimentos publicados · concierge nº 3 · copy sazonal (planejamento 2027) |
 | **Jan/27** | Lote 3 (dentistas/nutris) | 13 | 33–35 | R$ 2.850 | R$ 4.000 | Blueprint Sorriai · orgânico começa a converter sozinho (3+/mês) |
 | **Fev/27** | Corredor composto | 16 | 45–48 | R$ 3.950 | R$ 5.300 | 10 afiliados ativos · 30% dos novos via indicação · página /para/dentistas rankeando |
 | **Mar/27** | Paid teste + escala orgânica | 20 | 60–63 | R$ 5.200 | R$ 6.800 | Gatilho paid (10 depoimentos + MRR≥4k) · 1 formato de vídeo validado e industrializado |
-| **Abr/27** | Anuais | 24 | 78–82 | R$ 6.700 | R$ 8.700 | Campanha anual −40% · upsell Pro→Studio na carteira · concierge nº 4 |
+| **Abr/27** | Anuais | 24 | 78–82 | R$ 6.700 | R$ 8.700 | Campanha anual −30% · upsell Pro→Studio na carteira · concierge nº 4 |
 | **Mai/27** | Churn <5% | 28 | 98–103 | R$ 8.400 | R$ 10.500 | Resgate de trials parados · onboarding assistido virou processo |
 | **Jun/27** | 🎯 **18/06 — R$12k** | 30 | 115–125 | **R$ 9.500–10.000** | **≥ R$ 12.000** | MRR + 3–4 concierge + anuais do mês. 23 anos, dono da máquina. |
 
@@ -85,7 +86,7 @@ Clientes = ativos no fim do mês, líquidos de churn. Caixa = MRR + concierge + 
 ### AGOSTO — "Produto destravado + conteúdo ligado" (4 semanas)
 
 **S1 · 10–16/08 — Bloqueadores parte 1 + relógios**
-- Checkout Cakto: produtos Starter/Pro/Studio criados, testado ponta a ponta (sem ele não existe conversão)
+- Checkout Asaas: conta com cartão via API liberado, chave sandbox + webhook configurados, checkout hospedado (Pix + cartão, mensal e anual) testado ponta a ponta (sem ele não existe conversão)
 - Trial de 1 carrossel: mapear TODA fricção do fluxo atual (cadastro → briefing → carrossel), lista de correções
 - Relógios: chip de prospecção comprado + aquecimento D1 (20–50 msgs com conhecidos) · 2 domínios de e-mail comprados + warmup iniciado
 - Conteúdo: gravar os 5 primeiros vídeos-demo (pipeline: roteiro de 3 linhas → tela gravada → CapCut → 3 plataformas)
@@ -149,12 +150,12 @@ Clientes = ativos no fim do mês, líquidos de churn. Caixa = MRR + concierge + 
 
 ### Temas por mês
 
-- **NOV** — Afiliados no ar (40/20) · primeiros depoimentos publicados · upsell Pro nos ativos
+- **NOV** — Afiliados no ar (40/20, feature do app + split do Asaas) · primeiros depoimentos publicados · upsell Pro nos ativos
 - **DEZ** — Prova social: 5 depoimentos, 1 case numérico ("X horas → Y minutos") · copy sazonal "planejamento 2027" · concierge nº 3
 - **JAN** — Lote 3: dentistas/nutris (blueprint Sorriai) · orgânico convertendo sozinho · re-medir custo de IA/cliente
 - **FEV** — 10 afiliados ativos · 30% dos novos via indicação · carnaval = semana morta (rampa já desconta)
 - **MAR** — Gatilho paid (10 depoimentos + MRR≥R$4k → R$500/mês de teste) · industrializar o formato de vídeo vencedor (2x volume no que funciona)
-- **ABR** — Campanha anual −40% · upsell Studio pras micro agências · concierge nº 4 (último — teto de tempo)
+- **ABR** — Campanha anual −30% · upsell Studio pras micro agências · concierge nº 4 (último — teto de tempo)
 - **MAI** — Churn <5% como métrica-norte · resgate de trials parados · onboarding assistido virou processo escrito
 - **JUN** — Fechar contas até 18/06: MRR R$9,5–10k + concierge + anuais = **R$12k**. Retro: o que descongelar.
 

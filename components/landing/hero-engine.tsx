@@ -12,7 +12,8 @@ const TEMAS = [
   "3 rituais de skincare pro verão",
 ]
 
-/* Miniaturas dos slides: peças reais geradas na plataforma. */
+/* Miniaturas dos slides. Ver aviso em proof-wall.tsx: as imagens de
+   /refs-posts-unicos são referências de design, não output da engine. */
 const SLIDES = [
   "/refs-posts-unicos/Profissional/01/referencia.jpg",
   "/refs-posts-unicos/informativo/01/referencia.jpg",
@@ -219,7 +220,7 @@ export function HeroEngine() {
           Marca aprendida
         </div>
         <div className="space-y-1.5">
-          {["Tom · direto e confiante", "Paleta · roxo + neutros", "Público · PMEs"].map((r) => (
+          {["Tom · direto e confiante", "Paleta · azul + neutros", "Público · PMEs"].map((r) => (
             <div key={r} className="flex items-center gap-2 text-[11px] text-text-secondary">
               <Check className="w-3 h-3 text-primary shrink-0" />
               {r}

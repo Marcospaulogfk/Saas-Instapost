@@ -30,3 +30,6 @@ supabase/.temp/
 # que o app usa ficam versionados em public/.
 *.psd
 *.zip
+
+# Arquivos de trava do LibreOffice ao abrir .docx
+.~lock.*#

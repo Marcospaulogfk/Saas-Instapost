@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import { vincularIndicacaoPeloCookie } from "@/lib/indicacao/vincular"
 
 /**
  * Origem pública desta requisição.
@@ -30,9 +32,22 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      const res = NextResponse.redirect(`${origin}${next}`)
+      // Quem veio pelo Google não passa pelo signUp com metadata; o cookie
+      // nx_ref (posto em /cadastro?ref=) é o que carrega a indicação.
+      try {
+        const jar = await cookies()
+        const ref = jar.get("nx_ref")?.value
+        if (ref && data.user) {
+          await vincularIndicacaoPeloCookie(data.user.id, ref)
+          res.cookies.set("nx_ref", "", { path: "/", maxAge: 0 })
+        }
+      } catch (e) {
+        console.warn("[auth/callback] indicação pelo cookie falhou:", e)
+      }
+      return res
     }
   }
 

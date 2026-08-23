@@ -1,4 +1,4 @@
-import { getProfile } from "@/lib/data/queries"
+import { getProfile, tokensDisponiveis } from "@/lib/data/queries"
 import { planFromProfile, PLAN_TOKENS, type Plan } from "@/lib/tokens"
 import { ConfiguracoesClient } from "./configuracoes-client"
 
@@ -19,7 +19,7 @@ export default async function ConfiguracoesPage() {
       ? profile.plan_credits_monthly
       : PLAN_TOKENS[plan]
   const used = Math.max(0, profile?.plan_credits_used_this_month ?? 0)
-  const balance = Math.max(0, profile?.credits ?? 0)
+  const balance = tokensDisponiveis(profile)
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ||

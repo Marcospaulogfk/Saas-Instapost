@@ -15,7 +15,7 @@ export const runtime = "nodejs"
 //
 // Vive em /api/webhooks/* de propósito: é a allowlist do middleware
 // (máquina chamando máquina, sem cookie de sessão). A autenticação é o
-// segredo próprio no header, mesmo padrão do webhook da Cakto.
+// segredo próprio no header, mesmo padrão dos outros webhooks (Asaas).
 //
 // Endereçamento por BRAND_ID (12/08/2026). Antes o WebSync-OS mandava o
 // handle e esta rota procurava a brand por texto — um @ a mais, um handle

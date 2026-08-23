@@ -44,13 +44,19 @@ export async function signInWithPassword(
 export async function signUpWithPassword(
   email: string,
   password: string,
+  opts: { refCode?: string | null; next?: string | null } = {},
 ): Promise<SignUpResult> {
   const supabase = await createClient()
+  const next = opts.next && opts.next.startsWith("/") ? opts.next : "/dashboard"
+  // ref_code vai em raw_user_meta_data: o trigger handle_new_user (0014/0020)
+  // chama registrar_indicacao com ele. É o que faz /cadastro?ref=CODIGO valer.
+  const refCode = opts.refCode?.trim().toUpperCase() || null
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${appOrigin()}/auth/confirm?next=/dashboard`,
+      emailRedirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent(next)}`,
+      ...(refCode ? { data: { ref_code: refCode } } : {}),
     },
   })
   if (error) return { ok: false, error: translateAuthError(error.message) }

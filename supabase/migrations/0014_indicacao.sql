@@ -241,7 +241,7 @@ $$;
 -- ---------------------------------------------------------------------
 -- 6) Creditar no PRIMEIRO PAGAMENTO CONFIRMADO
 --
--- Chamada pelo webhook da Cakto (service_role) em toda compra aprovada.
+-- Chamada pela camada de cobrança (lib/billing/apply.ts, service_role) em toda compra aprovada.
 -- É IDEMPOTENTE por construção: só existe uma linha por `referred_id` e o
 -- UPDATE exige status 'pending'. Da segunda cobrança em diante não credita
 -- mais nada, então o webhook pode chamar sempre sem precisar saber se

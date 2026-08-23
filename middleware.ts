@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/auth"]
+const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/auth", "/afiliados"]
 // Sandboxes de dev (/teste*, /test-*, /preview-*) entram aqui: nenhuma tela do
 // produto linka mais pra elas, mas as rotas continuam no build e ficavam
 // abertas pra qualquer visitante. As APIs caras já eram protegidas pela
@@ -22,8 +22,9 @@ const PROTECTED_PREFIXES = [
 // pra queimar crédito Anthropic/Fal só com uma <img> apontando pra elas.
 // Allowlist em vez de denylist: rota nova nasce protegida.
 const PUBLIC_API_PREFIXES = [
-  "/api/webhooks", // chamado por provedor externo (Cakto); valida segredo próprio
+  "/api/webhooks", // chamado por provedor externo (Asaas, WebSync OS); valida segredo próprio
   "/api/proxy-image", // proxy de imagem, já limitado por allowlist de host
+  "/api/cron", // jobs agendados; valida CRON_SECRET no header
   // Callbacks da Meta (desautorização e exclusão de dados): sem sessão, a
   // autenticidade é o HMAC do signed_request com o App Secret.
   "/api/instagram/deauthorize",
@@ -40,7 +41,7 @@ const LP_HOST = `lp.${SITE_DOMAIN}`
 
 // Domínio anterior ao rebrand. Continua respondendo e manda todo mundo pro
 // novo com 301, MENOS /auth e /api: OAuth e webhooks têm a URL de callback
-// registrada na mão em cada provedor (Google, Supabase, Meta, Cakto) e um
+// registrada na mão em cada provedor (Google, Supabase, Meta, Asaas) e um
 // redirect no meio do fluxo quebra a troca de code por sessão. Essas rotas só
 // saem daqui depois que TODOS os provedores estiverem apontando pro domínio
 // novo — aí este bloco inteiro pode virar um 301 sem exceção.
@@ -79,7 +80,7 @@ const DEV_MODE_BYPASS =
   process.env.DEV_MODE === "true" &&
   process.env.NODE_ENV !== "production"
 
-export async function middleware(request: NextRequest) {
+async function middlewareBase(request: NextRequest) {
   const path = request.nextUrl.pathname
   const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
 
@@ -174,6 +175,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  return response
+}
+
+// === Atribuição de afiliado ===
+// `?af=CODIGO` em qualquer página grava o cookie nx_af (60 dias, legível no
+// client, sameSite lax). Fica FORA da lógica acima de propósito: vale também
+// pra resposta de redirect (apex -> app), senão o clique no link do afiliado
+// perderia a atribuição no primeiro salto. O cookie sobe pro domínio base em
+// produção pra valer na landing e no app.
+const AF_COOKIE = "nx_af"
+const AF_COOKIE_DIAS = 60
+const AF_CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/
+
+export async function middleware(request: NextRequest) {
+  const response = await middlewareBase(request)
+  const af = (request.nextUrl.searchParams.get("af") || "").trim().toUpperCase()
+  if (af && AF_CODE_RE.test(af)) {
+    const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
+    const domain = host.endsWith(SITE_DOMAIN) ? `.${SITE_DOMAIN}` : undefined
+    response.cookies.set(AF_COOKIE, af, {
+      maxAge: AF_COOKIE_DIAS * 24 * 60 * 60,
+      httpOnly: false,
+      sameSite: "lax",
+      path: "/",
+      ...(domain ? { domain } : {}),
+    })
+  }
   return response
 }
 

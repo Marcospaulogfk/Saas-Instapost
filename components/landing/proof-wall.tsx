@@ -1,6 +1,11 @@
 /**
- * Parede de prova: peças reais geradas na plataforma, rolando em colunas
- * verticais com velocidades diferentes. Só CSS — nenhum JS no cliente.
+ * Parede de prova, rolando em colunas verticais com velocidades diferentes.
+ * Só CSS — nenhum JS no cliente.
+ *
+ * ATENÇÃO: as imagens abaixo vêm de /refs-posts-unicos, que são as REFERÊNCIAS
+ * de design usadas pra construir os templates (o `reference_image` de cada
+ * item em lib/single-posts/catalog.ts). NÃO são peças geradas pela engine.
+ * Até entrarem exports reais aqui, a página não pode chamá-las de output nosso.
  */
 
 type Peca = { src: string; nicho: string }
@@ -42,7 +47,7 @@ function Card({ peca, eager }: { peca: Peca; eager?: boolean }) {
     <div className="group relative mb-3 overflow-hidden rounded-xl border border-hairline bg-surface">
       <img
         src={peca.src}
-        alt={`Carrossel de ${peca.nicho} gerado no Nexus Content`}
+        alt={`Exemplo de carrossel no estilo ${peca.nicho}`}
         /* As primeiras de cada coluna entram na tela junto com a seção; o resto
            só rola depois — daí o lazy. */
         loading={eager ? "eager" : "lazy"}

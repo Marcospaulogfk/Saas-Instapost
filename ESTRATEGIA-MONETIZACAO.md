@@ -1,8 +1,9 @@
-# SyncPost — Estratégia de Monetização (tokens, planos, afiliados, Cakto)
+# SyncPost — Estratégia de Monetização (tokens, planos, afiliados, Asaas)
 
 > Doc de decisão. Fonte: pesquisa de custos de 05/07/2026 (ver notas no fim).
 > Números em **BRL**, câmbio **R$ 5,20/USD** (buffer sobre 5,17 real, porque todo custo de IA é em dólar).
 > Status: **proposta pronta pra aprovar**. A implementação no código ainda não foi feita (ver §8).
+> **Revisão 22/08/2026:** checkout do provedor anterior descartado. Pagamento passa pelo **Asaas** via camada neutra `lib/billing`; ciclos só mensal e anual; tabela de tokens v2; afiliados viram feature do app (§3, §7, §8, §9 reescritos).
 
 ---
 
@@ -16,8 +17,9 @@
 3. **Planos (mensal):** Starter R$47 = 300 tk · Pro R$97 = 1000 tk · Studio R$247 = 3000 tk.
 4. **Teste grátis:** gera **1 carrossel de até 7 slides** (imagem normal, com marca d'água). O limite é o *output*, não o tempo — sem prazo de dias. Nano Banana Pro fica bloqueado; é o gancho do upgrade.
 5. **Acabou o token:** oferecer **comprar pacote avulso (top-up)** OU **fazer upgrade**. Os pacotes são de propósito um pouco mais caros por token que a assinatura — assim o heavy user vê que **subir de plano compensa** (maximiza MRR).
-6. **Afiliados:** **40% da 1ª fatura + 20% recorrente** nas renovações seguintes. Front-load na aquisição, recorrência que mantém o afiliado alinhado à retenção.
-7. **Cakto:** produto de assinatura com **Pix recorrente como método principal** (0% de taxa vs 3,89% no cartão — é a maior alavanca de margem).
+6. **Afiliados:** **40% da 1ª fatura + 20% recorrente** nas renovações seguintes. Front-load na aquisição, recorrência que mantém o afiliado alinhado à retenção. O Asaas não tem programa de afiliados nativo: o programa é **feature do app** (candidatura por formulário, aprovação manual) e o repasse usa o **split de pagamento** do Asaas.
+7. **Asaas:** checkout hospedado recorrente (Pix + cartão), criado por `app/actions/billing.ts`. Pix continua sendo o método a empurrar: R$1,99 fixo por cobrança (as 100 primeiras do mês grátis) contra 2,99% + R$0,49 no cartão.
+8. **Ciclos:** só **mensal** e **anual** (anual = 30% de desconto no preço; os tokens por mês NÃO encolhem). Trimestral e semestral saíram.
 
 **Margem bruta resultante (pior caso, 100% em imagem premium, via Pix):** Starter **73%** · Pro **59%** · Studio **52%**. Em uso realista (mistura de texto + imagem normal + premium) fica **70–77%**.
 
@@ -36,7 +38,7 @@
 
 **Insight-chave:** o texto é ruído no custo (R$0,06–0,12). **A imagem é 90%+ do COGS.** Otimize pela imagem, não pelo texto. O que decide o lucro é *quantas imagens premium* o usuário gera.
 
-**Taxas Cakto** (confiança ALTA): Pix **0% + R$2,49** · Cartão **3,89% + R$2,49** · Boleto 4,99% + R$2,49 · Saque R$4,59. Sem mensalidade. → **Empurrar Pix recorrente.**
+**Taxas Asaas** (tabela pública padrão, a confirmar na conta): Pix **R$1,99 por cobrança** (as 100 primeiras do mês são grátis) · Cartão **2,99% + R$0,49**. Sem mensalidade. → **Empurrar Pix recorrente.**
 
 **Alavancas de redução de custo (corrigido em 14/07/2026 com preços oficiais):**
 - ⚠️ CORREÇÃO: a API Gemini direta pro **Nano Banana Pro (Gemini 3 Pro Image)** custa **US$0,134** (1K/2K), não US$0,039 — o 0,039 é o preço do 2.5 Flash. Migrar direto no MESMO modelo economiza só ~11%.
@@ -47,17 +49,27 @@
 
 ## 3. Economia de tokens
 
-**Ancoragem:** 1 token ≈ **R$ 0,04 de custo real**. A partir daí:
+**Ancoragem:** 1 token ≈ **R$ 0,04 de custo real**. Tabela **v2** (22/08/2026), a que vale no código (`lib/tokens.ts`):
 
-| Ação | Tokens | Custo real coberto |
-|---|---|---|
-| Texto (roteiro/legenda) sem imagem | 1 | R$ 0,04 (cobre R$0,06–0,12 do texto na média de uso) |
-| 1 imagem **normal** (Flux/Nano normal) | **5** | R$ 0,20 |
-| 1 imagem **Nano Banana Pro** | **20** | R$ 0,80 (≈ R$0,78) |
-| Regerar imagem | = custo da imagem | — |
-| Carrossel de 8 slides, todas premium | 8×20 = 160 | R$ 6,24 ⚠️ |
+| Ação | Tokens |
+|---|---|
+| Roteiro do carrossel (texto) | 8 |
+| Texto do post único | 4 |
+| Capa do carrossel (arte) | 20 |
+| Arte do post único | 25 (post único completo = 4 + 25 = **29**) |
+| Slide de miolo | 2 |
+| Edição cirúrgica do bitmap | 15 |
+| Pautas | 4 cada, após 3 grátis por dia |
+| Editar (texto, cor, posição, fonte) | **grátis**, sempre |
+| Trial | 45 tokens |
 
-⚠️ **Decisão de produto importante:** definir se o carrossel gera **imagem por slide** ou **só na capa**. É a diferença entre custar ~R$1 e ~R$6 por carrossel. **Recomendo: 1 imagem por slide é opcional; padrão = capa + slides que o usuário marcar.** Isso protege a margem e evita carrossel "poluído" de imagem.
+**Regras do saldo:**
+- O plano **recarrega** todo ciclo e **zera a sobra** do mês anterior.
+- Tokens de **bônus de indicação** e **avulsos** não vencem.
+- Ordem de consumo: **plano → avulso → bônus**.
+- Extrato em `token_transactions` (migration 0020); débito atômico via RPC `apply_tokens`.
+
+⚠️ **Decisão de produto importante:** o carrossel gera arte na capa por padrão; miolo custa 2 tokens por slide. É isso que mantém o carrossel em ~R$1 em vez de ~R$6. **Padrão = capa + slides que o usuário marcar.**
 
 ---
 
@@ -74,19 +86,19 @@
 | Marca d'água | sim | não | não |
 | Extras | templates básicos, suporte email | templates exclusivos, sem marca d'água, suporte 12h | API, equipe 3 users, white-label, gerente dedicado |
 
-**Ciclos com desconto (já existem no código):** trimestral −17%, semestral −30%, anual −40%. O desconto anual (paga 12, −40%) é ótimo pra caixa e retenção — priorizar no checkout.
+**Ciclos:** só **mensal** e **anual** (−30% no preço, tokens por mês iguais). O anual é ótimo pra caixa e retenção — priorizar no checkout.
 
-### Margem por plano (mensal, via Pix; net = preço − R$2,49)
+### Margem por plano (mensal, via Pix; net = preço − R$1,99, e zero nas 100 primeiras cobranças do mês)
 
 | Plano | Receita líq. (Pix) | COGS pior caso (100% premium) | Lucro pior caso | Margem pior caso | Margem uso realista* |
 |---|---|---|---|---|---|
-| Starter | R$ 44,51 | 60 img normal = R$ 12,00 | R$ 32,51 | **73%** | ~77% |
-| Pro | R$ 94,51 | 50 img Pro = R$ 39,00 | R$ 55,51 | **59%** | ~72% |
-| Studio | R$ 244,51 | 150 img Pro = R$ 117,00 | R$ 127,51 | **52%** | ~70% |
+| Starter | R$ 45,01 | 60 img normal = R$ 12,00 | R$ 33,01 | **73%** | ~77% |
+| Pro | R$ 95,01 | 50 img Pro = R$ 39,00 | R$ 56,01 | **59%** | ~72% |
+| Studio | R$ 245,01 | 150 img Pro = R$ 117,00 | R$ 128,01 | **52%** | ~70% |
 
 \* Uso realista = mistura (texto + imagem normal + parte premium). A maioria não gasta 100% em premium.
 
-> No **cartão** (3,89% + R$2,49) a margem cai ~2–4 pontos. Por isso o Pix recorrente é a decisão certa.
+> No **cartão** (2,99% + R$0,49) a margem cai ~2–3 pontos. Por isso o Pix recorrente é a decisão certa.
 
 ---
 
@@ -96,9 +108,9 @@
 - **Só imagem normal** (Flux/Nano Banana normal). Nano Banana Pro fica bloqueado no trial — é o gancho pra converter em Pro.
 - **Marca d'água** no export (igual Starter).
 - **Custo máximo por trial:** 7 slides com imagem normal ≈ 7 × R$0,20 + texto = **~R$ 1,60 de COGS**. É o seu CAC de topo de funil — barato.
-- **Anti-abuso:** 1 trial por e-mail + device; opcionalmente cartão no cadastro (Cakto permite), o que derruba fraude e melhora conversão trial→pago.
+- **Anti-abuso:** 1 trial por e-mail + device; opcionalmente cartão no cadastro (o checkout do Asaas aceita), o que derruba fraude e melhora conversão trial→pago.
 
-**Por que "7 slides" e não tempo:** o usuário sente o produto completo (um carrossel inteiro, ponta a ponta) sem uma janela de dias que pressiona ou expira sem uso. Terminou o carrossel de teste → precisa assinar pra fazer o próximo. Em tokens internos, 7 slides ≈ 40 tokens de trial.
+**Por que "7 slides" e não tempo:** o usuário sente o produto completo (um carrossel inteiro, ponta a ponta) sem uma janela de dias que pressiona ou expira sem uso. Terminou o carrossel de teste → precisa assinar pra fazer o próximo. Em tokens internos, o trial concede **45 tokens**.
 
 ---
 
@@ -135,26 +147,30 @@ O front-load (40% no 1º mês) premia a aquisição; os 20% recorrentes mantêm 
 - Renovações: comissão 20% = R$ 19,40 → lucro R$ 94,51 − 19,40 − 25 = **~R$ 50/mês**.
 - **LTV vs custo de afiliado:** com churn ~8%/mês (lifetime ~12,5 meses) e margem blended ~70%, o Pro contribui ~R$ 800+ de vida. O afiliado leva ~R$ 39 + ~R$ 19,40 × ~11,5 renovações ≈ **R$ 262** no total. **CAC via afiliado << LTV** → saudável, com margem ainda positiva em cada renovação.
 
-A Cakto suporta **Pix recorrente para afiliados** (comissão a cada renovação) — usar isso.
+**Como roda no Asaas:** não existe programa de afiliados nativo. O repasse usa o **split de pagamento** (`percentualValue` pra `walletId` de outra conta Asaas), que funciona em assinaturas, então a comissão recorrente sai automática a cada cobrança. O programa em si é **feature do app**: candidatura por formulário, aprovação manual, cada afiliado aprovado cadastra o `walletId` da própria conta Asaas. A flag fica **desligada em produção** por enquanto.
+
+**Indicação (indique e ganhe)** é separada do afiliado: **100 tokens pro indicador e 45 pro indicado**, creditados no primeiro pagamento confirmado do indicado. Não acumula com comissão de afiliado.
 
 ---
 
-## 8. Cakto — passo a passo do cadastro
+## 8. Asaas — o que precisa estar configurado
 
-> Conta externa. **Não executei** o cadastro (regra de não criar contas/entrar em serviços externos sem você). Segue o roteiro pra você fazer, na ordem:
+> Conta externa. **Não executei** nada no painel (regra de não criar contas/entrar em serviços externos sem você). Checklist do que a camada `lib/billing` espera:
 
-1. **Criar o produto** "SyncPost" como **assinatura recorrente**.
-2. **Criar 3 ofertas** (Starter/Pro/Studio) × ciclos (mensal, trimestral, semestral, anual) com os preços da §4 e descontos da §4.
-3. **Ativar Pix recorrente** como método principal + cartão como secundário. (Pix = 0% de taxa.)
-4. **Garantia de 7 dias** (já anunciada no site) na configuração da oferta.
-5. **Top-ups** = produtos de **compra única** (order bump / upsell no checkout), valores da §6.
-6. **Webhook Cakto → SyncPost:** configurar o webhook de "compra aprovada / assinatura renovada / cancelada" apontando pra um endpoint novo `/api/webhooks/cakto` que:
-   - ativa/atualiza `subscription_status` do perfil,
-   - credita os tokens do plano (`plan_credits_monthly`) e reseta o consumo do mês,
-   - credita tokens de top-up quando for compra avulsa.
-7. **Programa de afiliados:** ativar na Cakto com a estrutura da §7 (40% 1ª + 15% recorrente 12m), cookie 60–90d.
+1. **Conta Asaas** com **cartão via API liberado** (pedir a liberação no painel; sem isso o checkout só aceita Pix).
+2. **Chave de API** em `ASAAS_API_KEY` + `ASAAS_ENV` (`sandbox` ou `production`). Sandbox primeiro, produção só com OK explícito.
+3. **Webhook** apontando pra `/api/webhooks/asaas`, com token de autenticação em `ASAAS_WEBHOOK_TOKEN`. Eventos habilitados: `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_OVERDUE`, `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`, `PAYMENT_SPLIT_DONE`, `CHECKOUT_PAID`, `SUBSCRIPTION_DELETED`.
+4. **Checkout:** hospedado do Asaas (`POST /checkouts`, `RECURRENT`, Pix + cartão), criado em runtime por `app/actions/billing.ts`. Não existe produto pra cadastrar na mão: plano e ciclo vão no payload.
+5. **Garantia de 7 dias** (já anunciada no site): reembolso manual via API/painel; o evento `PAYMENT_REFUNDED` cancela o plano sozinho.
+6. **Top-ups** = cobrança avulsa, mesmo webhook.
+7. **O que o webhook faz** (`app/api/webhooks/asaas` → `lib/billing/apply.ts`):
+   - `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`: concede o plano, recarrega os tokens do ciclo (zera a sobra), credita top-up quando for avulso e dispara a indicação (RPC `creditar_indicacao_no_pagamento`).
+   - `PAYMENT_OVERDUE`: marca atraso com **5 dias de carência** antes de bloquear.
+   - `PAYMENT_REFUNDED`: cancela o plano.
+   - Job diário `app/api/cron/renovacao` como rede de segurança (renovação que o webhook perdeu, fim da carência).
+8. **Afiliados:** split configurado por cobrança no payload do checkout (`split[].walletId` + `percentualValue`), só pra afiliado aprovado no app (§7).
 
-**Pendências de credenciais que travam pagamento** (do deploy): Stripe/Turnstile/Brevo ainda são placeholders no Coolify. Pra Cakto, o que importa é o webhook + as chaves da Cakto nas env vars.
+**Pendências de credenciais que travam pagamento** (do deploy): Turnstile/Brevo ainda são placeholders no Coolify. Pro Asaas, o que importa é `ASAAS_API_KEY`, `ASAAS_ENV` e `ASAAS_WEBHOOK_TOKEN` nas env vars.
 
 ---
 
@@ -163,12 +179,12 @@ A Cakto suporta **Pix recorrente para afiliados** (comissão a cada renovação)
 O sistema de tokens **ainda não existe** — hoje o pricing mostra "imagens/mês" fixo (`components/pricing/pricing-cards.tsx`) e o perfil tem campos de crédito (`plan_credits_monthly`, `plan_credits_used_this_month`, `credits`) já no schema. Reaproveitar esses campos como "tokens".
 
 Ordem sugerida (esqueleto antes da API, como sempre):
-1. **Migration/tabela:** `token_ledger` (entradas: grant do plano, top-up, consumo) + saldo derivado no perfil. Ou reusar `plan_credits_*` renomeando a semântica pra token.
-2. **Custo por ação:** tabela de custo (`TOKEN_COST = { textOnly:1, imageNormal:5, imagePro:20 }`) e débito nos endpoints de geração (`/api/post-unico/*`, `/api/teste-gerar`, editorial).
+1. **Migration/tabela:** `token_transactions` (migration 0020: grant do plano, top-up, bônus, consumo) + RPC `apply_tokens` pra débito atômico.
+2. **Custo por ação:** tabela v2 da §3 em `lib/tokens.ts` e débito nos endpoints de geração (`/api/post-unico/*`, `/api/teste-gerar`, editorial).
 3. **Gate do Nano Banana Pro:** só habilitar se `plan ∈ {pro, studio}` (checagem no server, não só na UI).
-4. **Teste grátis:** ao criar conta, creditar 100 tokens + flag trial (7 dias, imagem normal only, watermark).
+4. **Teste grátis:** ao criar conta, creditar 45 tokens + flag trial (imagem normal only, watermark).
 5. **UI de saldo:** mostrar tokens no header/sidebar (já tem `credits` no layout), tela de "comprar mais / fazer upgrade" com o nudge da §6.
-6. **Webhook Cakto** (§8.6) pra creditar tokens de verdade.
+6. **Webhook Asaas** (§8.7) + `app/actions/billing.ts` (checkout) + cron `app/api/cron/renovacao`.
 7. **Atualizar `pricing-cards.tsx`** de "X imagens/mês" para "X tokens/mês (≈ Y imagens)".
 
 Isso é uma frente de engenharia grande (mexe em billing) — vale fazer **depois de você aprovar os números** desta proposta, porque cada número aqui vira constante no código.
@@ -180,5 +196,5 @@ Isso é uma frente de engenharia grande (mexe em billing) — vale fazer **depoi
 - **Câmbio é o maior risco:** ±10%/ano é normal, e 100% do COGS é em USD. Todo número aqui usa R$5,20 (buffer). Reprecificar se passar de ~R$5,60.
 - **Sonnet sobe 50% em set/2026** ($2→$3 in, $10→$15 out) — impacto pequeno (texto é barato), mas o custo do carrossel-texto vai de R$0,12 → R$0,19.
 - **Fal vs Gemini direto:** Nano Banana Pro é ~4× mais barato na API Gemini direta. Migrar é a maior economia futura de COGS.
-- **Taxas Cakto:** vieram do índice oficial da central (a página específica deu 404 no dia). Confirmar no painel antes de fechar.
+- **Taxas Asaas:** tabela pública padrão (Pix R$1,99, cartão 2,99% + R$0,49). Confirmar na conta antes de fechar, porque negociação por volume muda os números.
 - **Quantas imagens por carrossel** é a variável que mais mexe na margem — decidir isso (§3) é prioridade.

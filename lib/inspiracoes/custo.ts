@@ -16,7 +16,7 @@ import { TOKEN_COST } from "@/lib/tokens"
  * a automação em 5/dia. A gente faz o contrário de propósito:
  *
  *   1. As primeiras N rodadas do dia são GRÁTIS.
- *   2. Da N+1 em diante, custa `TOKEN_COST.textOnly` (4 tokens) — a MENOR
+ *   2. Da N+1 em diante, custa `TOKEN_COST.ideas` (4 tokens), a MENOR
  *      unidade de texto já precificada no produto ("roteiro + legenda").
  *
  * Por quê:
@@ -49,7 +49,7 @@ import { TOKEN_COST } from "@/lib/tokens"
 export const IDEIAS_GRATIS_POR_DIA = 3
 
 /** Custo em tokens de uma rodada FORA da cota diária. */
-export const IDEIAS_TOKEN_COST = TOKEN_COST.textOnly
+export const IDEIAS_TOKEN_COST = TOKEN_COST.ideas
 
 /** Quantas ideias uma rodada entrega (também trava o custo de saída). */
 export const IDEIAS_POR_RODADA = 5

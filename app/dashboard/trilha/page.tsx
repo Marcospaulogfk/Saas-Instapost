@@ -43,7 +43,7 @@ const OBJETIVO =
   "Alvo junho/2027: ~38 clientes, MRR ~R$2,9k só de Nexus Content."
 
 const BLOQUEADORES = [
-  { item: "Checkout Cakto operacional", nota: "Sem ele não existe conversão — o funil inteiro morre no fim", quando: "Out (S10)" },
+  { item: "Checkout Asaas operacional", nota: "Sem ele não existe conversão — o funil inteiro morre no fim", quando: "Out (S10)" },
   { item: "Trial de 1 carrossel ponta a ponta sem fricção", nota: "É a landing do outbound inteiro", quando: "Out (S11)" },
   { item: "localStorage → Supabase (pautas, XP, onboarding)", nota: "Usuário não pode perder dados ao trocar de device", quando: "Out (S11)" },
   { item: "Teste visual lado-a-lado vs GalilAI aprovado", nota: "Se a diferença não for óbvia num print, o preço R$47 não se sustenta", quando: "Out (S11)" },

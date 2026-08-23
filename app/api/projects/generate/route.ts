@@ -3,7 +3,13 @@ import { createClient } from "@/lib/supabase/server"
 import { generateContent, type ClaudeSlide } from "@/lib/generation/claude"
 import { generateBrandImage, getUserPlan } from "@/lib/generation/image"
 import { searchUnsplash } from "@/lib/generation/unsplash"
-import { debitTokens, tokenCostForImage, TOKEN_COST, type Plan } from "@/lib/tokens"
+import {
+  debitTokens,
+  getAvailableTokens,
+  tokenCostForImage,
+  TOKEN_COST,
+  type Plan,
+} from "@/lib/tokens"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -151,6 +157,38 @@ export async function POST(req: Request) {
     )
   }
 
+  const nSlides = Math.min(Math.max(body.n_slides, 1), 7)
+
+  // -------------------------------------------------------------------
+  // Portão de saldo (antes de qualquer chamada paga).
+  //
+  // O débito é ATÔMICO e acontece lá no fim: sem saldo ele não debita NADA e
+  // a peça sairia de graça. Aqui só dá pra ESTIMAR o custo, porque quantas
+  // imagens serão de IA (e em que qualidade) só se sabe depois do Claude
+  // responder. Então cobra-se o PISO do que a requisição com certeza vai
+  // gastar, nunca o teto: o roteiro (sempre) mais, quando o modo é all_ai, a
+  // imagem mais barata possível por slide (o piso é "normal"; se o plano
+  // render "pro" o débito real vem maior). Em smart_mix/all_unsplash a
+  // origem das imagens vem do Claude, então o piso é só o roteiro.
+  // Estimar por baixo é deliberado: melhor deixar passar uma geração perto do
+  // limite do que barrar quem tinha saldo.
+  // -------------------------------------------------------------------
+  const custoMinimo =
+    TOKEN_COST.textOnly +
+    (body.mode === "all_ai" ? tokenCostForImage("normal") * nSlides : 0)
+  const saldoDisponivel = await getAvailableTokens(supabase, user.id)
+  if (saldoDisponivel < custoMinimo) {
+    return NextResponse.json(
+      {
+        error: "Tokens insuficientes para esta geração.",
+        code: "sem_saldo",
+        needed: custoMinimo,
+        available: saldoDisponivel,
+      },
+      { status: 402 },
+    )
+  }
+
   let claudeResult
   try {
     claudeResult = await generateContent({
@@ -164,7 +202,7 @@ export async function POST(req: Request) {
       brandColors: Array.isArray(brand.brand_colors)
         ? (brand.brand_colors as string[])
         : [],
-      nSlides: Math.min(Math.max(body.n_slides, 1), 7),
+      nSlides,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -255,9 +293,9 @@ export async function POST(req: Request) {
 
   // -------------------------------------------------------------------
   // Débito de tokens (BEST-EFFORT, não bloqueia geração).
-  // Custo = texto do carrossel (1) + cada imagem gerada por IA conforme a
-  // qualidade REAL: Nano Banana Pro (20) em Pro/Studio, Flux normal (5) no
-  // resto. Imagens vindas do Unsplash não custam token.
+  // Custo = roteiro do carrossel (TOKEN_COST.textOnly) + cada imagem gerada
+  // por IA conforme a qualidade REAL (capa 20 / miolo 2). Imagens de acervo
+  // não custam token. UMA linha no extrato pro carrossel inteiro.
   // Qualquer falha aqui é engolida: geração nunca quebra por causa do
   // sistema de tokens.
   // -------------------------------------------------------------------
@@ -266,10 +304,20 @@ export async function POST(req: Request) {
       .filter(({ image }) => image.source === "ai")
       .reduce((sum, { image }) => sum + tokenCostForImage(image.quality), 0)
     const tokensToDebit = TOKEN_COST.textOnly + imageTokens
-    const debit = await debitTokens(supabase, user.id, tokensToDebit)
+    const debit = await debitTokens(supabase, user.id, tokensToDebit, {
+      kind: "debit_carousel",
+      refType: "project",
+      refId: project.id,
+      title: `Carrossel: ${String(claudeResult.data.project_title || body.topic).slice(0, 80)}`,
+      meta: { images: imageTokens, text: TOKEN_COST.textOnly },
+    })
     if (!debit.ok) {
+      // O portão lá em cima usa o PISO do custo, então um débito que falha
+      // aqui é peça entregue sem cobrar: precisa aparecer no log com quem e
+      // quanto pra dar pra reconciliar depois.
       console.warn(
-        `[projects/generate] débito parcial de tokens: ${debit.debited}/${tokensToDebit}` +
+        `[projects/generate] débito de tokens falhou: user=${user.id} ` +
+          `amount=${tokensToDebit} debited=${debit.debited}` +
           (debit.error ? ` (${debit.error})` : ""),
       )
     }

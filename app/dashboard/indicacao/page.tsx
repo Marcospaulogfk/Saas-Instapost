@@ -3,7 +3,7 @@
 //
 // Programa de indicação TWO-SIDED: quem indica ganha e quem é indicado
 // também. Os dois só são creditados no PRIMEIRO PAGAMENTO CONFIRMADO do
-// indicado (webhook da Cakto → RPC creditar_indicacao_no_pagamento).
+// indicado (webhook de pagamento (app/api/webhooks/asaas → lib/billing/apply.ts) → RPC creditar_indicacao_no_pagamento).
 // Ver lib/indicacao/config.ts para a calibragem dos números.
 // =====================================================================
 

@@ -61,7 +61,6 @@ export async function saveEditorialPlan(
   if (error) return { ok: false, error: error.message }
 
   revalidatePath("/dashboard/calendario")
-  revalidatePath("/dashboard/planejar")
   return { ok: true, data: { inserted: count ?? rows.length } }
 }
 

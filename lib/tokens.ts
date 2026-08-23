@@ -2,85 +2,53 @@
 // lib/tokens.ts
 // Fonte única da verdade do sistema de TOKENS do Nexus Content.
 //
-// Estratégia completa (números, planos, margens): ver
-// ESTRATEGIA-MONETIZACAO.md na raiz do repo.
+// Regra única (TOKENS-INDICACAO-AFILIADOS-rev3.docx, decisões do Marcos em
+// 22/08/2026):
 //
-// Moeda = token. O usuário escolhe, por carrossel, se quer imagem de IA na
-// CAPA e/ou nos DEMAIS slides — e cada escolha queima tokens:
-//   - roteiro + legenda de CARROSSEL (sempre)              =  4 tokens
-//   - texto de POST ÚNICO (mesma conta, ver singlePostText) =  4 tokens
-//   - imagem de CAPA (Nano Banana, ~US$0,04 desde 21/08)     = 25 tokens
-//   - imagem por slide de miolo (Flux Schnell)             =  2 tokens
+//   "1 token = uma unidade de trabalho da IA. Texto é barato, imagem é cara,
+//    editar é grátis. O plano recarrega todo mês e zera a sobra; bônus de
+//    indicação e tokens avulsos não vencem. Ordem: plano → avulso → bônus.
+//    Toda entrada e saída vira uma linha no extrato (token_transactions)."
 //
-// A capa é o único slide que justifica modelo caro: é ela que para o scroll.
-// O miolo roda no modelo barato, então "imagem em tudo" custa quase o mesmo
-// que "só a capa" — a conta é dominada pela capa.
+// Tabela v2 (aprovada em 22/08):
+//   - roteiro + legenda de CARROSSEL ........................  8 tokens
+//       (era 4; o Sonnet custa R$0,28 por roteiro e 4 dava 26% de margem
+//        no Pro. Fica em 8 MESMO que o teste cego troque o escritor:
+//        "custos de API são relativos e podem aumentar, chutar pro alto".)
+//   - texto do POST ÚNICO ...................................  4 tokens
+//   - imagem de CAPA do carrossel (nano-banana simples) ...... 20 tokens
+//   - arte do POST ÚNICO (nano-banana-2, mais caro) .......... 25 tokens
+//   - imagem de slide de miolo (Flux Schnell) ................  2 tokens
+//   - edição cirúrgica do bitmap ............................. 15 tokens
+//   - pautas/inspirações além da cota grátis .................  4 tokens
+//   - editar no editor .......................................  0 (sempre)
 //
-// CALIBRAGEM (regra de negócio): os números acima saem de uma restrição, não
-// de gosto — margem bruta >= 80% em TODOS os planos com o usuário queimando
-// 100% dos tokens, em qualquer um dos três modos (sem imagem / só capa /
-// tudo). Mexer em qualquer custo aqui exige refazer essa verificação.
+// CALIBRAGEM: custo máximo de R$0,016 por token = 80% de margem bruta no
+// plano mais apertado com o usuário queimando 100% dos tokens. Mexer num
+// número aqui exige refazer essa conta (CUSTOS-IA-MARGEM-rev2.docx).
 //
-// PRÉ-REQUISITO do textOnly=4: prompt caching ligado no system prompt do
-// Claude (texto a ~R$0,05/carrossel). Sem cache o texto custa R$0,12 e o modo
-// "sem imagem" desaba pra ~58% de margem.
-//
-// Este módulo é ADITIVO: os campos de crédito já existentes no perfil
-// (`credits`, `plan_credits_monthly`, `plan_credits_used_this_month`)
-// passam a ser lidos com semântica de "tokens" — sem tabela nova.
+// Os campos de crédito do perfil continuam os mesmos, com semântica de
+// baldes: `credits` = plano, `topup_credits` = avulso, `referral_credits` =
+// bônus. O débito é ATÔMICO e escreve no extrato (RPC apply_tokens, migration
+// 0020). Preço dos planos e ciclos: lib/billing/plans.ts.
 // =====================================================================
 
-/** Custo em tokens por tipo de ação. Ver §3 do ESTRATEGIA-MONETIZACAO.md. */
+/** Custo em tokens por tipo de ação. */
 export const TOKEN_COST = {
-  /** Roteiro + legenda. Cobrado sempre, mesmo sem imagem nenhuma. */
-  textOnly: 4,
-  /**
-   * Texto + COMPOSIÇÃO de um POST ÚNICO. Separado do `textOnly` porque a peça
-   * de 1 slide não faz o mesmo trabalho que o roteiro de um carrossel:
-   *
-   *   - carrossel: o modelo escreve copy e o layout vem de template pronto;
-   *   - post único: o modelo escreve copy E COMPÕE o layout do zero
-   *     (lib/single-posts/compose.ts), num loop de até 4 tentativas.
-   *
-   * Compor custa mais que preencher, e até 20/08/2026 esse custo era cobrado
-   * como se fosse igual — os 4 tokens do carrossel pagavam também a
-   * composição. Era o furo de margem do produto.
-   *
-   * ===================================================================
-   * MEDIÇÃO de 20-21/08/2026 (via generation_usage), cache FRIO:
-   *
-   *   copy (generateFreeText), cache frio ......... US$ 0,032
-   *   composeSpec, 2 tentativas, cache frio ....... US$ 0,086
-   *   ------------------------------------------------------
-   *   total do lado Claude ........................ US$ 0,118
-   *
-   * O teto de COGS por token da tabela acima é R$ 0,016069
-   * (= R$0,466 / 29 tokens). A US$ 0,118 ≈ R$ 0,64, a composição sozinha
-   * consumiria ~40 tokens de orçamento — não 8.
-   *
-   * DECISÃO (21/08/2026): fica em 4, igual ao carrossel.
-   *
-   * A conta acima é do caminho de COMPOSIÇÃO — e o produto não usa mais esse
-   * caminho: com `POST_UNICO_FOTO_REAL = false`, todo post único vai pro
-   * nano-banana (bitmap), onde o `composeSpec` NÃO roda. O que sobra do lado
-   * Claude é só a copy, que com cache quente dá ~4,7 tokens de COGS — ou seja,
-   * exatamente o que os 4 tokens já cobriam.
-   *
-   * A constante continua SEPARADA do `textOnly` de propósito: no dia em que a
-   * composição voltar a ser caminho de produto, o preço do post único sobe
-   * aqui sem arrastar carrossel, inspirações e pricing junto. Nesse dia, a
-   * medição diz ~20 tokens com cache quente (copy + compose).
-   *
-   * Antes de mexer, olhe a série real — uma amostra não é distribuição:
-   *   select stage, count(*), avg(cost_usd), avg(attempts)
-   *     from generation_usage group by stage;
-   * ===================================================================
-   */
+  /** Roteiro + legenda do carrossel. Cobrado sempre, mesmo sem imagem. */
+  textOnly: 8,
+  /** Texto do post único (a arte é cobrada à parte, ver singlePostImage). */
   singlePostText: 4,
-  /** Imagem de CAPA. Nano Banana simples (~US$0,04) desde 21/08/2026; o preço em tokens ficou, a margem subiu. */
-  imageCover: 25,
+  /** Imagem de CAPA do carrossel (nano-banana simples, ~US$0,04). */
+  imageCover: 20,
+  /** Arte do post único (nano-banana-2, ~US$0,08). Papel de capa, modelo mais caro. */
+  singlePostImage: 25,
   /** Imagem de slide de miolo — Flux Schnell, ~US$0,003. */
   imageSlide: 2,
+  /** Edição cirúrgica do bitmap do post único (nano-banana /edit). */
+  editBitmap: 15,
+  /** Pauta/inspiração além das 3 grátis por dia. */
+  ideas: 4,
 } as const
 
 /** O que o usuário marcou no wizard antes de gerar. */
@@ -172,41 +140,11 @@ export function brandLimitFor(plan: string | null | undefined): number {
   return PLAN_BRANDS[plan as Plan] ?? PLAN_BRANDS.trial
 }
 
-/** Ciclos de cobrança e o desconto de cada um (espelha app/pricing/page.tsx). */
-export type BillingCycleId = "monthly" | "quarterly" | "semiannual" | "annual"
-
 /**
- * Tokens/mês por plano em CADA ciclo.
- *
- * Por que o grant encolhe quando o preço cai: o token é o que trava o COGS.
- * Manter 1.000 tokens no anual (−40%) significaria entregar o mesmo custo por
- * 60% da receita — o Pro anual fecharia em 72,7% e o Studio em 67,6%, abaixo
- * do piso de 80% que rege a tabela de custos acima.
- *
- * Os números saem da mesma restrição: no modo mais caro (só capa, R$0,466 por
- * carrossel de 29 tokens), tokens <= 0,20 × receita_liquida / 0,016069.
- * Todos os pares abaixo fecham entre 80,4% e 81,5%.
- *
- * O Starter não muda em ciclo nenhum: 300 está bem abaixo do teto dele (554),
- * então sobra folga mesmo no anual.
+ * Ciclos e preços moram em lib/billing/plans.ts. Tokens por mês são os
+ * mesmos em qualquer ciclo (decisão 22/08/2026: o desconto do anual mexe só
+ * no preço, nunca no grant).
  */
-export const PLAN_TOKENS_BY_CYCLE: Record<
-  BillingCycleId,
-  Record<Exclude<Plan, "trial">, number>
-> = {
-  monthly: { starter: 300, pro: 1000, studio: 3000 },
-  quarterly: { starter: 300, pro: 950, studio: 2500 },
-  semiannual: { starter: 300, pro: 800, studio: 2100 },
-  annual: { starter: 300, pro: 700, studio: 1800 },
-}
-
-/** Tokens/mês de um plano num ciclo. Fallback seguro no grant mensal. */
-export function planTokensForCycle(
-  plan: Exclude<Plan, "trial">,
-  cycle: BillingCycleId,
-): number {
-  return PLAN_TOKENS_BY_CYCLE[cycle]?.[plan] ?? PLAN_TOKENS[plan]
-}
 
 /**
  * Quais planos podem usar Nano Banana Pro.
@@ -245,7 +183,7 @@ export function tokenCostForRole(role: "cover" | "slide"): number {
  * único. A imagem dele tem papel de CAPA (é uma peça só, e é ela que para o
  * scroll), então roda no modelo caro e custa igual à capa de um carrossel:
  *
- *   textOnly (4) + imageCover (25) = 29 tokens
+ *   singlePostText (4) + singlePostImage (25) = 29 tokens
  *
  * Como o custo é composto pelas mesmas parcelas da capa, a margem é idêntica
  * à dela por construção — a verificação de piso de 80% feita para o carrossel
@@ -261,7 +199,7 @@ export function tokenCostForRole(role: "cover" | "slide"): number {
  * custa crédito e regenera o design do zero.
  */
 export function tokenCostForSinglePost(): number {
-  return TOKEN_COST.singlePostText + TOKEN_COST.imageCover
+  return TOKEN_COST.singlePostText + TOKEN_COST.singlePostImage
 }
 
 /**
@@ -274,6 +212,14 @@ export function tokenCostForSinglePost(): number {
  */
 export function tokenCostForImage(quality: ImageQuality): number {
   return quality === "pro" ? TOKEN_COST.imageCover : TOKEN_COST.imageSlide
+}
+
+/**
+ * Imagem do POST ÚNICO: a arte roda no nano-banana-2 (mais caro que a capa
+ * do carrossel), então "pro" aqui custa singlePostImage (25), não imageCover.
+ */
+export function tokenCostForSinglePostImage(quality: ImageQuality): number {
+  return quality === "pro" ? TOKEN_COST.singlePostImage : TOKEN_COST.imageSlide
 }
 
 /**
@@ -314,9 +260,8 @@ export function planFromProfile(p: {
 }
 
 // ---------------------------------------------------------------------
-// Mapa plano → tokens usado pelo webhook da Cakto (§8.6 do doc) para
-// creditar o grant mensal quando uma compra/renovação é aprovada.
-// Aceita os slugs de oferta que a Cakto mandar (normalize antes).
+// Mapa plano → tokens usado pela camada de cobrança (lib/billing) para o
+// grant mensal. Aceita string desconhecida (devolve 0).
 // ---------------------------------------------------------------------
 export function planTokensFor(plan: string | null | undefined): number {
   if (!plan) return 0
@@ -324,55 +269,154 @@ export function planTokensFor(plan: string | null | undefined): number {
 }
 
 // =====================================================================
-// Débito de tokens (best-effort).
+// Débito de tokens — ATÔMICO, com linha no extrato.
 //
-// Decrementa o saldo de tokens do usuário reusando a função SQL
-// `consume_image_credit` (0004_credit_functions.sql) num loop de N
-// chamadas — cada chamada tira 1 token de forma atômica (FOR UPDATE).
+// Chama a RPC `apply_tokens` (migration 0020): uma transação, ordem de
+// consumo plano → avulso → bônus, tudo-ou-nada. Se não houver saldo, não
+// debita nada e devolve ok=false (saldo_insuficiente).
 //
-// IMPORTANTE: é best-effort. NÃO deve bloquear a geração se falhar.
-// Sempre chamar dentro de try/catch nos endpoints; a função já não
-// lança (retorna { ok, debited }).
+// Continua best-effort do ponto de vista da geração: nunca lança. Os
+// endpoints chamam dentro de try/catch e a geração segue mesmo que o débito
+// falhe (decisão antiga: nunca travar o usuário por falha de cobrança).
+//
+// UMA linha por PEÇA (carrossel, post único, pauta), nunca por slide ou
+// etapa interna (decisão 22/08/2026, seção 10.6 do doc).
 // =====================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+export type DebitKind =
+  | "debit_carousel"
+  | "debit_single_post"
+  | "debit_image"
+  | "debit_edit_bitmap"
+  | "debit_ideas"
+  | "debit_other"
+
+export interface DebitMeta {
+  kind: DebitKind
+  /** Tipo da peça (project, single_post, editorial, idea...). */
+  refType?: string | null
+  /** ID da peça — é o que deixa o extrato "abrir" a peça. */
+  refId?: string | null
+  /** Título humano da linha do extrato. */
+  title?: string | null
+  meta?: Record<string, unknown>
+}
+
 export interface DebitResult {
   ok: boolean
-  /** Quantos tokens foram efetivamente debitados. */
+  /** Quantos tokens foram efetivamente debitados (0 ou `amount`). */
   debited: number
   error?: string
+  /** Saldo total disponível quando faltou saldo. */
+  available?: number
 }
 
 /**
- * Debita `amount` tokens do usuário, best-effort.
+ * Debita `amount` tokens do usuário numa única transação.
  *
  * @param client Supabase client (server ou admin) já autenticado.
  * @param userId UUID do usuário.
- * @param amount Total de tokens a debitar (ex: tokenCostForImage()).
+ * @param amount Total de tokens da peça.
+ * @param meta   Tipo, referência e título da linha do extrato.
  *
- * Nunca lança: em qualquer erro retorna { ok:false } e a geração segue.
- * Reusa `consume_image_credit` (RPC) — 1 token por chamada.
+ * Nunca lança.
  */
 export async function debitTokens(
   client: SupabaseClient,
   userId: string,
   amount: number,
+  meta: DebitMeta = { kind: "debit_other" },
 ): Promise<DebitResult> {
   if (!userId || amount <= 0) return { ok: true, debited: 0 }
-  let debited = 0
   try {
-    for (let i = 0; i < amount; i++) {
-      const { data, error } = await client.rpc("consume_image_credit", {
-        p_user_id: userId,
-      })
-      // data === false → saldo esgotou; error → falha de RPC.
-      if (error || data === false) break
-      debited++
-    }
-    return { ok: debited === amount, debited }
+    const { data, error } = await client.rpc("apply_tokens", {
+      p_user_id: userId,
+      p_amount: Math.round(amount),
+      p_kind: meta.kind,
+      p_ref_type: meta.refType ?? null,
+      p_ref_id: meta.refId ?? null,
+      p_title: meta.title ?? null,
+      p_meta: meta.meta ?? {},
+    })
+    if (error) return { ok: false, debited: 0, error: error.message }
+    const r = (data ?? {}) as { ok?: boolean; debited?: number; error?: string; available?: number }
+    if (!r.ok) return { ok: false, debited: 0, error: r.error ?? "falha", available: r.available }
+    return { ok: true, debited: r.debited ?? amount }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return { ok: false, debited, error: message }
+    return { ok: false, debited: 0, error: message }
   }
+}
+
+/** Estorno (falha depois do débito): devolve pro balde do plano, com linha no extrato. */
+export async function refundTokens(
+  client: SupabaseClient,
+  userId: string,
+  amount: number,
+  ref: { refType?: string | null; refId?: string | null; title?: string | null } = {},
+): Promise<boolean> {
+  if (!userId || amount <= 0) return true
+  try {
+    const { error } = await client.rpc("refund_tokens", {
+      p_user_id: userId,
+      p_amount: Math.round(amount),
+      p_ref_type: ref.refType ?? null,
+      p_ref_id: ref.refId ?? null,
+      p_title: ref.title ?? null,
+    })
+    return !error
+  } catch {
+    return false
+  }
+}
+
+// =====================================================================
+// Leitura de SALDO: o outro lado do débito atômico.
+//
+// O débito é tudo-ou-nada: quem não tem o total NÃO é debitado. Como todo
+// endpoint debita DEPOIS de gerar e nunca falha a resposta por causa de
+// token, sem uma checagem ANTES da chamada cara o usuário sem saldo geraria
+// de graça pra sempre. Estas funções existem só pra alimentar esse portão.
+// =====================================================================
+
+/**
+ * Saldo TOTAL disponível (plano + avulso + bônus), lido direto do banco.
+ * Existe porque o débito é atômico: quem não tem o total NÃO é debitado, e
+ * sem esta checagem ANTES de gerar a peça sairia de graça.
+ * Degrada sozinho se a migration 0020 ainda não rodou (cai nas colunas antigas).
+ */
+export async function getAvailableTokens(
+  client: SupabaseClient,
+  userId: string,
+): Promise<number> {
+  if (!userId) return 0
+  try {
+    const { data, error } = await client
+      .from("users")
+      .select("credits, topup_credits, referral_credits")
+      .eq("id", userId)
+      .single()
+    if (error) {
+      // Banco sem 0020 (ou sem 0014): usa só o balde do plano.
+      const { data: legado } = await client
+        .from("users").select("credits").eq("id", userId).single()
+      return Math.max(0, (legado as { credits?: number } | null)?.credits ?? 0)
+    }
+    const p = data as { credits?: number; topup_credits?: number; referral_credits?: number }
+    return Math.max(0, p.credits ?? 0) + Math.max(0, p.topup_credits ?? 0) + Math.max(0, p.referral_credits ?? 0)
+  } catch {
+    return 0
+  }
+}
+
+/** `true` se o usuário tem saldo pra pagar `amount`. Usuário anônimo passa (rotas públicas cobram 0). */
+export async function hasTokens(
+  client: SupabaseClient,
+  userId: string | null | undefined,
+  amount: number,
+): Promise<boolean> {
+  if (!userId || amount <= 0) return true
+  return (await getAvailableTokens(client, userId)) >= amount
 }

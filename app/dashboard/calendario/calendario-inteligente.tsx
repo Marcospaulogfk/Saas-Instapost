@@ -45,27 +45,28 @@ export function CalendarioInteligenteCard({
 
   return (
     <>
+      {/* Faixa cheia de marca: é a chamada principal do calendário e precisa
+          pesar mais que o resto da tela — cor sólida, sem gradiente nem glow
+          (DESIGN.md §6). */}
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="w-full mb-4 rounded-xl border border-border-subtle bg-background-secondary/50 hover:border-border-accent p-4 flex items-center gap-3 transition-colors text-left"
+        className="w-full mb-4 rounded-2xl bg-brand-600 hover:bg-brand-500 p-5 flex items-center gap-4 transition-colors text-left"
       >
-        <div className="w-10 h-10 rounded-lg bg-brand-600/15 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-5 h-5 text-brand-400" />
+        <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold text-text-primary">
-              Gere um calendário inteligente baseado nas suas inspirações
-            </p>
+            <p className="text-lg font-bold text-white">Recomendações IA</p>
             <BadgeGratis />
           </div>
-          <p className="text-[11px] text-text-muted mt-0.5">
-            A IA monta as pautas da semana ou do mês. Você só gasta token quando
-            decidir gerar o post.
+          <p className="text-[13px] text-white/80 mt-0.5">
+            Gere um calendário inteligente baseado nas suas inspirações — você só
+            gasta token quando decidir gerar o post.
           </p>
         </div>
-        <ChevronRight className="w-5 h-5 text-text-muted flex-shrink-0" />
+        <ChevronRight className="w-5 h-5 text-white/80 flex-shrink-0" />
       </button>
 
       {aberto && (

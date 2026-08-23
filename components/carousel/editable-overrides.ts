@@ -21,7 +21,7 @@
 // posicionamento dos contornos — mesma derivação de chave nos dois lados.
 // ============================================================================
 
-export type EditableType = "title" | "text" | "badge" | "image"
+export type EditableType = "title" | "text" | "badge" | "image" | "meta" | "block"
 
 export interface ElementOverride {
   /** Deslocamento em px na LARGURA DE DESIGN (420) — escala junto do slide. */
@@ -31,6 +31,9 @@ export interface ElementOverride {
   scale?: number
   /** Cor do texto (título/texto/badge). */
   color?: string
+  /** Oculta o elemento nativo (visibility:hidden — mantém o fluxo do layout,
+   *  nada reflui). Usado pra trocar "arrasta"/marca pelo bloco do usuário. */
+  hidden?: boolean
 }
 
 export type SlideElementOverrides = Record<string, ElementOverride>
@@ -47,6 +50,8 @@ export const EDITABLE_TYPE_LABEL: Record<EditableType, string> = {
   text: "Texto",
   badge: "Tag",
   image: "Imagem",
+  meta: "Rodapé",
+  block: "Bloco",
 }
 
 /**
@@ -64,6 +69,13 @@ export function collectEditableNodes(root: HTMLElement): EditableNode[] {
   root.querySelectorAll<HTMLElement>("[data-edit]").forEach((node) => {
     const type = node.getAttribute("data-edit") as EditableType | null
     if (!type || !(type in EDITABLE_TYPE_LABEL)) return
+    // Blocos livres têm chave ESTÁVEL (id) — apagar um do meio não
+    // renumera os outros. Os nós dos layouts seguem tipo-índice.
+    const stable = node.getAttribute("data-edit-key")
+    if (stable) {
+      out.push({ node, key: stable, type })
+      return
+    }
     const idx = counters[type] ?? 0
     counters[type] = idx + 1
     out.push({ node, key: `${type}-${idx}`, type })
@@ -89,6 +101,8 @@ export function applyElementOverrides(
 ) {
   const nodes = collectEditableNodes(root)
   for (const { node, key, type } of nodes) {
+    // Bloco livre: posição/cor vivem no próprio bloco (slide.blocks), nunca em el.
+    if (type === "block") continue
     const o = overrides?.[key]
 
     // ── transform (mover/escalar) — não se aplica à imagem ──
@@ -105,6 +119,15 @@ export function applyElementOverrides(
         node.style.transformOrigin = ""
         delete node.dataset.editTransformed
       }
+    }
+
+    // ── ocultar (qualquer tipo, inclusive imagem) ──
+    if (o?.hidden) {
+      node.style.visibility = "hidden"
+      node.dataset.editHidden = "1"
+    } else if (node.dataset.editHidden) {
+      node.style.visibility = ""
+      delete node.dataset.editHidden
     }
 
     // ── cor (título/texto/badge) ──

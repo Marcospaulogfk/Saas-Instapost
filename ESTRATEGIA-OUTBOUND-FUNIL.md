@@ -1,6 +1,6 @@
 # 🎯 Estratégia de Outbound SyncPost — ICP, Funil e Conversão
 
-Data: 19/07/2026 · Contexto: aquisição 100% outbound nos primeiros meses (sem tráfego pago até o produto consolidar métricas e objeções). 3 canais: WhatsApp, e-mail, LinkedIn (+ Instagram como aquecimento passivo). Base: 4 pesquisas profundas (ICPs/dor, concorrentes/preços, máquina de leads, playbook de conversão) — fontes no final. Docs irmãos: ESTRATEGIA-MONETIZACAO.md (planos/tokens/Cakto) · Chatbot/ESTRATEGIA-OUTBOUND-NUMEROS.md (doutrina de números/ban risk do EverReply — vale igual aqui).
+Data: 19/07/2026 · Contexto: aquisição 100% outbound nos primeiros meses (sem tráfego pago até o produto consolidar métricas e objeções). 3 canais: WhatsApp, e-mail, LinkedIn (+ Instagram como aquecimento passivo). Base: 4 pesquisas profundas (ICPs/dor, concorrentes/preços, máquina de leads, playbook de conversão) — fontes no final. Docs irmãos: ESTRATEGIA-MONETIZACAO.md (planos/tokens/Asaas) · Chatbot/ESTRATEGIA-OUTBOUND-NUMEROS.md (doutrina de números/ban risk do EverReply — vale igual aqui).
 
 ## ⚡ TL;DR — as 6 decisões
 
@@ -308,7 +308,7 @@ Leitura sem anestesia: **2–4 clientes/mês no realista dos primeiros 60 dias**
 
 ## 5. Execução — primeiras 6 semanas
 
-⏱️ Caminho crítico (começa no DIA 1, antes de tudo): (1) **chip de prospecção**: 10–14 dias de aquecimento — se não houver número envelhecido, ele é o gargalo; (2) **domínios de e-mail + warmup**: 3–4 semanas — comprar e ligar no dia 1 mesmo que o canal só entre no mês 2; (3) **pré-requisitos de PRODUTO que travam o funil**: trial de 1 carrossel funcionando ponta a ponta sem fricção (é a landing do outbound inteiro) · checkout Cakto operacional (sem ele não existe conversão — hoje billing não está implementado) · teste visual lado-a-lado vs GalilAI aprovado internamente · NÃO prometer publicação automática no Instagram na copy até a Meta aprovar (está pendente). Esses relógios não se aceleram com dinheiro nem esforço.
+⏱️ Caminho crítico (começa no DIA 1, antes de tudo): (1) **chip de prospecção**: 10–14 dias de aquecimento — se não houver número envelhecido, ele é o gargalo; (2) **domínios de e-mail + warmup**: 3–4 semanas — comprar e ligar no dia 1 mesmo que o canal só entre no mês 2; (3) **pré-requisitos de PRODUTO que travam o funil**: trial de 1 carrossel funcionando ponta a ponta sem fricção (é a landing do outbound inteiro) · checkout Asaas operacional (sem ele não existe conversão — hoje billing não está implementado) · teste visual lado-a-lado vs GalilAI aprovado internamente · NÃO prometer publicação automática no Instagram na copy até a Meta aprovar (está pendente). Esses relógios não se aceleram com dinheiro nem esforço.
 
 | Semana | Ações |
 |---|---|

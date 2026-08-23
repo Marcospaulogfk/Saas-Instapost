@@ -54,16 +54,32 @@ export function podeGerarFormato(multiSlide: boolean): boolean {
  */
 
 /**
- * Indique e ganhe. LIGADA por decisão do Marcos em 20/08/2026, antes da
- * migration: a faixa de indicação no topo do dashboard é a superfície que ele
- * quis no ar agora.
+ * Indique e ganhe. Em produção fica DESLIGADA até a migration 0014 (e a 0020,
+ * que põe o bônus no extrato) rodarem no banco; liga com NEXT_PUBLIC_INDICACAO=1
+ * na Coolify depois disso. Em dev aparece inteira. Decisão 22/08/2026: "prometer
+ * 100 créditos que não existem é o pior dos cenários".
  *
  * ATENÇÃO — enquanto `0014_indicacao.sql` não rodar no banco,
  * /dashboard/indicacao não tem as tabelas (`referrals`, `referral_credits`,
  * RPC `get_or_create_referral_code`) e a página falha. Aplicar a migration é o
  * que fecha isso; a flag já está do lado certo.
  */
-export const INDICACAO_HABILITADA = true
+export const INDICACAO_HABILITADA =
+  process.env.NEXT_PUBLIC_INDICACAO === "1" ||
+  (process.env.NEXT_PUBLIC_INDICACAO !== "0" && process.env.NODE_ENV !== "production")
+
+/**
+ * Afiliados (dinheiro, 25% recorrente via split do Asaas). Codado inteiro
+ * (formulário de candidatura, aprovação, página do afiliado, split na
+ * assinatura, comissões), mas DESLIGADO em produção por decisão do Marcos em
+ * 22/08/2026: "cria essa opção mas não sobe para produção até estar rodando,
+ * poucas pessoas têm conta Asaas, preciso pensar em outra coisa". Comissão,
+ * cookie e e-mail de candidatura ficaram "indefinido por enquanto".
+ * Depende da migration 0021_afiliados.sql. Liga com NEXT_PUBLIC_AFILIADOS=1.
+ */
+export const AFILIADOS_HABILITADO =
+  process.env.NEXT_PUBLIC_AFILIADOS === "1" ||
+  (process.env.NEXT_PUBLIC_AFILIADOS !== "0" && process.env.NODE_ENV !== "production")
 
 /** Fontes próprias de inspiração. Depende de 0016_inspiration_sources.sql. */
 export const FONTES_INSPIRACAO_HABILITADAS = false

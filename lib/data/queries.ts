@@ -9,12 +9,33 @@ const DEV_MODE_ENABLED =
   process.env.NODE_ENV !== "production"
 const DEV_USER_ID = process.env.DEV_USER_ID
 
+/**
+ * Perfil de cobrança/tokens. TRÊS baldes (migration 0020):
+ *   credits          = plano (recarrega e zera na renovação)
+ *   topup_credits    = avulso (não vence)
+ *   referral_credits = bônus de indicação (não vence)
+ * Quem exibe saldo lê daqui e só daqui (topo, wizard, Configurações, página
+ * de tokens), com `tokensDisponiveis()` pra somar.
+ */
 export type Profile = {
   credits: number
   subscription_status: string
   plan_credits_monthly: number
   plan_credits_used_this_month: number
   trial_used: boolean
+  topup_credits: number
+  referral_credits: number
+  plan_id: string | null
+  plan_cycle: string | null
+  plan_renews_at: string | null
+  past_due_since: string | null
+  billing_subscription_id: string | null
+}
+
+/** Total que o usuário pode gastar agora: plano + avulso + bônus. */
+export function tokensDisponiveis(p: Profile | null | undefined): number {
+  if (!p) return 0
+  return Math.max(0, p.credits ?? 0) + Math.max(0, p.topup_credits ?? 0) + Math.max(0, p.referral_credits ?? 0)
 }
 
 export type BrandSummary = {
@@ -93,14 +114,58 @@ export const requireUser = cache(async () => {
 
 export const getProfile = cache(async () => {
   const { supabase, user } = await requireUser()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select(
-      "credits, subscription_status, plan_credits_monthly, plan_credits_used_this_month, trial_used",
+      "credits, subscription_status, plan_credits_monthly, plan_credits_used_this_month, trial_used, topup_credits, referral_credits, plan_id, plan_cycle, plan_renews_at, past_due_since, billing_subscription_id",
     )
     .eq("id", user.id)
     .single()
-  return { user, profile: (data as Profile | null) ?? null }
+  if (error && /column|does not exist/i.test(error.message)) {
+    // Banco ainda sem a migration 0020: cai pras colunas antigas pra não
+    // derrubar o dashboard inteiro por causa do saldo.
+    const { data: legado } = await supabase
+      .from("users")
+      .select("credits, subscription_status, plan_credits_monthly, plan_credits_used_this_month, trial_used")
+      .eq("id", user.id)
+      .single()
+    const base = legado as Partial<Profile> | null
+    const profile: Profile | null = base
+      ? {
+          credits: base.credits ?? 0,
+          subscription_status: base.subscription_status ?? "trial",
+          plan_credits_monthly: base.plan_credits_monthly ?? 0,
+          plan_credits_used_this_month: base.plan_credits_used_this_month ?? 0,
+          trial_used: Boolean(base.trial_used),
+          topup_credits: 0,
+          referral_credits: 0,
+          plan_id: null,
+          plan_cycle: null,
+          plan_renews_at: null,
+          past_due_since: null,
+          billing_subscription_id: null,
+        }
+      : null
+    return { user, profile }
+  }
+  const raw = data as Partial<Profile> | null
+  const profile: Profile | null = raw
+    ? {
+        credits: raw.credits ?? 0,
+        subscription_status: raw.subscription_status ?? "trial",
+        plan_credits_monthly: raw.plan_credits_monthly ?? 0,
+        plan_credits_used_this_month: raw.plan_credits_used_this_month ?? 0,
+        trial_used: Boolean(raw.trial_used),
+        topup_credits: raw.topup_credits ?? 0,
+        referral_credits: raw.referral_credits ?? 0,
+        plan_id: raw.plan_id ?? null,
+        plan_cycle: raw.plan_cycle ?? null,
+        plan_renews_at: raw.plan_renews_at ?? null,
+        past_due_since: raw.past_due_since ?? null,
+        billing_subscription_id: raw.billing_subscription_id ?? null,
+      }
+    : null
+  return { user, profile }
 })
 
 export const listBrands = cache(async (): Promise<BrandSummary[]> => {

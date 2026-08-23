@@ -5,17 +5,26 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  Baseline,
   Check,
   Copy,
   Download,
   Loader2,
+  MessageSquare,
+  Move,
+  Plus,
+  RectangleVertical,
   RefreshCw,
   Image as ImageIcon,
   Save,
+  Smartphone,
   Sparkles,
   Square,
   Type,
 } from "lucide-react"
+import { Logo } from "@/components/brand/logo"
+import { EditorSection as Section } from "@/components/editor/editor-section"
+import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -28,7 +37,13 @@ import {
 } from "@/components/ui/select"
 import { useSpecEditor } from "@/lib/single-posts/use-spec-editor"
 import { applyFontPreset, FONT_PRESETS } from "@/lib/single-posts/font-presets"
-import { exportSpecToPng, isRealBrandId, saveSinglePost } from "@/lib/single-posts/save"
+import {
+  exportSpecToPng,
+  isRealBrandId,
+  renderSpecToPng,
+  saveSinglePost,
+} from "@/lib/single-posts/save"
+import { uploadPngDataUrl } from "@/lib/instagram/render-upload"
 import {
   addImageBlock,
   addShapeBlock,
@@ -378,6 +393,14 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const isBitmap =
     !!spec && spec.blocks.length === 0 && spec.background.kind === "photo"
 
+  /** URL pública da arte bitmap (null enquanto for data URL local). */
+  const artUrl =
+    spec?.background.kind === "photo" &&
+    spec.background.photo_url &&
+    /^https?:\/\//.test(spec.background.photo_url)
+      ? spec.background.photo_url
+      : null
+
   const bitmapChanges = bitmapFields()
     .map((f) => ({ key: f.key, from: f.value, to: (bitmapDraft[f.key] ?? f.value).trim() }))
     .filter((c) => c.to && c.to !== c.from)
@@ -438,6 +461,10 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     if (!spec || !brand) return
     setSaving(true)
     setError(null)
+    // A miniatura sai do preview na tela — sem tirar a seleção, o outline de
+    // edição do bloco selecionado entra no PNG que vai pra biblioteca.
+    setSelectedPath(null)
+    await new Promise((r) => setTimeout(r, 60))
     const res = await saveSinglePost({
       brandId: brand.id,
       spec,
@@ -448,6 +475,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       format,
       photoUrl,
       bitmapTexts,
+      previewNode: previewRef.current,
       savedId,
     })
     setSaving(false)
@@ -503,10 +531,40 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       <div className="order-2 flex-1 min-w-0 flex flex-col">
         {/* Toolbar de topo — ações sempre visíveis */}
         <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
-          <span className="text-[13px] font-medium text-text-primary">Post único</span>
+          {/* Formato do canvas — mesmo lugar e mesmo controle do editor de
+              carrossel. Aqui ele ADAPTA a arte (reposiciona as camadas em TS),
+              não regenera nada: por isso não custa tokens. */}
+          <Select
+            value={format}
+            onValueChange={(v) => handleFormat(v as PostFormat)}
+            disabled={!spec || adapting}
+          >
+            <SelectTrigger className="w-[170px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {POST_FORMAT_LIST.map((f) => {
+                const Icone =
+                  f.id === "story"
+                    ? RectangleVertical
+                    : f.id === "square"
+                      ? Square
+                      : Smartphone
+                return (
+                  <SelectItem key={f.id} value={f.id}>
+                    <span className="flex items-center gap-2">
+                      <Icone className="w-4 h-4" />
+                      {f.label} {f.ratio}
+                    </span>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
           <span className="text-[11px] text-text-muted">
-            {POST_FORMATS[format].width} × {POST_FORMATS[format].height}px ·{" "}
-            {POST_FORMATS[format].ratio}
+            {adapting
+              ? "Adaptando as camadas…"
+              : `${POST_FORMATS[format].width} × ${POST_FORMATS[format].height}px · adaptar não custa tokens`}
           </span>
 
           <div className="ml-auto flex items-center gap-2 flex-wrap">
@@ -522,6 +580,24 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                 Outra versão ({cost})
               </Button>
+            )}
+            {/* Publicar direto — mesmo botão do carrossel. A arte final é
+                renderizada do preview e hospedada na hora de publicar, então
+                funciona tanto pro bitmap quanto pro post de camadas (antes só
+                o bitmap com URL pública mostrava o botão). */}
+            {spec && (
+              <PublishToInstagram
+                kind="post"
+                imageCount={1}
+                caption={caption}
+                getImageUrls={async () => {
+                  // Bitmap já hospedado: manda a URL direto, sem re-render.
+                  if (isBitmap && artUrl) return [artUrl]
+                  if (!previewRef.current) throw new Error("preview indisponível")
+                  const png = await renderSpecToPng(previewRef.current, format)
+                  return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
+                }}
+              />
             )}
             <Button
               type="button"
@@ -593,7 +669,10 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       </div>
 
       {/* Sidebar de edição — coluna cheia à ESQUERDA */}
-      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-4 h-full overflow-y-auto">
+      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto">
+        <div className="px-1 pb-5">
+          <Logo size={28} variant="content" />
+        </div>
         <Link
           href="/dashboard/projetos"
           className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
@@ -614,8 +693,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         {spec && (
           <>
             {isBitmap && bitmapFields().length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm text-text-secondary">Textos da arte</Label>
+              <Section icon={Type} title="Textos da arte" defaultOpen>
                 <p className="text-[10px] text-text-muted">
                   A arte é uma imagem única. Edite os textos e aplique — a IA
                   troca só o que mudou, mantendo todo o design.
@@ -650,53 +728,12 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                   )}
                   {bitmapApplying
                     ? "Editando a arte…"
-                    : `Aplicar na arte (${TOKEN_COST.imageCover} tokens)`}
+                    : `Aplicar na arte (${TOKEN_COST.editBitmap} tokens)`}
                 </Button>
-              </div>
+              </Section>
             )}
 
-            <div className="space-y-2">
-              <Label className="text-sm text-text-secondary">Adaptar formato</Label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {POST_FORMAT_LIST.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => handleFormat(f.id)}
-                    disabled={adapting}
-                    className={`h-[68px] rounded-md border text-[11px] flex flex-col items-center justify-center gap-1 transition-colors disabled:opacity-50 ${
-                      format === f.id
-                        ? "border-brand-500 bg-brand-500/15 text-text-primary"
-                        : "border-border-subtle text-text-muted hover:text-text-primary"
-                    }`}
-                  >
-                    {/* Miniatura na proporção real — o usuário reconhece o
-                        formato pelo desenho antes de ler o rótulo. */}
-                    <span
-                      aria-hidden
-                      className={`border ${
-                        format === f.id ? "border-brand-400" : "border-current"
-                      }`}
-                      style={{
-                        height: 16,
-                        width: Math.round((16 * f.width) / f.height),
-                      }}
-                    />
-                    <span className="leading-none">{f.label}</span>
-                    <span className="leading-none text-[9px] opacity-70">
-                      {f.ratio}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-text-muted">
-                As camadas são reposicionadas — a arte não é gerada de novo.
-                Adaptar não custa tokens.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm text-text-secondary">Adicionar ao canvas</Label>
+            <Section icon={Plus} title="Adicionar ao canvas">
               <div className="grid grid-cols-2 gap-1.5">
                 {TEXT_STYLES.map((st) => (
                   <Button
@@ -739,10 +776,9 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 className="hidden"
                 onChange={handleAddImage}
               />
-            </div>
+            </Section>
 
-            <div className="space-y-2">
-              <Label className="text-sm text-text-secondary">Tipografia</Label>
+            <Section icon={Baseline} title="Tipografia">
               <Select value={fontPreset} onValueChange={setFontPreset}>
                 <SelectTrigger className="bg-background-secondary/60 border-border-subtle h-10">
                   <SelectValue />
@@ -755,15 +791,14 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Section>
 
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <Section icon={Move} title="Elemento selecionado" defaultOpen>
               {panel}
-            </div>
+            </Section>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm text-text-secondary">Legenda</Label>
+            <Section icon={MessageSquare} title="Legenda">
+              <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={copyCaption}
@@ -784,7 +819,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               <p className="text-[10px] text-text-muted">
                 Vai junto com o post ao salvar. Editar não custa tokens.
               </p>
-            </div>
+            </Section>
           </>
         )}
       </aside>

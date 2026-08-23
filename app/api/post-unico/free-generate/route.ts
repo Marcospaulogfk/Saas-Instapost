@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { debitTokens, tokenCostForImage, TOKEN_COST } from "@/lib/tokens"
+import {
+  debitTokens,
+  getAvailableTokens,
+  tokenCostForSinglePost,
+  tokenCostForSinglePostImage,
+  TOKEN_COST,
+  type DebitMeta,
+} from "@/lib/tokens"
 import { logImageUsage } from "@/lib/generation/usage-log"
 import {
   generateFreeSpec,
@@ -29,18 +36,55 @@ async function debitBestEffort(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string | undefined,
   amount: number,
+  meta: DebitMeta,
 ): Promise<void> {
   if (!userId || amount <= 0) return
   try {
-    await debitTokens(supabase, userId, amount)
+    const debit = await debitTokens(supabase, userId, amount, meta)
+    if (!debit.ok) {
+      // Peça já entregue e não cobrada. Quem impede isso de virar rotina é o
+      // portão de saldo lá no POST, não este log.
+      console.warn(
+        `[post-unico/free-generate] débito de tokens falhou: user=${userId} ` +
+          `amount=${amount} debited=${debit.debited}` +
+          (debit.error ? ` (${debit.error})` : ""),
+      )
+    }
   } catch {
     // ignorado — tokens nunca quebram geração
   }
 }
 
+/**
+ * Portão de saldo: 402 quando o usuário logado não tem o custo da etapa.
+ *
+ * Precisa existir porque o débito é ATÔMICO e roda DEPOIS da geração: saldo
+ * curto não debita nada, e sem barrar antes a peça sairia de graça. Devolve
+ * a resposta 402 pronta ou `null` quando pode seguir (inclusive sem sessão,
+ * caso em que nada é cobrado).
+ */
+async function barrarSemSaldo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | undefined,
+  amount: number,
+): Promise<NextResponse | null> {
+  if (!userId || amount <= 0) return null
+  const disponivel = await getAvailableTokens(supabase, userId)
+  if (disponivel >= amount) return null
+  return NextResponse.json(
+    {
+      error: "Tokens insuficientes para esta geração.",
+      code: "sem_saldo",
+      needed: amount,
+      available: disponivel,
+    },
+    { status: 402 },
+  )
+}
+
 /** Débito da imagem conforme a qualidade REAL entregue (null = foto real, grátis). */
 function imageCost(quality: "normal" | "pro" | null): number {
-  return quality ? tokenCostForImage(quality) : 0
+  return quality ? tokenCostForSinglePostImage(quality) : 0
 }
 
 /**
@@ -136,6 +180,16 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
+    // Esta etapa cobra só a ARTE. Barra pelo TETO dela (imagem no modelo
+    // caro): se a foto vier do Wikimedia o débito real é 0 e ninguém perde,
+    // mas quem não tem os 25 não leva a arte de graça.
+    const semSaldo = await barrarSemSaldo(
+      supabase,
+      user?.id,
+      tokenCostForSinglePostImage("pro"),
+    )
+    if (semSaldo) return semSaldo
+
     try {
       const result = await buildApprovedSpec({
         brand: body.brand,
@@ -149,7 +203,12 @@ export async function POST(req: Request) {
       })
       // Só a imagem: o texto já foi debitado na etapa text_only.
       const cobrado = imageCost(result.image_quality)
-      await debitBestEffort(supabase, user?.id, cobrado)
+      await debitBestEffort(supabase, user?.id, cobrado, {
+        kind: "debit_image",
+        refType: "single_post",
+        title: "Post único (arte)",
+        meta: { image_quality: result.image_quality },
+      })
       await logUsageBestEffort(supabase, result.usage_stages, {
         userId: user?.id,
         brandId: body.brand.id,
@@ -183,6 +242,14 @@ export async function POST(req: Request) {
 
   // ---- Modo: text-only → gera só content + caption (etapa de aprovação)
   if (body.text_only) {
+    // Só texto: o custo é exato, sem estimativa.
+    const semSaldo = await barrarSemSaldo(
+      supabase,
+      user?.id,
+      TOKEN_COST.singlePostText,
+    )
+    if (semSaldo) return semSaldo
+
     try {
       const result = await generateFreeText({
         brand: body.brand,
@@ -190,7 +257,11 @@ export async function POST(req: Request) {
         forceSkeletonId: body.skeleton_id ?? null,
         excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
       })
-      await debitBestEffort(supabase, user?.id, TOKEN_COST.singlePostText)
+      await debitBestEffort(supabase, user?.id, TOKEN_COST.singlePostText, {
+        kind: "debit_single_post",
+        refType: "single_post",
+        title: `Post único (texto): ${body.briefing.trim().slice(0, 60)}`,
+      })
       await logUsageBestEffort(supabase, result.usage_stages, {
         userId: user?.id,
         brandId: body.brand.id,
@@ -213,6 +284,12 @@ export async function POST(req: Request) {
   }
 
   // ---- Modo padrão: gera tudo (texto + foto + design)
+  // Barra pelo TETO do post único (texto + arte no modelo caro): é o mesmo
+  // número que o wizard mostra como "vai custar N tokens" antes de gerar,
+  // então quem passou no preview passa aqui.
+  const semSaldo = await barrarSemSaldo(supabase, user?.id, tokenCostForSinglePost())
+  if (semSaldo) return semSaldo
+
   try {
     const result = await generateFreeSpec({
       brand: body.brand,
@@ -222,7 +299,12 @@ export async function POST(req: Request) {
     })
     // Gera texto + imagem numa tacada só → cobra as duas parcelas.
     const cobrado = TOKEN_COST.singlePostText + imageCost(result.image_quality)
-    await debitBestEffort(supabase, user?.id, cobrado)
+    await debitBestEffort(supabase, user?.id, cobrado, {
+      kind: "debit_single_post",
+      refType: "single_post",
+      title: `Post único: ${(body.briefing ?? "").trim().slice(0, 60)}`,
+      meta: { image_quality: result.image_quality },
+    })
     await logUsageBestEffort(supabase, result.usage_stages, {
       userId: user?.id,
       brandId: body.brand.id,

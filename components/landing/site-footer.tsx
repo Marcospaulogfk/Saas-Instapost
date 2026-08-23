@@ -25,13 +25,15 @@ const EMPRESA = [
   { label: "Privacidade", href: "/privacidade" },
 ]
 
-/* TODO: trocar pelos perfis reais quando existirem. */
+/* Preencha o href conforme cada perfil existir. Quem continua com href vazio
+   não renderiza: ícone social que não leva a lugar nenhum queima confiança
+   justamente no rodapé, onde o visitante vai checar se a empresa é real. */
 const SOCIAIS = [
-  { Icon: Instagram, label: "Instagram", href: "#" },
-  { Icon: Linkedin, label: "LinkedIn", href: "#" },
-  { Icon: Youtube, label: "YouTube", href: "#" },
-  { Icon: Mail, label: "E-mail", href: "#" },
-]
+  { Icon: Instagram, label: "Instagram", href: "" },
+  { Icon: Linkedin, label: "LinkedIn", href: "" },
+  { Icon: Youtube, label: "YouTube", href: "" },
+  { Icon: Mail, label: "E-mail", href: "" },
+].filter((s) => s.href)
 
 /** Marca d'água: o viewBox é recalculado pelo bbox real do texto. */
 function Watermark() {

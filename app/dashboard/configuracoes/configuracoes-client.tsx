@@ -141,17 +141,17 @@ export function ConfiguracoesClient({
                 Saldo atual: {tokensBalance} tokens.
               </p>
               <p className="text-xs text-muted-foreground">
-                Cada geração consome tokens: roteiro/legenda (só texto) = 1
-                token · imagem padrão = 5 tokens · imagem premium (Nano Banana
-                Pro, planos Pro/Studio) = 20 tokens. Um carrossel de 7 slides
-                com imagem em todos usa ~35 tokens.
+                Saldo, extrato, tabela de preços em tokens e a gestão da
+                assinatura (trocar ou cancelar) ficam na página de tokens.
               </p>
             </div>
             <div className="flex gap-2">
               <Button asChild>
+                <Link href="/dashboard/tokens">Tokens e plano</Link>
+              </Button>
+              <Button variant="outline" asChild>
                 <Link href="/pricing">Ver planos</Link>
               </Button>
-              <Button variant="outline">Gerenciar cobranca</Button>
             </div>
           </section>
         </TabsContent>

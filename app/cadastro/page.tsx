@@ -36,23 +36,54 @@ export default function CadastroPage() {
     defaultValues: { email: "", password: "", acceptTerms: false },
   })
 
-  /* Pré-preenche com o e-mail digitado no rodapé da landing (/cadastro?email=).
+  const [refCode, setRefCode] = useState<string | null>(null)
+  const [nextPath, setNextPath] = useState<string>("/dashboard")
+
+  /* Pré-preenche com o e-mail digitado no rodapé da landing (/cadastro?email=)
+     e captura ?ref= (indicação), ?plano=/?ciclo= e ?next= (volta pro checkout).
      Lido de window em vez de useSearchParams pra não exigir Suspense aqui. */
   useEffect(() => {
-    const email = new URLSearchParams(window.location.search).get("email")
+    const q = new URLSearchParams(window.location.search)
+    const email = q.get("email")
     if (email) form.setValue("email", email)
+
+    const next = q.get("next")
+    const plano = q.get("plano")
+    const ciclo = q.get("ciclo")
+    if (next && next.startsWith("/")) setNextPath(next)
+    else if (plano) setNextPath(`/pricing?plano=${plano}&ciclo=${ciclo ?? "monthly"}`)
+
+    // Indicação: o código vale por 30 dias mesmo que a pessoa feche a aba e
+    // volte, ou entre pelo Google (o callback lê o cookie). Formato do código:
+    // 8 letras/números, sem 0/O/1/I/L.
+    const ref = (q.get("ref") ?? "").trim().toUpperCase()
+    const cookieRef = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("nx_ref="))
+      ?.slice("nx_ref=".length)
+    const valido = (v: string) => /^[A-HJ-KM-NP-Z2-9]{8}$/.test(v)
+    const escolhido = valido(ref) ? ref : cookieRef && valido(cookieRef) ? cookieRef : null
+    if (escolhido) {
+      setRefCode(escolhido)
+      if (ref === escolhido) {
+        document.cookie = `nx_ref=${escolhido}; path=/; max-age=${30 * 24 * 3600}; samesite=lax`
+      }
+    }
   }, [form])
 
   async function onSubmit(values: FormValues) {
     setServerError(null)
     setIsPending(true)
-    const result = await signUpWithPassword(values.email, values.password)
+    const result = await signUpWithPassword(values.email, values.password, {
+      refCode,
+      next: nextPath,
+    })
     setIsPending(false)
     if (result.ok) {
       if (result.needsConfirmation) {
         setSubmittedEmail(values.email)
       } else {
-        router.push("/dashboard")
+        router.push(nextPath)
         router.refresh()
       }
     } else {
@@ -63,7 +94,7 @@ export default function CadastroPage() {
   async function onGoogle() {
     setServerError(null)
     setIsPending(true)
-    const result = await signInWithGoogle("/dashboard")
+    const result = await signInWithGoogle(nextPath)
     if (result && !result.ok) {
       setIsPending(false)
       setServerError(result.error)

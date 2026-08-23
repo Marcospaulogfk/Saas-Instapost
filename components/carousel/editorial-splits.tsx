@@ -80,6 +80,8 @@ interface SplitProps {
   /** Cor de fundo custom (slide.bg). Quando definida, o slide troca o bg e
    *  deriva texto/contraste legível; undefined = usa o padrão do estilo. */
   bgOverride?: string
+  /** Cor do glow radial (estilos gradient/seamless). Vazio = accent. */
+  glow?: string
 }
 
 // ============================================================================
@@ -724,7 +726,7 @@ export function SplitMyPostFlowCta({
         <span
           className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
           style={{ backgroundColor: "#1668E3", color: "#FFFFFF", fontSize: 11, fontWeight: 700 }}
-        >
+         data-edit="meta">
           {slide.handle_avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -738,7 +740,7 @@ export function SplitMyPostFlowCta({
             "MP"
           )}
         </span>
-        <span className="text-sm font-medium">
+        <span className="text-sm font-medium" data-edit="meta">
           {slide.handle || "@brand"}
         </span>
       </div>
@@ -808,11 +810,13 @@ export function SplitGradientDark({
   fontClass,
   imageSlot = "none",
   bgOverride,
+  glow,
 }: SplitProps) {
   const hasBottomImage =
     imageSlot === "single-bottom" || imageSlot === "comparison-bottom"
   const titleSizeClass = fitTitle(slide.title, "text-[2.3rem]", "text-[1.9rem]", "text-[1.55rem]")
   const th = splitTheme(bgOverride)
+  const glowC = glow ?? accent
   const cBg = th?.bg ?? "#08080D"
   const cText = th?.text ?? "#FFFFFF"
   const cBody = th?.muted ?? "rgba(255,255,255,0.8)"
@@ -826,7 +830,7 @@ export function SplitGradientDark({
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(ellipse 80% 50% at 85% 0%, ${accent}24 0%, transparent 60%)`,
+          backgroundImage: `radial-gradient(ellipse 80% 50% at 85% 0%, ${glowC}24 0%, transparent 60%)`,
         }}
       />
 
@@ -918,13 +922,13 @@ export function SplitGradientDark({
           <span
             className="text-[10px] uppercase tracking-[0.18em] font-semibold"
             style={{ color: mixWithWhite(accent, 0.35) }}
-          >
+           data-edit="meta">
             {String(orderIndex + 1).padStart(2, "0")} / {String(totalSlides).padStart(2, "0")}
           </span>
           <span
             className="text-[10px] uppercase tracking-[0.18em] font-semibold"
             style={{ color: cFaint }}
-          >
+           data-edit="meta">
             arrasta →
           </span>
         </div>
@@ -981,7 +985,7 @@ export function SplitMinimalClean({
         className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold flex-shrink-0"
         style={{ color: cFaint }}
       >
-        <span>{slide.handle || "@brand"}</span>
+        <span data-edit="meta">{slide.handle || "@brand"}</span>
       </div>
 
       {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco inteiro ESCALA pra
@@ -1058,10 +1062,10 @@ export function SplitMinimalClean({
           className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold"
           style={{ color: cFaint }}
         >
-          <span className="tabular-nums">
+          <span className="tabular-nums" data-edit="meta">
             {ghost} / {String(totalSlides).padStart(2, "0")}
           </span>
-          <span>arrasta →</span>
+          <span data-edit="meta">arrasta →</span>
         </div>
       </div>
 
@@ -1087,8 +1091,10 @@ export function SplitSeamlessFlow({
   fontClass,
   imageSlot = "none",
   bgOverride,
+  glow,
 }: SplitProps) {
   void imageSlot
+  const glowC = glow ?? accent
   const isLast = orderIndex === totalSlides - 1
   const ghost = String(orderIndex + 1).padStart(2, "0")
   const bgUrl = slide.images[0]?.url ?? null
@@ -1129,13 +1135,13 @@ export function SplitSeamlessFlow({
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${accent}2E 0%, transparent 60%)`,
+          backgroundImage: `radial-gradient(ellipse 80% 45% at 20% 100%, ${glowC}2E 0%, transparent 60%)`,
         }}
       />
 
       {/* Header */}
       <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold" data-edit="meta">
           {slide.handle || "@brand"}
         </span>
         <span
@@ -1182,7 +1188,7 @@ export function SplitSeamlessFlow({
         <p
           className="text-[11px] uppercase tracking-[0.18em] font-bold"
           style={{ color: mixWithWhite(accent, 0.4) }}
-        >
+         data-edit="meta">
           {isLast ? "fim da linha · salva esse post" : "arrasta →"}
         </p>
       </div>
@@ -1362,17 +1368,17 @@ export function SplitCardsWhite({
       {/* Rodapé no canvas, abaixo do card (cores adaptam ao canvas) */}
       <div className="flex-shrink-0 flex items-end justify-between px-1 pt-3">
         <div className="leading-tight">
-          <div className="text-[12px] font-bold" style={{ color: ct.text }}>
+          <div className="text-[12px] font-bold" style={{ color: ct.text }} data-edit="meta">
             {brand}
           </div>
-          <div className="text-[10px]" style={{ color: ct.faint }}>
+          <div className="text-[10px]" style={{ color: ct.faint }} data-edit="meta">
             {slide.handle || "@brand"}
           </div>
         </div>
         <div
           className="text-[10px] uppercase tracking-[0.14em] font-semibold"
           style={{ color: ct.faint }}
-        >
+         data-edit="meta">
           {isLast ? "salva esse post" : "arrasta →"}
         </div>
       </div>
@@ -1387,7 +1393,7 @@ export function SplitCardsWhite({
 // exportar certo no html-to-image.
 // ============================================================================
 
-function VerifiedBadge({ size = 17 }: { size?: number }) {
+export function VerifiedBadge({ size = 17 }: { size?: number }) {
   const { showVerified } = useContext(SlideChromeContext)
   if (!showVerified) return null
   return (
@@ -1442,7 +1448,7 @@ export function SplitProfilePost({
         <div
           className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
           style={{ backgroundColor: "rgba(127,127,140,0.28)", color: text }}
-        >
+         data-edit="meta">
           {slide.handle_avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1459,12 +1465,13 @@ export function SplitProfilePost({
             <span
               className="font-bold text-[14px] truncate"
               style={{ color: text }}
+              data-edit="meta"
             >
               {name}
             </span>
             <VerifiedBadge size={15} />
           </div>
-          <div className="text-[12px]" style={{ color: faint }}>
+          <div className="text-[12px]" style={{ color: faint }} data-edit="meta">
             {slide.handle || "@perfil"}
           </div>
         </div>

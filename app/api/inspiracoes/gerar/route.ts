@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { debitTokens } from "@/lib/tokens"
+import { debitTokens, getAvailableTokens } from "@/lib/tokens"
 import { contarRodadasHoje } from "@/lib/inspiracoes/queries"
 import { custoDaRodada, gratisRestantes } from "@/lib/inspiracoes/custo"
 import { gerarIdeiasDaFonte } from "@/lib/inspiracoes/gerar-ideias"
@@ -65,12 +65,10 @@ export async function POST(req: Request) {
   const custo = custoDaRodada(rodadasHoje)
 
   if (custo > 0) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("credits")
-      .eq("id", user.id)
-      .maybeSingle()
-    const saldo = profile?.credits ?? 0
+    // Saldo TOTAL (plano + avulso + bônus). Ler só `credits` dizia "sem
+    // saldo" pra quem tinha bônus de indicação de sobra, enquanto o débito
+    // atômico teria consumido esse bônus numa boa.
+    const saldo = await getAvailableTokens(supabase, user.id)
     if (saldo < custo) {
       return NextResponse.json(
         {
@@ -152,7 +150,21 @@ export async function POST(req: Request) {
   // entrega se falhar).
   if (custo > 0) {
     try {
-      await debitTokens(supabase, user.id, custo)
+      const debit = await debitTokens(supabase, user.id, custo, {
+        kind: "debit_ideas",
+        refType: "inspiration_source",
+        refId: fonte.id,
+        title: "Pautas geradas (além da cota grátis)",
+      })
+      if (!debit.ok) {
+        // Rodada entregue sem cobrar. O que impede isso de virar rotina é a
+        // checagem de saldo lá em cima, não este log.
+        console.warn(
+          `[inspiracoes/gerar] débito de tokens falhou: user=${user.id} ` +
+            `amount=${custo} debited=${debit.debited}` +
+            (debit.error ? ` (${debit.error})` : ""),
+        )
+      }
     } catch {
       // silencioso de propósito — ver lib/tokens.ts
     }

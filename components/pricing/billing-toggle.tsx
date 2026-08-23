@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import type { BillingCycle } from "@/app/pricing/page"
+import { CYCLE_INFO } from "@/lib/billing/plans"
 import { Badge } from "@/components/ui/badge"
 import { Flame } from "lucide-react"
 
@@ -12,9 +13,12 @@ interface BillingToggleProps {
 
 const options: { value: BillingCycle; label: string; discount?: string; hot?: boolean }[] = [
   { value: "monthly", label: "Mensal" },
-  { value: "quarterly", label: "Trimestral", discount: "-17%" },
-  { value: "semiannual", label: "Semestral", discount: "-30%" },
-  { value: "annual", label: "Anual", discount: "-40%", hot: true },
+  {
+    value: "annual",
+    label: "Anual",
+    discount: `-${Math.round(CYCLE_INFO.annual.discount * 100)}%`,
+    hot: true,
+  },
 ]
 
 export function BillingToggle({ selected, onSelect }: BillingToggleProps) {

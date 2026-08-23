@@ -25,16 +25,13 @@ export function TrustFooter() {
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border">
               <span className="text-sm font-medium text-muted-foreground">Pix</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border">
-              <span className="text-sm font-medium text-muted-foreground">Boleto</span>
-            </div>
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <CreditCard className="w-4 h-4" />
-            <span>Pagamentos seguros via Stripe</span>
+            <span>Pagamentos seguros via Asaas</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
