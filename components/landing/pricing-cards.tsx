@@ -128,9 +128,7 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
         <p className="text-sm text-text-secondary mt-1 mb-5">{plano.tag}</p>
 
         <div className="flex items-baseline gap-1 mb-1">
-          <span className="lp-display text-4xl tabular-nums">
-            R$ {plano.price}
-          </span>
+          <span className="lp-display text-4xl tabular-nums">R$ {plano.price}</span>
           {plano.price > 0 && (
             <span className="font-mono text-xs text-text-muted">/mês</span>
           )}
