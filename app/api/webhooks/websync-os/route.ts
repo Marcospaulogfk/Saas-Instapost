@@ -145,7 +145,10 @@ export async function POST(req: Request) {
       .insert({
         brand_id: brandId,
         title: p.titulo.slice(0, 200),
-        description: p.descricao ? String(p.descricao).slice(0, 2000) : null,
+        // 4000 desde 24/08/2026: a copy do CRM passou a vir com slides densos
+        // (titulo + corpo por argumento) e o pior caso dela chega a ~3000. A
+        // coluna e text; o corte e defensivo contra payload malformado.
+        description: p.descricao ? String(p.descricao).slice(0, 4000) : null,
         format: FORMATOS.has(p.formato ?? "") ? p.formato : "post",
         objective: OBJETIVOS.has(p.objetivo ?? "") ? p.objetivo : "inform",
         scheduled_date: dataSugerida,
