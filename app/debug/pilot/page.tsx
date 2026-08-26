@@ -75,8 +75,12 @@ export default function PilotPage() {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("only")
   if (only === "render" && state.spec) {
+    // ?w=440 valida na escala do editor real (regra das duas escalas): a
+    // metrica de fonte arredonda diferente em tamanho pequeno e caixa justa
+    // demais quebra linha la mesmo cabendo em 1080.
+    const w = Number(new URLSearchParams(window.location.search).get("w")) || 1080
     return (
-      <div style={{ width: 1080, height: 1350, overflow: "hidden" }} data-pilot-render>
+      <div style={{ width: w, height: Math.round(w * 1.25), overflow: "hidden" }} data-pilot-render>
         {/* esconde o badge de dev do Next no screenshot headless */}
         <style>{`nextjs-portal{display:none}`}</style>
         <FreePostRenderer spec={state.spec} format="post" />

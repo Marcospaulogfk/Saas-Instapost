@@ -199,6 +199,35 @@ O que o lote revelou que o caso único não tinha mostrado:
 5. **Fal 422 intermitente** na geração do bitmap (2 ocorrências): 1 retry
    resolveu ambas. A fábrica precisa de retry nessa etapa também.
 
+## O bug do editor (26/08, noite): width em % quebra o modo editável
+
+O Marcos abriu um dos posts do lote no editor real e o layout desmontou —
+miniatura certa, editor quebrado. Depurado ao vivo no navegador dele, eram
+TRÊS causas empilhadas, e cada uma virou regra:
+
+1. **BUG DO PRODUTO (raiz): dupla aplicação de width.** No modo editável, o
+   FreePostRenderer põe o bloco num wrapper que recebe `position.width`, e o
+   filho clonado MANTÉM o próprio width — width em `%` resolve contra o
+   wrapper e aplica duas vezes (34% vira 34% de 34% = 11,6% do canvas, texto
+   espremido). O editor nunca sofreu disso porque o resize dele grava width em
+   `cqw`, que resolve contra o canvas nas duas camadas. REGRA: **spec de
+   conversão emite width SEMPRE em cqw, nunca em %** (o buildSpecFromLayout
+   original emite % — mais um motivo escondido do fracasso do híbrido). Fix de
+   produto sugerido via task separada.
+2. **Caixa sem folga quebra por rasterização.** O render 1080 aprovava textos
+   ocupando ~98% da caixa; em canvas de ~440 a métrica arredonda diferente e
+   quebra linha. REGRA: validar nas DUAS escalas (1080 e ~440) com folga
+   mínima de ~10%; a página do harness aceita `?w=` pra isso. E o fitFontCqw
+   precisa de largura de glifo POR FONTE (0.55 serve pra Inter; Archivo Black
+   é ~0.74, Anton ~0.45) — hoje superdimensiona fontes largas.
+3. **Headless rasteriza antes das fontes.** `--virtual-time-budget` corta o
+   carregamento e o screenshot sai com métrica de fallback — o juiz aprovava
+   medidas que não existem em produção. REGRA: o render de validação espera
+   `document.fonts.ready` antes de capturar.
+
+Os 4 posts do lote foram corrigidos no banco (widths → cqw, fontes
+recalibradas) e verificados um a um no editor de produção.
+
 ## A biblioteca (visão do Marcos, registrada 26/08)
 
 O destino do catálogo: uma biblioteca estilo Canva onde o usuário (a) escolhe
