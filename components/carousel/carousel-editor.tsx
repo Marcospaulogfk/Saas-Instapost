@@ -591,6 +591,8 @@ export interface CarouselEditorProps {
   initialTitleScale?: number
   initialBodyWeight?: number
   initialBodyScale?: number
+  /** Pauta (scheduled_posts) de origem — gravada no primeiro save (0023). */
+  pautaId?: string | null
 }
 
 type ImageMode = "ai" | "unsplash" | "wikimedia"
@@ -613,6 +615,7 @@ export function CarouselEditor({
   initialTitleScale,
   initialBodyWeight,
   initialBodyScale,
+  pautaId,
 }: CarouselEditorProps) {
   const [slides, setSlides] = useState<PreviewSlide[]>(initialSlides)
   const [selected, setSelected] = useState(0)
@@ -1424,6 +1427,8 @@ export function CarouselEditor({
       const coverImageUrl = await captureCover()
       const res = await saveCarouselV2({
         id: savedId,
+        // Origem só no insert: `saveCarouselV2` ignora quando `id` existe.
+        pautaId,
         data: {
           _kind: "carousel-v2",
           slides,

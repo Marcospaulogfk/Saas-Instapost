@@ -12,6 +12,12 @@ export interface SinglePostInput {
   content: PostContent
   /** Miniatura da arte (PNG no Storage) — alimenta os cartoes da biblioteca. */
   rendered_image_url?: string | null
+  /**
+   * Pauta (scheduled_posts) que originou o post, quando ele nasceu do Pipeline
+   * do calendario. E o que permite o CRM saber que a pauta virou arte
+   * (migration 0023 + GET /api/webhooks/websync-os/status).
+   */
+  scheduled_post_id?: string | null
 }
 
 export type CreateSinglePostResult =
@@ -44,6 +50,13 @@ export async function createSinglePost(
       raw_brief: input.raw_brief?.trim() || null,
       content: input.content,
       rendered_image_url: input.rendered_image_url ?? null,
+      // A coluna so entra no insert quando ha pauta de origem. Assim o save
+      // avulso continua identico ao de antes da 0023 e nao depende dela: se a
+      // migration ainda nao rodou no ambiente, quem quebra e so o caminho
+      // novo, nao a Biblioteca inteira.
+      ...(input.scheduled_post_id
+        ? { scheduled_post_id: input.scheduled_post_id }
+        : {}),
     })
     .select("id")
     .single()

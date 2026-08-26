@@ -85,6 +85,9 @@ interface PendingPayload {
   caption?: string
   photoPrompt?: string | null
   photoEntity?: string | null
+  /** Pauta (scheduled_posts) que originou a peca — vem do Pipeline do
+   *  calendario via `?pauta=` e e gravada no save (migration 0023). */
+  pautaId?: string | null
 }
 
 const STORAGE_KEY = "syncpost_pending_post_unico"
@@ -143,6 +146,10 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
   const [exporting, setExporting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedId, setSavedId] = useState<string | null>(initialPost?.id ?? null)
+  // Origem da peca. So no primeiro save (insert) ela importa: reedicao nao
+  // reescreve o vinculo, senao reabrir um post avulso apagaria a pauta de
+  // quem veio do calendario.
+  const [pautaId, setPautaId] = useState<string | null>(null)
   const [saveOk, setSaveOk] = useState(false)
 
   // ---- Edição cirúrgica (modo bitmap) ----
@@ -282,6 +289,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     const b = brands.find((x) => x.id === payload.brand?.id) ?? payload.brand ?? brands[0]
     if (b) setBrand(b)
     if (brief) setBriefing(brief)
+    if (payload.pautaId) setPautaId(payload.pautaId)
     if (!payload.autoRun) return
     // Texto ja aprovado no wizard → so monta o design (nao recobra o texto).
     if (payload.kind === "approved" && payload.approvedContent) {
@@ -477,6 +485,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
       bitmapTexts,
       previewNode: previewRef.current,
       savedId,
+      pautaId,
     })
     setSaving(false)
     if (!res.ok) {

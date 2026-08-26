@@ -54,6 +54,12 @@ export interface SaveCarouselInput {
   /** Se presente, atualiza o registro existente; senão cria um novo. */
   id?: string
   data: CarouselV2Data
+  /**
+   * Pauta (scheduled_posts) que originou o carrossel. Só é gravada no INSERT:
+   * reedição não reescreve a origem, senão reabrir um carrossel avulso
+   * apagaria o vínculo de quem veio do calendário (migration 0023).
+   */
+  pautaId?: string | null
 }
 
 type SaveResult = { ok: true; id: string } | { ok: false; error: string }
@@ -87,7 +93,13 @@ export async function saveCarouselV2(input: SaveCarouselInput): Promise<SaveResu
 
   const { data: inserted, error } = await supabase
     .from('editorial_carousels')
-    .insert({ user_id: user.id, ...row })
+    .insert({
+      user_id: user.id,
+      ...row,
+      // So entra quando ha pauta de origem — ver a nota em
+      // app/actions/single-posts.ts (nao acopla o save avulso a 0023).
+      ...(input.pautaId ? { scheduled_post_id: input.pautaId } : {}),
+    })
     .select('id')
     .single()
   if (error) return { ok: false, error: error.message }

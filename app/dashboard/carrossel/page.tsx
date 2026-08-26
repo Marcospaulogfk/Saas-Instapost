@@ -33,6 +33,9 @@ interface PendingGeneration {
   imageChoice?: ImageChoice
   /** Foto do artigo de origem (modo link) — candidata nº1 de capa. */
   coverPhotoUrl?: string | null
+  /** Pauta (scheduled_posts) que originou a peça, quando ela veio do Pipeline
+   *  do calendário. Gravada no primeiro save (migration 0023). */
+  pautaId?: string | null
 }
 
 function handleFromBrand(name?: string): string {
@@ -73,6 +76,8 @@ export default function CarrosselEditorPage() {
   const [savedStyle, setSavedStyle] = useState<EditorialStyle>("auto")
   const [savedFormat, setSavedFormat] = useState<"feed" | "stories">("feed")
   const [savedId, setSavedId] = useState<string | undefined>(undefined)
+  // Origem da peca (pauta do calendario). So o primeiro save usa.
+  const [pautaId, setPautaId] = useState<string | null>(null)
   const [savedFont, setSavedFont] = useState<string | undefined>(undefined)
   const [savedTitleWeight, setSavedTitleWeight] = useState<number | undefined>(
     undefined,
@@ -195,6 +200,8 @@ export default function CarrosselEditorPage() {
       return
     }
 
+    if (payload.pautaId) setPautaId(payload.pautaId)
+
     // Estilo + formato escolhidos no wizard — o editor abre já aplicando ambos.
     setSavedStyle(payload.editorialStyle || "auto")
     setSavedFormat(
@@ -295,6 +302,7 @@ export default function CarrosselEditorPage() {
       initialTitleScale={savedTitleScale}
       initialBodyWeight={savedBodyWeight}
       initialBodyScale={savedBodyScale}
+      pautaId={pautaId}
     />
   )
 }

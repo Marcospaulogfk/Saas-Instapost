@@ -82,7 +82,11 @@ export function PipelinePautas({
         rationale: p.rationale,
       }),
     )
-    router.push(`/dashboard/criar?tipo=post-unico&step=2&brief=${brief}`)
+    // `pauta=` carrega a ORIGEM até o save da arte (migration 0023): sem ela
+    // a peça nasce órfã e o CRM nunca descobre que a pauta virou post.
+    router.push(
+      `/dashboard/criar?tipo=post-unico&step=2&brief=${brief}&pauta=${p.id}`,
+    )
   }
 
   const vazio = posts.length === 0

@@ -304,6 +304,10 @@ function CriarWizard() {
   // este fluxo e divergiam dele — a do carrossel, inclusive, gerava sem
   // escolha de imagem, sem preview de custo e sem debitar token.
   const tipoParam = searchParams.get("tipo")
+  // Pauta de origem (?pauta=<scheduled_post_id>): vem do Pipeline do
+  // calendário e viaja ate o save da arte, que grava o vinculo (migration
+  // 0023). Sem isso o CRM nao consegue saber que a pauta virou peca.
+  const pautaParam = searchParams.get("pauta")
   const preSelecionado =
     (tipoParam === "post-unico" && POST_UNICO_HABILITADO) ||
     tipoParam === "carrossel"
@@ -726,6 +730,7 @@ function CriarWizard() {
           photoPrompt: approvalDraft.photoPrompt,
           photoEntity: approvalDraft.photoEntity ?? null,
           briefing: (promptRefinado ?? briefing).trim(),
+          pautaId: pautaParam,
           autoRun: true,
           ts: Date.now(),
         }),
@@ -814,6 +819,7 @@ function CriarWizard() {
           // Foto do artigo de origem: vira a capa se a proporção servir. É a
           // imagem certa, é grátis e poupa os 25 tokens da capa.
           coverPhotoUrl: linkMeta?.ogImage ?? null,
+          pautaId: pautaParam,
           autoRun: true,
           ts: Date.now(),
         }),

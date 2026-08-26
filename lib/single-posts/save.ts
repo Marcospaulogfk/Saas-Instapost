@@ -152,6 +152,11 @@ export interface SaveSinglePostParams {
   previewNode?: HTMLElement | null
   /** Id de um save anterior — presente = update em vez de insert. */
   savedId: string | null
+  /**
+   * Pauta (scheduled_posts) que originou a peça, quando ela nasceu do Pipeline
+   * do calendário. Só vale no INSERT: reedição não mexe no vínculo.
+   */
+  pautaId?: string | null
 }
 
 export type SaveSinglePostResult =
@@ -178,6 +183,7 @@ export async function saveSinglePost(
     bitmapTexts,
     previewNode,
     savedId,
+    pautaId,
   } = params
 
   if (!isRealBrandId(brandId)) {
@@ -237,6 +243,7 @@ export async function saveSinglePost(
       raw_brief: briefing || null,
       content,
       rendered_image_url: thumbUrl,
+      scheduled_post_id: pautaId ?? null,
     })
     if (!res.ok) return { ok: false, error: res.error }
     return { ok: true, postId: res.postId }
