@@ -25,6 +25,7 @@ import {
 import { Logo } from "@/components/brand/logo"
 import { EditorSection as Section } from "@/components/editor/editor-section"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
+import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -603,6 +604,21 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                   // Bitmap já hospedado: manda a URL direto, sem re-render.
                   if (isBitmap && artUrl) return [artUrl]
                   if (!previewRef.current) throw new Error("preview indisponível")
+                  const png = await renderSpecToPng(previewRef.current, format)
+                  return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
+                }}
+              />
+            )}
+            {/* Preparar pra agendar: guarda a arte final pra publicacao
+                automatica. NAO usa o atalho do bitmap do Fal (que a publicacao
+                manual usa): aquela URL expira, e agendamento so aceita arquivo
+                do nosso Storage. */}
+            {spec && (
+              <PrepararAgendamento
+                tipo="single_post"
+                pecaId={savedId}
+                getImageUrls={async () => {
+                  if (!previewRef.current) throw new Error("preview indisponivel")
                   const png = await renderSpecToPng(previewRef.current, format)
                   return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
                 }}

@@ -61,6 +61,7 @@ import {
   type ElementOverride,
 } from "@/components/carousel/editable-overrides"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
+import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
 import { renderNodeToPng, uploadPngDataUrl } from "@/lib/instagram/render-upload"
 import {
   PanelTopBar,
@@ -1753,6 +1754,14 @@ export function CarouselEditor({
           getImageUrls={renderSlidesForPublish}
           imageCount={slides.length}
           caption={caption ?? ""}
+        />
+        {/* Guarda a arte final (os N slides, na ordem) pra publicacao
+            automatica. Mesmo render do botao de publicar; a diferenca e que
+            aqui o resultado fica salvo em vez de ser descartado. */}
+        <PrepararAgendamento
+          tipo="carousel"
+          pecaId={savedId}
+          getImageUrls={renderSlidesForPublish}
         />
         <Button
           type="button"
