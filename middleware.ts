@@ -31,6 +31,12 @@ const PUBLIC_API_PREFIXES = [
   "/api/instagram/data-deletion",
 ]
 
+// Piloto do loop bitmap→spec (PLANO-LOOP-POST-EDITAVEL.md): a rota já devolve
+// 404 em produção por conta própria; a exceção só existe fora dela.
+if (process.env.NODE_ENV !== "production") {
+  PUBLIC_API_PREFIXES.push("/api/dev/pilot")
+}
+
 // === Split de domínio ===
 // Raiz (nexuscontentai.com.br / www) = landing/marketing.
 // app.nexuscontentai.com.br = o app. lp.* = landing pages avulsas (vazio ainda).

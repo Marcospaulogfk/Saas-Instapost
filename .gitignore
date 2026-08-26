@@ -33,3 +33,4 @@ supabase/.temp/
 
 # Arquivos de trava do LibreOffice ao abrir .docx
 .~lock.*#
+.pilot/
