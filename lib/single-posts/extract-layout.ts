@@ -244,10 +244,15 @@ export function buildSpecFromLayout(
   const blocks: FreeBlock[] = items.map((i, idx): FreeBlock => {
     const size = fitFontCqw(i.text, i.w, i.h, i.lines)
     const sizeStr = `min(${size.toFixed(2)}cqw, ${Math.round(size * CQW_PX)}px)`
+    // Posição em cqw, NUNCA em %: é a unidade que o resize do editor grava e a
+    // única que resolve igual no canvas e dentro do wrapper do modo editável
+    // (width em % aplicava duas vezes e desmontava o post ao abrir no editor).
+    // x/w são % da largura → cqw 1:1; y é % da ALTURA → ×1.25 no canvas 4:5.
+    const yCqw = i.y * (CANVAS_H_PX / 1080)
     const position = {
-      left: `${i.x.toFixed(1)}%`,
-      top: `${i.y.toFixed(1)}%`,
-      width: `${Math.min(100 - i.x, i.w + 1).toFixed(1)}%`,
+      left: `${i.x.toFixed(1)}cqw`,
+      top: `${yCqw.toFixed(1)}cqw`,
+      width: `${Math.min(100 - i.x, i.w + 1).toFixed(1)}cqw`,
     }
     if (i.pill_bg) {
       return {

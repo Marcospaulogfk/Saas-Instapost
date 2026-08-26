@@ -20,6 +20,7 @@ import {
 import { anton, playfair, inter, allura, bebas, montserrat, archivo, grotesk } from "./fonts"
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { POST_FORMATS, type PostFormat } from "@/lib/single-posts/formats"
+import { editableCloneSize } from "@/lib/single-posts/editable-clone"
 import type {
   FreeBlock,
   FreeFontKey,
@@ -775,7 +776,10 @@ export function FreePostRenderer({
               onSelectBlock?.(path)
             }}
           >
-            {/* Renderiza o block sem position absoluta (vira inline dentro do wrapper) */}
+            {/* Renderiza o block sem position absoluta (vira inline dentro do wrapper).
+                O width/height do clone sai de editableCloneSize — repassar o
+                width original em `%` aplicava a largura DUAS vezes (% do wrapper
+                que já tem esse %). */}
             {React.cloneElement(rendered, {
               style: {
                 ...((rendered.props as { style?: React.CSSProperties }).style ?? {}),
@@ -784,21 +788,14 @@ export function FreePostRenderer({
                 left: undefined,
                 right: undefined,
                 bottom: undefined,
-                // Imagem/shape preenchem o wrapper (o wrapper já tem o tamanho
-                // certo). Sem isso, height em % vira % do wrapper e a imagem
-                // encolhe pra um cantinho. Texto/pill mantêm width natural.
-                width:
-                  b.type === "image" || b.type === "shape"
-                    ? "100%"
-                    : (((rendered.props as { style?: React.CSSProperties }).style as
-                        | React.CSSProperties
-                        | undefined)?.width ?? "auto"),
-                height:
-                  b.type === "image" || b.type === "shape"
-                    ? "100%"
-                    : ((rendered.props as { style?: React.CSSProperties }).style as
-                        | React.CSSProperties
-                        | undefined)?.height,
+                ...editableCloneSize(b.type, b.position, {
+                  width: ((rendered.props as { style?: React.CSSProperties }).style as
+                    | React.CSSProperties
+                    | undefined)?.width,
+                  height: ((rendered.props as { style?: React.CSSProperties }).style as
+                    | React.CSSProperties
+                    | undefined)?.height,
+                }),
                 transform: undefined,
                 zIndex: undefined,
                 cursor: "inherit",
