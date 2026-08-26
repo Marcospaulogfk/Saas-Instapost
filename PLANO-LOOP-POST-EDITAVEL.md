@@ -164,6 +164,50 @@ O que o piloto NÃO provou ainda (fica pro lote de 10-20): taxa de aprovação e
 briefings variados (foto de pessoa real, layouts stat-hero, fundos claros) e o
 custo médio do juiz automatizado (aqui o juiz foi manual/Claude interativo).
 
+## Lote de 4 nichos — 26/08/2026, tarde: 4/4 APROVADOS, dentro do produto
+
+Segundo teste, agora em nichos variados (pedido do Marcos) e terminando na
+biblioteca REAL: barbearia (oferta), pizzaria (produto), construtora
+(autoridade/stat) e advocacia (educativo). Skeletons sorteados diferentes,
+fundos claro e escuro, pill/card/checkbox/botão.
+
+Resultado: **4/4 aprovados em 2-4 iterações** (~92-95% de fidelidade), salvos
+como posts editáveis em `single_posts` (títulos "[Piloto] ...", brand WebSync
+Solutions), com bitmap + clean plate + thumb re-hospedados no Storage pela
+própria action `save` (a Fase 0 em miniatura, validada). Custo médio
+~US$ 0,26/post (pior caso US$ 0,37).
+
+O que o lote revelou que o caso único não tinha mostrado:
+
+1. **Clean plate é o novo gargalo nº 1: 50% de taxa na 1ª tentativa** (2/4
+   vieram com texto ainda pintado). Retry resolve: 2ª tentativa limpou a
+   construtora, 3ª limpou a barbearia — 4/4 no fim. REGRA DA FÁBRICA: juiz de
+   clean plate (visão: "sobrou texto legível?") + até 3 retries (US$ 0,08 cada).
+   A action `clean` do harness já faz o retry preservando extração e patches.
+2. **Elementos vazios preservados na clean são ÂNCORAS de composição.** Pills,
+   botões e checkboxes que a limpeza mantém vazios marcam o lugar exato do
+   texto. O padrão vencedor: texto vira camada SIMPLES alinhada por cima do
+   elemento do fundo — nunca pill/botão HTML duplicado (dupla borda). Isso
+   deve virar código no buildSpecFromLayout.
+3. **Extração erra pill_bg**: checkbox/ícone colorido ao lado do texto vira
+   "fundo de pill" e o item rende um botão gigante. E ela mede texto FORA da
+   lista conhecida ("Só até sexta-feira" não existia no content) — o snap em
+   código continua obrigatório.
+4. **Ghost word não sobrevive**: "COMBO" atrás do card não tem como existir em
+   camada HTML (o card é parte do fundo). Perda estrutural aceita por ora;
+   melhoria futura: instruir a clean plate a PRESERVAR o texto-fantasma.
+5. **Fal 422 intermitente** na geração do bitmap (2 ocorrências): 1 retry
+   resolveu ambas. A fábrica precisa de retry nessa etapa também.
+
+## A biblioteca (visão do Marcos, registrada 26/08)
+
+O destino do catálogo: uma biblioteca estilo Canva onde o usuário (a) escolhe
+um template e DESCREVE NO CHAT o que quer nele, ou (b) não escolhe nada e a IA
+puxa o template certo pelo briefing/nicho — barbearia, pizzaria, construtora,
+advogado. Consequência pra Fase 0: cada geração gravada precisa carregar
+nicho/segmento + briefing + vibe junto do par bitmap→spec, porque é esse
+metadado que treina a escolha automática de template depois.
+
 ## Ordem de execução resumida
 
 1. **Agora:** Fase 0 (migration + re-host dos bitmaps). ~1 sessão de trabalho.

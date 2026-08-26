@@ -23,7 +23,8 @@ export default function PilotPage() {
   const [captured, setCaptured] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/dev/pilot", { cache: "no-store" })
+    const c = new URLSearchParams(window.location.search).get("case") ?? "default"
+    fetch(`/api/dev/pilot?case=${c}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setState(d)))
       .catch((e) => setError(String(e)))
