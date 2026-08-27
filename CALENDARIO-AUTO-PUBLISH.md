@@ -1,9 +1,10 @@
 # Calendário compartilhado + publicação automática no Instagram
 
-> 26/08/2026. Código escrito e verificado; **migration 0024 APLICADA em
-> produção** (via `supabase db push --linked`, histórico em sincronia).
-> **Falta agendar o cron** e trocar a URL da Ponte no CRM. Nada disso publica
-> pra cliente antes do Tech Provider na Meta (ver `INSTAGRAM_PENDENTE.md`).
+> 26/08/2026. **NO AR e ARMADO em produção**: commit `f12e33d`, migration 0024
+> aplicada, e o cron `publicar-agendados` agendado na Coolify (`*/15 * * * *`,
+> execução manual verde devolvendo o JSON do worker). A máquina roda sozinha.
+> Nada disso publica pra cliente antes do Tech Provider na Meta (ver
+> `INSTAGRAM_PENDENTE.md`).
 
 ## O problema que quase virou bug de produção
 
@@ -117,7 +118,8 @@ saber se diz "falta gerar" ou "só tem miniatura".
    do SQL Editor. Conferido depois rodando os selects exatos que o código usa
    (as duas tabelas de arte com as colunas novas e `publish_attempts`): 200 nos
    três.
-2. **Agendar o cron** na Coolify, ao lado do de renovação:
+2. **Agendar o cron** na Coolify, ao lado do de renovação — **ÚNICO passo que
+   falta do lado do Nexus**:
    ```
    */15 * * * *  curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
      https://app.nexuscontentai.com.br/api/cron/publicar
