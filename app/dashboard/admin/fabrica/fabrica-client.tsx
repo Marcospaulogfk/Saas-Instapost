@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   CheckCircle2,
   Eye,
+  Gavel,
   Hammer,
   Loader2,
   RefreshCcw,
@@ -97,7 +98,16 @@ export function FabricaClient({
   const [busy, setBusy] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [revisao, setRevisao] = useState<GenRow | null>(null)
+  /** Spec vivo do modal: o juiz-auto troca a cada iteracao sem fechar. */
+  const [specAtual, setSpecAtual] = useState<FreePostSpec | null>(null)
+  const [juizLog, setJuizLog] = useState<string[]>([])
   const renderRef = useRef<HTMLDivElement | null>(null)
+
+  function abrirRevisao(g: GenRow) {
+    setRevisao(g)
+    setSpecAtual(g.conversion?.spec ?? null)
+    setJuizLog([])
+  }
 
   const stats = useMemo(() => {
     const semana = gens.filter(
@@ -139,24 +149,73 @@ export function FabricaClient({
     }
   }
 
+  async function capturarRender(): Promise<string | null> {
+    const node = renderRef.current?.querySelector<HTMLElement>("[data-post-canvas]")
+    if (!node) return null
+    try {
+      const { toPng } = await import("html-to-image")
+      return await toPng(node, {
+        cacheBust: true,
+        includeQueryParams: true,
+        canvasWidth: 540,
+        canvasHeight: 675,
+        pixelRatio: 1,
+      })
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * O LOOP da fabrica no navegador: renderiza -> juiz VLM compara com o
+   * original -> patches -> re-render, ate aprovar ou 3 iteracoes. E o mesmo
+   * processo que aprovou os pilotos manuais, agora por conta propria.
+   */
+  async function rodarJuiz(gen: GenRow) {
+    setBusy(gen.id)
+    setErro(null)
+    try {
+      for (let it = 1; it <= 3; it++) {
+        setJuizLog((l) => [...l, `iteracao ${it}: renderizando e julgando...`])
+        // Espera o render assentar (fontes/imagens) antes de capturar.
+        await new Promise((r) => setTimeout(r, 900))
+        const png = await capturarRender()
+        if (!png) {
+          setJuizLog((l) => [...l, "captura falhou - abortado"])
+          return
+        }
+        const res = await fetch("/api/admin/fabrica", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "julgar", genId: gen.id, renderDataUrl: png }),
+        })
+        const d = await res.json()
+        if (!res.ok || d.error || d.ok === false) {
+          setJuizLog((l) => [...l, `erro: ${d.error ?? d.detalhe ?? res.status}`])
+          return
+        }
+        setJuizLog((l) => [
+          ...l,
+          `score ${d.score}${d.aprovado ? " - APROVADO" : ""} | ${d.patchesAplicados} patch(es)${
+            d.problemas?.length ? ` | ${d.problemas.slice(0, 3).join("; ")}` : ""
+          }`,
+        ])
+        if (d.spec) setSpecAtual(d.spec as FreePostSpec)
+        if (d.aprovado) {
+          router.refresh()
+          return
+        }
+      }
+      setJuizLog((l) => [...l, "3 iteracoes sem aprovacao - decida manualmente"])
+      router.refresh()
+    } finally {
+      setBusy(null)
+    }
+  }
+
   /** Promover: captura o render aprovado como PNG (vira a thumb do template). */
   async function promover(gen: GenRow) {
-    let thumbDataUrl: string | undefined
-    const node = renderRef.current?.querySelector<HTMLElement>("[data-post-canvas]")
-    if (node) {
-      try {
-        const { toPng } = await import("html-to-image")
-        thumbDataUrl = await toPng(node, {
-          cacheBust: true,
-          includeQueryParams: true,
-          canvasWidth: 540,
-          canvasHeight: 675,
-          pixelRatio: 1,
-        })
-      } catch {
-        // sem thumb o template salva do mesmo jeito
-      }
-    }
+    const thumbDataUrl = (await capturarRender()) ?? undefined
     const r = await op("promover", gen.id, { thumbDataUrl })
     if (r?.ok) setRevisao(null)
   }
@@ -280,7 +339,7 @@ export function FabricaClient({
                               size="sm"
                               variant="outline"
                               className="h-6 px-2 text-[11px]"
-                              onClick={() => setRevisao(g)}
+                              onClick={() => abrirRevisao(g)}
                             >
                               <Eye className="w-3 h-3 mr-1" />
                               Revisar
@@ -349,7 +408,7 @@ export function FabricaClient({
       )}
 
       {/* Comparador de revisão */}
-      {revisao && revisao.conversion?.spec && (
+      {revisao && specAtual && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-6"
           style={{ background: "rgba(0,0,0,0.75)" }}
@@ -366,10 +425,10 @@ export function FabricaClient({
                   Revisão — {revisao.niche ?? "sem nicho"}
                 </p>
                 <p className="text-xs" style={{ color: "var(--nv-text-muted)" }}>
-                  clean plate: {revisao.conversion.clean_attempts ?? "?"} tentativa(s)
-                  {revisao.conversion.clean_approved === false && " (JUIZ REPROVOU — confira o fundo)"}
+                  clean plate: {revisao.conversion?.clean_attempts ?? "?"} tentativa(s)
+                  {revisao.conversion?.clean_approved === false && " (JUIZ REPROVOU — confira o fundo)"}
                   {" · "}
-                  {(revisao.conversion.anchors?.length ?? 0)} âncora(s)
+                  {(revisao.conversion?.anchors?.length ?? 0)} âncora(s)
                 </p>
               </div>
               <button type="button" onClick={() => setRevisao(null)} style={{ color: "var(--nv-text-muted)" }}>
@@ -393,19 +452,39 @@ export function FabricaClient({
                   Convertido (editável) — o render abaixo é o produto real
                 </figcaption>
                 <div ref={renderRef} className="rounded-lg overflow-hidden">
-                  <FreePostRenderer spec={revisao.conversion.spec} format="post" />
+                  <FreePostRenderer spec={specAtual} format="post" />
                 </div>
               </figure>
             </div>
-            {(revisao.conversion.judge_log?.length ?? 0) > 0 && (
+            {(revisao.conversion?.judge_log?.length ?? 0) > 0 && (
               <pre
                 className="text-[11px] rounded-lg border p-2 whitespace-pre-wrap"
                 style={{ borderColor: "var(--nv-border, #333)", color: "var(--nv-text-muted)" }}
               >
-                {revisao.conversion.judge_log?.join("\n")}
+                {revisao.conversion?.judge_log?.join("\n")}
+              </pre>
+            )}
+            {juizLog.length > 0 && (
+              <pre
+                className="text-[11px] rounded-lg border p-2 whitespace-pre-wrap"
+                style={{ borderColor: "var(--nv-border, #333)", color: "#7fd18a" }}
+              >
+                {juizLog.join("\n")}
               </pre>
             )}
             <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                disabled={busy === revisao.id}
+                onClick={() => rodarJuiz(revisao)}
+              >
+                {busy === revisao.id ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Gavel className="w-4 h-4 mr-1.5" />
+                )}
+                Rodar juiz (auto)
+              </Button>
               <Button
                 variant="outline"
                 disabled={busy === revisao.id}

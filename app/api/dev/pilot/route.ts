@@ -16,7 +16,7 @@ import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 import type { PostBrand } from "@/lib/single-posts/types"
 import { capturarGeracaoBitmap } from "@/lib/fabrica/capture"
-import { converterGeracao } from "@/lib/fabrica/pipeline"
+import { converterGeracao, julgarGeracao } from "@/lib/fabrica/pipeline"
 
 // =============================================================================
 // PILOTO do loop bitmap → spec editável (PLANO-LOOP-POST-EDITAVEL.md, Fase 1).
@@ -124,9 +124,11 @@ export async function POST(req: Request) {
   const g = guard()
   if (g) return g
   const body = (await req.json()) as {
-    action: "copy" | "art" | "clean" | "extract" | "save" | "converter"
-    /** converter: id da linha em post_generations. */
+    action: "copy" | "art" | "clean" | "extract" | "save" | "converter" | "julgar"
+    /** converter/julgar: id da linha em post_generations. */
     genId?: string
+    /** julgar: nome do PNG do render dentro do dir do caso. */
+    renderFile?: string
     case?: string
     briefing?: string
     brand?: PostBrand
@@ -202,6 +204,28 @@ export async function POST(req: Request) {
       state.log.push("capturada em post_generations (Fase 0)")
       writeState(slug, state)
       return NextResponse.json(state)
+    }
+
+    if (body.action === "julgar") {
+      // Uma iteração do juiz-com-render usando o PNG headless do case dir —
+      // o mesmo julgarGeracao que o painel chama.
+      if (!body.genId || !body.renderFile) {
+        return NextResponse.json({ error: "genId e renderFile obrigatórios" }, { status: 400 })
+      }
+      const rf = path.join(caseDir(slug), path.basename(body.renderFile))
+      if (!fs.existsSync(rf)) {
+        return NextResponse.json({ error: `render não existe: ${body.renderFile}` }, { status: 400 })
+      }
+      const dataUrl = `data:image/png;base64,${fs.readFileSync(rf).toString("base64")}`
+      const r = await julgarGeracao(body.genId, dataUrl)
+      // Espelha o spec julgado no state do caso pro render headless seguinte.
+      const state = readState(slug)
+      if (state && r.spec) {
+        state.spec = r.spec
+        state.log.push(`juiz-auto: score ${r.score}${r.aprovado ? " APROVADO" : ""} — ${r.patchesAplicados} patch(es)`)
+        writeState(slug, state)
+      }
+      return NextResponse.json({ ...r, spec: undefined })
     }
 
     if (body.action === "converter") {

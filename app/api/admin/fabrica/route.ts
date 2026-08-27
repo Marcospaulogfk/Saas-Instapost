@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { converterGeracao, type ConversionRecord } from "@/lib/fabrica/pipeline"
+import {
+  converterGeracao,
+  julgarGeracao,
+  type ConversionRecord,
+} from "@/lib/fabrica/pipeline"
 import { rehostToStorage } from "@/lib/fabrica/capture"
 import { resolverDono } from "@/lib/websync/dono"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
@@ -29,11 +33,13 @@ function adminEmails(): Set<string> {
 }
 
 interface Body {
-  action: "converter" | "aprovar" | "reprovar" | "promover" | "rehost"
+  action: "converter" | "julgar" | "aprovar" | "reprovar" | "promover" | "rehost"
   genId?: string
   motivo?: string
   /** promover: PNG do render aprovado (data URL) — vira a thumb do template. */
   thumbDataUrl?: string
+  /** julgar: PNG do render atual (data URL) capturado pelo painel. */
+  renderDataUrl?: string
 }
 
 export async function POST(req: Request) {
@@ -60,6 +66,14 @@ export async function POST(req: Request) {
   try {
     if (body.action === "converter") {
       const r = await converterGeracao(body.genId)
+      return NextResponse.json(r)
+    }
+
+    if (body.action === "julgar") {
+      if (!body.renderDataUrl) {
+        return NextResponse.json({ error: "renderDataUrl obrigatório" }, { status: 400 })
+      }
+      const r = await julgarGeracao(body.genId, body.renderDataUrl)
       return NextResponse.json(r)
     }
 

@@ -44,6 +44,10 @@ const SITE_DOMAIN = "nexuscontentai.com.br"
 const APEX_HOSTS = new Set([SITE_DOMAIN, `www.${SITE_DOMAIN}`])
 const APP_HOST = `app.${SITE_DOMAIN}`
 const LP_HOST = `lp.${SITE_DOMAIN}`
+// fabrica.* = o chão de fábrica (painel admin de templates). O host é só um
+// atalho: a raiz reescreve pro painel e o resto segue o fluxo normal do app
+// (login incluso — a sessão é por host, então o admin loga uma vez lá).
+const FABRICA_HOST = `fabrica.${SITE_DOMAIN}`
 
 // Domínio anterior ao rebrand. Continua respondendo e manda todo mundo pro
 // novo com 301, MENOS /auth e /api: OAuth e webhooks têm a URL de callback
@@ -109,6 +113,15 @@ async function middlewareBase(request: NextRequest) {
         "<body style=\"margin:0;display:grid;place-items:center;height:100vh;" +
         "background:#05070c;color:#f2f5fa;font:500 15px system-ui\">Em breve.</body>",
       { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
+    )
+  }
+
+  // fabrica.*: a raiz abre direto o painel da fábrica. Demais rotas passam
+  // (login, /_next, /api) — o gate real é o ADMIN_EMAILS na própria página.
+  if (host === FABRICA_HOST && path === "/") {
+    return NextResponse.rewrite(
+      new URL("/dashboard/admin/fabrica", request.url),
+      { request },
     )
   }
 

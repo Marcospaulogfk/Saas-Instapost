@@ -9,6 +9,7 @@ import {
   type MeasuredText,
 } from "@/lib/single-posts/extract-layout"
 import { detectAnchors, snapToAnchors, type Anchor } from "./anchors"
+import { aplicarPatches, julgarRender, type JudgeVerdict } from "./judge"
 import { rehostToStorage } from "./capture"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
@@ -114,6 +115,77 @@ export async function ensureCleanPlate(artUrl: string): Promise<CleanPlateResult
     if (verdict.limpa) return last
   }
   return last as CleanPlateResult
+}
+
+export interface JulgamentoResultado {
+  ok: boolean
+  score: number
+  aprovado: boolean
+  problemas: string[]
+  patchesAplicados: number
+  spec?: FreePostSpec
+  detalhe?: string
+}
+
+/**
+ * Uma iteração do loop juiz-com-render: recebe o PNG do render (capturado
+ * pelo chamador — painel ou harness), compara com o original, aplica os
+ * patches no spec e persiste. Aprovou → pipeline_status "aprovada".
+ * O chamador re-renderiza o spec devolvido e chama de novo até aprovar
+ * (ou desistir — 3 iterações é o teto que os pilotos validaram).
+ */
+export async function julgarGeracao(
+  genId: string,
+  renderDataUrl: string,
+): Promise<JulgamentoResultado> {
+  const admin = createAdminClient()
+  const { data: gen, error } = await admin
+    .from("post_generations")
+    .select("id, art_url, fal_art_url, conversion, pipeline_status")
+    .eq("id", genId)
+    .single()
+  if (error || !gen) {
+    return { ok: false, score: 0, aprovado: false, problemas: [], patchesAplicados: 0, detalhe: "geração não encontrada" }
+  }
+  const conv = (gen.conversion as ConversionRecord | null) ?? {}
+  const spec = conv.spec
+  const originalUrl: string | null = gen.art_url ?? gen.fal_art_url
+  if (!spec || !originalUrl) {
+    return { ok: false, score: 0, aprovado: false, problemas: [], patchesAplicados: 0, detalhe: "sem spec convertido ou sem original" }
+  }
+
+  let verdict: JudgeVerdict
+  try {
+    verdict = await julgarRender(originalUrl, renderDataUrl, spec)
+  } catch (err) {
+    return {
+      ok: false, score: 0, aprovado: false, problemas: [], patchesAplicados: 0,
+      detalhe: err instanceof Error ? err.message : String(err),
+    }
+  }
+
+  const novoSpec = verdict.patches.length ? aplicarPatches(spec, verdict.patches) : spec
+  conv.spec = novoSpec
+  conv.judge_log = [
+    ...(conv.judge_log ?? []),
+    `juiz-auto: score ${verdict.score}${verdict.aprovado ? " APROVADO" : ""} — ${verdict.patches.length} patch(es)${verdict.problemas.length ? ` | ${verdict.problemas.join("; ")}` : ""}`,
+  ]
+  await admin
+    .from("post_generations")
+    .update({
+      conversion: conv,
+      ...(verdict.aprovado ? { pipeline_status: "aprovada" } : {}),
+    })
+    .eq("id", genId)
+
+  return {
+    ok: true,
+    score: verdict.score,
+    aprovado: verdict.aprovado,
+    problemas: verdict.problemas,
+    patchesAplicados: verdict.patches.length,
+    spec: novoSpec,
+  }
 }
 
 export interface ConversionRecord {
