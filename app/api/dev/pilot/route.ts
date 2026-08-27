@@ -122,7 +122,7 @@ export async function POST(req: Request) {
   const g = guard()
   if (g) return g
   const body = (await req.json()) as {
-    action: "copy" | "art" | "extract" | "save"
+    action: "copy" | "art" | "clean" | "extract" | "save"
     case?: string
     briefing?: string
     brand?: PostBrand
