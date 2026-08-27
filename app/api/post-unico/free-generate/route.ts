@@ -18,6 +18,7 @@ import { logGenerationUsage } from "@/lib/generation/usage-log"
 import type { PostBrand } from "@/lib/single-posts/types"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { UsageStageRecord } from "@/lib/single-posts/free-generate"
+import { capturarGeracaoBitmap } from "@/lib/fabrica/capture"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -134,6 +135,36 @@ async function logUsageBestEffort(
   }
 }
 
+/**
+ * Fase 0 da fábrica: toda geração bitmap vira dado. Best-effort — jamais
+ * atrasa ou quebra a resposta. Só captura quando saiu arte bitmap de verdade
+ * (photo_url presente com qualidade "pro" = nano-banana).
+ */
+function capturar(
+  body: RequestBody,
+  userId: string | undefined,
+  result: {
+    photo_url: string | null
+    image_quality: "normal" | "pro" | null
+    image_cost_usd: number
+    skeleton_id: string
+    content: SkeletonContent | null
+  },
+): void {
+  if (!result.photo_url || result.image_quality !== "pro") return
+  void capturarGeracaoBitmap({
+    brandId: body.brand.id ?? null,
+    userId: userId ?? null,
+    briefing: body.briefing?.trim() || null,
+    niche: body.brand.profession ?? null,
+    content: result.content,
+    photoPrompt: body.photo_prompt ?? null,
+    skeletonId: result.skeleton_id,
+    artUrl: result.photo_url,
+    imageCostUsd: result.image_cost_usd,
+  })
+}
+
 interface RequestBody {
   brand: PostBrand
   briefing?: string
@@ -215,6 +246,7 @@ export async function POST(req: Request) {
         tokensCharged: cobrado,
         image: { quality: result.image_quality, costUsd: result.image_cost_usd },
       })
+      capturar(body, user?.id, result)
       return NextResponse.json({
         spec: result.spec,
         rationale: result.rationale,
@@ -311,6 +343,7 @@ export async function POST(req: Request) {
       tokensCharged: cobrado,
         image: { quality: result.image_quality, costUsd: result.image_cost_usd },
     })
+    capturar(body, user?.id, result)
     return NextResponse.json({
       spec: result.spec,
       rationale: result.rationale,

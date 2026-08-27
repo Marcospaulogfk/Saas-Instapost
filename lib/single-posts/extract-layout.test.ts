@@ -40,6 +40,26 @@ describe("buildSpecFromLayout", () => {
     expect(pos.width).toBe("20.0cqw")
   })
 
+  it("fonte larga (archivo) sai menor que fonte estreita (anton) na mesma caixa", () => {
+    const larga = buildSpecFromLayout("https://x/c.png", [medida({ font_class: "sans-heavy", h: 16 })])
+    const estreita = buildSpecFromLayout("https://x/c.png", [medida({ font_class: "condensed-heavy", h: 16 })])
+    const cqw = (b: { font_size?: string }) => parseFloat((b.font_size ?? "").replace("min(", ""))
+    expect(cqw(larga.blocks[0] as { font_size?: string })).toBeLessThan(
+      cqw(estreita.blocks[0] as { font_size?: string }),
+    )
+  })
+
+  it("uppercase reduz o corpo vs o mesmo texto em caixa mista", () => {
+    // Caixa ALTA de propósito: o limite ativo precisa ser a largura, senão
+    // byHeight decide nos dois casos e o fator de glifo não aparece.
+    const upper = buildSpecFromLayout("https://x/c.png", [medida({ uppercase: true, h: 16 })])
+    const mixed = buildSpecFromLayout("https://x/c.png", [medida({ uppercase: false, h: 16 })])
+    const cqw = (b: { font_size?: string }) => parseFloat((b.font_size ?? "").replace("min(", ""))
+    expect(cqw(upper.blocks[0] as { font_size?: string })).toBeLessThan(
+      cqw(mixed.blocks[0] as { font_size?: string }),
+    )
+  })
+
   it("pill_bg vira bloco pill; sem pill_bg vira text", () => {
     const spec = buildSpecFromLayout("https://x/clean.png", [
       medida(),

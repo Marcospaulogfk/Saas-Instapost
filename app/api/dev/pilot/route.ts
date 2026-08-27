@@ -15,6 +15,8 @@ import {
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { FreePostSpec } from "@/lib/single-posts/free-spec"
 import type { PostBrand } from "@/lib/single-posts/types"
+import { capturarGeracaoBitmap } from "@/lib/fabrica/capture"
+import { converterGeracao } from "@/lib/fabrica/pipeline"
 
 // =============================================================================
 // PILOTO do loop bitmap → spec editável (PLANO-LOOP-POST-EDITAVEL.md, Fase 1).
@@ -122,7 +124,9 @@ export async function POST(req: Request) {
   const g = guard()
   if (g) return g
   const body = (await req.json()) as {
-    action: "copy" | "art" | "clean" | "extract" | "save"
+    action: "copy" | "art" | "clean" | "extract" | "save" | "converter"
+    /** converter: id da linha em post_generations. */
+    genId?: string
     case?: string
     briefing?: string
     brand?: PostBrand
@@ -182,8 +186,32 @@ export async function POST(req: Request) {
       state.cleanUrl = clean.url
       state.costs.cleanUsd = clean.costUsd
       state.log.push(`clean plate ok — $${clean.costUsd.toFixed(4)}`)
+      // Fase 0: o harness usa a MESMA captura da rota de produção — cada
+      // geração de teste também vira dado (e valida o caminho real).
+      await capturarGeracaoBitmap({
+        brandId: null,
+        userId: null,
+        briefing: state.briefing,
+        niche: state.brand.profession ?? null,
+        content: state.content ?? null,
+        photoPrompt: state.photo_prompt ?? null,
+        skeletonId: state.skeleton_id ?? null,
+        artUrl: art.url,
+        imageCostUsd: art.costUsd,
+      })
+      state.log.push("capturada em post_generations (Fase 0)")
       writeState(slug, state)
       return NextResponse.json(state)
+    }
+
+    if (body.action === "converter") {
+      // Roda o pipeline REAL da fábrica (lib/fabrica/pipeline) numa linha
+      // capturada — é o caminho que o painel usa, testável sem sessão.
+      if (!body.genId) {
+        return NextResponse.json({ error: "genId obrigatório" }, { status: 400 })
+      }
+      const r = await converterGeracao(body.genId)
+      return NextResponse.json(r)
     }
 
     if (body.action === "clean") {

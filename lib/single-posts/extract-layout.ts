@@ -212,8 +212,29 @@ Texto da lista que NÃO aparece na arte: não inclua. Não invente itens fora da
 /** Canvas de referência: 1080×1350; 1cqw = 10.8px; 1% de altura = 13.5px. */
 const CANVAS_H_PX = 1350
 const CQW_PX = 10.8
-/** Fator largura-média-de-glifo/corpo (mesma régua do compose). */
-const CHAR_W = 0.55
+/**
+ * Largura média glifo/corpo POR CLASSE de fonte. A régua única de 0.55 foi o
+ * que quebrou o lote de 26/08: serve pra Inter, mas Archivo Black é ~30% mais
+ * larga e Anton ~20% mais estreita — fonte larga saía superdimensionada e
+ * quebrava linha no editor. Valores medidos nos renders do lote.
+ */
+const CHAR_W_BY_CLASS: Record<MeasuredText["font_class"], number> = {
+  "condensed-heavy": 0.46, // anton
+  "condensed-light": 0.48, // bebas
+  "sans-heavy": 0.72, // archivo black
+  sans: 0.55, // inter
+  serif: 0.58, // playfair
+  "serif-italic": 0.55,
+  script: 0.5, // allura
+}
+/** Uppercase ocupa mais largura que o mesmo texto em caixa mista. */
+const UPPERCASE_W = 1.12
+/**
+ * A caixa nunca é ocupada além de ~90%: a métrica de rasterização varia entre
+ * escalas (canvas 1080 vs ~440 do editor) e texto a 98% da caixa quebra linha
+ * numa e não na outra — foi o "post desmontado no editor" de 26/08.
+ */
+const FOLGA_LARGURA = 0.9
 const LINE_HEIGHT = 1.12
 
 /**
@@ -225,13 +246,22 @@ const LINE_HEIGHT = 1.12
  * O modelo nunca escolhe corpo de fonte — é daqui que sai o fim do
  * "uma palavra por linha".
  */
-function fitFontCqw(text: string, wPct: number, hPct: number, lines: number): number {
+function fitFontCqw(
+  text: string,
+  wPct: number,
+  hPct: number,
+  lines: number,
+  fontClass: MeasuredText["font_class"] = "sans",
+  uppercase = false,
+): number {
   const n = Math.max(1, lines)
-  const widthCqw = wPct // 1% da largura = 1cqw
+  const widthCqw = wPct * FOLGA_LARGURA // 1% da largura = 1cqw
   const hPx = (hPct / 100) * CANVAS_H_PX
   const byHeight = hPx / n / LINE_HEIGHT / CQW_PX
   const longestLine = Math.ceil(text.length / n)
-  const byWidth = widthCqw / (CHAR_W * Math.max(2, longestLine))
+  const charW =
+    (CHAR_W_BY_CLASS[fontClass] ?? 0.55) * (uppercase ? UPPERCASE_W : 1)
+  const byWidth = widthCqw / (charW * Math.max(2, longestLine))
   const size = Math.min(byHeight, byWidth)
   return Math.max(1.6, Math.min(16, size))
 }
@@ -242,7 +272,7 @@ export function buildSpecFromLayout(
   items: MeasuredText[],
 ): FreePostSpec {
   const blocks: FreeBlock[] = items.map((i, idx): FreeBlock => {
-    const size = fitFontCqw(i.text, i.w, i.h, i.lines)
+    const size = fitFontCqw(i.text, i.w, i.h, i.lines, i.font_class, i.uppercase)
     const sizeStr = `min(${size.toFixed(2)}cqw, ${Math.round(size * CQW_PX)}px)`
     // Posição em cqw, NUNCA em %: é a unidade que o resize do editor grava e a
     // única que resolve igual no canvas e dentro do wrapper do modo editável

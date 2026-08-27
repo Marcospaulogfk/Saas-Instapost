@@ -228,6 +228,39 @@ TRÊS causas empilhadas, e cada uma virou regra:
 Os 4 posts do lote foram corrigidos no banco (widths → cqw, fontes
 recalibradas) e verificados um a um no editor de produção.
 
+## A fábrica de verdade (26/08, noite): Fase 0 + pipeline + painel NO PRODUTO
+
+Construído e verificado ponta a ponta em dev, deployado em produção:
+
+- **Fase 0 em produção**: toda geração bitmap do post único é capturada em
+  `post_generations` (migration 0025) com briefing, nicho (profissão da brand),
+  content, custo e a arte — re-hospedada no Storage via `next/server after()`
+  logo após a resposta. Best-effort: a captura jamais quebra a geração.
+- **Pipeline em código** (`lib/fabrica/`): clean plate com JUIZ VLM + até 3
+  tentativas (`ensureCleanPlate`), detecção de âncoras na clean
+  (`detectAnchors`) e snap dos textos às âncoras (`snapToAnchors`, puro e
+  testado), composição via buildSpecFromLayout (cqw + folga + glifo por
+  fonte). Resultado para em `aguardando_revisao`.
+- **Painel** `/dashboard/admin/fabrica` (ADMIN_EMAILS): abas Fábrica (kanban
+  da esteira com Converter/Revisar/Promover; comparador original vs render — o
+  próprio navegador renderiza o spec, o juiz humano é a UI) e Produção
+  (capturas + posts salvos + carrosséis). Operações em
+  `POST /api/admin/fabrica` (route handler, maxDuration 300).
+- **Promover** cria o `[Template]` na primeira brand do dono (resolverDono —
+  nunca em brand de cliente) com thumb capturada do próprio comparador.
+
+Verificação real (caso petshop, 26/08): captura ok, re-host automático ok,
+pipeline ok (clean aprovada pelo juiz na 1ª, 5 âncoras, 7 camadas), snap das
+CÁPSULAS perfeito (kicker e CTA caíram exatos nos elementos vazios do fundo).
+
+Limite conhecido, honesto: nos BULLETS as duas visões erraram o y em direções
+opostas (extrator 52%, âncoras 70%, real ~63%) e o snap não casou — a peça
+fica ~75-85% e depende da revisão humana. A correção estrutural é a próxima
+fase: juiz automatizado com RENDER no loop (renderiza, compara com o
+original, aplica patch — o que o juiz manual fez nos pilotos), que também
+resolve o subtítulo sem âncora. Candidato natural: rodar o julgamento no
+próprio painel (html-to-image client-side) ou headless no VPS.
+
 ## A biblioteca (visão do Marcos, registrada 26/08)
 
 O destino do catálogo: uma biblioteca estilo Canva onde o usuário (a) escolhe
