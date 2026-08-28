@@ -17,6 +17,48 @@ const LiquidEther = dynamic(() => import("./liquid-ether"), { ssr: false })
    claro do gradiente de texto. Trocar aqui muda o hero inteiro. */
 const CORES = ["#1668E3", "#7A5BFF", "#8DB8F7"]
 
+/* Placas que dividem memória com o sistema (integradas) e renderizadores por
+   software. A simulação de fluidos roda Navier-Stokes a cada frame: nesses
+   aparelhos ela estrangula o compositor e o Chrome derruba a aba, ainda mais
+   quando a RAM da máquina já está apertada. */
+const GPU_FRACA = /(SwiftShader|llvmpipe|Microsoft Basic|Mesa|Intel|UHD|HD Graphics)/i
+
+/*
+ * O gate. Errar pro lado conservador custa só um enfeite: o gradiente estático
+ * continua entregando o hero. Errar pro outro lado custa a página inteira.
+ */
+function aguentaSimulacao(): boolean {
+  try {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false
+    if (window.innerWidth < 1024) return false
+
+    const nucleos = navigator.hardwareConcurrency ?? 2
+    if (nucleos < 8) return false
+
+    /* deviceMemory só existe em navegador baseado em Chromium; onde não existe
+       a gente não bloqueia por isso. */
+    const memoria = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+    if (typeof memoria === "number" && memoria < 8) return false
+
+    const canvas = document.createElement("canvas")
+    const gl = (canvas.getContext("webgl2") ||
+      canvas.getContext("webgl")) as WebGLRenderingContext | null
+    if (!gl) return false
+
+    const info = gl.getExtension("WEBGL_debug_renderer_info")
+    const gpu = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : ""
+
+    /* Perde o contexto na hora: um canvas de teste não pode ficar segurando
+       slot de WebGL, que é recurso contado pelo navegador. */
+    gl.getExtension("WEBGL_lose_context")?.loseContext()
+
+    if (gpu && GPU_FRACA.test(gpu)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 function Estatico() {
   return (
     <div
@@ -33,13 +75,21 @@ export function HeroBackdrop() {
   const [liga, setLiga] = useState(false)
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    if (window.innerWidth < 768) return
+    if (!aguentaSimulacao()) return
 
     /* Espera o hero pintar antes de subir o simulador. */
     const t = setTimeout(() => setLiga(true), 400)
     return () => clearTimeout(t)
   }, [])
+
+  /* Se o driver derrubar o contexto WebGL mesmo assim, volta pro estático em
+     vez de deixar um canvas morto por cima do hero. */
+  useEffect(() => {
+    if (!liga) return
+    const onPerdeu = () => setLiga(false)
+    window.addEventListener("webglcontextlost", onPerdeu, true)
+    return () => window.removeEventListener("webglcontextlost", onPerdeu, true)
+  }, [liga])
 
   return (
     <div className="absolute inset-0">
@@ -52,8 +102,8 @@ export function HeroBackdrop() {
             cursorSize={100}
             isViscous
             viscous={30}
-            iterationsViscous={32}
-            iterationsPoisson={32}
+            iterationsViscous={16}
+            iterationsPoisson={24}
             resolution={0.5}
             isBounce={false}
             autoDemo

@@ -53,7 +53,7 @@ function Card({ peca, eager }: { peca: Peca; eager?: boolean }) {
         loading={eager ? "eager" : "lazy"}
         className="w-full aspect-[4/5] object-cover transition-transform duration-500 group-hover:scale-[1.04]"
       />
-      <span className="absolute bottom-2 left-2 rounded-full bg-black/65 backdrop-blur-sm px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white/90">
+      <span className="absolute bottom-2 left-2 rounded-full bg-black/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] text-white/90">
         {peca.nicho}
       </span>
     </div>
