@@ -7,6 +7,8 @@ import { SiteFooter } from "@/components/landing/site-footer"
 import { PlanosBackdrop } from "@/components/landing/planos-backdrop"
 import { Button } from "@/components/ui/button"
 import { NICHOS } from "@/lib/seo/nichos"
+import { TEMPLATES_NICHO } from "@/lib/seo/templates-nicho"
+import { NichoCarouselGallery } from "@/components/modelos/nicho-carousel-gallery"
 
 const NAV_ITEMS: CardNavItem[] = [
   {
@@ -136,7 +138,19 @@ export default function ModelosCarrosselHubPage() {
           texto, o grid de profissões já entra na primeira dobra. */}
       <section className="px-6 py-3.5 border-y border-hairline bg-surface/40">
         <div className="max-w-6xl mx-auto">
-          <SectionLabel>{NICHOS.length} profissões no piloto · grátis pra editar</SectionLabel>
+          <SectionLabel>
+            {TEMPLATES_NICHO.length} modelos · {NICHOS.length} profissões no piloto · grátis pra
+            editar
+          </SectionLabel>
+        </div>
+      </section>
+
+      {/* ── Galeria completa (padrão Adobe/Canva): todos os modelos já na
+          primeira dobra, com filtro por profissão. O grid de profissões
+          desce pra depois, como navegação complementar. ─────────── */}
+      <section className="px-6 py-10 md:py-12 border-b border-hairline">
+        <div className="max-w-6xl mx-auto">
+          <NichoCarouselGallery />
         </div>
       </section>
 

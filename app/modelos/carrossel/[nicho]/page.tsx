@@ -14,9 +14,6 @@ import {
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { NichoCarouselGallery } from "@/components/modelos/nicho-carousel-gallery"
-// Import do módulo server-safe (sem "use client"): importar o array via
-// carousel-style-gallery viraria client reference aqui e .filter quebraria.
-import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 import {
   NICHOS,
   nichoPorSlug,
@@ -24,11 +21,7 @@ import {
   seoDescriptionNicho,
   type NichoSeo,
 } from "@/lib/seo/nichos"
-
-// Mesma exclusão do estilo "auto" que a galeria pública aplica (ver
-// nicho-carousel-gallery.tsx) — a contagem da barra precisa bater com o
-// número de cards renderizados.
-const ESTILOS_PUBLICOS_COUNT = CAROUSEL_STYLES.filter((s) => s.style !== "auto").length
+import { TEMPLATES_NICHO, templatesDoNicho } from "@/lib/seo/templates-nicho"
 
 const NAV_ITEMS: CardNavItem[] = [
   {
@@ -136,10 +129,10 @@ function buildJsonLd(nicho: NichoSeo) {
       {
         "@type": "ItemList",
         name: `Modelos de carrossel para ${nicho.nome}`,
-        itemListElement: nicho.temas.map((tema, i) => ({
+        itemListElement: templatesDoNicho(nicho.slug).map((t, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          name: tema,
+          name: t.nome,
         })),
       },
     ],
@@ -207,7 +200,7 @@ export default async function NichoCarrosselPage({
             </Button>
           </div>
           <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-            1 carrossel completo grátis · Sem cartão · Escolha o estilo abaixo
+            1 carrossel completo grátis · Sem cartão · Escolha o modelo abaixo
           </p>
         </div>
       </section>
@@ -219,8 +212,7 @@ export default async function NichoCarrosselPage({
       <section className="px-6 py-3.5 border-y border-hairline bg-surface/40">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2.5">
           <p className="shrink-0 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-            {ESTILOS_PUBLICOS_COUNT} modelos de carrossel para {nicho.nome.toLowerCase()} · grátis
-            pra editar
+            {TEMPLATES_NICHO.length} modelos de carrossel · filtre pela sua profissão abaixo
           </p>
           <div className="flex items-center gap-2 overflow-x-auto sm:ml-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {outrosNichos.map((n) => (
@@ -239,11 +231,7 @@ export default async function NichoCarrosselPage({
       {/* ── Galeria de estilos ao vivo ────────────────────────── */}
       <section className="px-6 py-10 md:py-12">
         <div className="max-w-6xl mx-auto">
-          <NichoCarouselGallery
-            nichoSlug={nicho.slug}
-            demoSlides={nicho.demoSlides}
-            briefExemplo={nicho.briefExemplo}
-          />
+          <NichoCarouselGallery nichoAtualSlug={nicho.slug} />
         </div>
       </section>
 

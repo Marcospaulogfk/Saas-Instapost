@@ -32,7 +32,10 @@ export interface NichoSeo {
 // "IMAGEM" que o produto usa antes de gerar.
 const NO_IMAGE = { url: null, source: null, attribution: null, error: null } as const
 
-function slides(
+// Exportado (não só interno) pra que lib/seo/templates-nicho.ts monte os
+// demoSlides dos templates por nicho com o mesmo shape capa/conteúdo/CTA,
+// sem duplicar o array de PreviewSlide na mão.
+export function slides(
   capa: { title: string; highlight: string[]; subtitle: string; badge: string },
   conteudo: {
     title: string
