@@ -168,6 +168,16 @@ export function PipelinePautas({
                         </span>
                       </div>
 
+                      {p.created_at && (
+                        <p className="text-[9px] text-text-subtle mb-1.5">
+                          criada em{" "}
+                          {new Date(p.created_at).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}
+                        </p>
+                      )}
+
                       {/* O "por quê" é o que sustenta a decisão de gastar
                           token — some nas colunas seguintes, onde a escolha
                           já foi feita. */}

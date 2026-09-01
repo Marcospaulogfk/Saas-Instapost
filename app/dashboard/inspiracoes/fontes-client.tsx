@@ -386,6 +386,15 @@ export function FontesClient({
                     origem: {hostnameDe(i.source_ref)}
                   </p>
                 )}
+                {i.created_at && (
+                  <p className="text-[10px] text-text-subtle">
+                    criada em{" "}
+                    {new Date(i.created_at).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between gap-2 pt-2 mt-auto border-t border-border-subtle">
                   <button
