@@ -678,6 +678,69 @@
   color: #eef3fa;
 }
 
+/* ── Onboarding: "como você vai usar o Nexus?" (cards estilo Canva) ──── */
+/* Reusa `.nx-auth` (mesmo shell escuro do /cadastro); namespace próprio pra
+   não colidir com os estilos de formulário acima. */
+
+.nx-onb-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0c12;
+  padding: 16px;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    transform 0.15s;
+}
+.nx-onb-card:hover:not(:disabled) {
+  border-color: rgb(var(--nx-azul-rgb) / 0.45);
+  background: #0c0f18;
+}
+.nx-onb-card:disabled {
+  opacity: 0.7;
+}
+.nx-onb-card[data-active="true"] {
+  border-color: rgb(var(--nx-azul-rgb));
+  background: rgb(var(--nx-azul-rgb) / 0.1);
+}
+.nx-onb-card-icon {
+  display: grid;
+  height: 34px;
+  width: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: rgb(var(--nx-ciano-rgb) / 0.14);
+  color: rgb(var(--nx-ciano-rgb));
+}
+.nx-onb-card-label {
+  margin-top: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--nx-osso);
+}
+.nx-onb-card-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--nx-cinza-dim);
+}
+.nx-onb-card-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  height: 20px;
+  width: 20px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(var(--nx-azul-rgb));
+  color: #fff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nx-auth-fade-up,
   .nx-auth-card-bg,
