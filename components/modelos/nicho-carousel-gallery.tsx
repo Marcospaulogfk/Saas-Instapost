@@ -1,32 +1,22 @@
 "use client"
 
 // Galeria pública de estilos de carrossel pra uma página de nicho
-// (/modelos/carrossel/[nicho]). Ilha client porque o SlidePreview e a
-// navegação por pontinhos/setas exigem estado e ResizeObserver.
+// (/modelos/carrossel/[nicho]). Ilha client porque o CarouselStyleCard usa
+// estado e ResizeObserver pro preview.
 //
-// Reusa o motor de preview do produto (CAROUSEL_STYLES, ScaledPreview,
-// SlidePreview) pra que o card público renderize EXATAMENTE o mesmo visual
-// que o wizard interno, sem duplicar layout.
+// Reusa o CARD do produto (CarouselStyleCard) pra que a galeria pública
+// renderize EXATAMENTE o mesmo componente que a página de Templates do app,
+// sem duplicar layout — só troca demoSlides/href/onCtaClick por nicho.
 //
 // Estilo "auto" excluído de propósito: ele não é um estilo visual próprio,
 // é o fallback "deixa a IA escolher" (LegacyEditorialSlide). Numa galeria
 // pública que existe pra vender os 9 estilos nomeados, mostrar um 10º card
 // com visual genérico/legado ao lado deles é ruído, não diferencial.
-import { useState } from "react"
-import Link from "next/link"
-import { Inter } from "next/font/google"
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react"
 import {
   CAROUSEL_STYLES,
-  ScaledPreview,
+  CarouselStyleCard,
 } from "@/components/carousel/carousel-style-gallery"
-import {
-  SlidePreview,
-  type EditorialStyle,
-  type PreviewSlide,
-} from "@/components/carousel/slide-preview"
-
-const inter = Inter({ subsets: ["latin"], weight: ["900"] })
+import type { EditorialStyle, PreviewSlide } from "@/components/carousel/slide-preview"
 
 const ESTILOS_PUBLICOS = CAROUSEL_STYLES.filter((s) => s.style !== "auto")
 
@@ -53,94 +43,6 @@ function trackCtaClick(nicho: string, estilo: EditorialStyle) {
   }
 }
 
-function EstiloCard({
-  style,
-  name,
-  desc,
-  demoSlides,
-  nichoSlug,
-  briefExemplo,
-}: {
-  style: EditorialStyle
-  name: string
-  desc: string
-  demoSlides: PreviewSlide[]
-  nichoSlug: string
-  briefExemplo: string
-}) {
-  const [active, setActive] = useState(0)
-  const total = demoSlides.length
-  const go = (i: number) => setActive((i + total) % total)
-  const href = buildCtaHref(briefExemplo, style)
-
-  return (
-    <div className="group flex flex-col rounded-xl border border-hairline bg-card overflow-hidden transition-colors hover:border-border-accent [content-visibility:auto] [contain-intrinsic-size:auto_520px]">
-      <div className="relative">
-        <ScaledPreview>
-          <SlidePreview
-            slide={demoSlides[active]}
-            totalSlides={total}
-            template="editorial"
-            brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
-            fontClass={inter.className}
-            showDevBadges={false}
-            editorialStyle={style}
-            handle="@suamarca"
-            brandLabel="Sua Marca"
-          />
-        </ScaledPreview>
-
-        <button
-          type="button"
-          aria-label="Slide anterior"
-          onClick={() => go(active - 1)}
-          className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/85 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-opacity"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          aria-label="Próximo slide"
-          onClick={() => go(active + 1)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full bg-background/85 border border-hairline text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-background hover:text-text-primary transition-opacity"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-2.5 p-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-text-primary truncate">{name}</h3>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            {demoSlides.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Ver slide ${i + 1}`}
-                onClick={() => setActive(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === active ? "w-4 bg-brand-500" : "w-1.5 bg-text-subtle hover:bg-text-muted"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-
-        <p className="text-[11.5px] text-text-muted leading-relaxed line-clamp-2">{desc}</p>
-
-        <Link
-          href={href}
-          onClick={() => trackCtaClick(nichoSlug, style)}
-          className="mt-auto inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-sm font-medium transition-colors"
-        >
-          Usar este modelo
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
-    </div>
-  )
-}
-
 export function NichoCarouselGallery({
   nichoSlug,
   demoSlides,
@@ -153,14 +55,16 @@ export function NichoCarouselGallery({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {ESTILOS_PUBLICOS.map((s) => (
-        <EstiloCard
+        <CarouselStyleCard
           key={s.style}
           style={s.style}
           name={s.name}
           desc={s.desc}
+          badge={s.badge}
           demoSlides={demoSlides}
-          nichoSlug={nichoSlug}
-          briefExemplo={briefExemplo}
+          href={buildCtaHref(briefExemplo, s.style)}
+          ctaLabel="Usar este modelo"
+          onCtaClick={() => trackCtaClick(nichoSlug, s.style)}
         />
       ))}
     </div>

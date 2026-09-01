@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { CardNav, type CardNavItem } from "@/components/landing/card-nav"
 import { SiteFooter } from "@/components/landing/site-footer"
+import { PlanosBackdrop } from "@/components/landing/planos-backdrop"
 import { Button } from "@/components/ui/button"
 import { NICHOS } from "@/lib/seo/nichos"
 
@@ -97,20 +98,21 @@ export default function ModelosCarrosselHubPage() {
         }}
       />
 
-      <section className="relative px-6 pt-28 pb-16 md:pt-36 md:pb-20 border-b border-hairline">
+      <section className="isolate relative overflow-hidden px-6 pt-24 pb-8 md:pt-28 md:pb-10">
+        <PlanosBackdrop />
         <CardNav items={NAV_ITEMS} />
 
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border-accent bg-surface/60 backdrop-blur px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary mb-7">
+        <div className="relative max-w-3xl mx-auto text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border-accent bg-surface/60 backdrop-blur px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary mb-5">
             Modelos gratuitos por profissão
           </span>
 
-          <h1 className="lp-display text-[2.3rem] md:text-[3.4rem] leading-[1.06] mb-6">
+          <h1 className="lp-display text-[2rem] md:text-[2.9rem] leading-[1.08] mb-4">
             Modelos de carrossel para{" "}
             <span className="lp-text-gradient">Instagram</span>
           </h1>
 
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-9 leading-relaxed">
+          <p className="text-base md:text-lg text-text-secondary max-w-2xl mx-auto mb-6 leading-relaxed">
             Escolha a sua profissão abaixo e veja modelos prontos no visual certo pro seu nicho.
             Edite o texto e a arte com IA e publique sem abrir editor de design nenhum.
           </p>
@@ -128,15 +130,16 @@ export default function ModelosCarrosselHubPage() {
         </div>
       </section>
 
-      <section className="px-6 py-16 md:py-20">
+      {/* Barra de contagem estilo Adobe: sem seção intermediária cheia de
+          texto, o grid de profissões já entra na primeira dobra. */}
+      <section className="px-6 py-3.5 border-y border-hairline bg-surface/40">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionLabel>{NICHOS.length} profissões no piloto</SectionLabel>
-            <h2 className="lp-display text-3xl md:text-[2.5rem] leading-[1.1] mt-4 mb-3">
-              Encontre a sua profissão
-            </h2>
-          </div>
+          <SectionLabel>{NICHOS.length} profissões no piloto · grátis pra editar</SectionLabel>
+        </div>
+      </section>
 
+      <section className="px-6 py-10 md:py-12">
+        <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {NICHOS.map((n) => (
               <Link

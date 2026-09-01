@@ -18,73 +18,18 @@ import {
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 
-export type StyleBadgeTone = "brand" | "new" | "neutral"
-
-export interface CarouselStyleMeta {
-  style: EditorialStyle
-  name: string
-  desc: string
-  badge?: { label: string; tone: StyleBadgeTone }
-}
-
-// Estilos de carrossel (mesmo motor do editor). Cada um vira um card com preview
-// ao vivo + navegação pelos slides (capa → conteúdo → CTA).
-export const CAROUSEL_STYLES: CarouselStyleMeta[] = [
-  {
-    style: "minimal",
-    name: "Minimalista",
-    desc: "Branco suíço, tipografia gigante e hairlines. Versátil pra listas, dicas e conteúdo educativo de qualquer nicho.",
-    badge: { label: "Mais popular", tone: "brand" },
-  },
-  {
-    style: "perfil",
-    name: "Perfil",
-    desc: "Imita um post nativo de rede social: avatar, selo e texto. Ideal pra autoridade, threads e conteúdo de criador.",
-    badge: { label: "Estilo Twitter/X", tone: "neutral" },
-  },
-  {
-    style: "gradient",
-    name: "Gradiente",
-    desc: "Dark vibrante com destaque em gradiente. Moderno e impactante pra quem quer se destacar no feed.",
-    badge: { label: "Novo", tone: "new" },
-  },
-  {
-    style: "cards",
-    name: "Cards",
-    desc: "Capa com foto e título em vidro; conteúdo em cards brancos flutuantes. Clean e bem organizado.",
-    badge: { label: "Novo", tone: "new" },
-  },
-  {
-    style: "wesley",
-    name: "Impacto",
-    desc: "Dark de alto impacto, título em caixa alta e foto de fundo. Pra manchetes que param o scroll.",
-  },
-  {
-    style: "brandsdecoded",
-    name: "Revista",
-    desc: "Editorial de revista: título massivo, colunas e numeração fantasma. Sofisticado e autoral.",
-  },
-  {
-    style: "bolo",
-    name: "Lista Cream",
-    desc: "Lista em fundo creme, leve e acolhedor. Perfeito pra passo a passo, receitas e checklists.",
-  },
-  {
-    style: "seamless",
-    name: "Seamless",
-    desc: "Panorâmico: a linha de progresso avança slide a slide. Continuidade que prende até o final.",
-  },
-  {
-    style: "mypostflow",
-    name: "MyPostFlow",
-    desc: "Clean com CTA forte no último slide. Equilíbrio entre conteúdo e chamada pra ação.",
-  },
-  {
-    style: "auto",
-    name: "Automático",
-    desc: "A IA alterna layouts dark/light e escolhe o melhor pra cada slide. Deixa no piloto automático.",
-  },
-]
+// O array de estilos mudou pra carousel-styles.ts (módulo server-safe) pra que
+// Server Components possam lê-lo; o re-export mantém os imports antigos vivos.
+export {
+  CAROUSEL_STYLES,
+  type CarouselStyleMeta,
+  type StyleBadgeTone,
+} from "./carousel-styles"
+import {
+  CAROUSEL_STYLES,
+  type CarouselStyleMeta,
+  type StyleBadgeTone,
+} from "./carousel-styles"
 
 // Slides de demonstração — capa, conteúdo e CTA. Os pontinhos navegam por eles
 // pra mostrar como o estilo se comporta em cada tipo de slide.
@@ -118,8 +63,6 @@ export const DEMO_SLIDES: PreviewSlide[] = [
     image: { ...NO_IMAGE },
   },
 ]
-
-const TOTAL_DEMO = DEMO_SLIDES.length
 
 // Largura de design em que as fontes dos slides foram calibradas. O preview é
 // renderizado nessa largura e escalado pra caber na coluna do card — assim as
@@ -236,14 +179,22 @@ export function CarouselStyleCard({
   selected = false,
   onSelect,
   ctaLabel,
+  demoSlides,
+  onCtaClick,
 }: CarouselStyleMeta & {
   href?: string
   selected?: boolean
   onSelect?: (style: EditorialStyle) => void
   ctaLabel?: string
+  /** Slides de demonstração alternativos (ex.: galeria pública por nicho). Default: DEMO_SLIDES. */
+  demoSlides?: PreviewSlide[]
+  /** Disparado no clique do CTA em modo LINK, sem impedir a navegação (ex.: tracking). */
+  onCtaClick?: () => void
 }) {
+  const slides = demoSlides ?? DEMO_SLIDES
+  const total = slides.length
   const [active, setActive] = useState(0)
-  const go = (i: number) => setActive((i + TOTAL_DEMO) % TOTAL_DEMO)
+  const go = (i: number) => setActive((i + total) % total)
   const selectable = !href && !!onSelect
 
   return (
@@ -264,8 +215,8 @@ export function CarouselStyleCard({
       <div className="relative">
         <ScaledPreview>
           <SlidePreview
-            slide={DEMO_SLIDES[active]}
-            totalSlides={TOTAL_DEMO}
+            slide={slides[active]}
+            totalSlides={total}
             template="editorial"
             brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
             fontClass={inter.className}
@@ -320,7 +271,7 @@ export function CarouselStyleCard({
           </div>
           {/* Pontinhos de navegação */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {DEMO_SLIDES.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -346,6 +297,7 @@ export function CarouselStyleCard({
         {href ? (
           <Link
             href={href}
+            onClick={onCtaClick}
             className="mt-auto inline-flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-sm font-medium transition-colors"
           >
             {ctaLabel ?? "Usar template"}

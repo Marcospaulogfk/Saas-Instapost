@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { ArrowRight, Check } from "lucide-react"
 import { CardNav, type CardNavItem } from "@/components/landing/card-nav"
 import { SiteFooter } from "@/components/landing/site-footer"
+import { PlanosBackdrop } from "@/components/landing/planos-backdrop"
 import {
   Accordion,
   AccordionContent,
@@ -13,7 +14,15 @@ import {
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { NichoCarouselGallery } from "@/components/modelos/nicho-carousel-gallery"
+// Import do módulo server-safe (sem "use client"): importar o array via
+// carousel-style-gallery viraria client reference aqui e .filter quebraria.
+import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 import { NICHOS, nichoPorSlug, type NichoSeo } from "@/lib/seo/nichos"
+
+// Mesma exclusão do estilo "auto" que a galeria pública aplica (ver
+// nicho-carousel-gallery.tsx) — a contagem da barra precisa bater com o
+// número de cards renderizados.
+const ESTILOS_PUBLICOS_COUNT = CAROUSEL_STYLES.filter((s) => s.style !== "auto").length
 
 const NAV_ITEMS: CardNavItem[] = [
   {
@@ -156,25 +165,28 @@ export default async function NichoCarrosselPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(nicho)) }}
       />
 
-      {/* ── Hero ──────────────────────────────────────────────── */}
-      <section className="relative px-6 pt-28 pb-16 md:pt-36 md:pb-20 border-b border-hairline">
+      {/* ── Hero (compacto, estilo Adobe Express: hero curto + galeria
+          já visível na primeira dobra) ───────────────────────── */}
+      <section className="isolate relative overflow-hidden px-6 pt-24 pb-8 md:pt-28 md:pb-10">
+        <PlanosBackdrop />
         <CardNav items={NAV_ITEMS} />
 
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border-accent bg-surface/60 backdrop-blur px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary mb-7">
+        <div className="relative max-w-3xl mx-auto text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border-accent bg-surface/60 backdrop-blur px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary mb-5">
             Modelos gratuitos · {nicho.nome}
           </span>
 
-          <h1 className="lp-display text-[2.3rem] md:text-[3.4rem] leading-[1.06] mb-6">
+          <h1 className="lp-display text-[2rem] md:text-[2.9rem] leading-[1.08] mb-4">
             Carrossel para {nicho.nome.toLowerCase()}
             <span className="lp-text-gradient">: pronto em minutos</span>
           </h1>
 
-          <p className="text-lg text-text-secondary max-w-2xl mx-auto mb-9 leading-relaxed">
-            {nicho.propostaDeValor}
+          {/* Dor + proposta condensadas — a proposta completa fica pro CTA final */}
+          <p className="text-base md:text-lg text-text-secondary max-w-2xl mx-auto mb-6 leading-relaxed">
+            {nicho.dor}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-3">
             <Button
               asChild
               size="lg"
@@ -192,28 +204,33 @@ export default async function NichoCarrosselPage({
         </div>
       </section>
 
-      {/* ── A dor ─────────────────────────────────────────────── */}
-      <section className="px-6 py-14 md:py-16 border-b border-hairline">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-lg text-text-secondary leading-relaxed">{nicho.dor}</p>
+      {/* ── Barra estilo Adobe: contagem + chips de outras profissões ──
+          Substitui a antiga seção "Outras profissões" do fim da página:
+          aqui ela também funciona como navegação de topo, sem quebrar a
+          primeira dobra em mais uma seção cheia de texto. */}
+      <section className="px-6 py-3.5 border-y border-hairline bg-surface/40">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2.5">
+          <p className="shrink-0 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
+            {ESTILOS_PUBLICOS_COUNT} modelos de carrossel para {nicho.nome.toLowerCase()} · grátis
+            pra editar
+          </p>
+          <div className="flex items-center gap-2 overflow-x-auto sm:ml-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {outrosNichos.map((n) => (
+              <Link
+                key={n.slug}
+                href={`/modelos/carrossel/${n.slug}`}
+                className="shrink-0 whitespace-nowrap rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs text-text-secondary transition-colors hover:border-border-accent hover:text-text-primary"
+              >
+                {n.nome}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Galeria de estilos ao vivo ────────────────────────── */}
-      <section className="px-6 py-16 md:py-20">
+      <section className="px-6 py-10 md:py-12">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionLabel>Modelos prontos</SectionLabel>
-            <h2 className="lp-display text-3xl md:text-[2.5rem] leading-[1.1] mt-4 mb-3">
-              9 estilos de carrossel pra {nicho.nome.toLowerCase()}
-            </h2>
-            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Navegue pelos slides de cada estilo (capa, conteúdo e chamada final) e clique em
-              &quot;Usar este modelo&quot; pra abrir o gerador já com esse visual e um briefing de
-              exemplo pra {nicho.nome.toLowerCase()}.
-            </p>
-          </div>
-
           <NichoCarouselGallery
             nichoSlug={nicho.slug}
             demoSlides={nicho.demoSlides}
@@ -317,33 +334,6 @@ export default async function NichoCarrosselPage({
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
-      </section>
-
-      {/* ── Interlinks: outros nichos ──────────────────────────── */}
-      <section className="px-6 py-20 md:py-24 border-t border-hairline">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionLabel>Outras profissões</SectionLabel>
-            <h2 className="lp-display text-3xl md:text-[2.25rem] leading-[1.1] mt-4 mb-3">
-              Modelos para outras profissões
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {outrosNichos.map((n) => (
-              <Link
-                key={n.slug}
-                href={`/modelos/carrossel/${n.slug}`}
-                className="lp-card rounded-xl border border-hairline bg-surface p-5 transition-colors hover:border-border-accent"
-              >
-                <h3 className="font-semibold text-text-primary mb-1">
-                  Carrossel para {n.nome}
-                </h3>
-                <p className="text-sm text-text-secondary">{n.keywordPrimaria}</p>
-              </Link>
-            ))}
-          </div>
         </div>
       </section>
 
