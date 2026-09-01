@@ -3,6 +3,7 @@ import { sanitizeCopyDeep } from "@/lib/copy/sanitize"
 import { regrasCopy } from "@/lib/copy/regras"
 import { MODEL_ESCRITOR, MODEL_MECANICO } from "@/lib/generation/models"
 import { computeCostUsd } from "@/lib/generation/usage-log"
+import type { ReferenceImage } from "@/lib/generation/reference-input"
 
 // =============================================================================
 // Schemas (structured outputs — guarantee JSON validity)
@@ -313,6 +314,19 @@ export interface GenerationInput {
   protagonista?: string
   /** Fonte do fato (ex: "revista Wallpaper*"). */
   fonte?: string
+  /**
+   * Prompt adicional livre digitado pelo usuário no Step3 do wizard — pedido
+   * específico por cima do briefing/link (ex.: "crie posts apresentando esse
+   * produto pro público X"). Prioridade alta, mas nunca por cima das regras
+   * de formato do system prompt.
+   */
+  instrucoesAdicionais?: string
+  /**
+   * Imagens de referência anexadas pelo usuário (já comprimidas e em base64
+   * pelo cliente). Entram como blocos multimodais na mesma mensagem — só
+   * quando o usuário de fato anexou algo, pra não inflar tokens à toa.
+   */
+  imagensReferencia?: ReferenceImage[]
 }
 
 /**
@@ -541,6 +555,17 @@ ${input.avoidTitles.map((t) => `- "${t}"`).join("\n")}
 Gere uma versão SUBSTANCIALMENTE diferente: outro gancho de capa, outra estrutura de arco, outros exemplos e ângulos. NÃO reutilize nem parafraseie nenhum desses títulos — se o novo roteiro parecer uma variação cosmética do anterior, ele será rejeitado de novo.`
       : ""
 
+  // Pedido livre do usuário por cima do briefing (ex.: "foque no público
+  // iniciante"). Prioridade alta na leitura, mas o system prompt continua
+  // sendo dono do FORMATO (schema, limites de palavra, regras de capa) — a
+  // instrução nunca pode quebrar isso, só direcionar o conteúdo dentro dele.
+  const instrucoesBlock = input.instrucoesAdicionais?.trim()
+    ? `
+
+INSTRUÇÕES ADICIONAIS DO USUÁRIO (prioridade alta, mas nunca quebre as regras de formato):
+${input.instrucoesAdicionais.trim()}`
+    : ""
+
   const userMessage = `Gere o JSON do carrossel.
 
 CONTEXTO:
@@ -559,7 +584,34 @@ CONTEXTO:
 ABORDAGEM ESCOLHIDA PELO USUÁRIO — ela define a ESTRUTURA e o REGISTRO do texto (dois carrosséis sobre o mesmo tema com abordagens diferentes precisam ficar claramente diferentes):
 ${abordagemBrief}`
       : ""
-  }${noticiaBlock}${avoidBlock}`
+  }${noticiaBlock}${avoidBlock}${instrucoesBlock}`
+
+  // Imagens de referência do usuário — só entram na chamada quando existem
+  // (custo de tokens de imagem é zero senão). Seguem o mesmo formato
+  // multimodal de analyzeLogoColors: blocos de imagem ANTES do texto.
+  const imageBlocks = (input.imagensReferencia ?? []).slice(0, 3).map((img) => ({
+    type: "image" as const,
+    source: {
+      type: "base64" as const,
+      media_type: img.mediaType as
+        | "image/png"
+        | "image/jpeg"
+        | "image/webp"
+        | "image/gif",
+      data: img.data,
+    },
+  }))
+  const userContent = imageBlocks.length
+    ? [
+        ...imageBlocks,
+        {
+          type: "text" as const,
+          text:
+            "As imagens acima são referências visuais enviadas pelo usuário. Considere-as ao escrever a copy e os image_prompts dos slides quando fizer sentido.\n\n" +
+            userMessage,
+        },
+      ]
+    : userMessage
 
   const start = performance.now()
   const response = await client.messages.create({
@@ -578,7 +630,7 @@ ${abordagemBrief}`
         cache_control: { type: "ephemeral" },
       },
     ],
-    messages: [{ role: "user", content: userMessage }],
+    messages: [{ role: "user", content: userContent }],
   } as Anthropic.Messages.MessageCreateParamsNonStreaming)
   const ms = performance.now() - start
 

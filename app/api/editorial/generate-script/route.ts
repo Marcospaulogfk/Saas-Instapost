@@ -4,6 +4,10 @@ import { motivoRejeicaoCapa } from "@/lib/carousel/cover-guard"
 import { MODEL_ESCRITOR } from "@/lib/generation/models"
 import { logGenerationUsage } from "@/lib/generation/usage-log"
 import { createClient } from "@/lib/supabase/server"
+import {
+  validarImagensReferencia,
+  validarInstrucoesAdicionais,
+} from "@/lib/generation/reference-input"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
@@ -55,6 +59,10 @@ interface RequestBody {
   protagonista?: string
   /** Fonte do fato (ex: "revista Wallpaper*"). */
   fonte?: string
+  /** Prompt adicional livre do usuário (Step3 do wizard). */
+  instrucoesAdicionais?: string
+  /** Imagens de referência anexadas pelo usuário, já em base64. */
+  imagensReferencia?: { mediaType: string; data: string }[]
 }
 
 export async function POST(req: Request) {
@@ -98,6 +106,15 @@ export async function POST(req: Request) {
     typeof body.protagonista === "string" ? body.protagonista.trim() : ""
   const fonte = typeof body.fonte === "string" ? body.fonte.trim() : ""
 
+  const instrucoesResult = validarInstrucoesAdicionais(body.instrucoesAdicionais)
+  if (!instrucoesResult.ok) {
+    return NextResponse.json({ error: instrucoesResult.error }, { status: 400 })
+  }
+  const imagensResult = validarImagensReferencia(body.imagensReferencia)
+  if (!imagensResult.ok) {
+    return NextResponse.json({ error: imagensResult.error }, { status: 400 })
+  }
+
   try {
     const baseInput = {
       topic,
@@ -124,6 +141,8 @@ export async function POST(req: Request) {
       registro,
       protagonista: protagonista || undefined,
       fonte: fonte || undefined,
+      instrucoesAdicionais: instrucoesResult.value || undefined,
+      imagensReferencia: imagensResult.value.length ? imagensResult.value : undefined,
     }
 
     const result = await generateContent(baseInput)
