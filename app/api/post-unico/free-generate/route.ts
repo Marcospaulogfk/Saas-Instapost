@@ -19,6 +19,10 @@ import type { PostBrand } from "@/lib/single-posts/types"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { UsageStageRecord } from "@/lib/single-posts/free-generate"
 import { capturarGeracaoBitmap } from "@/lib/fabrica/capture"
+import {
+  validarImagensReferencia,
+  validarInstrucoesAdicionais,
+} from "@/lib/generation/reference-input"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -182,6 +186,10 @@ interface RequestBody {
   photo_prompt?: string | null
   /** Entidade real preservada da etapa de texto → vira foto real (Wikipedia). */
   image_entity?: string | null
+  /** Prompt adicional livre do usuário (Step3 do wizard). */
+  instrucoesAdicionais?: string
+  /** Imagens de referência anexadas pelo usuário, já em base64. */
+  imagensReferencia?: { mediaType: string; data: string }[]
 }
 
 export async function POST(req: Request) {
@@ -272,6 +280,15 @@ export async function POST(req: Request) {
     )
   }
 
+  const instrucoesResult = validarInstrucoesAdicionais(body.instrucoesAdicionais)
+  if (!instrucoesResult.ok) {
+    return NextResponse.json({ error: instrucoesResult.error }, { status: 400 })
+  }
+  const imagensResult = validarImagensReferencia(body.imagensReferencia)
+  if (!imagensResult.ok) {
+    return NextResponse.json({ error: imagensResult.error }, { status: 400 })
+  }
+
   // ---- Modo: text-only → gera só content + caption (etapa de aprovação)
   if (body.text_only) {
     // Só texto: o custo é exato, sem estimativa.
@@ -288,6 +305,8 @@ export async function POST(req: Request) {
         briefing: body.briefing.trim(),
         forceSkeletonId: body.skeleton_id ?? null,
         excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
+        instrucoesAdicionais: instrucoesResult.value || undefined,
+        imagensReferencia: imagensResult.value.length ? imagensResult.value : undefined,
       })
       await debitBestEffort(supabase, user?.id, TOKEN_COST.singlePostText, {
         kind: "debit_single_post",
@@ -328,6 +347,8 @@ export async function POST(req: Request) {
       briefing: body.briefing.trim(),
       forceSkeletonId: body.skeleton_id ?? null,
       excludeSkeletonIds: body.exclude_skeleton_ids ?? [],
+      instrucoesAdicionais: instrucoesResult.value || undefined,
+      imagensReferencia: imagensResult.value.length ? imagensResult.value : undefined,
     })
     // Gera texto + imagem numa tacada só → cobra as duas parcelas.
     const cobrado = TOKEN_COST.singlePostText + imageCost(result.image_quality)

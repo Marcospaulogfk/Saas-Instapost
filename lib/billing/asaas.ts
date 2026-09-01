@@ -28,10 +28,15 @@ import { encodeReference } from "./types"
 import { CYCLE_INFO, PLAN_LABEL, priceFor, tokensFor } from "./plans"
 import type { BillingCycle } from "./plans"
 
-const BASE_URL =
-  process.env.ASAAS_ENV === "production"
+/** Base da API, por ambiente. Exportada pra lib/billing/asaas-cartao-api.ts
+ *  (checkout transparente) não duplicar a regra. */
+export function asaasBaseUrl(asaasEnv?: string | null): string {
+  return (asaasEnv ?? process.env.ASAAS_ENV) === "production"
     ? "https://api.asaas.com/v3"
     : "https://api-sandbox.asaas.com/v3"
+}
+
+const BASE_URL = asaasBaseUrl()
 
 function apiKey(): string {
   const k = process.env.ASAAS_API_KEY
@@ -69,7 +74,7 @@ async function asaas<T>(
   return json as T
 }
 
-const CYCLE_TO_ASAAS: Record<BillingCycle, "MONTHLY" | "YEARLY"> = {
+export const CYCLE_TO_ASAAS: Record<BillingCycle, "MONTHLY" | "YEARLY"> = {
   monthly: "MONTHLY",
   annual: "YEARLY",
 }

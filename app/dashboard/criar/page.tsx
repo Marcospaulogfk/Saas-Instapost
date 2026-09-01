@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { Suspense, useEffect, useRef, useState } from "react"
+import type { ChangeEvent } from "react"
 import dynamic from "next/dynamic"
 import NextLink from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -26,6 +27,8 @@ import {
   Pencil,
   Loader2,
   Check,
+  ImagePlus,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -85,6 +88,42 @@ type LinkMeta = {
   protagonista: string
   entidades: Array<{ nome?: string; tipo?: string; papel?: string }>
   vocabularioVisual: string[]
+}
+
+/** Imagem de referência anexada no passo Ideia — já comprimida e em base64. */
+type ReferenceImage = {
+  mediaType: string
+  data: string
+}
+
+const MAX_IMAGENS_REFERENCIA = 3
+
+/**
+ * Comprime/redimensiona uma imagem no cliente antes de mandar pra IA: no máx
+ * ~1024px no maior lado, JPEG qualidade ~0.8. Evita que um anexo bruto de
+ * câmera (4-8MB) infle o payload e o custo de tokens de imagem — a IA só
+ * precisa da referência visual, não da resolução original.
+ */
+async function compressImageToBase64(file: File): Promise<ReferenceImage> {
+  const bitmap = await createImageBitmap(file)
+  try {
+    const MAX_SIDE = 1024
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+    const w = Math.max(1, Math.round(bitmap.width * scale))
+    const h = Math.max(1, Math.round(bitmap.height * scale))
+    const canvas = document.createElement("canvas")
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext("2d")
+    if (!ctx) throw new Error("canvas indisponível neste navegador")
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.8)
+    const base64 = dataUrl.split(",")[1] ?? ""
+    if (!base64) throw new Error("falha ao codificar a imagem")
+    return { mediaType: "image/jpeg", data: base64 }
+  } finally {
+    bitmap.close?.()
+  }
 }
 
 // === Recomendação de templates por objetivo + abordagem ===
@@ -353,6 +392,14 @@ function CriarWizard() {
   // --- Modo "A partir de Link" ---
   const [linkUrl, setLinkUrl] = useState("")
   const [linkErr, setLinkErr] = useState<string | null>(null)
+
+  // --- Instruções adicionais + imagens de referência (Step3, TODOS os modos) ---
+  // Pedido livre por cima do briefing/link (ex.: "crie posts apresentando esse
+  // produto pro público X") + até 3 imagens que a IA considera ao escrever a
+  // copy e os image_prompts. Vivem aqui (não dentro do Step3) porque alimentam
+  // os dois payloads de geração, montados em funções deste componente.
+  const [instrucoesAdicionais, setInstrucoesAdicionais] = useState("")
+  const [imagensReferencia, setImagensReferencia] = useState<ReferenceImage[]>([])
 
   // --- Etapa de aprovação (post-único) ---
   const [approvalDraft, setApprovalDraft] = useState<ApprovalDraft | null>(null)
@@ -676,6 +723,8 @@ function CriarWizard() {
           brand: wizardBrand,
           briefing: finalBriefing,
           text_only: true,
+          instrucoesAdicionais: instrucoesAdicionais.trim() || undefined,
+          imagensReferencia: imagensReferencia.length ? imagensReferencia : undefined,
         }),
       })
       const data = await res.json()
@@ -770,6 +819,8 @@ function CriarWizard() {
           registro: link?.registro,
           protagonista: link?.protagonista || undefined,
           fonte: link?.fonte || undefined,
+          instrucoesAdicionais: instrucoesAdicionais.trim() || undefined,
+          imagensReferencia: imagensReferencia.length ? imagensReferencia : undefined,
         }),
       })
       const data = await res.json()
@@ -990,6 +1041,10 @@ function CriarWizard() {
           linkUrl={linkUrl}
           setLinkUrl={setLinkUrl}
           linkErr={linkErr}
+          instrucoesAdicionais={instrucoesAdicionais}
+          setInstrucoesAdicionais={setInstrucoesAdicionais}
+          imagensReferencia={imagensReferencia}
+          setImagensReferencia={setImagensReferencia}
           onBack={() => goToStep(hasStep3 ? 3 : 2)}
           saldo={saldo}
           onGerar={() => void handleGerar()}
@@ -1534,6 +1589,10 @@ function Step3({
   linkUrl,
   setLinkUrl,
   linkErr,
+  instrucoesAdicionais,
+  setInstrucoesAdicionais,
+  imagensReferencia,
+  setImagensReferencia,
   sugestoes,
   brandName,
   imageChoice,
@@ -1559,6 +1618,10 @@ function Step3({
   linkUrl: string
   setLinkUrl: (v: string) => void
   linkErr: string | null
+  instrucoesAdicionais: string
+  setInstrucoesAdicionais: (v: string) => void
+  imagensReferencia: ReferenceImage[]
+  setImagensReferencia: (v: ReferenceImage[] | ((prev: ReferenceImage[]) => ReferenceImage[])) => void
   sugestoes: IdeaSuggestion[]
   brandName: string | null
   saldo: number | null
@@ -1570,6 +1633,8 @@ function Step3({
   const isLinkMode = comoCriar === "link"
   const busy = refinando || submitting
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [imagemErr, setImagemErr] = useState<string | null>(null)
+  const [comprimindo, setComprimindo] = useState(false)
   // Fonte única do preço — nunca recalcular à mão aqui (ver lib/tokens.ts).
   // O post único não passa pelo cálculo do carrossel: a imagem dele é capa por
   // definição e o toggle de "demais slides" nem aparece.
@@ -1583,6 +1648,34 @@ function Step3({
     setBriefing(s.briefing)
     setPromptRefinado(null)
     inputRef.current?.focus()
+  }
+
+  /**
+   * Anexo de imagens de referência: comprime cada arquivo no cliente (canvas,
+   * ~1024px maior lado, JPEG q0.8) antes de guardar em base64 — nunca manda o
+   * arquivo bruto da câmera pra API. Limita a 3 no total (recorta o excesso).
+   */
+  async function onAnexarImagens(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = "" // permite re-selecionar o mesmo arquivo depois
+    if (!files.length) return
+    const vagas = MAX_IMAGENS_REFERENCIA - imagensReferencia.length
+    if (vagas <= 0) return
+    setImagemErr(null)
+    setComprimindo(true)
+    try {
+      const aceitas = files.filter((f) => f.type.startsWith("image/")).slice(0, vagas)
+      if (!aceitas.length) {
+        setImagemErr("Selecione um arquivo de imagem válido.")
+        return
+      }
+      const novas = await Promise.all(aceitas.map(compressImageToBase64))
+      setImagensReferencia((prev) => [...prev, ...novas].slice(0, MAX_IMAGENS_REFERENCIA))
+    } catch {
+      setImagemErr("Não foi possível processar uma das imagens. Tente outro arquivo.")
+    } finally {
+      setComprimindo(false)
+    }
   }
 
   const modoLabel =
@@ -1854,6 +1947,87 @@ function Step3({
           Ao gerar, a IA refina sua ideia automaticamente antes de criar o conteúdo.
         </p>
       )}
+
+      {/* Instruções adicionais + imagens de referência — visíveis em TODOS os
+          modos (zero, link, inspirações): dá pra colar um link E pedir algo
+          específico por cima ("crie posts apresentando esse produto pro
+          público X"). O texto vira bloco de alta prioridade no prompt do
+          escritor; as imagens entram multimodais na mesma chamada, só quando
+          o usuário de fato anexa algo (custo de tokens zero senão). */}
+      <div className="mt-5 rounded-2xl border border-border-subtle bg-background-tertiary/20 p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+            <Pencil className="w-3 h-3" />
+            Instruções adicionais (opcional)
+          </p>
+          {instrucoesAdicionais.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setInstrucoesAdicionais("")}
+              className="text-[10px] text-text-muted hover:text-text-primary px-1"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        <Textarea
+          value={instrucoesAdicionais}
+          onChange={(e) => setInstrucoesAdicionais(e.target.value)}
+          placeholder="ex.: foque no público iniciante, cite o preço promocional…"
+          rows={2}
+          className="text-[13px] leading-relaxed resize-none bg-background-tertiary/40 border-border-subtle"
+        />
+
+        <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 mt-4 flex items-center gap-1.5">
+          <ImagePlus className="w-3 h-3" />
+          Imagens de referência (opcional, até {MAX_IMAGENS_REFERENCIA})
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {imagensReferencia.map((img, i) => (
+            <div
+              key={i}
+              className="relative w-16 h-16 rounded-lg overflow-hidden border border-border-subtle"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- base64 local, sem otimização remota */}
+              <img
+                src={`data:${img.mediaType};base64,${img.data}`}
+                alt={`Referência ${i + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setImagensReferencia((prev) => prev.filter((_, idx) => idx !== i))
+                }
+                className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90"
+                aria-label="Remover imagem"
+              >
+                <X className="w-2.5 h-2.5 text-white" />
+              </button>
+            </div>
+          ))}
+          {imagensReferencia.length < MAX_IMAGENS_REFERENCIA && (
+            <label className="w-16 h-16 rounded-lg border border-dashed border-border-subtle flex items-center justify-center cursor-pointer text-text-muted hover:border-brand-500/50 hover:text-brand-400 transition-colors">
+              {comprimindo ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImagePlus className="w-5 h-5" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={comprimindo}
+                onChange={onAnexarImagens}
+              />
+            </label>
+          )}
+        </div>
+        {imagemErr && (
+          <p className="text-[11px] text-destructive mt-2">{imagemErr}</p>
+        )}
+      </div>
       </div>
 
       <div className="flex justify-between gap-3 mt-6">

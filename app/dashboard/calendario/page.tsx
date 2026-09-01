@@ -395,6 +395,15 @@ export default function CalendarioPage() {
                 <p className="text-sm font-medium text-text-primary flex-1 truncate">
                   {s.title}
                 </p>
+                {s.created_at && (
+                  <span className="hidden sm:inline text-[10px] text-text-subtle flex-shrink-0">
+                    criada em{" "}
+                    {new Date(s.created_at).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </span>
+                )}
                 {s.source === "ia" && (
                   <Sparkles className="hidden sm:inline w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
                 )}

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { comOnboarding } from "@/lib/onboarding/rota"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 type SignUpResult =
@@ -44,10 +45,11 @@ export async function signInWithPassword(
 export async function signUpWithPassword(
   email: string,
   password: string,
-  opts: { refCode?: string | null; next?: string | null } = {},
+  opts: { name?: string | null; refCode?: string | null; next?: string | null } = {},
 ): Promise<SignUpResult> {
   const supabase = await createClient()
   const next = opts.next && opts.next.startsWith("/") ? opts.next : "/dashboard"
+  const nome = opts.name?.trim() || null
   // ref_code vai em raw_user_meta_data: o trigger handle_new_user (0014/0020)
   // chama registrar_indicacao com ele. É o que faz /cadastro?ref=CODIGO valer.
   const refCode = opts.refCode?.trim().toUpperCase() || null
@@ -55,8 +57,14 @@ export async function signUpWithPassword(
     email,
     password,
     options: {
-      emailRedirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent(next)}`,
-      ...(refCode ? { data: { ref_code: refCode } } : {}),
+      // O redirect pós-confirmação passa PELA etapa de onboarding (objetivo
+      // de uso) antes do destino real — signup direto (sem confirmação de
+      // e-mail) faz o mesmo client-side, ver app/cadastro/page.tsx.
+      emailRedirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent(comOnboarding(next))}`,
+      data: {
+        ...(nome ? { full_name: nome } : {}),
+        ...(refCode ? { ref_code: refCode } : {}),
+      },
     },
   })
   if (error) return { ok: false, error: translateAuthError(error.message) }

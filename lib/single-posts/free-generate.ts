@@ -26,6 +26,7 @@ import type { GenerateMetrics } from "./generate"
 import type { SkeletonContent, SkeletonImpl } from "./skeletons"
 import { computeCostUsd } from "@/lib/generation/usage-log"
 import type { UsageLike, UsageStage } from "@/lib/generation/usage-log"
+import type { ReferenceImage } from "@/lib/generation/reference-input"
 
 /**
  * Uso de uma etapa de geração, pro log de custo.
@@ -377,6 +378,10 @@ interface GenerateOpts {
   forceSkeletonId?: string | null
   /** IDs de skeletons que NÃO devem ser escolhidos (variação entre regenerações) */
   excludeSkeletonIds?: string[]
+  /** Prompt adicional livre do usuário (Step3 do wizard). */
+  instrucoesAdicionais?: string
+  /** Imagens de referência anexadas pelo usuário, já em base64. */
+  imagensReferencia?: ReferenceImage[]
 }
 
 export interface FreeGenerateResult {
@@ -426,6 +431,10 @@ interface TextOnlyOpts {
   briefing: string
   forceSkeletonId?: string | null
   excludeSkeletonIds?: string[]
+  /** Prompt adicional livre do usuário (Step3 do wizard). */
+  instrucoesAdicionais?: string
+  /** Imagens de referência anexadas pelo usuário, já em base64. */
+  imagensReferencia?: ReferenceImage[]
 }
 
 interface ApprovedOpts {
@@ -482,8 +491,18 @@ function buildUserPrompt(
   brand: PostBrand,
   briefing: string,
   candidates: SkeletonImpl[],
+  instrucoesAdicionais?: string,
 ): string {
   const seed = Math.floor(Math.random() * 100000)
+  // Pedido livre do usuário por cima do briefing (Step3 do wizard). Prioridade
+  // alta na leitura, mas o system prompt continua dono do FORMATO (slots,
+  // limites de palavra) — a instrução direciona o conteúdo, não quebra a regra.
+  const instrucoesBlock = instrucoesAdicionais?.trim()
+    ? `
+
+INSTRUÇÕES ADICIONAIS DO USUÁRIO (prioridade alta, mas nunca quebre as regras de formato):
+${instrucoesAdicionais.trim()}`
+    : ""
   return `MARCA:
 - Nome: ${brand.name}
 - Handle: @${brand.instagram_handle ?? brand.name.toLowerCase()}
@@ -492,7 +511,7 @@ function buildUserPrompt(
 - Tagline: ${brand.tagline ?? "—"}
 
 BRIEFING:
-"${briefing}"
+"${briefing}"${instrucoesBlock}
 
 LAYOUTS CANDIDATOS — escolha o que combina com o briefing:
 ${candidates
@@ -600,12 +619,26 @@ async function generateCopyComRetry(
   brand: PostBrand,
   briefing: string,
   candidates: SkeletonImpl[],
+  instrucoesAdicionais?: string,
+  imagensReferencia?: ReferenceImage[],
 ): Promise<{ parsed: SkeletonResponse; usage: Anthropic.Messages.Usage }> {
-  const first = await generateCopy(brand, briefing, candidates)
+  const first = await generateCopy(
+    brand,
+    briefing,
+    candidates,
+    instrucoesAdicionais,
+    imagensReferencia,
+  )
   if (first.parsed.photo_prompt?.trim()) return first
 
   console.warn("[free-generate] copy veio sem photo_prompt — repetindo uma vez")
-  const second = await generateCopy(brand, briefing, candidates)
+  const second = await generateCopy(
+    brand,
+    briefing,
+    candidates,
+    instrucoesAdicionais,
+    imagensReferencia,
+  )
   return {
     parsed: second.parsed,
     // Soma os dois usos: a volta perdida também foi paga, e esconder isso
@@ -629,9 +662,39 @@ async function generateCopy(
   brand: PostBrand,
   briefing: string,
   candidates: SkeletonImpl[],
+  instrucoesAdicionais?: string,
+  imagensReferencia?: ReferenceImage[],
 ) {
   const client = getClient()
-  const userPrompt = buildUserPrompt(brand, briefing, candidates)
+  const userPrompt = buildUserPrompt(brand, briefing, candidates, instrucoesAdicionais)
+
+  // Imagens de referência do usuário — mesmo padrão multimodal do carrossel
+  // (lib/generation/claude.ts) e de analyzeLogoColors: blocos de imagem ANTES
+  // do texto, e só entram na chamada quando o usuário de fato anexou algo.
+  const imageBlocks = (imagensReferencia ?? []).slice(0, 3).map((img) => ({
+    type: "image" as const,
+    source: {
+      type: "base64" as const,
+      media_type: img.mediaType as
+        | "image/png"
+        | "image/jpeg"
+        | "image/webp"
+        | "image/gif",
+      data: img.data,
+    },
+  }))
+  const userContent = imageBlocks.length
+    ? [
+        ...imageBlocks,
+        {
+          type: "text" as const,
+          text:
+            "As imagens acima são referências visuais enviadas pelo usuário. Considere-as ao escrever a copy e o photo_prompt quando fizer sentido.\n\n" +
+            userPrompt,
+        },
+      ]
+    : userPrompt
+
   const response = await client.messages.create({
     model: MODEL_ESCRITOR,
     // Com os `bullets` (3-4 itens de rótulo + frase) a resposta passou do teto
@@ -654,7 +717,7 @@ async function generateCopy(
       },
     ],
     tool_choice: { type: "tool", name: "entregar_copy" },
-    messages: [{ role: "user", content: userPrompt }],
+    messages: [{ role: "user", content: userContent }],
   })
   if (response.stop_reason === "max_tokens") {
     throw new Error(
@@ -734,12 +797,20 @@ export async function generateFreeSpec({
   briefing,
   forceSkeletonId,
   excludeSkeletonIds,
+  instrucoesAdicionais,
+  imagensReferencia,
 }: GenerateOpts): Promise<FreeGenerateResult> {
   const t0 = performance.now()
 
   // Sorteia candidatos; a IA escolhe entre eles pela vibe do briefing.
   const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
-  const { parsed, usage } = await generateCopyComRetry(brand, briefing, candidates)
+  const { parsed, usage } = await generateCopyComRetry(
+    brand,
+    briefing,
+    candidates,
+    instrucoesAdicionais,
+    imagensReferencia,
+  )
 
   // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
   const skeleton =
@@ -822,11 +893,19 @@ export async function generateFreeText({
   briefing,
   forceSkeletonId,
   excludeSkeletonIds,
+  instrucoesAdicionais,
+  imagensReferencia,
 }: TextOnlyOpts): Promise<FreeGenerateTextResult> {
   const t0 = performance.now()
 
   const candidates = pickSkeletonShortlist(forceSkeletonId, excludeSkeletonIds)
-  const { parsed, usage } = await generateCopyComRetry(brand, briefing, candidates)
+  const { parsed, usage } = await generateCopyComRetry(
+    brand,
+    briefing,
+    candidates,
+    instrucoesAdicionais,
+    imagensReferencia,
+  )
 
   // Trava a escolha na lista oferecida — se a IA inventar um id, cai no 1º.
   parsed.skeleton_id = (

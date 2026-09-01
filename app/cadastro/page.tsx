@@ -10,9 +10,11 @@ import { Check, Eye, EyeOff, Loader2, Mail } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { AuthVisual, GoogleIcon } from "@/components/auth/auth-visual"
 import { signUpWithPassword, signInWithGoogle } from "@/app/actions/auth"
+import { comOnboarding } from "@/lib/onboarding/rota"
 import "@/components/auth/auth.css"
 
 const schema = z.object({
+  name: z.string().min(2, "Informe seu nome"),
   email: z.string().min(1, "Informe seu email").email("Email invalido"),
   password: z
     .string()
@@ -33,7 +35,7 @@ export default function CadastroPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "", acceptTerms: false },
+    defaultValues: { name: "", email: "", password: "", acceptTerms: false },
   })
 
   const [refCode, setRefCode] = useState<string | null>(null)
@@ -75,6 +77,7 @@ export default function CadastroPage() {
     setServerError(null)
     setIsPending(true)
     const result = await signUpWithPassword(values.email, values.password, {
+      name: values.name,
       refCode,
       next: nextPath,
     })
@@ -83,7 +86,10 @@ export default function CadastroPage() {
       if (result.needsConfirmation) {
         setSubmittedEmail(values.email)
       } else {
-        router.push(nextPath)
+        // Sem confirmação de e-mail: a sessão já existe agora, então a etapa
+        // de onboarding (objetivo de uso) entra ANTES do destino real — o
+        // fluxo com confirmação faz o mesmo via emailRedirectTo (app/actions/auth.ts).
+        router.push(comOnboarding(nextPath))
         router.refresh()
       }
     } else {
@@ -155,6 +161,24 @@ export default function CadastroPage() {
               <div className="nx-auth-divider">ou continue com</div>
 
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                <div className="space-y-1.5">
+                  <label htmlFor="cadastro-name" className="nx-auth-label">
+                    Nome
+                  </label>
+                  <input
+                    id="cadastro-name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Como podemos te chamar"
+                    className="nx-auth-input"
+                    aria-invalid={!!form.formState.errors.name}
+                    {...form.register("name")}
+                  />
+                  {form.formState.errors.name && (
+                    <p className="nx-auth-erro-campo">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+
                 <div className="space-y-1.5">
                   <label htmlFor="cadastro-email" className="nx-auth-label">
                     Email

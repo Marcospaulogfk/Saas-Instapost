@@ -9,6 +9,7 @@ import type { BillingCycle } from "@/app/pricing/page"
 import { tokenCostForCarousel } from "@/lib/tokens"
 import {
   CYCLE_INFO,
+  PLAN_LABEL,
   PLAN_PRICE_MONTHLY,
   isPaidPlan,
   priceFor,
@@ -16,6 +17,8 @@ import {
   type PaidPlan,
 } from "@/lib/billing/plans"
 import { iniciarCheckout } from "@/app/actions/billing"
+import { createClient } from "@/lib/supabase/client"
+import { AssinarCartaoModal } from "@/components/billing/assinar-cartao-modal"
 
 interface PricingCardsProps {
   billingCycle: BillingCycle
@@ -109,9 +112,38 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
   const [pending, startTransition] = useTransition()
   const [ativo, setAtivo] = useState<PaidPlan | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [logado, setLogado] = useState(false)
+  const [logadoResolvido, setLogadoResolvido] = useState(false)
+  const [modalPlano, setModalPlano] = useState<PaidPlan | null>(null)
+  const [assinado, setAssinado] = useState<{ plan: PaidPlan; priceBr: string } | null>(null)
   const autoStarted = useRef(false)
 
-  function assinar(plan: PaidPlan) {
+  // Precisa saber se está logado ANTES de decidir entre abrir o modal de
+  // cartão (checkout transparente) ou mandar pro /cadastro — o modal chama
+  // uma rota autenticada, então oferecê-lo a quem não tem sessão só levaria
+  // a um 401 depois de a pessoa já ter digitado o cartão. `logadoResolvido`
+  // trava o auto-start (?plano= na volta do cadastro) até a checagem voltar,
+  // senão a corrida manda até quem ACABOU de logar de volta pro /cadastro.
+  useEffect(() => {
+    let ativo = true
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (!ativo) return
+        setLogado(Boolean(data.user))
+        setLogadoResolvido(true)
+      })
+      .catch(() => {
+        if (ativo) setLogadoResolvido(true)
+      })
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  /** Deslogado: mesmo caminho de sempre (iniciarCheckout redireciona pro
+   *  /cadastro?plano=&ciclo= e a página de preços retoma na volta). */
+  function irParaCadastro(plan: PaidPlan) {
     setErro(null)
     setAtivo(plan)
     startTransition(async () => {
@@ -124,20 +156,36 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
     })
   }
 
+  function assinar(plan: PaidPlan) {
+    setErro(null)
+    setAssinado(null)
+    if (logado) {
+      setModalPlano(plan)
+      return
+    }
+    irParaCadastro(plan)
+  }
+
   useEffect(() => {
     if (autoStarted.current) return
+    if (!logadoResolvido) return
     if (isPaidPlan(autoStartPlan)) {
       autoStarted.current = true
       assinar(autoStartPlan)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStartPlan])
+  }, [autoStartPlan, logadoResolvido])
 
   return (
     <div className="max-w-7xl mx-auto px-4">
     {erro && (
       <p className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">
         {erro}
+      </p>
+    )}
+    {assinado && (
+      <p className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm text-green-400">
+        Assinatura {PLAN_LABEL[assinado.plan]} confirmada — {assinado.priceBr}. Seus tokens já estão liberados.
       </p>
     )}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -247,6 +295,18 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
         )
       })}
     </div>
+    {modalPlano && (
+      <AssinarCartaoModal
+        open={Boolean(modalPlano)}
+        onOpenChange={(v) => !v && setModalPlano(null)}
+        plan={modalPlano}
+        cycle={billingCycle}
+        onSucesso={({ plan, priceBr }) => {
+          setModalPlano(null)
+          setAssinado({ plan, priceBr })
+        }}
+      />
+    )}
     </div>
   )
 }

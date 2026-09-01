@@ -1450,3 +1450,24 @@ $$;
 revoke all on function public.gerar_codigo_afiliado() from public;
 grant execute on function public.candidatar_afiliado(uuid, text, text, text, text, text, text, text)
   to anon, authenticated, service_role;
+
+
+-- =====================================================================
+-- >>> 0026_objetivo_uso.sql
+-- OBJETIVO DE USO: pergunta estilo Canva no onboarding, pós-cadastro
+-- =====================================================================
+
+alter table public.users
+  add column if not exists objetivo_uso text
+    check (objetivo_uso is null or objetivo_uso in (
+      'negocio',    -- "No meu negócio"
+      'criador',    -- "Sou criador de conteúdo"
+      'clientes',   -- "Para clientes (agência/freela)"
+      'estudo'      -- "Estudo/curiosidade"
+    ));
+
+comment on column public.users.objetivo_uso is
+  'Objetivo de uso declarado no onboarding (cards estilo Canva). Null = '
+  'ainda não respondeu ou pulou a etapa — nunca bloqueia o cadastro.';
+
+grant update (objetivo_uso) on public.users to authenticated;

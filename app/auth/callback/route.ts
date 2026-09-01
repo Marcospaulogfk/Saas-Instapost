@@ -34,7 +34,31 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const res = NextResponse.redirect(`${origin}${next}`)
+      // Cadastro (não login) via Google + onboarding "objetivo de uso" ainda
+      // incompleto → passa por /comecar antes do destino. `created_at` recente
+      // é o sinal de "é signup, não retorno": sem ele, todo login via Google
+      // de quem PULOU a etapa cairia nela de novo pra sempre (o campo fica
+      // null pra sempre, é skippable por design — não é "pendência a repetir").
+      let destino = `${origin}${next}`
+      try {
+        if (data.user) {
+          const criadoHaPouco = Date.now() - new Date(data.user.created_at).getTime() < 2 * 60 * 1000
+          if (criadoHaPouco) {
+            const { data: perfil } = await supabase
+              .from("users")
+              .select("objetivo_uso")
+              .eq("id", data.user.id)
+              .maybeSingle()
+            if (!perfil?.objetivo_uso) {
+              destino = `${origin}/comecar?next=${encodeURIComponent(next)}`
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[auth/callback] checagem de onboarding falhou:", e)
+      }
+
+      const res = NextResponse.redirect(destino)
       // Quem veio pelo Google não passa pelo signUp com metadata; o cookie
       // nx_ref (posto em /cadastro?ref=) é o que carrega a indicação.
       try {
