@@ -347,6 +347,13 @@ function CriarWizard() {
   // calendário e viaja ate o save da arte, que grava o vinculo (migration
   // 0023). Sem isso o CRM nao consegue saber que a pauta virou peca.
   const pautaParam = searchParams.get("pauta")
+  // Estilo pré-selecionado (?estilo=<id>): a galeria /dashboard/templates
+  // linka pra cá com o estilo já escolhido. So aceita ids validos de
+  // CAROUSEL_STYLES; fora disso cai no default "minimal" de sempre.
+  const estiloParam = searchParams.get("estilo")
+  const estiloValido = CAROUSEL_STYLES.some((s) => s.style === estiloParam)
+    ? (estiloParam as EditorialStyle)
+    : null
   const preSelecionado =
     (tipoParam === "post-unico" && POST_UNICO_HABILITADO) ||
     tipoParam === "carrossel"
@@ -376,7 +383,9 @@ function CriarWizard() {
   // Template escolhido na etapa nova ("auto" = deixa a IA escolher).
   const [templateId, setTemplateId] = useState<string>("auto")
   // Estilo visual do carrossel (passo "Estilo" — só p/ carrossel, 2+ slides).
-  const [carouselStyle, setCarouselStyle] = useState<EditorialStyle>("minimal")
+  const [carouselStyle, setCarouselStyle] = useState<EditorialStyle>(
+    estiloValido ?? "minimal",
+  )
   // Imagens de IA que o usuário quer. Default = só a capa: ela é o que para o
   // scroll e custa 25 tokens; ligar o miolo inteiro custa 12 a mais e é
   // decisão consciente, não padrão.

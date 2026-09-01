@@ -65,7 +65,8 @@ const LEGACY_KEEP_PREFIXES = ["/auth", "/api"]
 
 // Caminhos que PERMANECEM no domínio raiz (landing). Todo o resto é do app.
 // /instagram = página pública de exclusão de dados (exigida pela Meta).
-const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade", "/instagram"]
+// /modelos = páginas programáticas de SEO (galeria de templates por nicho).
+const MARKETING_PREFIXES = ["/pricing", "/termos", "/privacidade", "/instagram", "/modelos"]
 // Arquivos/rotas que DEVEM ser servidos na raiz (SEO): o Google busca
 // robots.txt e sitemap.xml no apex — redirecionar pro subdomínio prejudica.
 const MARKETING_EXACT = new Set(["/", "/robots.txt", "/sitemap.xml"])
@@ -207,12 +208,49 @@ const AF_COOKIE = "nx_af"
 const AF_COOKIE_DIAS = 60
 const AF_CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/
 
+// === Atribuição de primeiro toque ===
+// Grava nx_ft UMA vez, no primeiro hit de página do visitante: UTMs, click ids,
+// referrer externo e landing page. Nunca sobrescreve (primeiro toque é imutável);
+// o cadastro lê esse cookie e carimba a conta com a origem real, separando
+// orgânico (referrer google, sem utm) de pago (utm/gclid) e o nicho pelo path.
+const FT_COOKIE = "nx_ft"
+const FT_COOKIE_DIAS = 90
+const FT_PARAM_MAX = 200
+const FT_SKIP_PREFIXES = ["/api", "/auth", "/_next"]
+
+function primeiroToque(request: NextRequest): string | null {
+  const path = request.nextUrl.pathname
+  if (FT_SKIP_PREFIXES.some((p) => path.startsWith(p))) return null
+  const corte = (v: string | null) => (v || "").trim().slice(0, FT_PARAM_MAX)
+  const q = request.nextUrl.searchParams
+  const dados: Record<string, string> = {}
+  for (const chave of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"]) {
+    const v = corte(q.get(chave))
+    if (v) dados[chave] = v
+  }
+  const referrer = corte(request.headers.get("referer"))
+  const hostReferrer = (() => {
+    try {
+      return new URL(referrer).hostname
+    } catch {
+      return ""
+    }
+  })()
+  // Só referrer externo interessa: navegação interna não é origem.
+  if (hostReferrer && !hostReferrer.endsWith(SITE_DOMAIN) && !hostReferrer.endsWith(LEGACY_DOMAIN)) {
+    dados.referrer = referrer
+  }
+  dados.landing_page = path.slice(0, FT_PARAM_MAX)
+  dados.ts = new Date().toISOString()
+  return JSON.stringify(dados)
+}
+
 export async function middleware(request: NextRequest) {
   const response = await middlewareBase(request)
+  const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
+  const domain = host.endsWith(SITE_DOMAIN) ? `.${SITE_DOMAIN}` : undefined
   const af = (request.nextUrl.searchParams.get("af") || "").trim().toUpperCase()
   if (af && AF_CODE_RE.test(af)) {
-    const host = (request.headers.get("host") || "").toLowerCase().split(":")[0]
-    const domain = host.endsWith(SITE_DOMAIN) ? `.${SITE_DOMAIN}` : undefined
     response.cookies.set(AF_COOKIE, af, {
       maxAge: AF_COOKIE_DIAS * 24 * 60 * 60,
       httpOnly: false,
@@ -220,6 +258,18 @@ export async function middleware(request: NextRequest) {
       path: "/",
       ...(domain ? { domain } : {}),
     })
+  }
+  if (!request.cookies.get(FT_COOKIE)) {
+    const ft = primeiroToque(request)
+    if (ft) {
+      response.cookies.set(FT_COOKIE, ft, {
+        maxAge: FT_COOKIE_DIAS * 24 * 60 * 60,
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        ...(domain ? { domain } : {}),
+      })
+    }
   }
   return response
 }

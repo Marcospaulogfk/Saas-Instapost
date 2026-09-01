@@ -2,8 +2,12 @@
 
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { comOnboarding } from "@/lib/onboarding/rota"
+import { parsePrimeiroToqueCookie } from "@/lib/atribuicao/parse"
+
+const FT_COOKIE = "nx_ft"
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 type SignUpResult =
@@ -53,6 +57,12 @@ export async function signUpWithPassword(
   // ref_code vai em raw_user_meta_data: o trigger handle_new_user (0014/0020)
   // chama registrar_indicacao com ele. É o que faz /cadastro?ref=CODIGO valer.
   const refCode = opts.refCode?.trim().toUpperCase() || null
+  // first_touch vai em raw_user_meta_data igual ref_code: o trigger
+  // handle_new_user (0027) grava a coluna imutável a partir daqui. Sem isso,
+  // quem cadastra por e-mail (não passa pelo /auth/callback) nunca carimba
+  // a origem de aquisição.
+  const jar = await cookies()
+  const firstTouch = parsePrimeiroToqueCookie(jar.get(FT_COOKIE)?.value)
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -64,6 +74,7 @@ export async function signUpWithPassword(
       data: {
         ...(nome ? { full_name: nome } : {}),
         ...(refCode ? { ref_code: refCode } : {}),
+        ...(firstTouch ? { first_touch: firstTouch } : {}),
       },
     },
   })

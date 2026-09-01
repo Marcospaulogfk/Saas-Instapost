@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { vincularIndicacaoPeloCookie } from "@/lib/indicacao/vincular"
+import { vincularPrimeiroToquePeloCookie } from "@/lib/atribuicao/vincular"
 
 /**
  * Origem pública desta requisição.
@@ -70,6 +71,12 @@ export async function GET(request: Request) {
         }
       } catch (e) {
         console.warn("[auth/callback] indicação pelo cookie falhou:", e)
+      }
+      // Mesma lógica pro primeiro toque (nx_ft): quem veio pelo Google também
+      // não passa pelo signUp com metadata. Sempre chama; o guard de coluna
+      // null dentro da função torna idempotente pra quem já foi carimbado.
+      if (data.user) {
+        await vincularPrimeiroToquePeloCookie(data.user.id)
       }
       return res
     }

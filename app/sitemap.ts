@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { NICHOS } from '@/lib/seo/nichos'
 
 const BASE_URL = 'https://nexuscontentai.com.br'
 
@@ -18,18 +19,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/cadastro`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/login`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+    // /cadastro e /login saem do sitemap: o middleware redireciona esses
+    // paths do apex pro subdominio do app (307), entao aqui eles so
+    // apontavam pra um redirect. Pagina de autenticacao nao precisa indexar.
     {
       url: `${BASE_URL}/termos`,
       lastModified,
@@ -42,5 +34,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    {
+      url: `${BASE_URL}/modelos/carrossel`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    ...NICHOS.map((nicho) => ({
+      url: `${BASE_URL}/modelos/carrossel/${nicho.slug}`,
+      lastModified,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
   ]
 }
