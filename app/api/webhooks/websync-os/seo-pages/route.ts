@@ -6,6 +6,7 @@ import {
   seoDescriptionNicho,
   type NichoSeo,
 } from "@/lib/seo/nichos"
+import { TEMPLATES_NICHO, templatesDoNicho } from "@/lib/seo/templates-nicho"
 
 export const runtime = "nodejs"
 
@@ -29,6 +30,13 @@ export const runtime = "nodejs"
 const SECRET_HEADER = "x-websync-secret"
 const BASE_URL = "https://nexuscontentai.com.br"
 
+interface SeoPageTemplatePreview {
+  id: string
+  nome: string
+  estilo: string
+  nicho: string
+}
+
 interface SeoPagePreview {
   slug: string
   url: string
@@ -37,6 +45,11 @@ interface SeoPagePreview {
   h1: string
   keyword_primaria: string
   ativo: boolean
+  templates: SeoPageTemplatePreview[]
+}
+
+function templatePreview(t: (typeof TEMPLATES_NICHO)[number]): SeoPageTemplatePreview {
+  return { id: t.id, nome: t.nome, estilo: t.estilo, nicho: t.nichoSlug }
 }
 
 function nichoParaPreview(nicho: NichoSeo, ativo: boolean): SeoPagePreview {
@@ -49,6 +62,8 @@ function nichoParaPreview(nicho: NichoSeo, ativo: boolean): SeoPagePreview {
     h1: `Carrossel para ${nicho.nome.toLowerCase()}: pronto em segundos`,
     keyword_primaria: nicho.keywordPrimaria,
     ativo,
+    // Nichos de reserva ainda não têm template curado, só a ficha de SEO.
+    templates: ativo ? templatesDoNicho(nicho.slug).map(templatePreview) : [],
   }
 }
 
@@ -64,6 +79,7 @@ function hubParaPreview(): SeoPagePreview {
     h1: "Modelos de carrossel para Instagram",
     keyword_primaria: "modelos de carrossel para instagram",
     ativo: true,
+    templates: TEMPLATES_NICHO.map(templatePreview),
   }
 }
 
