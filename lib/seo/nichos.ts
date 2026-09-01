@@ -72,6 +72,10 @@ function slides(
   ]
 }
 
+// Piloto reduzido a 5 nichos ATIVOS por decisão do dono (01/09/2026), pra
+// concentrar a produção de templates. Ordem de prioridade: nutricionista,
+// advogado, dentista, psicólogo, personal-trainer. Os outros 5 nichos que já
+// tinham ficha pronta viraram NICHOS_RESERVA (dados intactos, voltam na onda 2).
 export const NICHOS: NichoSeo[] = [
   {
     slug: "nutricionista",
@@ -206,72 +210,6 @@ export const NICHOS: NichoSeo[] = [
     ],
   },
   {
-    slug: "personal-trainer",
-    nome: "Personal Trainer",
-    keywordPrimaria: "carrossel para personal trainer",
-    keywordsSecundarias: [
-      "post para instagram de personal trainer",
-      "template carrossel treino",
-      "ideias de post para personal",
-      "conteúdo instagram academia",
-      "arte para treino instagram",
-    ],
-    dor: "Precisa postar treino, dica e resultado de aluno com frequência alta pra captar aluno online, mas grava vídeo o dia todo e não sobra tempo pra montar carrossel bonito.",
-    temas: [
-      "5 exercícios para...",
-      "Erros comuns na execução de um exercício",
-      "Antes e depois de aluno",
-      "Mitos sobre treino e dieta",
-    ],
-    propostaDeValor:
-      "Transforma a rotina de treino do dia em carrossel pronto pro Instagram em poucos minutos, com estrutura de lista e destaque de exercício que já funciona nesse nicho, sem precisar editar imagem por imagem.",
-    demoSlides: slides(
-      {
-        title: "5 exercícios para fortalecer a lombar sem dor",
-        highlight: ["5 exercícios"],
-        subtitle: "A sequência que uso com aluno sedentário na primeira semana.",
-        badge: "Treino",
-      },
-      {
-        title: "Erro comum: descer rápido demais no agachamento",
-        highlight: ["Erro comum"],
-        subtitle: "A pressa é o que mais tira o resultado do exercício.",
-        body: "Controle a descida em 3 segundos e sinta o glúteo trabalhando antes de subir. Esse ajuste sozinho já muda o resultado de quem treina errado há meses.",
-        badge: "Dica 01",
-      },
-      {
-        title: "Salve este post e comece hoje mesmo",
-        highlight: ["hoje"],
-        subtitle: "Toque em salvar e leve pro seu próximo treino.",
-        badge: "Siga @seutreino",
-      },
-    ),
-    briefExemplo:
-      "Carrossel para personal trainer com 5 exercícios pra fortalecer a lombar sem dor, linguagem direta e motivadora, visual de academia moderna.",
-    faq: [
-      {
-        pergunta: "Dá pra postar resultado de aluno (antes e depois)?",
-        resposta:
-          "Sim, com a autorização do aluno. Descreva o resultado no briefing e escolha um estilo com destaque forte pra foto, como o Impacto ou o Cards.",
-      },
-      {
-        pergunta: "Funciona pra quem treina em casa e não só personal de academia?",
-        resposta:
-          "Sim. O conteúdo se adapta ao contexto que você descrever no briefing: academia, treino em casa, online ou ao ar livre.",
-      },
-      {
-        pergunta: "Consigo manter a mesma cor da minha marca em todo post?",
-        resposta:
-          "Sim, sua paleta e seu handle ficam salvos e aparecem automaticamente em cada carrossel novo.",
-      },
-      {
-        pergunta: "Preciso ter foto profissional pra usar a ferramenta?",
-        resposta:
-          "Não é obrigatório. Você pode gerar imagem com IA ou subir suas próprias fotos de treino e aluno.",
-      },
-    ],
-  },
-  {
     slug: "dentista",
     nome: "Dentista",
     keywordPrimaria: "carrossel para dentista",
@@ -338,72 +276,6 @@ export const NICHOS: NichoSeo[] = [
     ],
   },
   {
-    slug: "esteticista",
-    nome: "Esteticista",
-    keywordPrimaria: "carrossel para esteticista",
-    keywordsSecundarias: [
-      "post para instagram de esteticista",
-      "template carrossel estética",
-      "ideias de post para esteticista",
-      "conteúdo instagram estética facial",
-      "arte para procedimento estético",
-    ],
-    dor: "O resultado do trabalho é visual (pele, rosto, corpo), mas grande parte trabalha sozinha em casa ou salão pequeno e não sabe montar um antes e depois que pareça profissional.",
-    temas: [
-      "Antes e depois de procedimento",
-      "O que esperar da sua primeira sessão de...",
-      "Cuidados antes e depois do procedimento",
-      "Mitos sobre um tratamento específico",
-    ],
-    propostaDeValor:
-      "Gera carrossel com destaque forte pra foto de antes e depois (a peça que mais vende no nicho) já dentro de um layout que valoriza a imagem sem cortar nem distorcer o resultado do procedimento.",
-    demoSlides: slides(
-      {
-        title: "O que esperar da sua primeira sessão de limpeza de pele",
-        highlight: ["primeira sessão"],
-        subtitle: "Do que sente durante ao resultado que aparece nos dias seguintes.",
-        badge: "Estética",
-      },
-      {
-        title: "Cuidado 1: evite sol direto nas primeiras 48 horas",
-        highlight: ["Cuidado 1"],
-        subtitle: "A pele fica mais sensível logo depois do procedimento.",
-        body: "Protetor solar todos os dias, inclusive em casa, e nada de exposição direta na primeira semana. Esse cuidado simples evita manchas e prolonga o resultado.",
-        badge: "Dica 01",
-      },
-      {
-        title: "Salve este post e leve pra sua próxima cliente",
-        highlight: ["Salve"],
-        subtitle: "Toque em salvar e envie pra quem perguntar.",
-        badge: "Siga @suaestetica",
-      },
-    ),
-    briefExemplo:
-      "Carrossel para esteticista explicando o que esperar da primeira sessão de limpeza de pele, com cuidados pós procedimento, visual clean e acolhedor.",
-    faq: [
-      {
-        pergunta: "O layout consegue destacar bem uma foto de antes e depois?",
-        resposta:
-          "Sim, esse é o ponto forte do formato: os estilos Cards e Minimalista foram pensados pra dar espaço grande à foto, sem cortar rosto nem distorcer o resultado.",
-      },
-      {
-        pergunta: "Preciso de câmera profissional pra tirar a foto?",
-        resposta:
-          "Não. Foto de celular com boa luz funciona bem. Você também pode combinar foto real com imagem gerada por IA nos slides educativos.",
-      },
-      {
-        pergunta: "Dá pra usar pra qualquer tipo de procedimento estético?",
-        resposta:
-          "Sim, descreva o procedimento no briefing (facial, corporal, capilar) e a IA adapta o vocabulário e os cuidados mencionados.",
-      },
-      {
-        pergunta: "O texto já vem com aviso de resultado individual?",
-        resposta:
-          "A IA evita promessa de resultado garantido no roteiro, mas revise sempre o texto final antes de publicar, principalmente em posts de antes e depois.",
-      },
-    ],
-  },
-  {
     slug: "psicologo",
     nome: "Psicólogo",
     keywordPrimaria: "carrossel para psicólogo",
@@ -466,6 +338,145 @@ export const NICHOS: NichoSeo[] = [
         pergunta: "Posso adaptar o conteúdo pro meu público específico?",
         resposta:
           "Pode. Descreva o público no briefing (adolescentes, casais, terceira idade) e o roteiro se ajusta à linguagem certa.",
+      },
+    ],
+  },
+  {
+    slug: "personal-trainer",
+    nome: "Personal Trainer",
+    keywordPrimaria: "carrossel para personal trainer",
+    keywordsSecundarias: [
+      "post para instagram de personal trainer",
+      "template carrossel treino",
+      "ideias de post para personal",
+      "conteúdo instagram academia",
+      "arte para treino instagram",
+    ],
+    dor: "Precisa postar treino, dica e resultado de aluno com frequência alta pra captar aluno online, mas grava vídeo o dia todo e não sobra tempo pra montar carrossel bonito.",
+    temas: [
+      "5 exercícios para...",
+      "Erros comuns na execução de um exercício",
+      "Antes e depois de aluno",
+      "Mitos sobre treino e dieta",
+    ],
+    propostaDeValor:
+      "Transforma a rotina de treino do dia em carrossel pronto pro Instagram em poucos minutos, com estrutura de lista e destaque de exercício que já funciona nesse nicho, sem precisar editar imagem por imagem.",
+    demoSlides: slides(
+      {
+        title: "5 exercícios para fortalecer a lombar sem dor",
+        highlight: ["5 exercícios"],
+        subtitle: "A sequência que uso com aluno sedentário na primeira semana.",
+        badge: "Treino",
+      },
+      {
+        title: "Erro comum: descer rápido demais no agachamento",
+        highlight: ["Erro comum"],
+        subtitle: "A pressa é o que mais tira o resultado do exercício.",
+        body: "Controle a descida em 3 segundos e sinta o glúteo trabalhando antes de subir. Esse ajuste sozinho já muda o resultado de quem treina errado há meses.",
+        badge: "Dica 01",
+      },
+      {
+        title: "Salve este post e comece hoje mesmo",
+        highlight: ["hoje"],
+        subtitle: "Toque em salvar e leve pro seu próximo treino.",
+        badge: "Siga @seutreino",
+      },
+    ),
+    briefExemplo:
+      "Carrossel para personal trainer com 5 exercícios pra fortalecer a lombar sem dor, linguagem direta e motivadora, visual de academia moderna.",
+    faq: [
+      {
+        pergunta: "Dá pra postar resultado de aluno (antes e depois)?",
+        resposta:
+          "Sim, com a autorização do aluno. Descreva o resultado no briefing e escolha um estilo com destaque forte pra foto, como o Impacto ou o Cards.",
+      },
+      {
+        pergunta: "Funciona pra quem treina em casa e não só personal de academia?",
+        resposta:
+          "Sim. O conteúdo se adapta ao contexto que você descrever no briefing: academia, treino em casa, online ou ao ar livre.",
+      },
+      {
+        pergunta: "Consigo manter a mesma cor da minha marca em todo post?",
+        resposta:
+          "Sim, sua paleta e seu handle ficam salvos e aparecem automaticamente em cada carrossel novo.",
+      },
+      {
+        pergunta: "Preciso ter foto profissional pra usar a ferramenta?",
+        resposta:
+          "Não é obrigatório. Você pode gerar imagem com IA ou subir suas próprias fotos de treino e aluno.",
+      },
+    ],
+  },
+]
+
+// Reserva da onda 2 (decisão de 01/09/2026): fichas prontas, mas fora do
+// piloto por enquanto. Não alimentam sitemap, generateStaticParams nem os
+// chips de profissões — voltam pra NICHOS quando a produção de templates
+// abrir espaço.
+export const NICHOS_RESERVA: NichoSeo[] = [
+  {
+    slug: "esteticista",
+    nome: "Esteticista",
+    keywordPrimaria: "carrossel para esteticista",
+    keywordsSecundarias: [
+      "post para instagram de esteticista",
+      "template carrossel estética",
+      "ideias de post para esteticista",
+      "conteúdo instagram estética facial",
+      "arte para procedimento estético",
+    ],
+    dor: "O resultado do trabalho é visual (pele, rosto, corpo), mas grande parte trabalha sozinha em casa ou salão pequeno e não sabe montar um antes e depois que pareça profissional.",
+    temas: [
+      "Antes e depois de procedimento",
+      "O que esperar da sua primeira sessão de...",
+      "Cuidados antes e depois do procedimento",
+      "Mitos sobre um tratamento específico",
+    ],
+    propostaDeValor:
+      "Gera carrossel com destaque forte pra foto de antes e depois (a peça que mais vende no nicho) já dentro de um layout que valoriza a imagem sem cortar nem distorcer o resultado do procedimento.",
+    demoSlides: slides(
+      {
+        title: "O que esperar da sua primeira sessão de limpeza de pele",
+        highlight: ["primeira sessão"],
+        subtitle: "Do que sente durante ao resultado que aparece nos dias seguintes.",
+        badge: "Estética",
+      },
+      {
+        title: "Cuidado 1: evite sol direto nas primeiras 48 horas",
+        highlight: ["Cuidado 1"],
+        subtitle: "A pele fica mais sensível logo depois do procedimento.",
+        body: "Protetor solar todos os dias, inclusive em casa, e nada de exposição direta na primeira semana. Esse cuidado simples evita manchas e prolonga o resultado.",
+        badge: "Dica 01",
+      },
+      {
+        title: "Salve este post e leve pra sua próxima cliente",
+        highlight: ["Salve"],
+        subtitle: "Toque em salvar e envie pra quem perguntar.",
+        badge: "Siga @suaestetica",
+      },
+    ),
+    briefExemplo:
+      "Carrossel para esteticista explicando o que esperar da primeira sessão de limpeza de pele, com cuidados pós procedimento, visual clean e acolhedor.",
+    faq: [
+      {
+        pergunta: "O layout consegue destacar bem uma foto de antes e depois?",
+        resposta:
+          "Sim, esse é o ponto forte do formato: os estilos Cards e Minimalista foram pensados pra dar espaço grande à foto, sem cortar rosto nem distorcer o resultado.",
+      },
+      {
+        pergunta: "Preciso de câmera profissional pra tirar a foto?",
+        resposta:
+          "Não. Foto de celular com boa luz funciona bem. Você também pode combinar foto real com imagem gerada por IA nos slides educativos.",
+      },
+      {
+        pergunta: "Dá pra usar pra qualquer tipo de procedimento estético?",
+        resposta:
+          "Sim, descreva o procedimento no briefing (facial, corporal, capilar) e a IA adapta o vocabulário e os cuidados mencionados.",
+      },
+      {
+        pergunta: "O texto já vem com aviso de resultado individual?",
+        resposta:
+          "A IA evita promessa de resultado garantido no roteiro, mas revise sempre o texto final antes de publicar, principalmente em posts de antes e depois.",
       },
     ],
   },
@@ -737,4 +748,20 @@ export const NICHOS: NichoSeo[] = [
 
 export function nichoPorSlug(slug: string): NichoSeo | undefined {
   return NICHOS.find((n) => n.slug === slug)
+}
+
+// Fonte única de title/description das páginas de nicho: usada tanto pelo
+// generateMetadata da página real quanto pelo endpoint de preview SERP do
+// CRM (app/api/webhooks/websync-os/seo-pages), pra nunca divergir.
+export function seoTitleNicho(nicho: NichoSeo): string {
+  // O Google trunca o title por volta de 60 chars: em nome longo
+  // (Nutricionista, Personal Trainer) o "Pronto" sai pra caber o
+  // "Grátis com IA", que é o gancho de clique que não pode ser cortado.
+  const completo = `Carrossel para ${nicho.nome} Pronto em Segundos | Grátis com IA`
+  if (completo.length <= 60) return completo
+  return `Carrossel para ${nicho.nome} em Segundos | Grátis com IA`
+}
+
+export function seoDescriptionNicho(nicho: NichoSeo): string {
+  return `Descreva o tema e a IA monta seu carrossel de ${nicho.nome.toLowerCase()} completo: copy, design e arte em segundos. Modelos prontos pra editar. Comece grátis, sem cartão.`
 }

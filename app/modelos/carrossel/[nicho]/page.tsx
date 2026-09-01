@@ -17,7 +17,13 @@ import { NichoCarouselGallery } from "@/components/modelos/nicho-carousel-galler
 // Import do módulo server-safe (sem "use client"): importar o array via
 // carousel-style-gallery viraria client reference aqui e .filter quebraria.
 import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
-import { NICHOS, nichoPorSlug, type NichoSeo } from "@/lib/seo/nichos"
+import {
+  NICHOS,
+  nichoPorSlug,
+  seoTitleNicho,
+  seoDescriptionNicho,
+  type NichoSeo,
+} from "@/lib/seo/nichos"
 
 // Mesma exclusão do estilo "auto" que a galeria pública aplica (ver
 // nicho-carousel-gallery.tsx) — a contagem da barra precisa bater com o
@@ -73,12 +79,14 @@ export async function generateMetadata({
   const nicho = nichoPorSlug(slug)
   if (!nicho) return {}
 
-  const title = `Carrossel para ${nicho.nome}: modelos prontos pra editar grátis`
-  const description = `${nicho.keywordPrimaria}: gere carrosséis prontos pro Instagram com IA, no visual certo pra ${nicho.nome.toLowerCase()}. Escolha o estilo, edite e publique sem abrir editor de design.`
+  const title = seoTitleNicho(nicho)
+  const description = seoDescriptionNicho(nicho)
   const path = `/modelos/carrossel/${nicho.slug}`
 
   return {
-    title,
+    // absolute: sem o template "| Nexus Content" do layout raiz, que
+    // estouraria os ~60 chars e o Google cortaria o gancho do title.
+    title: { absolute: title },
     description,
     alternates: { canonical: path },
     openGraph: {
@@ -178,7 +186,7 @@ export default async function NichoCarrosselPage({
 
           <h1 className="lp-display text-[2rem] md:text-[2.9rem] leading-[1.08] mb-4">
             Carrossel para {nicho.nome.toLowerCase()}
-            <span className="lp-text-gradient">: pronto em minutos</span>
+            <span className="lp-text-gradient">: pronto em segundos</span>
           </h1>
 
           {/* Dor + proposta condensadas — a proposta completa fica pro CTA final */}

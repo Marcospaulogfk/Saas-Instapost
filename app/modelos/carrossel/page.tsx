@@ -39,12 +39,14 @@ const NAV_ITEMS: CardNavItem[] = [
   },
 ]
 
-const TITLE = "Modelos de carrossel para Instagram por profissão"
+const TITLE = "Modelos de Carrossel para Instagram: Crie o Seu em Segundos com IA"
 const DESCRIPTION =
-  "Modelos de carrossel prontos pra editar, organizados por profissão: nutricionista, advogado, personal trainer, dentista e mais. Escolha a sua, edite e publique grátis."
+  "Escolha sua profissão, descreva o tema e a IA monta seu carrossel completo em segundos: copy, design e arte prontos pra editar. Comece grátis, sem cartão."
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // absolute: sem o "| Nexus Content" do template raiz, senão o title
+  // passa muito de 60 chars e o Google corta o gancho.
+  title: { absolute: TITLE },
   description: DESCRIPTION,
   alternates: { canonical: "/modelos/carrossel" },
   openGraph: {

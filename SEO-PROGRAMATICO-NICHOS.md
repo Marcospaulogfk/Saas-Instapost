@@ -43,6 +43,8 @@ Profissionais liberais e pequenos negócios brasileiros que compram ou produzem 
 
 ## 2. Priorização: os 10 nichos do piloto
 
+> **Decisão do dono (01/09/2026):** o piloto encolheu de 10 para os 5 primeiros desta lista (nutricionista, advogado, dentista, psicólogo, personal trainer), pra concentrar a produção de templates. Os outros 5 (esteticista, corretor de imóveis, social media, barbearia, clínica de estética) ficam em reserva pra onda 2, junto com os 20 nichos restantes da lista de 30. Igreja/ministério já entra aprovada como candidata da onda 2.
+
 Critérios usados (peso qualitativo, não numérico):
 
 - **Potencial de busca (heurística):** tamanho do mercado profissional no Brasil e quanto esse profissional já posta ou tenta postar no Instagram.
