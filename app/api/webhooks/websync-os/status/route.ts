@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { resolverDono } from "@/lib/websync/dono"
+import { editorUrlFor, type ArtifactType } from "@/lib/websync/editor-url"
 
 export const runtime = "nodejs"
 
@@ -35,17 +36,6 @@ const MAX_IDS = 50
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Base absoluta do app. Env manda; o host de produção é o último recurso. */
-function editorBase(): string {
-  const raw =
-    process.env.WEBSYNC_EDITOR_BASE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "https://app.nexuscontentai.com.br"
-  return raw.replace(/\/+$/, "")
-}
-
-type ArtifactType = "single_post" | "carousel"
-
 interface Artefato {
   type: ArtifactType
   id: string
@@ -61,13 +51,6 @@ interface ItemStatus {
   artifact_id: string | null
   thumb_url: string | null
   editor_url: string | null
-}
-
-function editorUrlFor(a: Artefato): string {
-  const base = editorBase()
-  return a.type === "single_post"
-    ? `${base}/dashboard/editor/post-unico?post=${a.id}`
-    : `${base}/dashboard/carrossel?id=${a.id}`
 }
 
 /** Mais recente vence: gerar duas vezes a mesma pauta não confunde o CRM. */
@@ -171,10 +154,15 @@ export async function GET(req: Request) {
 
     // `editorial_carousels` não tem coluna de thumb: a capa composta mora
     // dentro do JSONB. O `->>` evita trazer o carousel_data inteiro (slides,
-    // textos e urls) só pra ler um campo.
+    // textos e urls) só pra ler um campo. `coverImageUrl` é a capa COMPOSTA
+    // (PNG com texto+marca) que só existe depois de um save manual no editor;
+    // a arte gerada sozinha pela Ponte (01/09/2026) nunca passa por lá, então
+    // cai no 2º alias — a foto crua do slide 0, melhor que card sem imagem.
     const { data: carrosseis, error: carrosseisError } = await admin
       .from("editorial_carousels")
-      .select("id, scheduled_post_id, created_at, cover:carousel_data->>coverImageUrl")
+      .select(
+        "id, scheduled_post_id, created_at, cover:carousel_data->>coverImageUrl, primeira:carousel_data->slides->0->image->>url",
+      )
       .in("scheduled_post_id", ids)
       .eq("user_id", dono.ownerId)
     if (carrosseisError) {
@@ -189,12 +177,13 @@ export async function GET(req: Request) {
       scheduled_post_id: string | null
       created_at: string
       cover: string | null
+      primeira: string | null
     }>) {
       if (!c.scheduled_post_id) continue
       registrar(artefatos, c.scheduled_post_id, {
         type: "carousel",
         id: c.id,
-        thumb: c.cover ?? null,
+        thumb: c.cover ?? c.primeira ?? null,
         createdAt: c.created_at,
       })
     }
@@ -223,7 +212,7 @@ export async function GET(req: Request) {
       artifact_type: arte?.type ?? null,
       artifact_id: arte?.id ?? null,
       thumb_url: arte?.thumb ?? null,
-      editor_url: arte ? editorUrlFor(arte) : null,
+      editor_url: arte ? editorUrlFor(arte.type, arte.id) : null,
     }
   })
 
