@@ -145,6 +145,264 @@ export function ProjectsList({
     })
   }
 
+  function renderPost(post: SinglePostItem) {
+    return (
+      <div
+        key={post.id}
+        className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all bg-black"
+      >
+        <Link
+          href={`/dashboard/posts-unicos/${post.id}`}
+          className="absolute inset-0"
+        >
+          {post.rendered_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.rendered_image_url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className={`absolute inset-0 ${getProjectGradient(post.id)}`}
+            />
+          )}
+        </Link>
+        <Badge
+          variant="secondary"
+          className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
+        >
+          Post
+        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+            >
+              {deletingId === post.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MoreHorizontal className="w-4 h-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/posts-unicos/${post.id}`}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Editar
+              </Link>
+            </DropdownMenuItem>
+            {post.rendered_image_url && (
+              <DropdownMenuItem asChild>
+                <a
+                  href={post.rendered_image_url}
+                  download={`${post.title || "post"}.png`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Baixar
+                </a>
+              </DropdownMenuItem>
+            )}
+            {post.caption && (
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  void copiar(post.id, post.caption ?? "")
+                }}
+              >
+                {copiadoId === post.id ? (
+                  <Check className="w-4 h-4 mr-2 text-success" />
+                ) : (
+                  <FileText className="w-4 h-4 mr-2" />
+                )}
+                {copiadoId === post.id ? "Legenda copiada" : "Copiar legenda"}
+              </DropdownMenuItem>
+            )}
+            {post.raw_brief && (
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/dashboard/criar?tipo=post-unico&step=2&brief=${encodeURIComponent(post.raw_brief)}`}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Recriar com este prompt
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              className="text-destructive"
+              onSelect={(e) => {
+                e.preventDefault()
+                handleDeleteSinglePost(post.id)
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pointer-events-none">
+          <h3 className="font-semibold text-white truncate">
+            {post.title}
+          </h3>
+          <p className="text-sm text-white/60">
+            {post.brand_name
+              ? `${post.brand_name} · ${formatRelativeDate(post.created_at)}`
+              : formatRelativeDate(post.created_at)}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  function renderCarrossel(carousel: CarouselListItem) {
+    return (
+      <Link
+        key={carousel.id}
+        href={`/dashboard/carrossel?id=${carousel.id}`}
+        className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02] bg-black"
+      >
+        {carousel.cover ? (
+          <CarouselNavPreview cover={carousel.cover} slides={carousel.slides} />
+        ) : carousel.cover_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={carousel.cover_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
+          />
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              onClick={(e) => e.preventDefault()}
+            >
+              {deletingId === carousel.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MoreHorizontal className="w-4 h-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/carrossel?id=${carousel.id}`}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Abrir no editor
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onSelect={(e) => {
+                e.preventDefault()
+                handleDeleteCarousel(carousel.id)
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Link>
+    )
+  }
+
+  function renderProjeto(project: Project) {
+    return (
+      <Link
+        key={project.id}
+        href={`/dashboard/projetos/${project.id}`}
+        className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02]"
+      >
+        <div
+          className={`absolute inset-0 ${getProjectGradient(project.id)}`}
+        />
+        <Badge
+          variant="secondary"
+          className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
+        >
+          {project.brand.name}
+        </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              onClick={(e) => e.preventDefault()}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Pencil className="w-4 h-4 mr-2" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Copy className="w-4 h-4 mr-2" />
+              Duplicar
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <h3 className="font-semibold text-white truncate">
+            {project.title}
+          </h3>
+          <p className="text-sm text-white/60">
+            {formatRelativeDate(project.created_at)}
+          </p>
+        </div>
+      </Link>
+    )
+  }
+
+  // Uma grade so, ordenada por data de criacao (mais novo primeiro).
+  // Antes cada tipo era um bloco separado na tela, entao um post recem
+  // criado caia depois de todos os carrosseis e projetos antigos.
+  const itens = [
+    ...filteredSinglePosts.map((post) => ({
+      kind: "post" as const,
+      id: post.id,
+      created_at: post.created_at,
+      post,
+    })),
+    ...filteredCarousels.map((carrossel) => ({
+      kind: "carrossel" as const,
+      id: carrossel.id,
+      created_at: carrossel.created_at,
+      carrossel,
+    })),
+    ...filtered.map((projeto) => ({
+      kind: "projeto" as const,
+      id: projeto.id,
+      created_at: projeto.created_at,
+      projeto,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -215,9 +473,7 @@ export function ProjectsList({
             )}
           </div>
 
-          {filtered.length === 0 &&
-          filteredCarousels.length === 0 &&
-          filteredSinglePosts.length === 0 ? (
+          {itens.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <p className="text-muted-foreground">
                 Nenhum projeto encontrado com esses filtros.
@@ -225,228 +481,13 @@ export function ProjectsList({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredSinglePosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all bg-black"
-                >
-                  <Link
-                    href={`/dashboard/posts-unicos/${post.id}`}
-                    className="absolute inset-0"
-                  >
-                    {post.rendered_image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={post.rendered_image_url}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className={`absolute inset-0 ${getProjectGradient(post.id)}`}
-                      />
-                    )}
-                  </Link>
-                  <Badge
-                    variant="secondary"
-                    className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
-                  >
-                    Post
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
-                      >
-                        {deletingId === post.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <MoreHorizontal className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/posts-unicos/${post.id}`}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Editar
-                        </Link>
-                      </DropdownMenuItem>
-                      {post.rendered_image_url && (
-                        <DropdownMenuItem asChild>
-                          <a
-                            href={post.rendered_image_url}
-                            download={`${post.title || "post"}.png`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Baixar
-                          </a>
-                        </DropdownMenuItem>
-                      )}
-                      {post.caption && (
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault()
-                            void copiar(post.id, post.caption ?? "")
-                          }}
-                        >
-                          {copiadoId === post.id ? (
-                            <Check className="w-4 h-4 mr-2 text-success" />
-                          ) : (
-                            <FileText className="w-4 h-4 mr-2" />
-                          )}
-                          {copiadoId === post.id ? "Legenda copiada" : "Copiar legenda"}
-                        </DropdownMenuItem>
-                      )}
-                      {post.raw_brief && (
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/dashboard/criar?tipo=post-unico&step=2&brief=${encodeURIComponent(post.raw_brief)}`}
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Recriar com este prompt
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onSelect={(e) => {
-                          e.preventDefault()
-                          handleDeleteSinglePost(post.id)
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pointer-events-none">
-                    <h3 className="font-semibold text-white truncate">
-                      {post.title}
-                    </h3>
-                    <p className="text-sm text-white/60">
-                      {post.brand_name
-                        ? `${post.brand_name} · ${formatRelativeDate(post.created_at)}`
-                        : formatRelativeDate(post.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {filteredCarousels.map((carousel) => (
-                <Link
-                  key={carousel.id}
-                  href={`/dashboard/carrossel?id=${carousel.id}`}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02] bg-black"
-                >
-                  {carousel.cover ? (
-                    <CarouselNavPreview cover={carousel.cover} slides={carousel.slides} />
-                  ) : carousel.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={carousel.cover_url}
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className={`absolute inset-0 ${getProjectGradient(carousel.id)}`}
-                    />
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        {deletingId === carousel.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <MoreHorizontal className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/carrossel?id=${carousel.id}`}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Abrir no editor
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onSelect={(e) => {
-                          e.preventDefault()
-                          handleDeleteCarousel(carousel.id)
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </Link>
-              ))}
-              {filtered.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/dashboard/projetos/${project.id}`}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-all hover:scale-[1.02]"
-                >
-                  <div
-                    className={`absolute inset-0 ${getProjectGradient(project.id)}`}
-                  />
-                  <Badge
-                    variant="secondary"
-                    className="absolute top-3 left-3 bg-black/40 backdrop-blur-sm text-white border-0 text-xs"
-                  >
-                    {project.brand.name}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Duplicar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Download className="w-4 h-4 mr-2" />
-                        Exportar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <h3 className="font-semibold text-white truncate">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-white/60">
-                      {formatRelativeDate(project.created_at)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+              {itens.map((item) =>
+                item.kind === "post"
+                  ? renderPost(item.post)
+                  : item.kind === "carrossel"
+                    ? renderCarrossel(item.carrossel)
+                    : renderProjeto(item.projeto),
+              )}
             </div>
           )}
         </>

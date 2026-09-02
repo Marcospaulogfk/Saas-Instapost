@@ -140,6 +140,8 @@ export interface CarouselListItem {
   slide_count: number
   /** Slides completos — permite preview navegável (cards estilo template). */
   slides: PreviewSlide[]
+  /** Data de criacao — usada pra ordenar a Biblioteca junto com posts e projetos. */
+  created_at: string
   updated_at: string
 }
 
@@ -153,7 +155,7 @@ export async function listCarouselsV2(): Promise<CarouselListItem[]> {
 
   const { data, error } = await supabase
     .from('editorial_carousels')
-    .select('id, topic, brand_name, carousel_data, updated_at')
+    .select('id, topic, brand_name, carousel_data, created_at, updated_at')
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
   if (error || !data) return []
@@ -186,6 +188,7 @@ export async function listCarouselsV2(): Promise<CarouselListItem[]> {
         cover: coverData,
         slide_count: slides.length,
         slides,
+        created_at: r.created_at as string,
         updated_at: r.updated_at as string,
       }
     })
