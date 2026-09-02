@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { resolverDono } from "@/lib/websync/dono"
+import {
+  agendarGeracao,
+  lerImagensCrm,
+  lerBuscasCrm,
+  type ResultadoAgendamento,
+} from "@/lib/websync/gerar-arte"
 
 export const runtime = "nodejs"
+// Só importa quando algum item do lote pede `gerar: true` (a geração em si
+// roda em after(), depois da resposta) — mesmo raciocínio de .../gerar/route.ts.
+export const maxDuration = 300
 
 // =====================================================================
 // Webhook WebSync-OS → Nexus Content  (a Ponte, 11/08/2026)
@@ -26,6 +35,13 @@ export const runtime = "nodejs"
 //
 // Idempotência: mesmo título na mesma brand não duplica; devolve o id
 // existente como 'ja_existia' pro worker poder carimbar o espelho.
+//
+// Geração automática (01/09/2026): `gerar: true` num item pede pra este
+// endpoint TAMBÉM agendar a arte (delega pra lib/websync/gerar-arte.ts —
+// mesmo motor de /gerar/route.ts). `imagens`/`buscas` são as fotos e termos
+// de busca que o CRM já escolheu por slide. O campo `arte` na resposta é o
+// desfecho do agendamento; a geração de fato roda em after(), depois desta
+// resposta ir embora.
 // =====================================================================
 
 const SECRET_HEADER = "x-websync-secret"
@@ -43,6 +59,12 @@ interface PostRecebido {
   formato?: string
   objetivo?: string
   data_sugerida?: string
+  /** Pede a geração automática da arte (a Ponte, 01/09/2026). */
+  gerar?: boolean
+  /** Foto que o CRM já escolheu por slide (1-based). Shape cru — validado por lerImagensCrm. */
+  imagens?: unknown
+  /** Termo de busca visual por slide (1-based); o do slide 1 vira prompt da capa. Cru — validado por lerBuscasCrm. */
+  buscas?: unknown
 }
 
 interface ResultadoItem {
@@ -50,6 +72,8 @@ interface ResultadoItem {
   resultado: "criado" | "ja_existia" | "brand_nao_encontrada" | "invalido"
   id?: string
   motivo?: string
+  /** Desfecho do agendamento de geração — só presente quando `gerar: true` veio no item. */
+  arte?: ResultadoAgendamento
 }
 
 export async function POST(req: Request) {
@@ -132,7 +156,14 @@ export async function POST(req: Request) {
       .limit(1)
       .maybeSingle()
     if (existente) {
-      resultados.push({ ref, resultado: "ja_existia", id: existente.id })
+      const item: ResultadoItem = { ref, resultado: "ja_existia", id: existente.id }
+      if (p.gerar) {
+        item.arte = await agendarGeracao(admin, dono.ownerId, existente.id, {
+          imagens: lerImagensCrm(p.imagens),
+          buscas: lerBuscasCrm(p.buscas),
+        })
+      }
+      resultados.push(item)
       continue
     }
 
@@ -167,7 +198,14 @@ export async function POST(req: Request) {
       })
       continue
     }
-    resultados.push({ ref, resultado: "criado", id: criado.id })
+    const item: ResultadoItem = { ref, resultado: "criado", id: criado.id }
+    if (p.gerar) {
+      item.arte = await agendarGeracao(admin, dono.ownerId, criado.id, {
+        imagens: lerImagensCrm(p.imagens),
+        buscas: lerBuscasCrm(p.buscas),
+      })
+    }
+    resultados.push(item)
   }
 
   const criados = resultados.filter((r) => r.resultado === "criado").length
