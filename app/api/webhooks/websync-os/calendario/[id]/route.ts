@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import { dataValida, horaValida, instanteAgendado, normalizarHora } from "@/lib/calendario/agenda"
 import { avaliarArte, podeAgendar, type PecaBruta } from "@/lib/calendario/arte"
 import { CAMPOS_PAUTA, montarItens, type PautaRow } from "@/lib/calendario/itens"
@@ -37,7 +37,6 @@ export const dynamic = "force-dynamic"
 //                          conseguir se redesenhar sem uma segunda chamada.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const STATUS_EDITORIAIS = new Set(["ideia", "em_criacao", "pronto", "agendado"])
 const STATUS_DO_WORKER = new Set(["publicado", "falhou"])
 
@@ -52,13 +51,11 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/calendario] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
-  }
-  if (req.headers.get(SECRET_HEADER) !== expected) {
-    return erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return auth.status === 503
+      ? erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
+      : erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
   }
 
   const { id } = await params
@@ -92,7 +89,7 @@ export async function PATCH(
   }
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) return erroJson(409, "dono_indefinido", dono.motivo)
 
   const { data: brands } = await admin

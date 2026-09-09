@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { conferirSegredoDoDono } from "@/lib/websync/dono"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const runtime = "nodejs"
@@ -17,7 +18,6 @@ export const runtime = "nodejs"
 // incremental (o CRM manda o created_at do último lead que já puxou).
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const LIMIT_PADRAO = 50
 const LIMIT_MAXIMO = 100
 
@@ -31,15 +31,12 @@ interface Lead {
 }
 
 export async function GET(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/leads] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return NextResponse.json({ error: "webhook não configurado" }, { status: 503 })
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os/leads] secret inválido")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
+  // Esta rota devolve a base de contas do produto inteiro (public.users), que
+  // nao e filtrada por dono. Por isso ela pede o segredo DO DONO: segredo de
+  // cliente aqui vazaria a lista de usuarios do Marcos.
+  const auth = conferirSegredoDoDono(req)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status })
   }
 
   const url = new URL(req.url)

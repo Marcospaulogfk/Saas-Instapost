@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { conferirSegredoDoDono } from "@/lib/websync/dono"
 import {
   NICHOS,
   NICHOS_RESERVA,
@@ -27,7 +28,6 @@ export const runtime = "nodejs"
 // header, sem sessão.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const BASE_URL = "https://nexuscontentai.com.br"
 
 interface SeoPageTemplatePreview {
@@ -84,15 +84,11 @@ function hubParaPreview(): SeoPagePreview {
 }
 
 export async function GET(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/seo-pages] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return NextResponse.json({ error: "webhook não configurado" }, { status: 503 })
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os/seo-pages] secret inválido")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
+  // Paginas de SEO do proprio SyncPost, nao de cliente: so o WebSync-OS.
+  // O conferirSegredoDoDono ja loga a tentativa; antes este caso era mudo.
+  const auth = conferirSegredoDoDono(req)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status })
   }
 
   const pages: SeoPagePreview[] = [

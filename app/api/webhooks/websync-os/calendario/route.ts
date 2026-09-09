@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import { dataValida } from "@/lib/calendario/agenda"
 import { CAMPOS_PAUTA, montarItens, type PautaRow } from "@/lib/calendario/itens"
 import { erroJson, pedidoRuim } from "@/lib/calendario/resposta"
@@ -27,19 +27,15 @@ export const dynamic = "force-dynamic"
 // o calendário de peça alheia é vazamento.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const MAX_ITENS = 200
 const MAX_DIAS = 120
 
 export async function GET(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/calendario] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
-  }
-  if (req.headers.get(SECRET_HEADER) !== expected) {
-    console.warn("[websync-os/calendario] secret inválido")
-    return erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return auth.status === 503
+      ? erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
+      : erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
   }
 
   const url = new URL(req.url)
@@ -63,7 +59,7 @@ export async function GET(req: Request) {
   }
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) return erroJson(409, "dono_indefinido", dono.motivo)
 
   const { data: brands, error: brandsError } = await admin

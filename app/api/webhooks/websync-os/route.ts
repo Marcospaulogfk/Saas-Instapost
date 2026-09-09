@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import {
   agendarGeracao,
   lerImagensCrm,
@@ -44,7 +44,6 @@ export const maxDuration = 300
 // resposta ir embora.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const MAX_POSTS = 20
 
 const FORMATOS = new Set(["post", "carrossel", "stories", "reels"])
@@ -78,18 +77,11 @@ interface ResultadoItem {
 
 export async function POST(req: Request) {
   // 1) Validação do secret ------------------------------------------------
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return NextResponse.json(
-      { error: "webhook não configurado" },
-      { status: 503 },
-    )
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os] secret inválido no webhook")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
+  // O segredo diz de qual CRM é o pedido, e é dele que sai o dono das brands
+  // logo abaixo. Nada no corpo do pedido escolhe dono.
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status })
   }
 
   // 2) Parse do payload ---------------------------------------------------
@@ -110,7 +102,7 @@ export async function POST(req: Request) {
   // publicaria a pauta do Marcos no calendário editorial de outra empresa,
   // sem erro nenhum na hora.
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }

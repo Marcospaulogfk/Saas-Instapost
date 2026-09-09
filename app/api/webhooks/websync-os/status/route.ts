@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import { editorUrlFor, type ArtifactType } from "@/lib/websync/editor-url"
 
 export const runtime = "nodejs"
@@ -31,7 +31,6 @@ export const runtime = "nodejs"
 // brands de clientes, e responder o estado de peça alheia é vazamento.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
 const MAX_IDS = 50
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -66,15 +65,9 @@ function registrar(
 }
 
 export async function GET(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/status] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return NextResponse.json({ error: "webhook não configurado" }, { status: 503 })
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os/status] secret inválido")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status })
   }
 
   const url = new URL(req.url)
@@ -100,7 +93,7 @@ export async function GET(req: Request) {
   const ids = pedidos.filter((id) => UUID_RE.test(id))
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }
