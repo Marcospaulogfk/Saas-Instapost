@@ -46,6 +46,28 @@ export function num(v: number | undefined | null): number | null {
   return typeof v === "number" ? v : null
 }
 
+/**
+ * A data como TODO navegador consegue ler.
+ *
+ * A Meta devolve `timestamp` no formato `2026-09-08T12:00:00+0000` — fuso
+ * sem os dois-pontos. A especificação do ECMAScript exige `+HH:MM`, e fora
+ * do formato cada motor decide sozinho: o V8 (Chrome, e este servidor)
+ * aceita, o JavaScriptCore do Safari devolve Invalid Date.
+ *
+ * Repassar o valor cru fazia a data sumir SÓ no iPhone. É o pior tipo de
+ * bug de formato: passa em todo teste de quem desenvolve no desktop e
+ * aparece no telefone de quem usa. Normalizar aqui resolve pra qualquer
+ * consumidor da ponte, em vez de cada tela lembrar de consertar.
+ *
+ * Data ilegível volta como veio: inventar não é melhor que repassar.
+ */
+export function paraIso(bruto: string | null | undefined): string {
+  const texto = (bruto ?? "").trim()
+  if (!texto) return ""
+  const t = new Date(texto)
+  return Number.isNaN(t.getTime()) ? texto : t.toISOString()
+}
+
 /** A primeira linha não vazia da legenda serve de manchete na tabela do CRM. */
 export function manchete(caption: string | null | undefined): string | null {
   const linha = (caption ?? "")
@@ -91,7 +113,7 @@ export function montarPost(
 ): PostDaPonte {
   return {
     id: midia.id,
-    publicadoEm: midia.timestamp,
+    publicadoEm: paraIso(midia.timestamp),
     manchete: manchete(midia.caption),
     alcance: num(insights?.reach),
     salvamentos: num(insights?.saved),

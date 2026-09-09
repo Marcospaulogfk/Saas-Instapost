@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { InstagramMedia } from "@/lib/instagram/meta"
 import {
   manchete,
+  paraIso,
   mapearPautas,
   montarPost,
   montarTotais,
@@ -107,6 +108,38 @@ describe("totais de 30 dias", () => {
     const t = montarTotais({ saves: 12 }, [])
 
     expect(t.salvamentos).toBe(12)
+  })
+})
+
+describe("data que todo navegador le", () => {
+  it("o fuso sem dois-pontos da Meta vira ISO de verdade", () => {
+    // Este é o caso real: a Graph API devolve +0000, sem os dois-pontos.
+    // O Chrome lê, o Safari devolve Invalid Date — a data sumia SÓ no
+    // iPhone, que é o único aparelho onde o Reinaldo abre isso.
+    expect(paraIso("2026-09-08T12:00:00+0000")).toBe("2026-09-08T12:00:00.000Z")
+  })
+
+  it("o que já está em ISO continua válido", () => {
+    expect(paraIso("2026-09-08T12:00:00.000Z")).toBe("2026-09-08T12:00:00.000Z")
+  })
+
+  it("o formato que quebra: sai daqui com os dois-pontos no fuso", () => {
+    // A garantia que interessa pra tela, dita sem depender de um valor fixo.
+    const saida = paraIso("2026-09-08T12:00:00+0000")
+    expect(Number.isNaN(new Date(saida).getTime())).toBe(false)
+    expect(saida).toMatch(/(Z|[+-]\d{2}:\d{2})$/)
+  })
+
+  it("vazio continua vazio, sem virar a data de hoje", () => {
+    // `new Date("")` é inválida, mas `new Date(undefined as any)` não é o
+    // ponto: inventar "agora" aqui carimbaria post sem data com a data da
+    // leitura, e ninguém desconfiaria.
+    expect(paraIso("")).toBe("")
+    expect(paraIso(null)).toBe("")
+  })
+
+  it("data ilegível volta como veio, em vez de virar algo inventado", () => {
+    expect(paraIso("ontem à noite")).toBe("ontem à noite")
   })
 })
 
