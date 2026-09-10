@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -222,33 +222,30 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
 
             <div className="mb-6">
               <div className="flex items-baseline gap-1">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={monthlyPrice}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="text-5xl font-bold tabular-nums"
-                  >
-                    R$ {monthlyPrice}
-                  </motion.span>
-                </AnimatePresence>
+                {/* O preço NÃO anima, de propósito (10/09/2026). Ele vivia
+                    dentro de um AnimatePresence mode="wait" com key={preço}:
+                    ao trocar pra Anual, o número novo entrava em opacity 0 e
+                    ficava lá. Os três planos ficavam sem preço, sobrando só o
+                    "/mês" solto, e voltar pra Mensal não resolvia (só
+                    recarregar a página). É a informação que decide a compra:
+                    não pode depender de uma animação terminar. */}
+                <span className="text-5xl font-bold tabular-nums">
+                  R$ {monthlyPrice}
+                </span>
                 <span className="text-lg text-muted-foreground">{cycle.label}</span>
               </div>
               
+              {/* Mesma regra do preço: "Economize R$ X" é argumento de venda,
+                  então nasce visível em vez de depender da animação. */}
               {hasDiscount && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-2 space-y-1"
-                >
+                <div className="mt-2 space-y-1">
                   <p className="text-sm text-muted-foreground line-through">
                     R$ {plan.basePrice} x {cycle.months}
                   </p>
                   <p className="text-sm text-green-500 font-medium">
                     Economize R$ {savings}
                   </p>
-                </motion.div>
+                </div>
               )}
               
               <p className="text-xs text-muted-foreground mt-3">
