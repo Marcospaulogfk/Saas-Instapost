@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Playfair_Display, Anton } from 'next/font/google'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Medicao, MedicaoNoScript } from '@/components/tracking/medicao'
 import './globals.css'
@@ -134,7 +133,6 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <Medicao />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )
