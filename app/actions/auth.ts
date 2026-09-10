@@ -121,8 +121,10 @@ export async function requestPasswordReset(
   email: string,
 ): Promise<ActionResult> {
   const supabase = await createClient()
+  // O link cai na tela de senha NOVA, não no painel: antes ele logava a
+  // pessoa e a deixava no dashboard sem nunca pedir a senha nova.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${appOrigin()}/auth/confirm?next=/dashboard`,
+    redirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent("/redefinir-senha")}`,
   })
   if (error) return { ok: false, error: translateAuthError(error.message) }
   return { ok: true }
