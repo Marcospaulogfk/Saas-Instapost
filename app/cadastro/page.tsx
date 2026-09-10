@@ -43,6 +43,7 @@ export default function CadastroPage() {
 
   const [refCode, setRefCode] = useState<string | null>(null)
   const [nextPath, setNextPath] = useState<string>("/dashboard")
+  const [planoLabel, setPlanoLabel] = useState<string | null>(null)
 
   /* Pré-preenche com o e-mail digitado no rodapé da landing (/cadastro?email=)
      e captura ?ref= (indicação), ?plano=/?ciclo= e ?next= (volta pro checkout).
@@ -57,6 +58,12 @@ export default function CadastroPage() {
     const ciclo = q.get("ciclo")
     if (next && next.startsWith("/")) setNextPath(next)
     else if (plano) setNextPath(`/pricing?plano=${plano}&ciclo=${ciclo ?? "monthly"}`)
+
+    const nomesPlano: Record<string, string> = { starter: "Starter", pro: "Pro", studio: "Studio" }
+    if (plano && nomesPlano[plano]) {
+      const cicloNome = ciclo === "annual" ? "anual" : "mensal"
+      setPlanoLabel(`${nomesPlano[plano]} · ${cicloNome}`)
+    }
 
     // Indicação: o código vale por 30 dias mesmo que a pessoa feche a aba e
     // volte, ou entre pelo Google (o callback lê o cookie). Formato do código:
@@ -147,7 +154,16 @@ export default function CadastroPage() {
             /* ── Formulário ────────────────────────────────────── */
             <div className="nx-auth-inner nx-auth-fade-up">
               <h1 className="nx-auth-title">Criar conta</h1>
-              <p className="nx-auth-sub">Comece com 2 imagens grátis. Sem cartão de crédito.</p>
+              <p className="nx-auth-sub">Teste grátis, sem cartão.</p>
+
+              {planoLabel && (
+                <p className="nx-auth-dica mt-3">
+                  Plano escolhido: {planoLabel}{" "}
+                  <Link href="/pricing" className="nx-auth-link">
+                    trocar
+                  </Link>
+                </p>
+              )}
 
               <div className="mt-7">
                 <button
