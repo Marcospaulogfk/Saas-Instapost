@@ -81,6 +81,22 @@ const PLANOS = [
   },
 ]
 
+/**
+ * Caminho direto pra ASSINAR a partir da landing (revisão contra o EverReply,
+ * que tem "Assinar" sólido mais "Teste grátis" fantasma em cada cartão pago).
+ * Antes os três pagos diziam "Testar grátis primeiro" e não existia jeito de
+ * assinar sem passar pelo teste.
+ *
+ * Vai pra /pricing com ?plano= e ?ciclo= porque é lá que o checkout já sabe
+ * começar sozinho (components/pricing/pricing-cards.tsx). Quem não tem conta é
+ * mandado pelo `iniciarCheckout` pro cadastro com o plano na URL e volta pro
+ * checkout depois. Mensal porque é o preço que este cartão mostra.
+ */
+function linkAssinar(nome: string): string {
+  const plano = nome.toLowerCase()
+  return `/pricing?plano=${plano}&ciclo=monthly`
+}
+
 /** Card com foco de luz seguindo o cursor — reforça o card sem pintar de roxo. */
 function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number }) {
   const reduced = useReducedMotion()
@@ -121,7 +137,7 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
       </div>
 
       {plano.popular && (
-        <span className="absolute -top-3 left-7 z-10 rounded-md bg-primary text-white font-mono text-[10px] uppercase tracking-[0.14em] px-2.5 py-1">
+        <span className="lp-sweep absolute -top-3 left-7 z-10 overflow-hidden rounded-md bg-primary text-white font-mono text-[10px] uppercase tracking-[0.14em] px-2.5 py-1">
           Mais escolhido
         </span>
       )}
@@ -141,16 +157,35 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
           {plano.perDay}
         </p>
 
-        <Button
-          asChild
-          className={`w-full mb-6 rounded-full ${
-            plano.popular
-              ? "bg-primary text-white hover:bg-primary/90"
-              : "border border-hairline-strong bg-transparent hover:border-primary hover:text-primary"
-          }`}
-        >
-          <Link href="/cadastro">{plano.cta}</Link>
-        </Button>
+        {/* Nos pagos, "Assinar" é a ação principal e o teste grátis vira a
+            saída de quem quer ver funcionando antes de pagar. No Grátis o único
+            botão continua sendo o de começar, e um espaço do mesmo tamanho do
+            link fantasma mantém as listas dos quatro cartões na mesma linha.
+            `h-11`: o Button padrão tinha 36px, abaixo do alvo de toque. */}
+        <div className="mb-6">
+          <Button
+            asChild
+            className={`h-11 w-full rounded-full ${
+              plano.popular
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "border border-hairline-strong bg-transparent hover:border-primary hover:text-primary"
+            }`}
+          >
+            <Link href={plano.price > 0 ? linkAssinar(plano.name) : "/cadastro"}>
+              {plano.price > 0 ? `Assinar ${plano.name}` : plano.cta}
+            </Link>
+          </Button>
+          {plano.price > 0 ? (
+            <Link
+              href="/cadastro"
+              className="mt-1.5 flex min-h-11 w-full items-center justify-center rounded-full text-[13.5px] font-medium text-text-secondary transition-colors hover:text-foreground"
+            >
+              {plano.cta}
+            </Link>
+          ) : (
+            <div aria-hidden className="mt-1.5 min-h-11" />
+          )}
+        </div>
 
         <ul className="space-y-3">
           {plano.feats.map((f) => (

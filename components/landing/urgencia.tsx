@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { ArrowRight, Check, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 
 import { Reveal } from "./reveal"
 import { Marca, SectionHead, Wrap } from "./primitivas"
@@ -11,7 +10,9 @@ import { Marca, SectionHead, Wrap } from "./primitivas"
  *
  * O lugar desta seção na página é o da seção de urgência da landing do
  * EverReply, e o desenho é o mesmo: cabeçalho, um cartão de peso no meio da
- * faixa e um fecho curto com CTA.
+ * faixa e um fecho curto. SEM CTA dentro do cartão, como a referência depois
+ * de 06/09: a seção termina no argumento, e o próximo botão da página é o dos
+ * planos, que é onde a pessoa decide.
  *
  * O QUE MUDA, E POR QUÊ. A versão do EverReply carrega uma prova de fora
  * (comunicado do WhatsApp, vídeo de um executivo com nome e cargo, previsão da
@@ -114,13 +115,6 @@ export function Urgencia({ className = "", id }: { className?: string; id?: stri
                   A única variável é o que sobra no fim.
                 </span>
               </p>
-              <Link
-                href="/cadastro"
-                className="lp-cta-glow mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-8 text-[15px] font-semibold text-white transition-colors hover:bg-primary/90"
-              >
-                Começar o primeiro carrossel grátis
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </Reveal>

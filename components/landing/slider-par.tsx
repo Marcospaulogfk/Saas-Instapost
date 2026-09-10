@@ -204,7 +204,13 @@ export function SliderPar({
                 botão ocupa a altura inteira da pílula (44px) e só a barrinha
                 de dentro continua fina, então o visual não muda e o dedo
                 acerta. O `-mx-1 px-1` dá folga lateral sem afastar os pontos
-                um do outro. */}
+                um do outro.
+                NO CELULAR os pontos são só INDICADOR (`pointer-events-none`
+                abaixo de `md`). A revisão mediu 21px de largura por ponto, e
+                44px pra cada um dos cinco não cabe na pílula de 390px. Quem
+                navega no dedo tem as duas setas de 48px ao lado, que fazem a
+                mesma coisa; a partir do `md` (mouse) os pontos voltam a ser
+                clicáveis. */}
             {itens.map((it, n) => (
               <button
                 key={it.n}
@@ -212,7 +218,7 @@ export function SliderPar({
                 onClick={() => irPara(n, true)}
                 aria-label={`Ir para o passo ${n + 1}`}
                 aria-current={n === i ? "true" : undefined}
-                className="flex h-12 shrink-0 items-center px-2"
+                className="pointer-events-none flex h-12 shrink-0 items-center px-2 md:pointer-events-auto"
               >
                 <span
                   className={`relative block h-1.5 overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] ${

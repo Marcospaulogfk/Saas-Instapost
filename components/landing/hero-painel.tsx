@@ -61,6 +61,24 @@ const PECAS = [
   "/refs-posts-unicos/beauty/03/referencia.jpg",
 ]
 
+/* O carrossel do post dentro do celular. 5 slides: dá pra sentir que é um
+   carrossel de verdade sem virar uma demonstração longa dentro do herói.
+   A ordem mistura os nichos de referência só pra variar a moldura a cada
+   slide. */
+const POST_SLIDES = [
+  "/refs-posts-unicos/beauty/03/referencia.jpg",
+  "/refs-posts-unicos/beauty/01/referencia.jpg",
+  "/refs-posts-unicos/informativo/01/referencia.jpg",
+  "/refs-posts-unicos/comercial/01/referencia.jpg",
+  "/refs-posts-unicos/Profissional/01/referencia.jpg",
+]
+
+/* Delay negativo de cada pontinho, em múltiplos de -3s (15s / 5 slides).
+   Delay negativo adianta o relógio da animação: cada pontinho roda o MESMO
+   keyframe de opacidade, só que começa "no meio" do ciclo, e por isso acende
+   sozinho na janela certa sem precisar de um @keyframes por posição. */
+const POST_DOT_DELAYS = ["0s", "-12s", "-9s", "-6s", "-3s"]
+
 function ColunaPecas() {
   const lista = [...PECAS, ...PECAS]
   return (
@@ -85,7 +103,9 @@ function ColunaPecas() {
   )
 }
 
-/** O celular com o post no ar. Estático de propósito: é o destino, não a demo. */
+/** O celular com o post no ar. O carrossel do post anda sozinho, em CSS puro
+    (lp-post-fita): o painel é SERVER COMPONENT e é o LCP da página, então a
+    animação não pode depender de useState/useEffect pra decidir o slide. */
 function Celular() {
   return (
     <div className="w-[228px] rounded-[28px] border border-hairline-strong bg-background p-2 shadow-[0_28px_60px_-20px_rgba(0,0,0,0.75)]">
@@ -103,19 +123,32 @@ function Celular() {
           </span>
         </div>
 
-        <div className="relative">
-          <img
-            src="/refs-posts-unicos/beauty/03/referencia.jpg"
-            alt="Exemplo de carrossel publicado no Instagram"
-            className="aspect-[4/5] w-full object-cover"
-          />
+        <div className="relative overflow-hidden">
+          {/* A fita: 500% de largura pros 5 slides (20% cada), e o keyframe
+              anda ela em degraus de -20% com patamar parado em cada slide.
+              Overflow-hidden no container de fora é o que corta o resto da
+              fita e deixa só um slide por vez visível. */}
+          <div className="lp-post-fita flex w-[500%]">
+            {POST_SLIDES.map((src, i) => (
+              <img
+                key={src}
+                src={src}
+                alt={i === 0 ? "Exemplo de carrossel publicado no Instagram" : ""}
+                loading={i === 0 ? undefined : "lazy"}
+                className="aspect-[4/5] w-[20%] shrink-0 object-cover"
+              />
+            ))}
+          </div>
           {/* Os pontinhos do carrossel: é o que diz que ali tem mais de um
-              slide, e o formato é o assunto da página. */}
+              slide, e o formato é o assunto da página. Cada um usa o mesmo
+              keyframe de opacidade (lp-post-dot) com um delay negativo
+              diferente, pra acender só na janela do próprio slide. */}
           <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-            {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+            {POST_DOT_DELAYS.map((delay, n) => (
               <span
                 key={n}
-                className={`h-1 w-1 rounded-full ${n === 0 ? "bg-white" : "bg-white/45"}`}
+                className={`lp-post-dot h-1 w-1 rounded-full bg-white ${n === 0 ? "lp-post-dot-first" : ""}`}
+                style={{ animationDelay: delay }}
               />
             ))}
           </span>

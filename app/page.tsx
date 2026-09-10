@@ -11,6 +11,7 @@ import {
   Play,
   Sparkles,
   Type,
+  Users,
   Wand2,
 } from "lucide-react"
 
@@ -72,6 +73,14 @@ import {
 /* ── FAQ ─────────────────────────────────────────────────────────
    Usado na seção e no JSON-LD (FAQPage), então a lista é uma só. */
 const FAQ_ITEMS = [
+  /* A objeção mais forte vem PRIMEIRO, e por isso é a que nasce aberta: é o
+     equivalente do "e se ela não souber responder?" do EverReply. Quem chega
+     desconfiado de IA quer saber o que acontece quando o resultado não presta
+     antes de querer saber quantos carrosséis cabem no plano. */
+  {
+    q: "E se o carrossel sair ruim?",
+    a: "Ele não sai como sentença. Tudo que a IA montou continua editável dentro da plataforma: você reescreve o título, troca a cor, a foto e a posição de cada bloco, e editar nunca gasta token. Se preferir outra versão do zero, é só gerar de novo, e a tela mostra quantos tokens a nova geração vai custar antes de você confirmar. No teste grátis você julga isso com a sua marca, sem cartão.",
+  },
   {
     q: "Quantos carrosséis posso criar por mês?",
     a: "Depende do plano e de quantas imagens de IA você usa. Com imagem em todos os slides: Starter faz cerca de 7, Pro cerca de 25 e Studio cerca de 75 por mês. Só com a capa, que é o mais comum, o Pro faz cerca de 35. Editar o que foi gerado nunca custa token. No teste grátis você monta 1 carrossel completo.",
@@ -240,19 +249,32 @@ const BENEFICIOS = [
     texto:
       "A engine trabalha com a ficha que você configurou: tom, paleta, público e o que nunca pode ser dito. É o oposto do post genérico com a sua logo colada no canto.",
   },
+  /* O 3º e o 4º foram reescritos na revisão contra o EverReply: o 3º era
+     OBJEÇÃO ("você não precisa saber design"), não consequência, e o 4º
+     repetia palavra por palavra o título da faixa do diferencial. */
   {
     icone: Wand2,
-    titulo: "Você não precisa saber design",
+    titulo: "Seu perfil para de parecer amador",
     texto:
-      "Nada de alinhar caixa de texto no Canva às onze da noite. Os slides já vêm diagramados, e o que você faz é escolher o tema e aprovar o resultado.",
+      "Os slides saem diagramados, com hierarquia, respiro e a paleta certa. Quem chega no perfil encontra uma marca que se leva a sério, e você não abriu o Canva pra isso.",
   },
   {
-    icone: MousePointerClick,
-    titulo: "E continua mandando em cada pixel",
+    icone: Users,
+    titulo: "Você atende mais clientes com o mesmo time",
     texto:
-      "O que a IA entregou é ponto de partida, não sentença. Título, cor, foto e posição continuam editáveis dentro da plataforma, sem exportar pro Canva pra arrumar uma vírgula.",
+      "Cada marca tem a própria ficha, e trocar de uma pra outra é um clique. Quem faz social media pra vários negócios entrega a semana de todos sem contratar mais gente pra montar arte.",
   },
 ]
+
+/* Canal humano do cartão Agência. É o MESMO número do suporte do painel
+   (app/dashboard/suporte), pela mesma variável: se o número mudar, muda nos
+   dois lugares. O cartão promete "a gente monta o pacote junto com você", e
+   essa promessa só se cumpre com uma pessoa do outro lado, não com o
+   formulário de cadastro. */
+const WHATSAPP_SUPORTE = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "5521994959476"
+const LINK_AGENCIA = `https://wa.me/${WHATSAPP_SUPORTE}?text=${encodeURIComponent(
+  "Oi! Quero falar sobre o plano Agência do Nexus Content.",
+)}`
 
 /* O `overflow-x-clip` do <main> logo abaixo é `clip` e NÃO `hidden`, e a troca
    conserta bug real: com `hidden` no eixo X o navegador PROMOVE o overflow-y de
@@ -303,7 +325,7 @@ export default function HomePage() {
         </div>
 
         <Wrap>
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="mx-auto max-w-5xl text-center">
             <Reveal>
               <span className="mb-7 inline-flex items-center gap-2 rounded-full border border-border-accent bg-surface/60 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary backdrop-blur">
                 <span className="relative flex h-1.5 w-1.5">
@@ -319,10 +341,17 @@ export default function HomePage() {
                 as três objeções de uma vez: "vai sair genérico" (aprende a
                 marca), "não sei design" (design pronto) e "vou ficar preso ao
                 que a IA fez" (editor por dentro). */}
-            <h1 className="lp-display text-[2.35rem] leading-[1.04] md:text-[4rem]">
-              <RevealWords text="O software que escreve, desenha e publica" highlight={[3, 4, 5, 6]} />
-              <br />
-              <RevealWords text="o Instagram da sua marca no seu lugar" />
+            {/* UMA FRASE SÓ, sem <br> forçado (revisão contra o EverReply). O <br>
+                com `max-w-4xl` quebrava o título em quatro linhas no desktop,
+                com "seu lugar" órfão na última, e no celular virava sete linhas
+                a 37,6px. Agora a caixa é `max-w-5xl`, o `text-balance` reparte
+                as linhas por igual e o celular usa 1.85rem, o mesmo corpo do
+                título do EverReply. */}
+            <h1 className="lp-display text-balance text-[1.85rem] leading-[1.1] sm:text-[3.2rem] md:text-[3.8rem]">
+              <RevealWords
+                text="O software que escreve, desenha e publica o Instagram da sua marca no seu lugar"
+                highlight={[3, 4, 5, 6]}
+              />
               <span
                 className="lp-caret ml-2 inline-block h-[0.8em] w-[0.45em] bg-primary align-[-0.02em]"
                 aria-hidden
@@ -568,20 +597,22 @@ export default function HomePage() {
                     plugar no seu fluxo. A gente monta o pacote junto com você.
                   </p>
                 </div>
-                <Link
-                  href="/cadastro"
-                  className="lp-cta-glow inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-primary/90"
+                <a
+                  href={LINK_AGENCIA}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lp-cta-glow inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-primary/90"
                 >
-                  Falar sobre agência
+                  Falar com a gente no WhatsApp
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
               </div>
             </Reveal>
 
             <Reveal delay={0.15} className="mt-6 text-center">
               <Link
                 href="/pricing"
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary transition hover:text-primary"
+                className="inline-flex min-h-11 items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-text-secondary transition hover:text-primary"
               >
                 Ver comparação completa <ArrowRight className="h-3.5 w-3.5" />
               </Link>

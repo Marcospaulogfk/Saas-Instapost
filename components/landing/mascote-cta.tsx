@@ -29,9 +29,20 @@ export function MascoteCta() {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY
-      /* Some antes do CTA final — a última tela já tem o botão grande. */
+      /* Some antes do CTA final, a última tela já tem o botão grande. */
       const fim = document.documentElement.scrollHeight - window.innerHeight - 900
-      setVisivel(y > window.innerHeight * 0.9 && y < fim)
+      /*
+       * Só pode aparecer depois que a seção de planos (#planos) já passou:
+       * aparecendo cedo ela ficava por cima das setas/pontos dos sliders de
+       * #recursos e #plataforma e competia com o "Teste grátis" do menu do
+       * topo (landing de referência nem tem esse mascote). Se a página não
+       * tiver #planos (outro uso do componente), mantém a regra antiga.
+       */
+      const planos = document.getElementById("planos")
+      const passouPlanos = planos
+        ? planos.getBoundingClientRect().bottom < 0
+        : y > window.innerHeight * 0.9
+      setVisivel(passouPlanos && y < fim)
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })

@@ -90,7 +90,7 @@ export function CalculadoraCusto() {
     {
       k: "voce" as Quem,
       titulo: "Você mesmo, no braço",
-      nota: `${STACK_IAS.map((i) => i.nome).join(" + ")} — e ${conta.horas}h suas por mês`,
+      nota: `${STACK_IAS.map((i) => i.nome).join(" + ")}, mais ${conta.horas}h suas por mês`,
       valor: conta.faca_voce,
     },
   ]
