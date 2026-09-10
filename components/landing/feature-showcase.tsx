@@ -15,10 +15,15 @@ import {
 } from "lucide-react"
 import { useNaTela } from "./use-na-tela"
 
+/* Os mocks abaixo sao EXPORTADOS porque servem em dois lugares: aqui, no
+   showcase de abas, e como cenas do palco do `SliderPar` nas secoes "Por
+   dentro do Nexus" e "A plataforma". Duplicar 400 linhas de mock pra ter a
+   mesma tela em dois formatos seria garantia de as duas versoes divergirem no
+   primeiro ajuste de produto. */
 /* ── Mockups ────────────────────────────────────────────────────
    Cada recurso é mostrado funcionando, não descrito num card de ícone. */
 
-function MockMarca() {
+export function MockMarca() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-lg border border-hairline bg-background px-3 py-2.5">
@@ -70,7 +75,7 @@ function MockMarca() {
   )
 }
 
-function MockRoteiro() {
+export function MockRoteiro() {
   const linhas = [
     { n: "01", t: "Você posta todo dia e o alcance não sobe", tag: "gancho" },
     { n: "02", t: "O problema não é o algoritmo", tag: "virada" },
@@ -99,7 +104,7 @@ function MockRoteiro() {
   )
 }
 
-function MockImagem() {
+export function MockImagem() {
   const imgs = [
     "/refs-posts-unicos/beauty/03/referencia.jpg",
     "/refs-posts-unicos/fitness/01/referencia.jpg",
@@ -133,7 +138,7 @@ function MockImagem() {
   )
 }
 
-function MockEditor() {
+export function MockEditor() {
   return (
     <div className="grid grid-cols-[1.3fr_1fr] gap-3">
       {/* canvas */}
@@ -206,7 +211,7 @@ function MockEditor() {
   )
 }
 
-function MockExport() {
+export function MockExport() {
   const arquivos = ["slide-01.png", "slide-02.png", "slide-03.png", "slide-04.png"]
   return (
     <div className="space-y-2.5">
@@ -239,7 +244,7 @@ function MockExport() {
   )
 }
 
-function MockEstilos() {
+export function MockEstilos() {
   /* Os nomes são os mesmos que aparecem no seletor do editor
      (STYLE_OPTIONS em components/carousel/carousel-editor.tsx): o visitante
      encontra na plataforma exatamente o que viu aqui. Antes eram 6 nomes
@@ -283,7 +288,7 @@ function MockEstilos() {
   )
 }
 
-function MockPostUnico() {
+export function MockPostUnico() {
   return (
     <div className="grid grid-cols-[1fr_1.1fr] items-center gap-3">
       <div className="space-y-2">

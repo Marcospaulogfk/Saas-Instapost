@@ -102,9 +102,12 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.55, delay: index * 0.1 }}
-      className={`group relative rounded-2xl border bg-surface p-7 transition-colors ${
+      /* h-full + flex: todos os cards têm a MESMA altura (o grid estica) e o
+         destaque do "Mais escolhido" vem da borda e do glow, nunca de um card
+         maior — cartão fora de esquadro é o que quebrava a régua da seção. */
+      className={`group relative flex h-full flex-col rounded-2xl border bg-surface p-7 transition-colors ${
         plano.popular
-          ? "border-border-accent border-t-2 border-t-primary lp-cta-glow md:-mt-4 md:pb-10"
+          ? "border-border-accent border-t-2 border-t-primary lp-cta-glow"
           : "border-hairline hover:border-hairline-strong"
       }`}
     >
@@ -123,9 +126,10 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
         </span>
       )}
 
-      <div className="relative">
+      <div className="relative flex flex-1 flex-col">
         <h3 className="text-lg font-semibold">{plano.name}</h3>
-        <p className="text-sm text-text-secondary mt-1 mb-5">{plano.tag}</p>
+        {/* min-h de 2 linhas: preço, CTA e lista nascem na mesma altura nos 4 cards. */}
+        <p className="text-sm text-text-secondary mt-1 mb-5 min-h-[2.5rem]">{plano.tag}</p>
 
         <div className="flex items-baseline gap-1 mb-1">
           <span className="lp-display text-4xl tabular-nums">R$ {plano.price}</span>
@@ -164,7 +168,7 @@ function Card({ plano, index }: { plano: (typeof PLANOS)[number]; index: number 
 export function PricingCards() {
   return (
     <>
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {PLANOS.map((p, i) => (
           <Card key={p.name} plano={p} index={i} />
         ))}

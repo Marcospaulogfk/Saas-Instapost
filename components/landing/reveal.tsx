@@ -38,7 +38,15 @@ export function Reveal({ children, delay = 0, from = "bottom", className = "" }:
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        /* `isIntersecting` sozinho não cobre PULO de scroll. Num salto (clique
+           numa âncora do menu, F5 no meio da página, restauração de scroll do
+           navegador) o bloco pode sair de "abaixo da dobra" pra "acima da
+           dobra" sem nunca ter intersectado: o observer reporta o quadro novo
+           como não-intersectando, o bloco fica em opacity 0 e o failsafe do
+           CSS já está desligado, porque o primeiro Reveal marcou `html.lp-js`.
+           Então quem JÁ PASSOU (borda de baixo acima da viewport) também
+           precisa acender. */
+        if (entry.isIntersecting || entry.boundingClientRect.bottom < 0) {
           setVisivel(true)
           io.disconnect()
         }

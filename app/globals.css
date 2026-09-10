@@ -563,7 +563,15 @@
     --border-accent: rgba(22, 104, 227, 0.30);
     --shadow-card: 0 8px 30px rgba(35, 20, 70, 0.10);
     /* Repetidas de propósito: o valor que desce de .lp-root já vem resolvido
-       em preto e não acompanha os --background-* declarados aqui. */
+       em preto e não acompanha os --background-* declarados aqui.
+       O mesmo vale pros *-foreground: sem redeclarar, `text-foreground` chega
+       aqui como BRANCO e some no fundo claro (foi o que apagou os rótulos dos
+       controles da calculadora). */
+    --foreground: var(--text-primary);
+    --card-foreground: var(--text-primary);
+    --popover-foreground: var(--text-primary);
+    --secondary-foreground: var(--text-primary);
+    --muted-foreground: var(--text-muted);
     --surface: #FFFFFF;
     --surface-2: #FAF8FF;
     --card: #FFFFFF;
@@ -974,6 +982,137 @@
     transform: translateY(-3px);
   }
 
+  /* ── Esteira: fita em loop infinito ─────────────────────────
+     Porte da esteira da landing do EverReply. A fita leva DUAS cópias do
+     mesmo grupo e anda até -50%: quando a primeira sai, a segunda já está
+     no lugar dela e o loop não dá salto.
+
+     O respiro mora no ITEM (margin-right) e nunca em `gap` no grupo. Com
+     `gap`, a fita ganharia um vão a mais ENTRE os dois grupos que não existe
+     dentro deles, e -50% passaria a valer meio vão a menos que um grupo,
+     é exatamente esse meio vão que aparece como pulo a cada volta. Com o
+     respiro colado em cada item (o último inclusive), um grupo mede
+     `soma(itens) + n × respiro` e a conta fecha.
+
+     A duração é do CONTEÚDO, não da classe: mais itens pedem mais tempo pra
+     manter a mesma velocidade aparente. Abaixo de ~30s a fita vira enjoo. */
+  .lp-esteira {
+    --lp-esteira-dur: 48s;
+    --lp-esteira-respiro: 12px;
+    overflow: hidden;
+    /* Os itens SOMEM nas pontas em vez de serem cortados em seco.
+       `-webkit-` primeiro: Safari só entendeu a versão sem prefixo no 15.4. */
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+  }
+  .lp-esteira-fita {
+    display: flex;
+    /* `max-content` garante que a fita meça a soma real dos dois grupos 
+       sem isso ela herdaria a largura da janela e o -50% seria de outra coisa. */
+    width: max-content;
+    /* Só transform, e `linear`: qualquer easing num loop infinito faz a fita
+       respirar (acelera e freia a cada volta), que é o tique que denuncia o
+       truque das duas cópias. */
+    animation: lp-esteira-desliza var(--lp-esteira-dur) linear infinite;
+  }
+  .lp-esteira-grupo {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-esteira-item {
+    flex: none;
+    margin-right: var(--lp-esteira-respiro);
+    white-space: nowrap;
+  }
+  /* Pausa no hover E no foco de teclado: sem isso, quem quer ler um item
+     específico (ou tabular até ele) fica correndo atrás do texto. */
+  .lp-esteira:hover .lp-esteira-fita,
+  .lp-esteira:focus-within .lp-esteira-fita {
+    animation-play-state: paused;
+  }
+  @keyframes lp-esteira-desliza {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+
+  /* ── Palco do slider de par (components/landing/slider-par.tsx) ──
+     À direita do cartão de texto fica o PALCO: grade de pontos azul com
+     máscara radial (some nas bordas) por ::before e um brilho que deriva
+     14s pra cada lado por ::after. Os dois ficam ABAIXO das cenas. */
+  .lp-palco::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    background-image: radial-gradient(rgba(22, 104, 227, 0.5) 1px, transparent 1.4px);
+    background-size: 18px 18px;
+    -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 46%, #000 35%, transparent 95%);
+            mask-image: radial-gradient(ellipse 85% 80% at 50% 46%, #000 35%, transparent 95%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .lp-palco::after {
+    content: "";
+    position: absolute;
+    top: -14%;
+    right: -10%;
+    width: 74%;
+    height: 74%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1668E3 0%, transparent 64%);
+    opacity: 0.18;
+    pointer-events: none;
+    animation: lp-palco-drift 14s ease-in-out infinite alternate;
+  }
+  @keyframes lp-palco-drift {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-22px, 18px); }
+  }
+
+  /* Camada = uma cena do palco. Pousa (fade + escala + subida curta) quando
+     ganha `.on`; ao sair só apaga: a transform volta depois, já invisível.
+     Entrada com corpo, saída sem chamar atenção. */
+  .lp-camada {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    transform: scale(0.985) translateY(8px);
+    transition: opacity 0.3s ease, transform 0s 0.35s;
+    pointer-events: none;
+  }
+  .lp-camada.on {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Texto do passo entrando (o cartão da esquerda do slider). */
+  .lp-in { animation: lp-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  @keyframes lp-in {
+    from { opacity: 0; transform: translateY(6px); }
+  }
+
+  /* O ponto ativo do slider enche no tempo do autoplay: é o único relógio
+     visível da seção. A duração vem inline do React. */
+  .lp-dotfill {
+    transform-origin: left center;
+    animation: lp-dotfill-enche linear forwards;
+  }
+  @keyframes lp-dotfill-enche {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  /* Pop-in de bloco trocado no lugar (etapa do "Começo", balão do FAQ). */
+  .lp-pop { animation: lp-pop 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  @keyframes lp-pop {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .lp-marquee,
     .lp-marquee-y,
@@ -983,10 +1122,32 @@
     .lp-float-slow,
     .lp-ring-pulse,
     .lp-sweep::after,
-    .lp-gradient-live {
+    .lp-gradient-live,
+    .lp-palco::after,
+    .lp-in,
+    .lp-dotfill,
+    .lp-pop {
       animation: none !important;
     }
     .lp-card:hover { transform: none; }
+
+    /* ESTEIRA: para de andar e vira fileira com rolagem na mão. O conteúdo
+       NÃO some. Sai só a cópia duplicada, que existia unicamente pra emendar
+       o loop e, parada, seria a mesma lista lida duas vezes. */
+    .lp-esteira {
+      overflow-x: auto;
+      -webkit-mask-image: none !important;
+              mask-image: none !important;
+    }
+    .lp-esteira-fita {
+      animation: none !important;
+      transform: none !important;
+    }
+    .lp-esteira-grupo[aria-hidden="true"] { display: none !important; }
+
+    /* Cena do palco: aparece sem pousar. */
+    .lp-camada { transition: none !important; }
+    .lp-camada.on { transform: none !important; }
   }
 }
 

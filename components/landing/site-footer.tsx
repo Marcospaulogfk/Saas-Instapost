@@ -5,15 +5,20 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Instagram, Linkedin, Mail, Youtube } from "lucide-react"
 
+import { irParaSecao } from "./ir-para-secao"
+
 /*
  * Rodapé em dois cards (referência: footer do Kresna) adaptado à marca:
  * card escuro com gradiente da logo à esquerda, card claro com navegação à
  * direita, selo flutuante escrito à mão e a marca d'água gigante embaixo.
  */
 
+/* As mesmas ancoras do menu do topo, na mesma ordem. Link de rodape pra
+   ancora que nao existe rola a pagina pro topo e parece bug: "#como-funciona"
+   saiu daqui junto com a secao que ele apontava. */
 const NAVEGACAO = [
-  { label: "Como funciona", href: "#como-funciona" },
   { label: "Recursos", href: "#recursos" },
+  { label: "Plataforma", href: "#plataforma" },
   { label: "Planos", href: "#planos" },
   { label: "Dúvidas", href: "#faq" },
 ]
@@ -195,10 +200,19 @@ export function SiteFooter() {
               <div key={col.titulo}>
                 <div className="lp-hand mb-4 text-2xl italic text-white/45">{col.titulo}</div>
                 {col.itens.map((l) => (
+                  /* min-h-11 (44px) + flex pra dar alvo de toque de 44px no
+                     celular sem crescer a fonte; mb reduzido pra compensar
+                     a altura extra e o espaçamento continuar parecido. */
                   <Link
                     key={l.href + l.label}
                     href={l.href}
-                    className="mb-3.5 block text-sm font-semibold text-white/90 transition-colors hover:text-primary"
+                    /* Mesmo motivo do menu do topo: o scroll suave global não
+                       completa a viagem até a seção e a página ficava parada com
+                       a URL trocada. O helper salta na hora. Em link que não é
+                       âncora (/termos, /login) ele não faz nada e o Link segue
+                       normal. */
+                    onClick={(e) => irParaSecao(e, l.href)}
+                    className="mb-0 flex min-h-11 items-center text-sm font-semibold text-white/90 transition-colors hover:text-primary"
                   >
                     {l.label}
                   </Link>
@@ -238,9 +252,10 @@ export function SiteFooter() {
                   placeholder="Seu melhor e-mail"
                   className="min-w-0 flex-1 border-0 bg-transparent px-3.5 py-2.5 text-[13.5px] text-white outline-none placeholder:text-white/35"
                 />
+                {/* min-h-11 (44px) pra dar alvo de toque de 44px no celular */}
                 <button
                   type="submit"
-                  className="shrink-0 rounded-lg bg-white px-5 py-2.5 text-[13.5px] font-semibold text-black transition-[background-color,transform] duration-200 hover:-translate-y-px hover:bg-white/90"
+                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-[13.5px] font-semibold text-black transition-[background-color,transform] duration-200 hover:-translate-y-px hover:bg-white/90"
                 >
                   Criar conta
                 </button>

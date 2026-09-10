@@ -124,19 +124,6 @@ export function CalculadoraCusto() {
             nota="atende clientes ou toca vários perfis"
           />
         </Bloco>
-
-        <Bloco titulo="Quem faz isso hoje?">
-          <div className="grid gap-2">
-            {linhas.map((l) => (
-              <Radio
-                key={l.k}
-                marcado={quem === l.k}
-                onChange={() => setQuem(l.k)}
-                label={l.titulo}
-              />
-            ))}
-          </div>
-        </Bloco>
       </div>
 
       {/* ── Resultado ─────────────────────────────────────────── */}
@@ -145,23 +132,40 @@ export function CalculadoraCusto() {
           <h3 className="lp-display text-2xl">O mesmo mês, três contas</h3>
           <p className="mt-2 text-sm leading-relaxed text-text-secondary">
             {conta.pecas} peças por mês ≈ {conta.tokens.toLocaleString("pt-BR")} tokens.
-            {" "}O plano abaixo é o que cobre esse volume.
+            {" "}Clique em quem faz isso hoje pra ver a economia.
           </p>
         </div>
 
+        {/* O card É o controle: a lista de radios na coluna da esquerda repetia
+            estes mesmos três títulos. Clicar aqui escolhe a referência. */}
         {linhas.map((l) => (
-          <div
+          <button
             key={l.k}
-            className={`rounded-xl border p-5 transition-colors ${
-              quem === l.k ? "border-border-accent bg-surface" : "border-hairline bg-surface/60"
+            type="button"
+            role="radio"
+            aria-checked={quem === l.k}
+            onClick={() => setQuem(l.k)}
+            className={`w-full rounded-xl border p-5 text-left transition-colors ${
+              quem === l.k
+                ? "border-border-accent bg-surface"
+                : "border-hairline bg-surface/60 hover:border-hairline-strong"
             }`}
           >
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-[15px] font-medium">{l.titulo}</div>
-                <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
-                  {l.nota}
-                </div>
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  className={`mt-1 grid h-4 w-4 shrink-0 place-items-center rounded-full border-2 transition-colors ${
+                    quem === l.k ? "border-primary" : "border-hairline-strong"
+                  }`}
+                >
+                  {quem === l.k && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-medium text-text-primary">{l.titulo}</span>
+                  <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-text-muted">
+                    {l.nota}
+                  </span>
+                </span>
               </div>
               <motion.div
                 key={l.valor}
@@ -173,7 +177,7 @@ export function CalculadoraCusto() {
                 {brl(l.valor)}
               </motion.div>
             </div>
-          </div>
+          </button>
         ))}
 
         {/* Nexus */}
@@ -304,35 +308,6 @@ function Checkbox({
           {nota}
         </span>
       </span>
-    </button>
-  )
-}
-
-function Radio({
-  marcado,
-  onChange,
-  label,
-}: {
-  marcado: boolean
-  onChange: () => void
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      role="radio"
-      aria-checked={marcado}
-      className="flex w-full items-center gap-3 text-left"
-    >
-      <span
-        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors ${
-          marcado ? "border-primary" : "border-hairline-strong"
-        }`}
-      >
-        {marcado && <span className="h-2 w-2 rounded-full bg-primary" />}
-      </span>
-      <span className="text-sm text-foreground">{label}</span>
     </button>
   )
 }

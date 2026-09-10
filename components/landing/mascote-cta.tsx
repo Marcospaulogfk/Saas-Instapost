@@ -72,7 +72,7 @@ export function MascoteCta() {
                 className="mb-2 hidden max-w-[15rem] rounded-2xl rounded-br-sm border border-hairline bg-surface px-4 py-3 shadow-[0_14px_40px_-16px_rgba(0,0,0,0.7)] sm:block"
               >
                 <p className="text-[13px] leading-snug text-text-secondary">
-                  Monta o primeiro carrossel comigo — leva 3 minutos e não pede cartão.
+                  Monta o primeiro carrossel comigo: leva 3 minutos e não pede cartão.
                 </p>
               </motion.div>
             )}
