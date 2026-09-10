@@ -149,6 +149,32 @@ export function SliderPar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rodando, i, itens.length])
 
+  /* A barrinha de um passo: fina, e a do passo ativo enche no tempo do
+     autoplay. Mora numa função porque os dois grupos de pontos (indicador
+     no celular, botões no desktop) desenham exatamente a mesma coisa. */
+  const barra = (n: number) => (
+    <span
+      className={`relative block h-1.5 overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] ${
+        n === i ? "w-6 bg-brand-900" : "w-1.5 bg-hairline-strong"
+      }`}
+    >
+      {n === i ? (
+        <span
+          key={`${geracao}-${auto ? "a" : "m"}`}
+          className={`absolute inset-0 rounded-full bg-primary ${auto ? "lp-dotfill" : ""}`}
+          style={
+            auto
+              ? {
+                  animationDuration: `${DUR_AUTO_MS}ms`,
+                  animationPlayState: rodando ? "running" : "paused",
+                }
+              : undefined
+          }
+        />
+      ) : null}
+    </span>
+  )
+
   return (
     <div
       ref={raiz}
@@ -198,19 +224,24 @@ export function SliderPar({
           </button>
 
           <div className="flex h-12 items-center gap-0 rounded-full border border-hairline bg-surface-2 px-2.5">
-            {/* O ALVO DE TOQUE É O BOTÃO, o desenho é o <span> de dentro. A
-                barrinha ativa tem 6px de altura e o ponto inativo 6x6: como
-                botão, isso dava um alvo de 6px numa tela de dedo. Agora o
-                botão ocupa a altura inteira da pílula (44px) e só a barrinha
-                de dentro continua fina, então o visual não muda e o dedo
-                acerta. O `-mx-1 px-1` dá folga lateral sem afastar os pontos
-                um do outro.
-                NO CELULAR os pontos são só INDICADOR (`pointer-events-none`
-                abaixo de `md`). A revisão mediu 21px de largura por ponto, e
-                44px pra cada um dos cinco não cabe na pílula de 390px. Quem
-                navega no dedo tem as duas setas de 48px ao lado, que fazem a
-                mesma coisa; a partir do `md` (mouse) os pontos voltam a ser
-                clicáveis. */}
+            {/* NO CELULAR OS PONTOS NÃO SÃO BOTÕES (produção, 28e4ccb: o testador
+                ainda media 21px de largura em "Ir para o passo 2..5"). O
+                `pointer-events-none` anterior tirava o toque mas deixava cinco
+                botões de 21px na árvore de acessibilidade e no Tab, e 44px pra
+                cada um não cabe na pílula de 390px. Agora são dois grupos:
+                abaixo de `md`, um indicador puro (`aria-hidden`, sem botão), e
+                quem navega no dedo usa as duas setas de 48px ao lado; a partir
+                do `md` (mouse), os botões voltam, com a altura inteira da
+                pílula como alvo e só a barrinha de dentro fina. O grupo que
+                não vale no tamanho atual fica `display: none`, então some
+                também do leitor de tela e do Tab. */}
+            <span aria-hidden className="flex items-center md:hidden">
+              {itens.map((it, n) => (
+                <span key={it.n} className="flex h-12 items-center px-2">
+                  {barra(n)}
+                </span>
+              ))}
+            </span>
             {itens.map((it, n) => (
               <button
                 key={it.n}
@@ -218,28 +249,9 @@ export function SliderPar({
                 onClick={() => irPara(n, true)}
                 aria-label={`Ir para o passo ${n + 1}`}
                 aria-current={n === i ? "true" : undefined}
-                className="pointer-events-none flex h-12 shrink-0 items-center px-2 md:pointer-events-auto"
+                className="hidden h-12 shrink-0 items-center px-2 md:flex"
               >
-                <span
-                  className={`relative block h-1.5 overflow-hidden rounded-full transition-[width,background-color] duration-300 ease-[cubic-bezier(.22,1,.36,1)] ${
-                    n === i ? "w-6 bg-brand-900" : "w-1.5 bg-hairline-strong"
-                  }`}
-                >
-                  {n === i ? (
-                    <span
-                      key={`${geracao}-${auto ? "a" : "m"}`}
-                      className={`absolute inset-0 rounded-full bg-primary ${auto ? "lp-dotfill" : ""}`}
-                      style={
-                        auto
-                          ? {
-                              animationDuration: `${DUR_AUTO_MS}ms`,
-                              animationPlayState: rodando ? "running" : "paused",
-                            }
-                          : undefined
-                      }
-                    />
-                  ) : null}
-                </span>
+                {barra(n)}
               </button>
             ))}
           </div>
