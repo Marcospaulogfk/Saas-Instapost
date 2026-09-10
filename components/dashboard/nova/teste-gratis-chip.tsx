@@ -15,7 +15,8 @@ import { TEXTO_REGRA_TESTE, UNIDADES_TESTE, type EstadoTeste } from "@/lib/teste
 function resumo(e: EstadoTeste): string {
   if (e.esgotado) return "Seu teste grátis já foi usado."
   if (e.carrosseis === 0 && e.posts === 0) return "Nada usado ainda."
-  return `Você já criou ${e.posts} post${e.posts === 1 ? "" : "s"} único${e.posts === 1 ? "" : "s"}; ainda cabe${e.restante === 1 ? "" : "m"} ${e.restante}.`
+  // Post único desligado em produção: o texto não fala mais em posts.
+  return "Parte do seu teste grátis já foi usada."
 }
 
 export function TesteGratisChip({ estado }: { estado: EstadoTeste }) {
@@ -39,7 +40,7 @@ export function TesteGratisChip({ estado }: { estado: EstadoTeste }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-3.5">
         <p className="text-[11px] font-bold uppercase tracking-wider text-text-muted">Teste grátis</p>
-        <p className="mt-1.5 text-sm text-text-primary">1 carrossel de até 5 slides ou 3 posts únicos.</p>
+        <p className="mt-1.5 text-sm text-text-primary">1 carrossel de até 5 slides.</p>
         <p className="mt-1 text-xs text-text-secondary">{resumo(estado)}</p>
         <Link
           href="/pricing"

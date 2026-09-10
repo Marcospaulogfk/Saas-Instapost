@@ -23,7 +23,7 @@ import {
 import { getProfile, requireUser, tokensDisponiveis } from "@/lib/data/queries"
 import { TOKEN_COST, tokenCostForCarousel, tokenCostForSinglePost } from "@/lib/tokens"
 import { CYCLE_INFO, PLAN_LABEL, priceFor, isPaidPlan, isBillingCycle } from "@/lib/billing/plans"
-import { INDICACAO_HABILITADA, AFILIADOS_HABILITADO } from "@/lib/features"
+import { INDICACAO_HABILITADA, AFILIADOS_HABILITADO, POST_UNICO_HABILITADO } from "@/lib/features"
 import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
 import { getConsumoDoMes, getExtrato, KIND_LABEL, linkDaPeca } from "@/lib/extrato/queries"
 import { lerEstadoTeste } from "@/lib/teste-gratis"
@@ -136,8 +136,15 @@ export default async function TokensPage({
       tokens: String(tokenCostForCarousel(7, { cover: true, slides: true })),
       nota: "roteiro + capa + 6 imagens",
     },
-    { peca: "Post único (texto + arte)", tokens: String(tokenCostForSinglePost()) },
-    { peca: "Edição da arte do post único", tokens: String(TOKEN_COST.editBitmap) },
+    // Post único desligado em produção (decisão do Marcos, 10/09/2026): preço
+    // de algo que o cliente não consegue gerar só confunde. Volta sozinho se
+    // a flag for ligada.
+    ...(POST_UNICO_HABILITADO
+      ? [
+          { peca: "Post único (texto + arte)", tokens: String(tokenCostForSinglePost()) },
+          { peca: "Edição da arte do post único", tokens: String(TOKEN_COST.editBitmap) },
+        ]
+      : []),
     { peca: "Pautas (após 3 grátis por dia)", tokens: String(TOKEN_COST.ideas) },
     { peca: "Editar no editor", tokens: "grátis", nota: "sempre, sem limite" },
   ]
@@ -198,7 +205,7 @@ export default async function TokensPage({
                     ? "Seu teste grátis já foi usado."
                     : estadoTeste.posts === 0 && estadoTeste.carrosseis === 0
                       ? "Nada usado ainda."
-                      : `Você já criou ${estadoTeste.posts} post${estadoTeste.posts === 1 ? "" : "s"} único${estadoTeste.posts === 1 ? "" : "s"}; ainda cabem ${estadoTeste.restante}.`}
+                      : "Parte do seu teste grátis já foi usada."}
                 </p>
               </>
             ) : (
@@ -286,7 +293,7 @@ export default async function TokensPage({
               <p className="pt-1" style={{ color: "var(--nv-text-muted)" }}>
                 {estadoTeste.noTeste ? (
                   <>
-                    No teste grátis você cria 1 carrossel de até 5 slides ou 3 posts únicos.
+                    No teste grátis você cria 1 carrossel de até 5 slides.
                     Assine pra recarregar tokens todo mês; o anual sai{" "}
                     {Math.round(CYCLE_INFO.annual.discount * 100)}% mais barato com os mesmos
                     tokens.

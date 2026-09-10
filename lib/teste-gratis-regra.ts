@@ -17,10 +17,14 @@ export const MAX_SLIDES_TESTE = 5
 
 /** A regra em uma frase, igual em toda tela que fala do teste. */
 export const TEXTO_REGRA_TESTE =
-  "Teste grátis: 1 carrossel de até 5 slides ou 3 posts únicos"
+  // Só o carrossel (decisão do Marcos, 10/09/2026): o post único está
+  // desligado em produção, então prometer "ou 3 posts" oferecia o que o
+  // cliente não consegue usar. A REGRA do servidor não mudou (o contador
+  // ainda aceita post único se a flag voltar); só o texto.
+  "Teste grátis: 1 carrossel de até 5 slides"
 
 export const MENSAGEM_TESTE_ESGOTADO =
-  "Seu teste grátis já foi usado: ele inclui 1 carrossel de até 5 slides ou até 3 posts únicos. Para continuar criando, escolha um plano."
+  "Seu teste grátis já foi usado: ele inclui 1 carrossel de até 5 slides. Para continuar criando, escolha um plano."
 
 /**
  * Data de corte da regra (contas criadas a partir de 10/09/2026, 00h de

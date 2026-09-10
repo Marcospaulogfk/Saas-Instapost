@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { isBillingCycle, type BillingCycle as Cycle } from "@/lib/billing/plans"
+import { POST_UNICO_HABILITADO } from "@/lib/features"
 import { PricingHeader } from "@/components/pricing/pricing-header"
 import { BillingToggle } from "@/components/pricing/billing-toggle"
 import { PricingCards } from "@/components/pricing/pricing-cards"
@@ -49,7 +50,7 @@ function PricingPageInner() {
       <div className="max-w-3xl mx-auto px-4 pt-6 text-center">
         <p className="text-xs text-muted-foreground">
           Tokens são a moeda do Nexus Content: roteiro + legenda do carrossel
-          = 8 tokens, capa = 20, imagem por slide = 2, post único = 29. Você
+          = 8 tokens, capa = 20, imagem por slide = 2{POST_UNICO_HABILITADO ? ", post único = 29" : ""}. Você
           decide em cada peça se quer imagem de IA. Editar o que foi gerado é
           sempre grátis. Os tokens por mês são os mesmos no plano mensal e no
           anual.

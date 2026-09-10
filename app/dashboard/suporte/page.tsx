@@ -13,7 +13,7 @@ const WHATSAPP = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? '5521994959476'
 const FAQ = [
   {
     q: 'Como eu crio um post ou carrossel?',
-    a: 'Clique em "Criar conteúdo" no topo do dashboard, escolha o formato (carrossel ou post único), digite o tema e a IA gera o roteiro, o design e as imagens usando os dados da sua marca ativa. Depois é só ajustar no editor e exportar.',
+    a: 'Clique em "Criar conteúdo" no topo do dashboard, escolha o formato, digite o tema e a IA gera o roteiro, o design e as imagens usando os dados da sua marca ativa. Depois é só ajustar no editor e exportar.',
   },
   {
     q: 'Como funciona o carrossel gerado pela IA?',
@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: 'Como funcionam os tokens e os planos?',
-    a: 'Cada plano recarrega uma quantidade de tokens todo mês: Starter tem 300, Pro tem 1.000 e Studio tem 3.000. Os tokens do plano renovam a cada ciclo e a sobra não acumula; tokens avulsos e de indicação não vencem. No teste grátis você cria 1 carrossel de até 5 slides ou 3 posts únicos. Você acompanha o consumo na página Tokens e pode trocar de plano quando quiser na página de planos.',
+    a: 'Cada plano recarrega uma quantidade de tokens todo mês: Starter tem 300, Pro tem 1.000 e Studio tem 3.000. Os tokens do plano renovam a cada ciclo e a sobra não acumula; tokens avulsos e de indicação não vencem. No teste grátis você cria 1 carrossel de até 5 slides. Você acompanha o consumo na página Tokens e pode trocar de plano quando quiser na página de planos.',
   },
   {
     q: 'Como troco a marca ativa?',
