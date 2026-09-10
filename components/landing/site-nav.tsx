@@ -145,7 +145,7 @@ export function SiteNav() {
       >
         <p className="px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.14em]">
           <TrendingUp className="mr-1.5 -mt-0.5 inline h-3.5 w-3.5" />
-          Seu primeiro carrossel completo é grátis, sem cartão
+          Teste o Nexus Content grátis, sem cartão
         </p>
       </div>
 

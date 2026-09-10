@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Instagram, Linkedin, Mail, Youtube } from "lucide-react"
 
 import { irParaSecao } from "./ir-para-secao"
@@ -95,16 +94,6 @@ function Watermark() {
 }
 
 export function SiteFooter() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-
-  /* Leva o e-mail digitado pro cadastro em vez de sumir com ele. */
-  const irParaCadastro = () => {
-    const destino = email.trim()
-      ? `/cadastro?email=${encodeURIComponent(email.trim())}`
-      : "/cadastro"
-    router.push(destino)
-  }
 
   return (
     <footer className="bg-black px-6 py-12 md:py-16">
@@ -231,35 +220,18 @@ export function SiteFooter() {
               <h4 className="text-[15px] leading-[1.45] text-white/55">
                 A IA não espera.
                 <strong className="block text-[19px] font-bold text-white">
-                  Comece com 1 carrossel grátis.
+                  Teste grátis, sem cartão.
                 </strong>
               </h4>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  irParaCadastro()
-                }}
-                className="flex w-full rounded-xl border border-white/10 bg-white/[0.04] p-[5px] md:w-[330px]"
+              {/* SEM CAMPO DE E-MAIL (ordem do dono, 10/09). O campo pedia o e-mail
+                  só pra repassar pro cadastro, que pede de novo: era um passo a
+                  mais antes do mesmo lugar. Fica o botão direto. */}
+              <Link
+                href="/cadastro"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-6 py-2.5 text-[14px] font-semibold text-black transition-[background-color,transform] duration-200 hover:-translate-y-px hover:bg-white/90 md:w-[330px]"
               >
-                <label htmlFor="footer-email" className="sr-only">
-                  Seu e-mail
-                </label>
-                <input
-                  id="footer-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Seu melhor e-mail"
-                  className="min-w-0 flex-1 border-0 bg-transparent px-3.5 py-2.5 text-[13.5px] text-white outline-none placeholder:text-white/35"
-                />
-                {/* min-h-11 (44px) pra dar alvo de toque de 44px no celular */}
-                <button
-                  type="submit"
-                  className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-white px-5 py-2.5 text-[13.5px] font-semibold text-black transition-[background-color,transform] duration-200 hover:-translate-y-px hover:bg-white/90"
-                >
-                  Criar conta
-                </button>
-              </form>
+                Testar grátis
+              </Link>
             </div>
           </div>
         </div>

@@ -238,7 +238,7 @@ export function MockExport() {
         </motion.div>
       ))}
       <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-text-muted pt-1">
-        PNG nomeado por slide · sem marca d&apos;água nos planos pagos
+        PNG nomeado por slide, na ordem certa
       </p>
     </div>
   )
@@ -436,7 +436,6 @@ const RECURSOS = [
     bullets: [
       "PNG 1080×1350 por slide",
       "ZIP do carrossel completo",
-      "Sem marca d'água nos planos pagos",
     ],
     mock: MockExport,
   },

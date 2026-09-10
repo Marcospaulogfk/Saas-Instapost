@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 import { SiteNav } from "@/components/landing/site-nav"
+import { LinkSecao } from "@/components/landing/link-secao"
 import { HeroBackdrop } from "@/components/landing/hero-backdrop"
 import { HeroPainel } from "@/components/landing/hero-painel"
 import { Esteira, EsteiraCartoes, type ItemCartao } from "@/components/landing/esteira"
@@ -83,7 +84,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Quantos carrosséis posso criar por mês?",
-    a: "Depende do plano e de quantas imagens de IA você usa. Com imagem em todos os slides: Starter faz cerca de 7, Pro cerca de 25 e Studio cerca de 75 por mês. Só com a capa, que é o mais comum, o Pro faz cerca de 35. Editar o que foi gerado nunca custa token. No teste grátis você monta 1 carrossel completo.",
+    a: "Depende do plano e de quantas imagens de IA você usa. Com imagem em todos os slides: Starter faz cerca de 7, Pro cerca de 25 e Studio cerca de 75 por mês. Só com a capa, que é o mais comum, o Pro faz cerca de 35. Editar o que foi gerado nunca custa token.",
   },
   {
     q: "Preciso saber design pra usar?",
@@ -103,7 +104,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Como funciona o teste grátis?",
-    a: "Você cria a conta sem cartão e monta 1 carrossel completo, com capa gerada por IA. Depois é só escolher um plano pra continuar.",
+    a: "Você cria a conta sem cartão e testa o Nexus Content com a sua própria marca, antes de pagar qualquer coisa. Se gostar do resultado, é só escolher um plano pra continuar.",
   },
 ]
 
@@ -175,7 +176,7 @@ const MECANISMO: ItemSlider[] = [
     n: "05",
     titulo: "Sai em Full HD, nomeado na ordem dos slides",
     texto:
-      "PNG em 1080x1350, um arquivo por slide, na ordem certa, ou o ZIP do carrossel completo. Sem marca d'água nos planos pagos, e sem aquela meia hora renomeando arquivo antes de subir.",
+      "PNG em 1080x1350, um arquivo por slide, na ordem certa, ou o ZIP do carrossel completo. Sem aquela meia hora renomeando arquivo antes de subir.",
     cena: MockExport,
   },
 ]
@@ -374,7 +375,7 @@ export default function HomePage() {
                   className="lp-cta-glow h-[52px] rounded-full bg-primary px-7 text-[15px] text-white hover:bg-primary/90"
                 >
                   <Link href="/cadastro">
-                    Criar meu primeiro carrossel grátis
+                    Começar teste grátis
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -384,15 +385,15 @@ export default function HomePage() {
                   size="lg"
                   className="h-[52px] rounded-full border-hairline-strong px-7 text-[15px]"
                 >
-                  <Link href="#recursos">
+                  <LinkSecao href="#recursos">
                     <Play className="mr-2 h-4 w-4" />
                     Ver como funciona
-                  </Link>
+                  </LinkSecao>
                 </Button>
               </div>
 
               <p className="mt-7 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
-                1 carrossel completo grátis · Sem cartão · Cancela em 1 clique
+                Teste grátis · Sem cartão · Cancela em 1 clique
               </p>
             </Reveal>
           </div>
@@ -571,7 +572,7 @@ export default function HomePage() {
             <SectionHead
               eyebrow="Planos"
               title="Comece grátis. Suba quando crescer."
-              sub="1 carrossel completo grátis, sem cartão. Sem fidelidade e cobrança em BRL."
+              sub="Teste grátis, sem cartão. Sem fidelidade e cobrança em BRL."
             />
             <Reveal className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">
               <span>Garantia de 7 dias</span>
@@ -635,18 +636,21 @@ export default function HomePage() {
           <Reveal className="mt-12">
             <CalculadoraCusto />
           </Reveal>
-          <Reveal delay={0.15} className="mt-8 text-center">
+          {/* FORA do <Reveal> (pendência da revisão): é um botão pequeno logo
+              acima do FAQ, e num pulo de rolagem era sempre ele que ficava na
+              borda da tela, apagado atrás da pílula fixa até a pessoa rolar. */}
+          <div className="mt-8 text-center">
             <Button
               asChild
               size="lg"
               className="lp-cta-glow h-12 rounded-full bg-primary px-8 text-white hover:bg-primary/90"
             >
-              <Link href="#planos">
+              <LinkSecao href="#planos">
                 Ver planos
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              </LinkSecao>
             </Button>
-          </Reveal>
+          </div>
         </Wrap>
       </section>
 
@@ -681,7 +685,7 @@ export default function HomePage() {
 
                   <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/20 bg-white/20">
                     {[
-                      { n: "1 carrossel", l: "Grátis, sem cartão" },
+                      { n: "Teste grátis", l: "Sem cartão" },
                       { n: "1 clique", l: "Pra cancelar" },
                     ].map((s) => (
                       <div key={s.l} className="bg-[#06122A]/35 p-4 backdrop-blur-sm">
@@ -727,9 +731,9 @@ export default function HomePage() {
                   <span className="lp-text-gradient">constância de verdade</span>
                 </h2>
                 <p className="mx-auto mt-4 mb-9 max-w-xl text-[17px] leading-relaxed text-text-secondary">
-                  Conta a sua marca, digita o tema e exporta o primeiro carrossel em minutos. É 1
-                  carrossel completo grátis pra você julgar o resultado com a sua marca na tela. Sem
-                  cartão e sem código.
+                  Conta a sua marca, digita o tema e vê o carrossel pronto em minutos. O
+                  teste é grátis e sem cartão, pra você julgar o resultado com a sua marca na
+                  tela, não com a demo de outra pessoa.
                 </p>
                 <div className="flex flex-col justify-center gap-3 sm:flex-row">
                   <Button
@@ -748,7 +752,7 @@ export default function HomePage() {
                     size="lg"
                     className="h-[52px] rounded-full border-hairline-strong px-7 text-[15px]"
                   >
-                    <Link href="#planos">Ver os planos</Link>
+                    <LinkSecao href="#planos">Ver os planos</LinkSecao>
                   </Button>
                 </div>
                 <p className="mt-6 flex items-center justify-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-text-muted">

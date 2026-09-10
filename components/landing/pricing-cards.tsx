@@ -26,11 +26,13 @@ const PLANOS = [
     tag: "Pra decidir com a sua marca na tela",
     perDay: "Sem cartão",
     cta: "Começar por aqui",
+    /* SEM NÚMERO NO GRÁTIS, por ordem do dono (10/09): a landing só diz que
+       existe teste grátis e sem cartão. A regra do teste vai mudar e fica no
+       produto, não aqui. Nenhum plano fala de marca d'água. */
     feats: [
-      `${PLAN_TOKENS.trial} tokens, uma vez`,
-      "≈ 1 carrossel completo com capa de IA",
-      "1 marca configurada",
-      "Com marca d'água",
+      "Teste com a sua própria marca",
+      "Roteiro, design e imagem de IA",
+      "Editor completo na plataforma",
     ],
     popular: false,
   },
@@ -59,7 +61,6 @@ const PLANOS = [
       equivalencia(PLAN_TOKENS.pro),
       "5 marcas configuradas",
       "Capa em Nano Banana 2",
-      "Sem marca d'água",
       "Export em lote",
     ],
     popular: true,
