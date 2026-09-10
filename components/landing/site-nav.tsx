@@ -86,6 +86,39 @@ export function SiteNav() {
     }
   }, [])
 
+  /* ABRIR A URL JÁ COM ÂNCORA (`/#planos` num link compartilhado, um anúncio
+     que aponta pra seção de preço) cai no MESMO problema do clique no menu:
+     quem rola é o navegador, com o `scroll-behavior: smooth` global, e a
+     viagem de 12.000px não completa. Só que aqui não existe clique pra
+     interceptar, então o salto sai na montagem.
+
+     E NÃO BASTA SALTAR: o Chrome RESTAURA o scroll anterior depois da
+     montagem, e a restauração dele chega por último e ganha. Medido: abrindo
+     `/#planos` numa aba que estava no FAQ, a página parava no FAQ com a URL
+     dizendo `#planos`. Por isso a restauração passa pra `manual` e o salto
+     é nosso.
+
+     `manual` sÓ quando existe hash, de propósito: se a URL diz onde parar,
+     ela manda. Sem hash a restauração continua com o navegador, senão um F5
+     no meio da página jogaria a pessoa de volta pro topo. */
+  useEffect(() => {
+    const hash = window.location.hash
+    if (!hash || hash === "#") return
+    const alvo = document.querySelector(hash)
+    if (!alvo) return
+
+    const restauracaoOriginal = window.history.scrollRestoration
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"
+
+    alvo.scrollIntoView({ behavior: "instant", block: "start" })
+
+    return () => {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = restauracaoOriginal
+      }
+    }
+  }, [])
+
   /* Trava o corpo enquanto o menu mobile está aberto. */
   useEffect(() => {
     document.body.style.overflow = aberto ? "hidden" : ""
