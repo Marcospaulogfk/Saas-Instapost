@@ -86,12 +86,25 @@ export default function CadastroPage() {
   async function onSubmit(values: FormValues) {
     setServerError(null)
     setIsPending(true)
-    const result = await signUpWithPassword(values.email, values.password, {
-      name: values.name,
-      refCode,
-      next: nextPath,
-    })
-    setIsPending(false)
+    // A server action pode LANÇAR (rede caiu, servidor reiniciando, versão
+    // trocada no meio do uso). Sem este try, o botão ficava em "Criando..."
+    // pra sempre e a pessoa não via mensagem nenhuma (ERRO 11, 10/09/2026).
+    let result: Awaited<ReturnType<typeof signUpWithPassword>>
+    try {
+      result = await signUpWithPassword(values.email, values.password, {
+        name: values.name,
+        refCode,
+        next: nextPath,
+      })
+    } catch (err) {
+      console.error("[cadastro] a ação de cadastro falhou:", err)
+      setServerError(
+        "Não conseguimos falar com o servidor agora. Recarregue a página e tente de novo; se já recebeu o e-mail de confirmação, é só clicar no link.",
+      )
+      return
+    } finally {
+      setIsPending(false)
+    }
     if (result.ok) {
       if (result.needsConfirmation) {
         setSubmittedEmail(values.email)
