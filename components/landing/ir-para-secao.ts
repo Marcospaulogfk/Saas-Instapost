@@ -16,15 +16,32 @@
  * `behavior: "instant"` e não `"auto"`: `auto` significa "use o que o CSS
  * disser", e o que o CSS diz aqui é `smooth`, que é justamente o problema.
  *
- * O `block: "start"` respeita o `scroll-margin-top` das seções (`scroll-mt-24`
- * no page.tsx), então a pílula flutuante do menu não cobre o título da seção
- * onde a pessoa acabou de chegar.
+ * O destino desconta o `scroll-margin-top` das seções (`scroll-mt-24` no
+ * page.tsx), então a pílula flutuante do menu não cobre o título da seção
+ * onde a pessoa acabou de chegar (ver `rolarAte`).
  *
  * A URL continua ganhando o hash, pela `history.pushState`: quem copia o
  * endereço leva a âncora, e o botão voltar do navegador continua funcionando.
  * Se o alvo não existir, a função não faz nada e devolve o controle pro
  * navegador (o `preventDefault` só acontece quando há pra onde ir).
  */
+/**
+ * Rola até o elemento, deixando o respiro do `scroll-margin-top` dele.
+ *
+ * A conta é feita NA MÃO em vez de confiar no `scrollIntoView`, porque ele
+ * nem sempre aplica o `scroll-margin`. Medido em 10/09 a 390px: no portal do
+ * Maestri (Electron com Chromium 136) o `scrollIntoView` pousava Planos com o
+ * topo em -1px, margem ignorada e título embaixo da pílula fixa, enquanto o
+ * Chrome pousava a 96px. Lendo a margem do CSS e descontando no `scrollTo`,
+ * os dois param no mesmo lugar, e o respiro continua definido num lugar só
+ * (o `scroll-mt-24` das seções no page.tsx).
+ */
+export function rolarAte(alvo: Element): void {
+  const margem = parseFloat(window.getComputedStyle(alvo).scrollMarginTop) || 0
+  const topo = alvo.getBoundingClientRect().top + window.scrollY - margem
+  window.scrollTo({ top: Math.max(0, topo), behavior: "instant" })
+}
+
 export function irParaSecao(evento: { preventDefault: () => void }, href: string): void {
   if (typeof document === "undefined") return
   if (!href.startsWith("#")) return
@@ -34,7 +51,7 @@ export function irParaSecao(evento: { preventDefault: () => void }, href: string
   if (!alvo) return
 
   evento.preventDefault()
-  alvo.scrollIntoView({ behavior: "instant", block: "start" })
+  rolarAte(alvo)
 
   try {
     window.history.pushState(null, "", href)

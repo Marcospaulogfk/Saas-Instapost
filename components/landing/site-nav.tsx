@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ArrowRight, TrendingUp } from "lucide-react"
 
 import { Logo } from "@/components/brand/logo"
-import { irParaSecao } from "./ir-para-secao"
+import { irParaSecao, rolarAte } from "./ir-para-secao"
 
 /*
  * Cabeçalho da landing: pílula flutuante, no molde da barra do EverReply.
@@ -110,7 +110,7 @@ export function SiteNav() {
     const restauracaoOriginal = window.history.scrollRestoration
     if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"
 
-    alvo.scrollIntoView({ behavior: "instant", block: "start" })
+    rolarAte(alvo)
 
     return () => {
       if ("scrollRestoration" in window.history) {
