@@ -19,6 +19,7 @@ import type { PostBrand } from "@/lib/single-posts/types"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
 import type { UsageStageRecord } from "@/lib/single-posts/free-generate"
 import { capturarGeracaoBitmap } from "@/lib/fabrica/capture"
+import { artePagaPeloTeste, liberarPecaTeste, reservarPecaTeste } from "@/lib/teste-gratis"
 import {
   validarImagensReferencia,
   validarInstrucoesAdicionais,
@@ -219,15 +220,27 @@ export async function POST(req: Request) {
         { status: 400 },
       )
     }
+    // Teste grátis (lib/teste-gratis.ts): a ARTE é onde o post único nasce,
+    // então é aqui que a peça conta. Peça do teste não passa pelo saldo: 3
+    // posts custariam 87 tokens e o teste tem 45; quem limita é o contador.
+    const reserva = await reservarPecaTeste(user?.id, "post_unico", "free-generate:aprovado")
+    if (!reserva.ok) return reserva.resposta
+    const pagoPeloTeste = artePagaPeloTeste(reserva)
+
     // Esta etapa cobra só a ARTE. Barra pelo TETO dela (imagem no modelo
     // caro): se a foto vier do Wikimedia o débito real é 0 e ninguém perde,
     // mas quem não tem os 25 não leva a arte de graça.
-    const semSaldo = await barrarSemSaldo(
-      supabase,
-      user?.id,
-      tokenCostForSinglePostImage("pro"),
-    )
-    if (semSaldo) return semSaldo
+    if (!pagoPeloTeste) {
+      const semSaldo = await barrarSemSaldo(
+        supabase,
+        user?.id,
+        tokenCostForSinglePostImage("pro"),
+      )
+      if (semSaldo) {
+        await liberarPecaTeste(reserva)
+        return semSaldo
+      }
+    }
 
     try {
       const result = await buildApprovedSpec({
@@ -240,8 +253,9 @@ export async function POST(req: Request) {
         // geram texto), mas dá ao compositor o assunto do post.
         briefing: body.briefing?.trim() || null,
       })
-      // Só a imagem: o texto já foi debitado na etapa text_only.
-      const cobrado = imageCost(result.image_quality)
+      // Só a imagem: o texto já foi debitado na etapa text_only. Peça do
+      // teste grátis sai do contador, não do saldo.
+      const cobrado = pagoPeloTeste ? 0 : imageCost(result.image_quality)
       await debitBestEffort(supabase, user?.id, cobrado, {
         kind: "debit_image",
         refType: "single_post",
@@ -268,6 +282,7 @@ export async function POST(req: Request) {
     } catch (err) {
       const message = err instanceof Error ? err.message : "erro desconhecido"
       console.error("[post-unico/free-generate:approved]", err)
+      await liberarPecaTeste(reserva)
       return NextResponse.json({ error: message }, { status: 500 })
     }
   }
@@ -338,8 +353,19 @@ export async function POST(req: Request) {
   // Barra pelo TETO do post único (texto + arte no modelo caro): é o mesmo
   // número que o wizard mostra como "vai custar N tokens" antes de gerar,
   // então quem passou no preview passa aqui.
-  const semSaldo = await barrarSemSaldo(supabase, user?.id, tokenCostForSinglePost())
-  if (semSaldo) return semSaldo
+  // Teste grátis (lib/teste-gratis.ts): o modo completo entrega o post
+  // inteiro, arte inclusa, então consome a peça. Peça do teste não passa
+  // pelo saldo; quem limita é o contador.
+  const reserva = await reservarPecaTeste(user?.id, "post_unico", "free-generate:completo")
+  if (!reserva.ok) return reserva.resposta
+  const pagoPeloTeste = artePagaPeloTeste(reserva)
+  if (!pagoPeloTeste) {
+    const semSaldo = await barrarSemSaldo(supabase, user?.id, tokenCostForSinglePost())
+    if (semSaldo) {
+      await liberarPecaTeste(reserva)
+      return semSaldo
+    }
+  }
 
   try {
     const result = await generateFreeSpec({
@@ -351,7 +377,10 @@ export async function POST(req: Request) {
       imagensReferencia: imagensResult.value.length ? imagensResult.value : undefined,
     })
     // Gera texto + imagem numa tacada só → cobra as duas parcelas.
-    const cobrado = TOKEN_COST.singlePostText + imageCost(result.image_quality)
+    // Peça do teste grátis sai do contador, não do saldo.
+    const cobrado = pagoPeloTeste
+      ? 0
+      : TOKEN_COST.singlePostText + imageCost(result.image_quality)
     await debitBestEffort(supabase, user?.id, cobrado, {
       kind: "debit_single_post",
       refType: "single_post",
@@ -377,6 +406,7 @@ export async function POST(req: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"
     console.error("[post-unico/free-generate]", err)
+    await liberarPecaTeste(reserva)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

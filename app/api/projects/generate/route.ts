@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { liberarPecaTeste, reservarPecaTeste, slidesPermitidos } from "@/lib/teste-gratis"
 import { generateContent, type ClaudeSlide } from "@/lib/generation/claude"
 import { generateBrandImage, getUserPlan } from "@/lib/generation/image"
 import { searchUnsplash } from "@/lib/generation/unsplash"
@@ -157,7 +158,12 @@ export async function POST(req: Request) {
     )
   }
 
-  const nSlides = Math.min(Math.max(body.n_slides, 1), 7)
+  // Teste grátis (lib/teste-gratis.ts): este endpoint gera um carrossel
+  // inteiro, então consome a peça e respeita o teto de slides do teste.
+  const reserva = await reservarPecaTeste(user.id, "carrossel", "projects/generate")
+  if (!reserva.ok) return reserva.resposta
+
+  const nSlides = slidesPermitidos(reserva, Math.min(Math.max(body.n_slides, 1), 7))
 
   // -------------------------------------------------------------------
   // Portão de saldo (antes de qualquer chamada paga).
@@ -178,6 +184,8 @@ export async function POST(req: Request) {
     (body.mode === "all_ai" ? tokenCostForImage("normal") * nSlides : 0)
   const saldoDisponivel = await getAvailableTokens(supabase, user.id)
   if (saldoDisponivel < custoMinimo) {
+    // Barrado pelo saldo: a peça do teste não foi usada, devolve.
+    await liberarPecaTeste(reserva)
     return NextResponse.json(
       {
         error: "Tokens insuficientes para esta geração.",
@@ -207,6 +215,7 @@ export async function POST(req: Request) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error("[projects/generate] Claude FAIL:", msg)
+    await liberarPecaTeste(reserva)
     return NextResponse.json({ error: `Claude: ${msg}` }, { status: 502 })
   }
 

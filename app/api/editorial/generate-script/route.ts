@@ -4,6 +4,7 @@ import { motivoRejeicaoCapa } from "@/lib/carousel/cover-guard"
 import { MODEL_ESCRITOR } from "@/lib/generation/models"
 import { logGenerationUsage } from "@/lib/generation/usage-log"
 import { createClient } from "@/lib/supabase/server"
+import { liberarPecaTeste, reservarPecaTeste, slidesPermitidos } from "@/lib/teste-gratis"
 import {
   validarImagensReferencia,
   validarInstrucoesAdicionais,
@@ -81,6 +82,15 @@ export async function POST(req: Request) {
     )
   }
 
+  // Teste grátis (lib/teste-gratis.ts): o roteiro é onde o carrossel NASCE.
+  // Regerar o roteiro também conta, senão "regerar" viraria o segundo
+  // carrossel de graça.
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser()
+  const reserva = await reservarPecaTeste(user?.id, "carrossel", "editorial/generate-script")
+  if (!reserva.ok) return reserva.resposta
+
   const objective = (["sell", "inform", "engage", "community"] as const).includes(
     body.objective as never,
   )
@@ -91,11 +101,13 @@ export async function POST(req: Request) {
   )
     ? (body.template as "editorial" | "cinematic" | "hybrid")
     : "editorial"
-  // Geração limitada a no máximo 7 slides por carrossel.
-  const nSlides =
+  // Geração limitada a no máximo 7 slides por carrossel (5 no teste grátis).
+  const nSlides = slidesPermitidos(
+    reserva,
     typeof body.desiredSlides === "number" && body.desiredSlides >= 3
       ? Math.min(body.desiredSlides, 7)
-      : 7
+      : 7,
+  )
 
   const registro =
     typeof body.registro === "string" &&
@@ -185,6 +197,8 @@ export async function POST(req: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"
     console.error("[editorial/generate-script]", message)
+    // Falha nossa não pode queimar a peça do teste grátis.
+    await liberarPecaTeste(reserva)
     return NextResponse.json({ error: message }, { status: 502 })
   }
 }

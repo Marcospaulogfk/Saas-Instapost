@@ -5,6 +5,8 @@ import {
   type ClaudeMetrics,
 } from "@/lib/generation/claude"
 import { generateImage } from "@/lib/generation/fal"
+import { createClient } from "@/lib/supabase/server"
+import { liberarPecaTeste, reservarPecaTeste, slidesPermitidos } from "@/lib/teste-gratis"
 import { searchUnsplash } from "@/lib/generation/unsplash"
 
 export const runtime = "nodejs"
@@ -145,6 +147,16 @@ export async function POST(req: Request) {
     )
   }
 
+  // Teste grátis (lib/teste-gratis.ts): o sandbox também gera um carrossel
+  // completo com imagens, então conta como a peça. Sem isto ele seria a porta
+  // dos fundos da regra.
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser()
+  const reserva = await reservarPecaTeste(user?.id, "carrossel", "teste-gerar")
+  if (!reserva.ok) return reserva.resposta
+  body.nSlides = slidesPermitidos(reserva, body.nSlides)
+
   console.log("\n========== [teste-gerar] NOVA GERAÇÃO ==========")
   console.log(`📝 topic:    ${body.topic}`)
   console.log(`🎯 objective: ${body.objective} | tone: ${body.tone}`)
@@ -169,6 +181,7 @@ export async function POST(req: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error("[teste-gerar] Claude FAIL:", message)
+    await liberarPecaTeste(reserva)
     return NextResponse.json({ error: `Claude: ${message}` }, { status: 502 })
   }
 

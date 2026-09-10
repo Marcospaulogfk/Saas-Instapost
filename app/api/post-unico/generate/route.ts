@@ -8,6 +8,7 @@ import {
   TOKEN_COST,
 } from "@/lib/tokens"
 import { getTemplate } from "@/lib/single-posts/catalog"
+import { artePagaPeloTeste, liberarPecaTeste, reservarPecaTeste } from "@/lib/teste-gratis"
 import { generatePostContent, pickBestTemplate } from "@/lib/single-posts/generate"
 import type { PostBrand, PostCategory } from "@/lib/single-posts/types"
 
@@ -73,7 +74,13 @@ export async function POST(req: Request) {
   // piso: texto + uma imagem na qualidade mais barata quando o template pede
   // foto. O débito real, mais adiante, pode ser maior.
   // -------------------------------------------------------------------
-  if (user) {
+  // Teste grátis (lib/teste-gratis.ts): este modo gera o post inteiro, então
+  // consome a peça. Peça do teste não passa pelo saldo nem debita a arte.
+  const reserva = await reservarPecaTeste(user?.id, "post_unico", "post-unico/generate")
+  if (!reserva.ok) return reserva.resposta
+  const pagoPeloTeste = artePagaPeloTeste(reserva)
+
+  if (user && !pagoPeloTeste) {
     const custoMinimo =
       TOKEN_COST.singlePostText +
       (template.needs_photo ? tokenCostForSinglePostImage("normal") : 0)
@@ -100,7 +107,8 @@ export async function POST(req: Request) {
     )
 
     // Débito best-effort por qualidade real (só se logado). Nunca bloqueia.
-    if (user) {
+    // Peça do teste grátis sai do contador, não do saldo.
+    if (user && !pagoPeloTeste) {
       try {
         const imageTokens =
           result.image_counts.normal * tokenCostForSinglePostImage("normal") +
@@ -135,6 +143,7 @@ export async function POST(req: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido"
     console.error("[post-unico/generate]", err)
+    await liberarPecaTeste(reserva)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

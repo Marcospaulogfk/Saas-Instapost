@@ -2,6 +2,13 @@ import { NextRequest } from 'next/server'
 import { generateCompleteCarousel } from '@/lib/editorial/generator'
 import { getActiveBrandIdFromCookie } from '@/lib/active-brand'
 import { getBrandById, listBrands } from '@/lib/data/queries'
+import { createClient } from '@/lib/supabase/server'
+import {
+  liberarPecaTeste,
+  MAX_SLIDES_TESTE,
+  reservarPecaTeste,
+  slidesPermitidos,
+} from '@/lib/teste-gratis'
 
 export const maxDuration = 300
 
@@ -42,9 +49,25 @@ export async function GET(request: NextRequest) {
   const handle = sp.get('handle') || '@NEXUSCONTENT'
   const tone = (sp.get('tone') || 'direto') as 'profissional' | 'casual' | 'direto'
   const audience = sp.get('audience') || 'criadores de conteúdo'
-  const desiredSlides = sp.get('desiredSlides')
+  const pedidos = sp.get('desiredSlides')
     ? Number(sp.get('desiredSlides'))
     : undefined
+
+  // Teste grátis (lib/teste-gratis.ts): este stream gera um carrossel
+  // completo, então consome a peça e respeita o teto de slides do teste.
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser()
+  const reserva = await reservarPecaTeste(user?.id, 'carrossel', 'editorial/generate-stream')
+  if (!reserva.ok) {
+    // A tela escuta o evento `error` do EventSource e mostra `message`.
+    return new Response(
+      `event: error\ndata: ${JSON.stringify({ message: reserva.mensagem })}\n\n`,
+      { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform' } },
+    )
+  }
+  const desiredSlides =
+    reserva.noTeste ? slidesPermitidos(reserva, pedidos ?? MAX_SLIDES_TESTE) : pedidos
 
   // Contexto rico da marca ativa (melhora copy + imagens). Best-effort.
   const activeBrand = await loadActiveBrandContext()
@@ -80,6 +103,8 @@ export async function GET(request: NextRequest) {
         controller.close()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'erro desconhecido'
+        // Falha nossa não pode queimar a peça do teste grátis.
+        await liberarPecaTeste(reserva)
         sendEvent('error', { message })
         controller.close()
       }
