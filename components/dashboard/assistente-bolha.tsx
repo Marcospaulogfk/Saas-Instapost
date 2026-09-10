@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { Loader2, Maximize2, Minimize2, Send, Trash2, X } from "lucide-react"
 
 /**
@@ -133,6 +134,14 @@ export function AssistenteBolha({ marcaAtiva = null }: Props) {
       setCarregando(false)
     }
   }
+
+  // Nas telas de CRIAÇÃO a bolha some (R4-6, 10/09/2026): ela fica fixa no
+  // canto inferior direito, exatamente onde moram os botões "Continuar" e
+  // "Aprovar e criar arte" do rodapé do passo a passo. No desktop o clique
+  // no meio do botão abria o chat em vez de avançar. Ali a pessoa está no
+  // meio de um fluxo; conselho de pauta ela pede antes ou depois.
+  const pathname = usePathname()
+  if (pathname?.startsWith("/dashboard/criar")) return null
 
   return (
     <>

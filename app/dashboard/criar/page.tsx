@@ -327,7 +327,17 @@ function buildBriefingPlaceholder(brand: ActiveBrandLite | null): string {
 export default function CriarWizardPage() {
   // useSearchParams (sync do step com a URL) exige Suspense boundary no App Router.
   return (
-    <Suspense fallback={null}>
+    // Fallback VISÍVEL (R4-5, 10/09/2026): com `null`, qualquer demora ou
+    // falha ao montar o wizard virava página em branco muda, sem "carregando"
+    // nem erro, e a pessoa achava que o botão do menu estava quebrado.
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center gap-2 text-sm text-text-muted">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando a criação...
+        </div>
+      }
+    >
       <CriarWizard />
     </Suspense>
   )
@@ -1143,27 +1153,37 @@ function FundoFluido({ animado }: { animado: boolean }) {
   }
   return (
     <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden>
-      <LiquidEther
-        /* Fundo puramente ambiente: ignora o cursor e se move sozinho pelo
-           autoDemo. Sem isso o ponteiro fica "dentro" do container quase
-           sempre (ele cobre a página toda) e o autoDemo nunca assumiria. */
-        interactive={false}
-        colors={["#5227FF", "#2210b8", "#457f93"]}
-        mouseForce={20}
-        cursorSize={100}
-        isViscous
-        viscous={30}
-        iterationsViscous={32}
-        iterationsPoisson={32}
-        resolution={0.5}
-        isBounce={false}
-        autoDemo
-        autoSpeed={0.5}
-        autoIntensity={2.2}
-        takeoverDuration={0.25}
-        autoResumeDelay={3000}
-        autoRampDuration={0.6}
-      />
+      {/* Suspense PRÓPRIO do fundo (R4-5, 10/09/2026). O LiquidEther é
+          dynamic({ ssr: false }): no servidor ele "desiste" e joga pro
+          Suspense mais próximo, que era o do WIZARD INTEIRO. Aí o passo a
+          passo só aparecia depois de o pedaço do three.js carregar no
+          navegador; se esse carregamento travava, a criação ficava em branco
+          (por navegação interna o pedaço já estava em cache, por isso o
+          atalho do dashboard funcionava). Isolado aqui, um fundo que não
+          carrega só deixa de animar, e o wizard sai pronto do servidor. */}
+      <Suspense fallback={null}>
+        <LiquidEther
+          /* Fundo puramente ambiente: ignora o cursor e se move sozinho pelo
+             autoDemo. Sem isso o ponteiro fica "dentro" do container quase
+             sempre (ele cobre a página toda) e o autoDemo nunca assumiria. */
+          interactive={false}
+          colors={["#5227FF", "#2210b8", "#457f93"]}
+          mouseForce={20}
+          cursorSize={100}
+          isViscous
+          viscous={30}
+          iterationsViscous={32}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo
+          autoSpeed={0.5}
+          autoIntensity={2.2}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </Suspense>
       <div className="pointer-events-none absolute inset-0 bg-[rgba(5,7,12,0.66)]" />
     </div>
   )
