@@ -5,14 +5,28 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
-import { Mail, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { ArrowLeft, Loader2, Mail } from "lucide-react"
+import { Logo } from "@/components/brand/logo"
+import { AuthVisual } from "@/components/auth/auth-visual"
 import { requestPasswordReset } from "@/app/actions/auth"
+import "@/components/auth/auth.css"
+
+// =====================================================================
+// Recuperar senha.
+//
+// Refeita em 10/09/2026: a tela ainda dizia "InstaPost" (nome de dois
+// rebrands atrás), era um bloco centralizado que não parecia com nenhuma
+// outra tela do produto e tinha texto sem acento. É a tela que a pessoa
+// abre no pior momento — quando não consegue entrar — e justo ali o
+// produto parecia outro. Agora usa o mesmo esqueleto de /login e /cadastro.
+//
+// A resposta é sempre a mesma, exista o e-mail ou não: dizer "esse e-mail
+// não está cadastrado" entregaria a lista de clientes a quem estivesse
+// testando endereços.
+// =====================================================================
 
 const schema = z.object({
-  email: z.string().min(1, "Informe seu email").email("Email invalido"),
+  email: z.string().min(1, "Informe seu e-mail").email("E-mail inválido"),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -38,99 +52,120 @@ export default function RecuperarSenhaPage() {
     }
   }
 
-  if (submittedEmail) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-[440px] space-y-6 text-center">
-          <Link href="/" className="text-2xl font-bold inline-block">
-            InstaPost
-          </Link>
-          <div className="rounded-full bg-primary/10 w-16 h-16 mx-auto flex items-center justify-center">
-            <Mail className="w-8 h-8 text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Email enviado
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Se{" "}
-              <span className="font-medium text-foreground">
-                {submittedEmail}
-              </span>{" "}
-              estiver cadastrado, voce recebera um link para redefinir sua senha
-              em alguns instantes.
-            </p>
-          </div>
-          <Button asChild variant="outline" className="w-full">
-            <Link href="/login">Voltar para o login</Link>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-[440px] space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-2xl font-bold inline-block">
-            InstaPost
+    <div className="dark nx-auth">
+      <div className="nx-auth-col">
+        <header className="nx-auth-top">
+          <Link href="/" className="inline-flex items-center">
+            <Logo size={26} />
           </Link>
-        </div>
+          <Link href="/login" className="nx-auth-back">
+            ← Voltar ao login
+          </Link>
+        </header>
 
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Esqueceu a senha?
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Digite seu email e enviaremos um link para voce criar uma nova senha.
-          </p>
-        </div>
+        <main className="nx-auth-body">
+          <div className="nx-auth-inner nx-auth-fade-up">
+            {submittedEmail ? (
+              <>
+                <span className="mb-5 grid h-12 w-12 place-items-center rounded-full bg-[rgb(22_104_227/0.12)] ring-1 ring-[rgb(22_104_227/0.3)]">
+                  <Mail className="h-5 w-5 text-brand-400" />
+                </span>
+                <h1 className="nx-auth-title">E-mail enviado</h1>
+                <p className="nx-auth-sub">
+                  Se{" "}
+                  <span className="font-semibold text-[#f2f5fa]">{submittedEmail}</span>{" "}
+                  estiver cadastrado, o link para criar uma senha nova chega em
+                  alguns instantes. Confira também a caixa de spam.
+                </p>
+                <div className="mt-7 space-y-3">
+                  <Link href="/login" className="nx-auth-submit block text-center">
+                    Voltar para o login
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setSubmittedEmail(null)}
+                    className="nx-auth-troca w-full"
+                  >
+                    Errou o e-mail?{" "}
+                    <span className="nx-auth-link font-semibold">Tentar outro</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h1 className="nx-auth-title">Esqueceu a senha?</h1>
+                <p className="nx-auth-sub">
+                  Digite seu e-mail e enviamos um link para você criar uma nova.
+                </p>
 
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4"
-          noValidate
-        >
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...form.register("email")}
-              aria-invalid={!!form.formState.errors.email}
-            />
-            {form.formState.errors.email && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.email.message}
-              </p>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="mt-7 space-y-4"
+                  noValidate
+                >
+                  <div className="space-y-1.5">
+                    <label htmlFor="recuperar-email" className="nx-auth-label">
+                      E-mail
+                    </label>
+                    <input
+                      id="recuperar-email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="voce@empresa.com"
+                      className="nx-auth-input"
+                      aria-invalid={!!form.formState.errors.email}
+                      {...form.register("email")}
+                    />
+                    {form.formState.errors.email && (
+                      <p className="nx-auth-erro-campo">
+                        {form.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {serverError && <div className="nx-auth-erro">{serverError}</div>}
+
+                  <button type="submit" disabled={isPending} className="nx-auth-submit">
+                    {isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      "Enviar link de recuperação"
+                    )}
+                  </button>
+
+                  <p className="nx-auth-troca">
+                    <Link
+                      href="/login"
+                      className="nx-auth-link inline-flex items-center gap-1.5 font-semibold"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Voltar para o login
+                    </Link>
+                  </p>
+                </form>
+              </>
             )}
           </div>
+        </main>
 
-          {serverError && (
-            <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
-              {serverError}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            className="w-full h-11"
-            disabled={isPending}
-          >
-            {isPending ? "Enviando..." : "Enviar link de recuperacao"}
-          </Button>
-        </form>
-
-        <Link
-          href="/login"
-          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Voltar para o login
-        </Link>
+        <footer className="nx-auth-foot">
+          Precisa de ajuda? Fale com a gente em contato@nexuscontentai.com.br.
+        </footer>
       </div>
+
+      <AuthVisual
+        tagline={
+          <>
+            O carrossel pronto,
+            <br />
+            em 3 minutos.
+          </>
+        }
+      />
     </div>
   )
 }

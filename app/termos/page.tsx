@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { Logo } from '@/components/brand/logo'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Termos de Uso',
   description:
-    'Termos de uso da plataforma SyncPost — condições de acesso, planos, conteúdo gerado por IA e responsabilidades.',
+    'Termos de uso da plataforma Nexus Content — condições de acesso, planos, conteúdo gerado por IA e responsabilidades.',
   alternates: { canonical: '/termos' },
 }
 
@@ -27,7 +28,7 @@ export default function TermosPage() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-hairline">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center">
-            <img src="/syncpost-horizontal-branca-trim.png" alt="SyncPost" className="h-6 w-auto" />
+            <Logo size={24} />
           </Link>
           <Link
             href="/"
@@ -51,12 +52,12 @@ export default function TermosPage() {
 
         <Section title="1. Objeto">
           <p>
-            O SyncPost é uma plataforma de software como serviço (SaaS) operada pela <strong className="text-foreground">WebSync</strong>,
+            O Nexus Content é uma plataforma de software como serviço (SaaS) operada pela <strong className="text-foreground">WebSync</strong>,
             destinada à geração de conteúdo para redes sociais — em especial carrosséis, posts e roteiros
             para Instagram — com auxílio de inteligência artificial.
           </p>
           <p>
-            Ao criar uma conta ou utilizar qualquer funcionalidade do SyncPost, você declara ter lido,
+            Ao criar uma conta ou utilizar qualquer funcionalidade do Nexus Content, você declara ter lido,
             compreendido e aceitado integralmente estes Termos de Uso. Se você não concorda com qualquer
             condição aqui prevista, não utilize a plataforma.
           </p>
@@ -64,7 +65,7 @@ export default function TermosPage() {
 
         <Section title="2. Conta e cadastro">
           <p>
-            Para usar o SyncPost você precisa criar uma conta com informações verdadeiras, completas e
+            Para usar o Nexus Content você precisa criar uma conta com informações verdadeiras, completas e
             atualizadas. Você é o único responsável pela guarda das suas credenciais de acesso e por toda
             atividade realizada a partir da sua conta.
           </p>
@@ -77,7 +78,7 @@ export default function TermosPage() {
 
         <Section title="3. Planos, pagamento e créditos">
           <p>
-            O SyncPost oferece um período de teste gratuito limitado e planos pagos com cobrança recorrente
+            O Nexus Content oferece um período de teste gratuito limitado e planos pagos com cobrança recorrente
             em reais (BRL), conforme descrito na página de planos. Os valores, limites de geração de imagens
             e recursos de cada plano podem ser atualizados a qualquer momento, sempre com comunicação prévia
             aos assinantes ativos.
@@ -95,7 +96,7 @@ export default function TermosPage() {
 
         <Section title="4. Conteúdo gerado por inteligência artificial">
           <p>
-            Os textos, roteiros e imagens produzidos pelo SyncPost são gerados por modelos de inteligência
+            Os textos, roteiros e imagens produzidos pelo Nexus Content são gerados por modelos de inteligência
             artificial a partir das informações fornecidas por você (briefing, dados de marca, temas).
             Por sua natureza, o conteúdo gerado por IA pode conter imprecisões, informações desatualizadas
             ou resultados inesperados.
@@ -106,7 +107,7 @@ export default function TermosPage() {
             das plataformas onde será veiculado (como as diretrizes do Instagram/Meta).
           </p>
           <p>
-            É vedado utilizar o SyncPost para gerar conteúdo ilegal, difamatório, discriminatório,
+            É vedado utilizar o Nexus Content para gerar conteúdo ilegal, difamatório, discriminatório,
             enganoso, que infrinja direitos de terceiros ou que viole políticas das redes sociais.
           </p>
         </Section>
@@ -118,7 +119,7 @@ export default function TermosPage() {
             termos dos provedores de IA utilizados.
           </p>
           <p>
-            A plataforma SyncPost em si — código, marca, identidade visual, templates, interfaces e demais
+            A plataforma Nexus Content em si — código, marca, identidade visual, templates, interfaces e demais
             elementos — é de titularidade da WebSync e protegida pela legislação de propriedade intelectual.
             É proibido copiar, reproduzir, fazer engenharia reversa ou explorar comercialmente qualquer
             parte da plataforma sem autorização expressa.
@@ -132,7 +133,7 @@ export default function TermosPage() {
 
         <Section title="6. Disponibilidade e limitação de responsabilidade">
           <p>
-            Empregamos esforços razoáveis para manter o SyncPost disponível e estável, mas o serviço é
+            Empregamos esforços razoáveis para manter o Nexus Content disponível e estável, mas o serviço é
             fornecido &quot;no estado em que se encontra&quot;, podendo sofrer interrupções para manutenção,
             atualizações ou por falhas de terceiros (provedores de infraestrutura, modelos de IA e meios
             de pagamento).
@@ -160,7 +161,7 @@ export default function TermosPage() {
         <Section title="8. Alterações destes termos">
           <p>
             Estes Termos podem ser atualizados periodicamente. Alterações relevantes serão comunicadas por
-            e-mail ou aviso na plataforma. O uso continuado do SyncPost após a atualização implica
+            e-mail ou aviso na plataforma. O uso continuado do Nexus Content após a atualização implica
             concordância com a nova versão.
           </p>
         </Section>
@@ -185,7 +186,7 @@ export default function TermosPage() {
 
         <div className="mt-14 pt-6 border-t border-hairline flex items-center justify-between">
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            SyncPost · WebSync · Feito no Brasil
+            Nexus Content · WebSync · Feito no Brasil
           </p>
           <Link
             href="/privacidade"

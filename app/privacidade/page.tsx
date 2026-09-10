@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { Logo } from '@/components/brand/logo'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
   description:
-    'Política de privacidade do SyncPost — como coletamos, usamos e protegemos seus dados pessoais em conformidade com a LGPD.',
+    'Política de privacidade do Nexus Content — como coletamos, usamos e protegemos seus dados pessoais em conformidade com a LGPD.',
   alternates: { canonical: '/privacidade' },
 }
 
@@ -27,7 +28,7 @@ export default function PrivacidadePage() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-hairline">
         <div className="max-w-3xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center">
-            <img src="/syncpost-horizontal-branca-trim.png" alt="SyncPost" className="h-6 w-auto" />
+            <Logo size={24} />
           </Link>
           <Link
             href="/"
@@ -53,7 +54,7 @@ export default function PrivacidadePage() {
 
         <Section title="1. Quem somos">
           <p>
-            O SyncPost é operado pela <strong className="text-foreground">WebSync</strong>, que atua como
+            O Nexus Content é operado pela <strong className="text-foreground">WebSync</strong>, que atua como
             controladora dos dados pessoais tratados na plataforma, nos termos da Lei Geral de Proteção de
             Dados Pessoais (Lei nº 13.709/2018 — LGPD).
           </p>
@@ -143,7 +144,7 @@ export default function PrivacidadePage() {
 
         <Section title="5. Conexão com o Instagram (Meta)">
           <p>
-            O SyncPost permite que você conecte a sua conta profissional do Instagram (Comercial ou
+            O Nexus Content permite que você conecte a sua conta profissional do Instagram (Comercial ou
             Criador de Conteúdo) para publicar, diretamente da plataforma, o conteúdo que você mesmo criou
             e revisou. Essa conexão é opcional e feita por você, via login oficial do Instagram (Meta).
           </p>
@@ -151,7 +152,7 @@ export default function PrivacidadePage() {
             <strong className="text-foreground">Dados do Instagram que tratamos:</strong> ao conectar, a
             Meta nos fornece o identificador da sua conta (ID de usuário do Instagram), o seu nome de
             usuário e um token de acesso. Guardamos esses dados de forma restrita e associada apenas à sua
-            conta SyncPost, para manter a conexão ativa e publicar quando você pedir. Não coletamos suas
+            conta Nexus Content, para manter a conexão ativa e publicar quando você pedir. Não coletamos suas
             credenciais (login/senha) do Instagram — a autenticação acontece nos servidores da Meta.
           </p>
           <p>
@@ -166,21 +167,21 @@ export default function PrivacidadePage() {
           </p>
           <p>
             <strong className="text-foreground">Métricas:</strong> as métricas são lidas da Meta no
-            momento em que você abre a página de métricas no SyncPost e exibidas apenas para você. Guardamos
-            o identificador das publicações feitas pelo SyncPost para associar cada métrica ao conteúdo
+            momento em que você abre a página de métricas no Nexus Content e exibidas apenas para você. Guardamos
+            o identificador das publicações feitas pelo Nexus Content para associar cada métrica ao conteúdo
             correspondente. Não usamos essas métricas para treinar modelos nem para qualquer finalidade
             fora da sua própria conta.
           </p>
           <p>
             <strong className="text-foreground">Como revogar o acesso:</strong> você pode desconectar o
-            Instagram a qualquer momento dentro do SyncPost (no botão “Desconectar” da tela de publicação),
+            Instagram a qualquer momento dentro do Nexus Content (no botão “Desconectar” da tela de publicação),
             o que remove o token armazenado. Você também pode revogar o acesso do lado do Instagram em{' '}
             <em>Configurações → Apps e sites</em>. Ao desconectar, deixamos de ter qualquer acesso à sua
             conta.
           </p>
           <p>
             <strong className="text-foreground">Exclusão dos dados do Instagram:</strong> quando você
-            remove o SyncPost em <em>Apps e sites</em> do Instagram, a Meta nos avisa e apagamos
+            remove o Nexus Content em <em>Apps e sites</em> do Instagram, a Meta nos avisa e apagamos
             imediatamente o token e os dados de conexão. Você também pode pedir a exclusão a qualquer
             momento em{' '}
             <a href="/instagram/exclusao-de-dados" className="text-primary hover:underline">
@@ -267,7 +268,7 @@ export default function PrivacidadePage() {
 
         <div className="mt-14 pt-6 border-t border-hairline flex items-center justify-between">
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            SyncPost · WebSync · Feito no Brasil
+            Nexus Content · WebSync · Feito no Brasil
           </p>
           <Link
             href="/termos"
