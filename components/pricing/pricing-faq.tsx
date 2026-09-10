@@ -11,35 +11,35 @@ import {
 const faqs = [
   {
     question: "O que conta como uma 'imagem'?",
-    answer: "Cada geracao de imagem com IA consome 1 credito do seu plano. Isso inclui tanto a geracao inicial quanto regeneracoes. Editar texto, cores ou posicionar elementos nao consome creditos adicionais.",
+    answer: "Cada geração de imagem com IA consome 1 crédito do seu plano. Isso inclui tanto a geração inicial quanto regenerações. Editar texto, cores ou posicionar elementos não consome créditos adicionais.",
   },
   {
     question: "Posso mudar de plano a qualquer momento?",
-    answer: "Sim! Voce pode fazer upgrade ou downgrade a qualquer momento. Se fizer upgrade, pagara apenas a diferenca proporcional. Se fizer downgrade, o novo valor sera aplicado no proximo ciclo de cobranca.",
+    answer: "Sim! Você pode fazer upgrade ou downgrade a qualquer momento. Se fizer upgrade, pagará apenas a diferença proporcional. Se fizer downgrade, o novo valor será aplicado no próximo ciclo de cobrança.",
   },
   {
-    question: "O que acontece se eu nao usar todas as imagens?",
-    answer: "Os creditos de imagem nao acumulam para o proximo mes. Recomendamos escolher um plano adequado ao seu uso medio. Voce pode complementar com pacotes avulsos quando precisar de mais.",
+    question: "O que acontece se eu não usar todas as imagens?",
+    answer: "Os créditos de imagem não acumulam para o próximo mês. Recomendamos escolher um plano adequado ao seu uso médio. Você pode complementar com pacotes avulsos quando precisar de mais.",
   },
   {
-    question: "Voces cobram em real ou dolar?",
-    answer: "Todos os precos sao em Reais (BRL) e a cobranca e feita no cartao de credito em moeda local. Nao ha surpresas com variacao cambial.",
+    question: "Vocês cobram em real ou dólar?",
+    answer: "Todos os preços são em Reais (BRL) e a cobrança é feita no cartão de crédito em moeda local. Não há surpresas com variação cambial.",
   },
   {
-    question: "Posso usar o conteudo gerado comercialmente?",
-    answer: "Sim! Todo conteudo gerado na plataforma e seu para usar como quiser, incluindo uso comercial. Voce mantem 100% dos direitos sobre suas criacoes.",
+    question: "Posso usar o conteúdo gerado comercialmente?",
+    answer: "Sim! Todo conteúdo gerado na plataforma é seu para usar como quiser, incluindo uso comercial. Você mantém 100% dos direitos sobre suas criações.",
   },
   {
-    question: "Como funciona o teste gratis?",
-    answer: "Voce pode criar uma conta gratuita e montar 1 carrossel completo, com capa gerada por IA, sem precisar cadastrar cartao de credito. E uma otima forma de conhecer a plataforma antes de assinar.",
+    question: "Como funciona o teste grátis?",
+    answer: "Você pode criar uma conta gratuita e montar 1 carrossel completo, com capa gerada por IA, sem precisar cadastrar cartão de crédito. É uma ótima forma de conhecer a plataforma antes de assinar.",
   },
   {
-    question: "Voces oferecem reembolso?",
-    answer: "Sim! Oferecemos garantia de 7 dias. Se nao ficar satisfeito por qualquer motivo, entre em contato dentro dos primeiros 7 dias e faremos o reembolso integral, sem perguntas.",
+    question: "Vocês oferecem reembolso?",
+    answer: "Sim! Oferecemos garantia de 7 dias. Se não ficar satisfeito por qualquer motivo, entre em contato dentro dos primeiros 7 dias e faremos o reembolso integral, sem perguntas.",
   },
   {
     question: "Como cancelo minha assinatura?",
-    answer: "Voce pode cancelar a qualquer momento diretamente nas configuracoes da sua conta. O cancelamento e imediato e voce continua com acesso ate o fim do periodo ja pago.",
+    answer: "Você pode cancelar a qualquer momento diretamente nas configurações da sua conta. O cancelamento é imediato e você continua com acesso até o fim do período já pago.",
   },
 ]
 

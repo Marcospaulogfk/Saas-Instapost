@@ -77,6 +77,20 @@ export function tokenCostForCarousel(
   return cost
 }
 
+/**
+ * "≈ N carrosséis completos ou M roteiros" pro grant de um plano.
+ *
+ * FONTE ÚNICA da equivalência mostrada na landing E na /pricing (10/09/2026).
+ * Antes cada tela fazia a própria conta: a landing dizia "≈7 carrosséis ou
+ * 37 roteiros" e a /pricing "≈7 ou 10 só com capa" pro MESMO plano — quem
+ * compara as duas páginas acha que uma delas está mentindo. Carrossel
+ * completo = 7 slides com capa e miolo de IA, pela tabela acima.
+ */
+export function equivalenciaDoPlano(tokens: number): string {
+  const completo = tokenCostForCarousel(7, { cover: true, slides: true })
+  return `≈ ${Math.floor(tokens / completo)} carrosséis completos ou ${Math.floor(tokens / TOKEN_COST.textOnly)} roteiros`
+}
+
 /** Planos disponíveis. `trial` = teste grátis (≈ 7 slides, ver §5). */
 export type Plan = "trial" | "starter" | "pro" | "studio"
 

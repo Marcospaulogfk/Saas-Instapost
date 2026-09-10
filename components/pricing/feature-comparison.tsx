@@ -3,13 +3,29 @@
 import { Fragment } from "react"
 import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
+import { PLAN_TOKENS, equivalenciaDoPlano } from "@/lib/tokens"
 
+/**
+ * Tokens e equivalência (carrosséis/roteiros) vêm de lib/tokens.ts, fonte
+ * única compartilhada com a landing e o card de preço (10/09/2026): nunca
+ * número escrito à mão.
+ */
 const featureGroups = [
   {
-    name: "GERACAO",
+    name: "GERAÇÃO",
     features: [
-      { name: "Tokens por mes", starter: "300", pro: "1.000", studio: "3.000" },
-      { name: "≈ carrosséis só com capa", starter: "10", pro: "35", studio: "107" },
+      {
+        name: "Tokens por mês",
+        starter: PLAN_TOKENS.starter.toLocaleString("pt-BR"),
+        pro: PLAN_TOKENS.pro.toLocaleString("pt-BR"),
+        studio: PLAN_TOKENS.studio.toLocaleString("pt-BR"),
+      },
+      {
+        name: "Equivalência do plano",
+        starter: equivalenciaDoPlano(PLAN_TOKENS.starter),
+        pro: equivalenciaDoPlano(PLAN_TOKENS.pro),
+        studio: equivalenciaDoPlano(PLAN_TOKENS.studio),
+      },
       { name: "Capa em Nano Banana 2", starter: true, pro: true, studio: true },
       { name: "Templates", starter: "5", pro: "20+ exclusivos", studio: "Todos + custom" },
     ],
@@ -26,20 +42,20 @@ const featureGroups = [
     name: "EDITOR",
     features: [
       { name: "Editor de camadas", starter: true, pro: true, studio: true },
-      { name: "Templates avancados", starter: false, pro: true, studio: true },
-      { name: "Export sem marca d'agua", starter: false, pro: true, studio: true },
+      { name: "Templates avançados", starter: false, pro: true, studio: true },
+      { name: "Export sem marca d'água", starter: false, pro: true, studio: true },
     ],
   },
   {
     name: "EQUIPE",
     features: [
-      { name: "Usuarios", starter: "1", pro: "1", studio: "3" },
-      { name: "Permissoes", starter: false, pro: false, studio: true },
+      { name: "Usuários", starter: "1", pro: "1", studio: "3" },
+      { name: "Permissões", starter: false, pro: false, studio: true },
       { name: "White-label", starter: false, pro: false, studio: true },
     ],
   },
   {
-    name: "INTEGRACOES",
+    name: "INTEGRAÇÕES",
     features: [
       { name: "API", starter: false, pro: false, studio: true },
       { name: "Webhooks", starter: false, pro: false, studio: true },
@@ -49,7 +65,7 @@ const featureGroups = [
   {
     name: "SUPORTE",
     features: [
-      { name: "Email", starter: true, pro: true, studio: true },
+      { name: "E-mail", starter: true, pro: true, studio: true },
       { name: "Tempo de resposta", starter: "48h", pro: "12h", studio: "4h" },
       { name: "Onboarding", starter: false, pro: false, studio: "1-on-1" },
     ],
@@ -81,7 +97,7 @@ export function FeatureComparison() {
       </h2>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px]">
+        <table className="w-full min-w-[760px]">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-4 pr-4 font-medium text-muted-foreground">Recurso</th>

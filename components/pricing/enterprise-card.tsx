@@ -20,7 +20,7 @@ export function EnterpriseCard() {
               Precisa de mais?
             </h3>
             <p className="text-muted-foreground max-w-lg">
-              Para volumes acima de 10.000 imagens/mes ou necessidades especificas, fale com nosso time.
+              Para volumes acima de 10.000 imagens/mês ou necessidades específicas, fale com nosso time.
             </p>
           </div>
           <Button variant="outline" className="shrink-0 hover:border-primary hover:text-primary">

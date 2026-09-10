@@ -3,27 +3,25 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { equivalenciaDoPlano } from "@/lib/tokens"
 
 const addOns = [
   {
     name: "Boost",
     tokens: 300,
     price: 34,
-    equivalencia: "≈ 7 carrosseis completos",
     popular: false,
   },
   {
     name: "Pro Pack",
     tokens: 800,
     price: 79,
-    equivalencia: "≈ 19 carrosseis completos",
     popular: true,
   },
   {
     name: "Power Pack",
     tokens: 2000,
     price: 179,
-    equivalencia: "≈ 48 carrosseis completos",
     popular: false,
   },
 ]
@@ -70,7 +68,7 @@ export function AddOns() {
               R$ {addon.price}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              {addon.equivalencia}
+              {equivalenciaDoPlano(addon.tokens)}
             </p>
             <Button variant="outline" className="w-full hover:border-primary hover:text-primary">
               Comprar

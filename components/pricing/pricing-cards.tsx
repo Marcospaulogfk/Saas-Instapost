@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { BillingCycle } from "@/app/pricing/page"
-import { tokenCostForCarousel } from "@/lib/tokens"
+import { equivalenciaDoPlano } from "@/lib/tokens"
 import {
   CYCLE_INFO,
   PLAN_LABEL,
@@ -34,48 +35,46 @@ const MENSAGEM_ERRO: Record<string, string> = {
 
 /**
  * Linha de tokens do card. Os tokens/mês são os MESMOS em qualquer ciclo
- * (decisão 22/08/2026: o anual desconta o preço, não o grant). O "≈" usa o
- * carrossel completo de 7 slides e o só-capa, pela tabela de lib/tokens.ts,
- * nunca número escrito à mão.
+ * (decisão 22/08/2026: o anual desconta o preço, não o grant). A equivalência
+ * vem de equivalenciaDoPlano (lib/tokens.ts), fonte única compartilhada com a
+ * landing (10/09/2026): nunca número escrito à mão.
  */
 function tokenFeature(id: PaidPlan): string {
   const tk = tokensFor(id)
-  const completo = tokenCostForCarousel(7, { cover: true, slides: true })
-  const soCapa = tokenCostForCarousel(7, { cover: true, slides: false })
-  return `${tk.toLocaleString("pt-BR")} tokens/mês (≈ ${Math.floor(tk / completo)} carrosséis completos ou ${Math.floor(tk / soCapa)} só com capa)`
+  return `${tk.toLocaleString("pt-BR")} tokens/mês (${equivalenciaDoPlano(tk)})`
 }
 
 const plans = [
   {
     id: "starter" as const,
     name: "Starter",
-    tagline: "Para criadores comecando",
+    tagline: "Para criadores começando",
     basePrice: PLAN_PRICE_MONTHLY.starter,
     popular: false,
-    cta: "Comecar com Starter",
+    cta: "Começar com Starter",
     ctaVariant: "outline" as const,
     features: [
       "1 marca configurada",
-      "Templates basicos",
+      "Templates básicos",
       "Capa em Nano Banana 2",
-      "Marca d'agua no export",
-      "Suporte por email",
+      "Marca d'água no export",
+      "Suporte por e-mail",
     ],
     featurePrefix: "Inclui:",
   },
   {
     id: "pro" as const,
     name: "Pro",
-    tagline: "Para criadores serios e agencias",
+    tagline: "Para criadores sérios e agências",
     basePrice: PLAN_PRICE_MONTHLY.pro,
     popular: true,
     cta: "Escolher Pro",
     ctaVariant: "default" as const,
     features: [
       "5 marcas configuradas",
-      "Sem marca d'agua",
+      "Sem marca d'água",
       "Templates exclusivos",
-      "Suporte prioritario (12h)",
+      "Suporte prioritário (12h)",
       "Export em lote",
     ],
     featurePrefix: "Tudo do Starter, mais:",
@@ -83,21 +82,35 @@ const plans = [
   {
     id: "studio" as const,
     name: "Studio",
-    tagline: "Para agencias e empresas",
+    tagline: "Para agências e empresas",
     basePrice: PLAN_PRICE_MONTHLY.studio,
     popular: false,
     cta: "Escolher Studio",
     ctaVariant: "outline" as const,
     features: [
       "Marcas ilimitadas",
-      "API para automacao",
-      "Equipe de ate 3 usuarios",
+      "API para automação",
+      "Equipe de até 3 usuários",
       "Gerente de conta dedicado",
-      "White-label disponivel",
+      "White-label disponível",
     ],
     featurePrefix: "Tudo do Pro, mais:",
   },
 ]
+
+/** Card do plano Grátis: dados iguais aos da landing (components/landing/pricing-cards.tsx). */
+const freePlan = {
+  name: "Grátis",
+  tagline: "Pra decidir com a sua marca na tela",
+  selo: "Sem cartão",
+  cta: "Começar por aqui",
+  features: [
+    "Teste com a sua própria marca",
+    "Roteiro, design e imagem de IA",
+    "Editor completo na plataforma",
+  ],
+  featurePrefix: "Inclui:",
+}
 
 function calculatePrice(plan: PaidPlan, cycle: BillingCycle) {
   const p = priceFor(plan, cycle)
@@ -119,7 +132,7 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
   const autoStarted = useRef(false)
 
   // Precisa saber se está logado ANTES de decidir entre abrir o modal de
-  // cartão (checkout transparente) ou mandar pro /cadastro — o modal chama
+  // cartão (checkout transparente) ou mandar pro /cadastro: o modal chama
   // uma rota autenticada, então oferecê-lo a quem não tem sessão só levaria
   // a um 401 depois de a pessoa já ter digitado o cartão. `logadoResolvido`
   // trava o auto-start (?plano= na volta do cadastro) até a checagem voltar,
@@ -185,10 +198,51 @@ export function PricingCards({ billingCycle, autoStartPlan }: PricingCardsProps)
     )}
     {assinado && (
       <p className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-center text-sm text-green-400">
-        Assinatura {PLAN_LABEL[assinado.plan]} confirmada — {assinado.priceBr}. Seus tokens já estão liberados.
+        Assinatura {PLAN_LABEL[assinado.plan]} confirmada por {assinado.priceBr}. Seus tokens já estão liberados.
       </p>
     )}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl p-8 border border-border bg-card transition-all duration-300 hover:border-primary/30"
+      >
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-muted-foreground">
+            {freePlan.name}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">{freePlan.tagline}</p>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex items-baseline gap-1">
+            <span className="text-5xl font-bold tabular-nums">R$ 0</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">{freePlan.selo}</p>
+        </div>
+
+        <Button
+          asChild
+          variant="outline"
+          className="w-full mb-6 hover:border-primary hover:text-primary"
+        >
+          <Link href="/cadastro">{freePlan.cta}</Link>
+        </Button>
+
+        <div className="border-t border-border pt-6">
+          <p className="text-sm font-medium text-muted-foreground mb-4">
+            {freePlan.featurePrefix}
+          </p>
+          <ul className="space-y-3">
+            {freePlan.features.map((feature) => (
+              <li key={feature} className="flex items-start gap-3 text-sm">
+                <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <span className="text-foreground">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </motion.div>
       {plans.map((plan, index) => {
         const { monthlyPrice, totalPrice, savings } = calculatePrice(plan.id, billingCycle)
         const cycle = CYCLE_INFO[billingCycle]

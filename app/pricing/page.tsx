@@ -60,7 +60,7 @@ function PricingPageInner() {
         <p className="text-sm text-muted-foreground">
           <span className="text-green-500 mr-4">&#10003; Cancele quando quiser</span>
           <span className="text-green-500 mr-4">&#10003; Garantia de 7 dias</span>
-          <span className="text-green-500">&#10003; Cobranca em BRL</span>
+          <span className="text-green-500">&#10003; Cobrança em BRL</span>
         </p>
       </div>
 

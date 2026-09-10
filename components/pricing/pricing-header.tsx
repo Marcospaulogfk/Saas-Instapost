@@ -12,13 +12,13 @@ export function PricingHeader() {
       className="py-20 text-center"
     >
       <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/10">
-        Precos simples e transparentes
+        Preços simples e transparentes
       </Badge>
       <h1 className="text-5xl font-bold tracking-tight text-foreground mb-4 text-balance">
         Escolha seu plano
       </h1>
       <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-        Comece gratis. Cancele quando quiser. Sem letras miudas.
+        Comece grátis. Cancele quando quiser. Sem letras miúdas.
       </p>
     </motion.header>
   )
