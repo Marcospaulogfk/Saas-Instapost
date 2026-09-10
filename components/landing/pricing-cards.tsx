@@ -5,20 +5,19 @@ import Link from "next/link"
 import { motion, useMotionValue, useMotionTemplate, useReducedMotion } from "framer-motion"
 import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { PLAN_TOKENS, TOKEN_COST, tokenCostForCarousel } from "@/lib/tokens"
+import { PLAN_TOKENS, TOKEN_COST, equivalenciaDoPlano, tokenCostForCarousel } from "@/lib/tokens"
 
 /**
  * Os números aqui são CALCULADOS de lib/tokens.ts, nunca escritos à mão: a
  * landing prometendo o que o produto não entrega foi bug real quando a tabela
  * de tokens mudou (v2 em 22/08/2026: roteiro 4 -> 8, capa 25 -> 20).
  */
-const CARROSSEL_COMPLETO = tokenCostForCarousel(7, { cover: true, slides: true })
 const CARROSSEL_SO_CAPA = tokenCostForCarousel(7, { cover: true, slides: false })
 
-/** "≈ N carrosséis completos ou M roteiros" pro grant de um plano. */
-function equivalencia(tokens: number): string {
-  return `≈ ${Math.floor(tokens / CARROSSEL_COMPLETO)} carrosséis completos ou ${Math.floor(tokens / TOKEN_COST.textOnly)} roteiros`
-}
+/* A equivalência "≈ N carrosséis completos ou M roteiros" vem de
+   `equivalenciaDoPlano` (lib/tokens.ts), a mesma função da /pricing. A landing
+   fazia a conta dela à mão com a mesma fórmula; com uma fonte só, se o preço
+   ou o custo de token mudar, as duas páginas mudam juntas. */
 const PLANOS = [
   {
     name: "Grátis",
@@ -44,7 +43,7 @@ const PLANOS = [
     cta: "Testar grátis primeiro",
     feats: [
       `${PLAN_TOKENS.starter} tokens / mês`,
-      equivalencia(PLAN_TOKENS.starter),
+      equivalenciaDoPlano(PLAN_TOKENS.starter),
       "1 marca configurada",
       "Capa em Nano Banana 2",
     ],
@@ -58,7 +57,7 @@ const PLANOS = [
     cta: "Testar grátis primeiro",
     feats: [
       `${PLAN_TOKENS.pro.toLocaleString("pt-BR")} tokens / mês`,
-      equivalencia(PLAN_TOKENS.pro),
+      equivalenciaDoPlano(PLAN_TOKENS.pro),
       "5 marcas configuradas",
       "Capa em Nano Banana 2",
       "Export em lote",
@@ -73,7 +72,7 @@ const PLANOS = [
     cta: "Testar grátis primeiro",
     feats: [
       `${PLAN_TOKENS.studio.toLocaleString("pt-BR")} tokens / mês`,
-      equivalencia(PLAN_TOKENS.studio),
+      equivalenciaDoPlano(PLAN_TOKENS.studio),
       "Marcas ilimitadas",
       "API + white-label",
       "Até 3 usuários",
