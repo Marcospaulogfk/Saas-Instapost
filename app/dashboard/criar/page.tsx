@@ -166,7 +166,9 @@ const WIZARD_BRAND = {
   id: "wizard-brand",
   name: "Marca Demo",
   brand_colors: ["#1668E3", "#0A0A0F", "#FAF8F5"],
-  instagram_handle: "marca",
+  // Vazio de propósito (R4-10): "marca" virava "@MARCA" no post pronto.
+  // Sem @ cadastrado, os slides escondem a linha do handle.
+  instagram_handle: "",
 }
 
 type Formato = {

@@ -24,6 +24,7 @@ import { getProfile, requireUser, tokensDisponiveis } from "@/lib/data/queries"
 import { TOKEN_COST, tokenCostForCarousel, tokenCostForSinglePost } from "@/lib/tokens"
 import { CYCLE_INFO, PLAN_LABEL, priceFor, isPaidPlan, isBillingCycle } from "@/lib/billing/plans"
 import { INDICACAO_HABILITADA, AFILIADOS_HABILITADO } from "@/lib/features"
+import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
 import { getConsumoDoMes, getExtrato, KIND_LABEL, linkDaPeca } from "@/lib/extrato/queries"
 import { lerEstadoTeste } from "@/lib/teste-gratis"
 import { TEXTO_REGRA_TESTE } from "@/lib/teste-gratis-regra"
@@ -218,7 +219,9 @@ export default async function TokensPage({
             {ativo ? <LinkPlanos>Mudar de plano</LinkPlanos> : <LinkPlanos>Assinar um plano</LinkPlanos>}
             {INDICACAO_HABILITADA && (
               <Link href="/dashboard/indicacao" className="nv-btn-ghost inline-flex h-9 items-center rounded-lg px-3 text-[12.5px]">
-                Indicar e ganhar
+                {/* Bônus explícito (R4-12): o número ao lado era o saldo, e
+                    parecia que "Indicar e ganhar 45" dava o próprio saldo. */}
+                Indicar e ganhar {REFERRAL_TOKENS.indicador} tokens
               </Link>
             )}
           </div>

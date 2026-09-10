@@ -20,6 +20,7 @@ import {
   listActiveScheduledPosts,
   createScheduledPost,
   deleteScheduledPost,
+  updateScheduledPost,
 } from "@/app/actions/scheduled-posts"
 import {
   statusColor,
@@ -70,6 +71,9 @@ export default function CalendarioPage() {
   const [month, setMonth] = useState(today.getMonth())
   const [filterStatus, setFilterStatus] = useState<"todos" | PostStatus>("todos")
   const [novaModal, setNovaModal] = useState<{ data: string } | null>(null)
+  // Pauta aberta pra edição (R4-17/R4-19): clicar nela no dia, na lista do
+  // mês ou no Pipeline abre ESTA pauta, não uma nova.
+  const [editando, setEditando] = useState<PautaScheduledPost | null>(null)
 
   // Fonte ÚNICA: scheduled_posts (banco). Cobre tanto ideias da IA
   // (source='ia') quanto pautas manuais (source='manual').
@@ -160,8 +164,62 @@ export default function CalendarioPage() {
       alert(res.error)
       return
     }
+    // A pauta entra na tela NA HORA (R4-16): antes a tela esperava a
+    // releitura e, no teste, só mostrava depois de recarregar a página, então
+    // parecia que não tinha salvo e a pessoa criava de novo. A releitura
+    // continua em segundo plano pra alinhar com o banco.
+    const criadaId = res.data.id
+    setScheduled((list) => [
+      ...list,
+      {
+        id: criadaId,
+        brand_id: brandId,
+        title: titulo,
+        description: null,
+        format: formato,
+        objective: "engage",
+        scheduled_date: data,
+        scheduled_time: hora || null,
+        status: "agendado",
+        source: "manual",
+        project_id: null,
+        created_at: new Date().toISOString(),
+      },
+    ])
     setNovaModal(null)
-    await refetch()
+    void refetch()
+  }
+
+  /** Salva a edição de uma pauta existente (R4-17/R4-19). Mover = trocar a data. */
+  async function handleEditarPauta(
+    titulo: string,
+    data: string,
+    hora: string,
+    formato: PostFormato,
+  ) {
+    if (!editando) return
+    const id = editando.id
+    setSaving(true)
+    const res = await updateScheduledPost(id, {
+      title: titulo,
+      scheduledDate: data,
+      scheduledTime: hora || null,
+      format: formato,
+    })
+    setSaving(false)
+    if (!res.ok) {
+      alert(res.error)
+      return
+    }
+    setScheduled((list) =>
+      list.map((s) =>
+        s.id === id
+          ? { ...s, title: titulo, scheduled_date: data, scheduled_time: hora || null, format: formato }
+          : s,
+      ),
+    )
+    setEditando(null)
+    void refetch()
   }
 
   async function handleDelete(id: string) {
@@ -333,7 +391,23 @@ export default function CalendarioPage() {
                       {dayItems.slice(0, 3).map((s) => (
                         <div
                           key={s.id}
-                          className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1"
+                          role="button"
+                          tabIndex={0}
+                          // Clicar na pauta abre ELA (R4-17), não uma nova: o
+                          // stopPropagation impede o clique de chegar no botão do
+                          // dia, que continua abrindo "Nova pauta" no espaço vazio.
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditando(s)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setEditando(s)
+                            }
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1 cursor-pointer hover:ring-1 hover:ring-brand-500/60"
                           style={{
                             background:
                               s.source === "ia"
@@ -392,9 +466,15 @@ export default function CalendarioPage() {
                   {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
                   {s.scheduled_time ? ` ${fmtHora(s.scheduled_time)}` : ""}
                 </span>
-                <p className="text-sm font-medium text-text-primary flex-1 truncate">
+                {/* Título abre a pauta pra editar (R4-19). */}
+                <button
+                  type="button"
+                  onClick={() => setEditando(s)}
+                  title="Editar pauta"
+                  className="text-left text-sm font-medium text-text-primary flex-1 truncate hover:text-brand-300"
+                >
                   {s.title}
-                </p>
+                </button>
                 {s.created_at && (
                   <span className="hidden sm:inline text-[10px] text-text-subtle flex-shrink-0">
                     criada em{" "}
@@ -435,7 +515,9 @@ export default function CalendarioPage() {
       {/* Pipeline: ideias da IA -> em criação -> prontos -> agendados.
           Fica abaixo do calendário porque é a visão de EXECUÇÃO (o que fazer
           agora), enquanto a grade acima é a visão de DISTRIBUIÇÃO (quando). */}
-      {!loading && <PipelinePautas posts={scheduled} onChanged={refetch} />}
+      {!loading && (
+        <PipelinePautas posts={scheduled} onChanged={refetch} onEditar={setEditando} />
+      )}
 
       {/* Modal: Nova Pauta */}
       {novaModal && (
@@ -445,6 +527,24 @@ export default function CalendarioPage() {
             saving={saving}
             onSave={handleNovaPauta}
             onCancel={() => setNovaModal(null)}
+          />
+        </Modal>
+      )}
+
+      {/* Modal: Editar Pauta (R4-17/R4-19). Mover a pauta = trocar a data. */}
+      {editando && (
+        <Modal onClose={() => setEditando(null)} title="Editar pauta">
+          <NovaPautaForm
+            key={editando.id}
+            initialData={editando.scheduled_date}
+            inicial={{
+              titulo: editando.title,
+              hora: fmtHora(editando.scheduled_time),
+              formato: editando.format,
+            }}
+            saving={saving}
+            onSave={handleEditarPauta}
+            onCancel={() => setEditando(null)}
           />
         </Modal>
       )}
@@ -509,19 +609,22 @@ function Modal({
 
 function NovaPautaForm({
   initialData,
+  inicial,
   saving,
   onSave,
   onCancel,
 }: {
   initialData: string
+  /** Preenchido na EDIÇÃO de uma pauta existente (R4-17/R4-19). */
+  inicial?: { titulo: string; hora: string; formato: PostFormato }
   saving: boolean
   onSave: (titulo: string, data: string, hora: string, formato: PostFormato) => void
   onCancel: () => void
 }) {
-  const [titulo, setTitulo] = useState("")
+  const [titulo, setTitulo] = useState(inicial?.titulo ?? "")
   const [data, setData] = useState(initialData)
-  const [hora, setHora] = useState("")
-  const [formato, setFormato] = useState<PostFormato>("post")
+  const [hora, setHora] = useState(inicial?.hora ?? "")
+  const [formato, setFormato] = useState<PostFormato>(inicial?.formato ?? "post")
 
   return (
     <form

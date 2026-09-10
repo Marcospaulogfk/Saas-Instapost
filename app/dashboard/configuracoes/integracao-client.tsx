@@ -57,23 +57,51 @@ function formatarData(iso: string | null): string {
   })
 }
 
-/** Botão de copiar que confirma na própria etiqueta. */
+/**
+ * Copia pro clipboard com plano B. `navigator.clipboard` falha calado em
+ * contexto sem permissão (iframe, navegador corporativo, alguns portais de
+ * teste): era o "Copiar não dá retorno nenhum" do R4-21. Aqui tenta a API,
+ * cai no execCommand antigo, e só então admite que não deu.
+ */
+async function copiar(texto: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(texto)
+    return true
+  } catch {
+    try {
+      const area = document.createElement("textarea")
+      area.value = texto
+      area.setAttribute("readonly", "")
+      area.style.position = "fixed"
+      area.style.opacity = "0"
+      document.body.appendChild(area)
+      area.select()
+      const ok = document.execCommand("copy")
+      document.body.removeChild(area)
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
+
+/** Botão de copiar que SEMPRE responde na própria etiqueta. */
 function BotaoCopiar({ texto, rotulo = "Copiar" }: { texto: string; rotulo?: string }) {
-  const [copiado, setCopiado] = useState(false)
+  const [estado, setEstado] = useState<"parado" | "copiado" | "falhou">("parado")
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
       onClick={() => {
-        void navigator.clipboard.writeText(texto).then(() => {
-          setCopiado(true)
-          setTimeout(() => setCopiado(false), 2000)
+        void copiar(texto).then((ok) => {
+          setEstado(ok ? "copiado" : "falhou")
+          setTimeout(() => setEstado("parado"), 2500)
         })
       }}
     >
-      {copiado ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      {copiado ? "Copiado" : rotulo}
+      {estado === "copiado" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {estado === "copiado" ? "Copiado" : estado === "falhou" ? "Selecione e copie" : rotulo}
     </Button>
   )
 }
@@ -109,6 +137,13 @@ export function IntegracaoClient({ chaves, baseUrl }: Props) {
 
   function gerar() {
     setErro(null)
+    // Nome obrigatório (R4-21): sem ele a chave nascia como "Chave sem nome",
+    // indistinguível na lista, e o testador acabou com uma chave válida que
+    // ninguém sabia pra que servia.
+    if (!nome.trim()) {
+      setErro("Dê um nome pra chave, por exemplo onde você vai usar. É o que te deixa saber qual revogar depois.")
+      return
+    }
     iniciar(async () => {
       const r = await criarChaveApi(nome)
       if (!r.ok) {

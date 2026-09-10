@@ -249,8 +249,8 @@ export function NovaIndicacaoCard() {
         </h2>
       </div>
       <p className="text-[12px] mb-4 flex-1" style={{ color: "var(--nv-text-muted)" }}>
-        {REFERRAL_TOKENS.indicador} tokens por indicado que assinar — e quem
-        entra pelo seu link ganha {REFERRAL_TOKENS.indicado}. Sem limite, e
+        {REFERRAL_TOKENS.indicador} tokens por indicado que assinar, e quem
+        entra pelo seu link ganha {REFERRAL_TOKENS.indicado} tokens extras ao assinar. Sem limite, e
         esses tokens nunca expiram.
       </p>
       <Link

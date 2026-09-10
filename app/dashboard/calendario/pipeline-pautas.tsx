@@ -39,9 +39,12 @@ const PROXIMO: Partial<Record<PostStatus, { status: PostStatus; label: string }>
 export function PipelinePautas({
   posts,
   onChanged,
+  onEditar,
 }: {
   posts: PautaScheduledPost[]
   onChanged: () => void
+  /** Abre a pauta pra editar título, data, hora e formato (R4-19). */
+  onEditar?: (p: PautaScheduledPost) => void
 }) {
   const router = useRouter()
   const [ocupado, setOcupado] = useState<string | null>(null)
@@ -141,9 +144,16 @@ export function PipelinePautas({
                         {p.source === "ia" && (
                           <Sparkles className="w-3 h-3 text-brand-400 flex-shrink-0 mt-0.5" />
                         )}
-                        <p className="text-[12px] font-medium text-text-primary leading-snug flex-1">
+                        {/* Título abre a pauta pra editar (R4-19). */}
+                        <button
+                          type="button"
+                          onClick={() => onEditar?.(p)}
+                          disabled={!onEditar}
+                          title="Editar pauta"
+                          className="text-left text-[12px] font-medium text-text-primary leading-snug flex-1 hover:text-brand-300 disabled:hover:text-text-primary"
+                        >
                           {p.title}
-                        </p>
+                        </button>
                         <button
                           type="button"
                           onClick={() => remover(p.id)}

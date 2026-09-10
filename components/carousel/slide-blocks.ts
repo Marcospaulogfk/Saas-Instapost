@@ -174,7 +174,9 @@ export function createBlock(
       return {
         id, type, z, ...center(220, 44),
         name: brand?.name || "Sua marca",
-        handle: brand?.handle || "@marca",
+        // Sem @ cadastrado, fica vazio e o bloco esconde a linha (R4-10):
+        // o marcador "@marca" saía no post pronto, em caixa alta.
+        handle: brand?.handle || "",
         avatar: brand?.avatar,
         initials: brand?.initials,
         color: ink, showAvatar: true, verified: true,

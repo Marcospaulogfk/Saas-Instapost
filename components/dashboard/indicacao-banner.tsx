@@ -60,12 +60,15 @@ export function IndicacaoBanner() {
         Indique
       </span>
       <p className="min-w-0 flex-1 truncate text-[13px] text-white">
+        {/* Mesma regra da página de Indicação (R4-2): tokens, não
+            "créditos", e o bônus vale quando o indicado ASSINA, não no
+            clique. Quem entra pelo link também só ganha ao assinar. */}
         <span className="font-bold">
-          Ganhe {REFERRAL_TOKENS.indicador} créditos por indicação
+          Ganhe {REFERRAL_TOKENS.indicador} tokens por indicado que assinar
         </span>
         <span className="text-white/80">
           {" "}
-          — e quem entrar pelo seu link ganha {REFERRAL_TOKENS.indicado}.
+          e quem entrar pelo seu link ganha {REFERRAL_TOKENS.indicado} tokens extras ao assinar.
         </span>
       </p>
       <Link

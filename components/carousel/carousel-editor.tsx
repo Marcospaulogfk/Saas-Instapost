@@ -979,7 +979,8 @@ export function CarouselEditor({
         onDark,
         brand: {
           name: brandValue || "Sua marca",
-          handle: handleValue || "@marca",
+          // Sem @ cadastrado, vazio: o slide esconde a linha (R4-10).
+          handle: handleValue || "",
           avatar: avatarUrl || undefined,
           initials: avatarInitials || undefined,
         },

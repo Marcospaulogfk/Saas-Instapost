@@ -27,6 +27,9 @@ export function HandleBadge({
   x,
   y,
 }: HandleBadgeProps) {
+  // Marca sem @ do Instagram: nada de pill com "@" solto ou marcador de
+  // exemplo no post pronto (R4-10). O slide simplesmente não tem a linha.
+  if (!handle || !handle.replace(/^@+/, '').trim()) return null
   const cleanHandle = handle.startsWith('@') ? handle : `@${handle}`
   const fontSize = 22
   const fontFamily = EDITORIAL_FONTS.bodyBold.family

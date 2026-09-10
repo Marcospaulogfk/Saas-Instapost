@@ -163,6 +163,62 @@ export async function updateScheduledPostStatus(
   return { ok: true }
 }
 
+/**
+ * Edita uma pauta pelo calendário: título, data, hora e formato (R4-17 e
+ * R4-19, rodada 4 do testador). "Mover" a pauta é trocar a data aqui;
+ * arrastar fica pra depois. A RLS de scheduled_posts garante que só o dono
+ * da marca edita.
+ */
+export async function updateScheduledPost(
+  id: string,
+  input: {
+    title: string
+    scheduledDate: string
+    scheduledTime?: string | null
+    format: PostFormato
+  },
+): Promise<Result> {
+  const { supabase, user } = await getUser()
+  if (!user) return { ok: false, error: "Você precisa estar logado." }
+
+  const title = input.title.trim()
+  if (!title) return { ok: false, error: "Título obrigatório." }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.scheduledDate)) {
+    return { ok: false, error: "Data inválida." }
+  }
+  const hora = input.scheduledTime?.trim() || null
+  if (hora && !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(hora)) {
+    return { ok: false, error: "Hora inválida." }
+  }
+
+  // Publicada é histórico: mover a data reescreveria o passado (mesma regra
+  // do PATCH do calendário compartilhado, lib/calendario/operacoes.ts).
+  const { data: atual } = await supabase
+    .from("scheduled_posts")
+    .select("status")
+    .eq("id", id)
+    .maybeSingle()
+  if (!atual) return { ok: false, error: "Pauta não encontrada." }
+  if (atual.status === "publicado") {
+    return { ok: false, error: "Esta peça já foi publicada: a data dela não muda mais." }
+  }
+
+  const { error } = await supabase
+    .from("scheduled_posts")
+    .update({
+      title: title.slice(0, 200),
+      scheduled_date: input.scheduledDate,
+      scheduled_time: hora,
+      format: input.format,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath("/dashboard/calendario")
+  return { ok: true }
+}
+
 export async function deleteScheduledPost(id: string): Promise<Result> {
   const { supabase, user } = await getUser()
   if (!user) return { ok: false, error: "Você precisa estar logado." }
