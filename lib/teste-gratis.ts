@@ -33,11 +33,50 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 export type TipoPeca = "carrossel" | "post_unico"
 
-/** Teto de slides de um carrossel gerado no teste grátis. */
-export const MAX_SLIDES_TESTE = 5
+// Texto, teto e conta da regra moram em lib/teste-gratis-regra.ts, que o
+// navegador também importa: a tela e o servidor falam a MESMA regra.
+import type { SupabaseClient } from "@supabase/supabase-js"
+import {
+  calcularEstadoTeste,
+  FORA_DO_TESTE,
+  MAX_SLIDES_TESTE,
+  MENSAGEM_TESTE_ESGOTADO,
+  type EstadoTeste,
+} from "./teste-gratis-regra"
+export { MAX_SLIDES_TESTE, MENSAGEM_TESTE_ESGOTADO }
 
-export const MENSAGEM_TESTE_ESGOTADO =
-  "Seu teste grátis já foi usado: ele inclui 1 carrossel de até 5 slides ou até 3 posts únicos. Para continuar criando, escolha um plano em /pricing."
+/**
+ * Onde a conta está no teste grátis, SEM reservar peça. É o que as telas
+ * usam pra avisar antes (criação, topo, Tokens). Lê pelo client da sessão:
+ * a RLS deixa cada um ver a própria linha de users e as próprias peças.
+ * Qualquer falha devolve "fora do teste": a tela cai no comportamento de
+ * antes e quem decide de verdade continua sendo a RPC na hora de gerar.
+ */
+export async function lerEstadoTeste(
+  client: SupabaseClient,
+  userId: string | null | undefined,
+): Promise<EstadoTeste> {
+  if (!userId) return FORA_DO_TESTE
+  try {
+    const [{ data: conta }, { data: pecas }] = await Promise.all([
+      client
+        .from("users")
+        .select("created_at, subscription_status, topup_credits, referral_credits")
+        .eq("id", userId)
+        .maybeSingle(),
+      client.from("trial_pecas").select("tipo").eq("user_id", userId),
+    ])
+    if (!conta) return FORA_DO_TESTE
+    const lista = (pecas ?? []) as { tipo: string }[]
+    return calcularEstadoTeste(conta, {
+      carrosseis: lista.filter((p) => p.tipo === "carrossel").length,
+      posts: lista.filter((p) => p.tipo === "post_unico").length,
+    })
+  } catch (err) {
+    console.warn("[teste-gratis] não consegui ler o estado do teste:", err)
+    return FORA_DO_TESTE
+  }
+}
 
 export type Reserva =
   /** Fora da regra (assinante, saldo comprado, conta antiga): segue livre. */

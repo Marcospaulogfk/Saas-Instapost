@@ -20,11 +20,13 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react"
-import { getProfile, tokensDisponiveis } from "@/lib/data/queries"
+import { getProfile, requireUser, tokensDisponiveis } from "@/lib/data/queries"
 import { TOKEN_COST, tokenCostForCarousel, tokenCostForSinglePost } from "@/lib/tokens"
 import { CYCLE_INFO, PLAN_LABEL, priceFor, isPaidPlan, isBillingCycle } from "@/lib/billing/plans"
 import { INDICACAO_HABILITADA, AFILIADOS_HABILITADO } from "@/lib/features"
 import { getConsumoDoMes, getExtrato, KIND_LABEL, linkDaPeca } from "@/lib/extrato/queries"
+import { lerEstadoTeste } from "@/lib/teste-gratis"
+import { TEXTO_REGRA_TESTE } from "@/lib/teste-gratis-regra"
 import { BotaoCancelar, FiltroMes, LinkPlanos } from "./tokens-client"
 
 
@@ -71,10 +73,11 @@ export default async function TokensPage({
   searchParams: Promise<{ mes?: string; checkout?: string }>
 }) {
   const sp = await searchParams
-  const [{ profile }, extrato, consumo] = await Promise.all([
+  const [{ profile }, extrato, consumo, estadoTeste] = await Promise.all([
     getProfile(),
     getExtrato({ mes: sp.mes ?? null }),
     getConsumoDoMes(),
+    requireUser().then(({ supabase, user }) => lerEstadoTeste(supabase, user.id)),
   ])
 
   const plano = Math.max(0, profile?.credits ?? 0)
@@ -184,14 +187,31 @@ export default async function TokensPage({
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--nv-text-subtle)" }}>
               Disponível agora
             </p>
-            <p className="mt-1 text-4xl font-bold tabular-nums" style={{ color: "var(--nv-text)" }}>
-              {fmt(total)} <span className="text-base font-normal" style={{ color: "var(--nv-text-muted)" }}>tokens</span>
-            </p>
-            {grant > 0 && (
-              <p className="mt-2 text-[12px]" style={{ color: "var(--nv-text-muted)" }}>
-                Plano: {fmt(usados)} de {fmt(grant)} usados neste ciclo ({pct}%)
-                {renovaEm ? ` · renova em ${data(renovaEm)}` : ""}
-              </p>
+            {estadoTeste.noTeste ? (
+              <>
+                <p className="mt-1 text-xl sm:text-2xl font-bold" style={{ color: "var(--nv-text)" }}>
+                  {TEXTO_REGRA_TESTE}
+                </p>
+                <p className="mt-2 text-[12px]" style={{ color: "var(--nv-text-muted)" }}>
+                  {estadoTeste.esgotado
+                    ? "Seu teste grátis já foi usado."
+                    : estadoTeste.posts === 0 && estadoTeste.carrosseis === 0
+                      ? "Nada usado ainda."
+                      : `Você já criou ${estadoTeste.posts} post${estadoTeste.posts === 1 ? "" : "s"} único${estadoTeste.posts === 1 ? "" : "s"}; ainda cabem ${estadoTeste.restante}.`}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-4xl font-bold tabular-nums" style={{ color: "var(--nv-text)" }}>
+                  {fmt(total)} <span className="text-base font-normal" style={{ color: "var(--nv-text-muted)" }}>tokens</span>
+                </p>
+                {grant > 0 && (
+                  <p className="mt-2 text-[12px]" style={{ color: "var(--nv-text-muted)" }}>
+                    Plano: {fmt(usados)} de {fmt(grant)} usados neste ciclo ({pct}%)
+                    {renovaEm ? ` · renova em ${data(renovaEm)}` : ""}
+                  </p>
+                )}
+              </>
             )}
           </div>
           <div className="flex gap-2">
@@ -261,9 +281,20 @@ export default async function TokensPage({
             )}
             {!ativo && (
               <p className="pt-1" style={{ color: "var(--nv-text-muted)" }}>
-                No teste grátis você tem {fmt(grant || 45)} tokens uma vez. Assine pra recarregar todo
-                mês; o anual sai {Math.round(CYCLE_INFO.annual.discount * 100)}% mais barato com os
-                mesmos tokens.
+                {estadoTeste.noTeste ? (
+                  <>
+                    No teste grátis você cria 1 carrossel de até 5 slides ou 3 posts únicos.
+                    Assine pra recarregar tokens todo mês; o anual sai{" "}
+                    {Math.round(CYCLE_INFO.annual.discount * 100)}% mais barato com os mesmos
+                    tokens.
+                  </>
+                ) : (
+                  <>
+                    No teste grátis você tem {fmt(grant || 45)} tokens uma vez. Assine pra recarregar todo
+                    mês; o anual sai {Math.round(CYCLE_INFO.annual.discount * 100)}% mais barato com os
+                    mesmos tokens.
+                  </>
+                )}
               </p>
             )}
           </dl>

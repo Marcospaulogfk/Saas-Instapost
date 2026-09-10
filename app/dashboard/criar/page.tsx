@@ -43,6 +43,13 @@ import { POST_TEMPLATES, CATEGORY_LABELS } from "@/lib/single-posts/catalog"
 import type { PostTemplateMeta } from "@/lib/single-posts/types"
 import { getActiveBrandLite, type ActiveBrandLite } from "@/app/actions/brands"
 import { getTokenBalance } from "@/app/actions/balance"
+import { getEstadoTesteGratis } from "@/app/actions/teste-gratis"
+import {
+  FORA_DO_TESTE,
+  MAX_SLIDES_TESTE,
+  TEXTO_REGRA_TESTE,
+  type EstadoTeste,
+} from "@/lib/teste-gratis-regra"
 import { POST_UNICO_HABILITADO, podeGerarFormato } from "@/lib/features"
 import BorderGlow from "@/components/backgrounds/border-glow"
 import {
@@ -496,6 +503,27 @@ function CriarWizard() {
       .then(setSaldo)
       .catch(() => setSaldo(null))
   }, [])
+  // Estado do teste grátis por peça (rodada 4, 10/09/2026): teto de slides e
+  // a regra no lugar do custo em tokens. `catch` mantém fora do teste, que é
+  // o comportamento de sempre.
+  const [testeGratis, setTesteGratis] = useState<EstadoTeste>(FORA_DO_TESTE)
+  useEffect(() => {
+    getEstadoTesteGratis()
+      .then(setTesteGratis)
+      .catch(() => setTesteGratis(FORA_DO_TESTE))
+  }, [])
+  // No teste, o carrossel nasce com no máximo 5 slides. O formato já pode ter
+  // nascido com 7 (defaults de ?tipo=carrossel, Inspiração ou o próprio
+  // Step1) antes de saber que a conta está no teste — este efeito corrige
+  // assim que `testeGratis` chega.
+  useEffect(() => {
+    if (!testeGratis.noTeste) return
+    setFormato((f) =>
+      f && f.slides > MAX_SLIDES_TESTE
+        ? buildFormato(f.format, MAX_SLIDES_TESTE)
+        : f,
+    )
+  }, [testeGratis])
   // Marca se o usuário já escolheu objetivo manualmente (não sobrescrever).
   const objetivoTouched = useRef(false)
   useEffect(() => {
@@ -995,6 +1023,7 @@ function CriarWizard() {
           formato={formato}
           onSelect={setFormato}
           onNext={() => canAdvanceStep1() && goToStep(2)}
+          maxSlides={testeGratis.noTeste ? MAX_SLIDES_TESTE : 7}
         />
       )}
 
@@ -1068,6 +1097,7 @@ function CriarWizard() {
           saldo={saldo}
           onGerar={() => void handleGerar()}
           canFinish={canGerar()}
+          testeGratis={testeGratis}
         />
       )}
 
@@ -1259,10 +1289,13 @@ function Step1({
   formato,
   onSelect,
   onNext,
+  maxSlides,
 }: {
   formato: Formato | null
   onSelect: (f: Formato) => void
   onNext: () => void
+  /** Teto de slides do carrossel: 5 no teste grátis, 7 fora dele. */
+  maxSlides: number
 }) {
   const kind = kindFromFormato(formato)
   const slides = formato?.slides ?? 1
@@ -1273,8 +1306,12 @@ function Step1({
   const opcoesVisiveis = KIND_OPTIONS.filter((k) => podeGerarFormato(k.multi))
   const activeOption = KIND_OPTIONS.find((k) => k.id === kind) ?? null
   // Quantidade só faz sentido em carrossel. Ao trocar de único pra carrossel,
-  // abre em 7 (o padrão de carrossel do produto) em vez de herdar o 1.
+  // abre no máximo permitido (7, ou 5 no teste grátis) em vez de herdar o 1.
   const showSlides = !!activeOption?.multi
+  const slideOptions = Array.from(
+    { length: Math.max(0, maxSlides - 1) },
+    (_, i) => i + 2,
+  )
 
   return (
     <div>
@@ -1308,7 +1345,10 @@ function Step1({
                 type="button"
                 onClick={() =>
                   onSelect(
-                    buildFormato(k.format, k.multi ? (slides > 1 ? slides : 7) : 1),
+                    buildFormato(
+                      k.format,
+                      k.multi ? (slides > 1 ? slides : maxSlides) : 1,
+                    ),
                   )
                 }
                 className={`relative h-full w-full p-5 text-left transition-colors ${
@@ -1339,14 +1379,18 @@ function Step1({
         })}
       </div>
 
-      {/* Quantidade de slides: só nos carrosséis, de 2 a 7 (máximo da geração). */}
+      {/* Quantidade de slides: só nos carrosséis, de 2 até maxSlides. */}
       {showSlides && (
         <div className="max-w-xl mx-auto mb-8">
           <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 text-center">
             Quantos slides?
           </p>
-          <div className="grid grid-cols-6 gap-2">
-            {[2, 3, 4, 5, 6, 7].map((n) => {
+          <div
+            className={`grid gap-2 ${
+              slideOptions.length <= 4 ? "grid-cols-4" : "grid-cols-6"
+            }`}
+          >
+            {slideOptions.map((n) => {
               const selected = slides === n
               return (
                 <button
@@ -1365,7 +1409,9 @@ function Step1({
             })}
           </div>
           <p className="text-[11px] text-text-muted mt-2 text-center">
-            Máximo de 7 por geração.
+            {maxSlides < 7
+              ? "No teste grátis, até 5 slides."
+              : `Máximo de ${maxSlides} por geração.`}
           </p>
         </div>
       )}
@@ -1630,6 +1676,7 @@ function Step3({
   saldo,
   onGerar,
   canFinish,
+  testeGratis,
 }: {
   formato: Formato
   comoCriar: ComoCriar
@@ -1657,6 +1704,8 @@ function Step3({
   onBack: () => void
   onGerar: () => void
   canFinish: boolean
+  /** Estado do teste grátis: troca custo em tokens pela regra por peça. */
+  testeGratis: EstadoTeste
 }) {
   const isPostUnico = formato.pageMode === "post-unico"
   const isLinkMode = comoCriar === "link"
@@ -1813,6 +1862,7 @@ function Step3({
               onChange={onImageChoice}
               slides={formato.slides}
               total={custoTokens}
+              ocultarPrecos={testeGratis.noTeste}
             />
           )}
 
@@ -1861,30 +1911,36 @@ function Step3({
             roda, só não debita. */}
         <div className="mt-1.5 flex items-center justify-between gap-3 text-[10px]">
           <span className="text-text-muted">
-            Custo:{" "}
-            <strong className="text-text-secondary tabular-nums">
-              até {custoTokens} tokens
-            </strong>
-            {saldo != null && (
+            {testeGratis.noTeste ? (
+              TEXTO_REGRA_TESTE
+            ) : (
               <>
-                {" · "}
-                <span className={semSaldo ? "text-danger" : "text-text-muted"}>
-                  Saldo: <span className="tabular-nums">{saldo}</span>
-                </span>
+                Custo:{" "}
+                <strong className="text-text-secondary tabular-nums">
+                  até {custoTokens} tokens
+                </strong>
+                {saldo != null && (
+                  <>
+                    {" · "}
+                    <span className={semSaldo ? "text-danger" : "text-text-muted"}>
+                      Saldo: <span className="tabular-nums">{saldo}</span>
+                    </span>
+                  </>
+                )}
+                {isPostUnico && (
+                  <span className="hidden sm:inline">
+                    {" "}
+                    · custa menos se a foto vier de acervo real
+                  </span>
+                )}
               </>
-            )}
-            {isPostUnico && (
-              <span className="hidden sm:inline">
-                {" "}
-                · custa menos se a foto vier de acervo real
-              </span>
             )}
           </span>
           <span className="text-text-muted shrink-0">
             {briefing.length} chars · Ctrl+Enter pra gerar
           </span>
         </div>
-        {semSaldo && (
+        {!testeGratis.noTeste && semSaldo && (
           <p className="mt-1 text-[11px] text-danger">
             Saldo insuficiente.{" "}
             <NextLink
@@ -2333,11 +2389,14 @@ function ImagemSeletor({
   onChange,
   slides,
   total,
+  ocultarPrecos,
 }: {
   choice: ImageChoice
   onChange: (v: ImageChoice) => void
   slides: number
   total: number
+  /** Teste grátis: a regra é por peça, não por token — esconde os preços. */
+  ocultarPrecos: boolean
 }) {
   const modo = imagemModo(choice)
   const miolo = Math.max(0, slides - 1)
@@ -2379,9 +2438,11 @@ function ImagemSeletor({
         <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
           Imagens geradas por IA
         </span>
-        <span className="font-mono text-[12px] font-semibold text-text-primary tabular-nums">
-          {total} tokens
-        </span>
+        {!ocultarPrecos && (
+          <span className="font-mono text-[12px] font-semibold text-text-primary tabular-nums">
+            {total} tokens
+          </span>
+        )}
       </div>
       <div role="radiogroup" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {opcoes.map((o) => {
@@ -2407,13 +2468,15 @@ function ImagemSeletor({
                 >
                   {o.label}
                 </span>
-                <span
-                  className={`font-mono text-[11px] tabular-nums ${
-                    ativo ? "text-brand-200" : "text-text-muted"
-                  }`}
-                >
-                  {o.custo} tk
-                </span>
+                {!ocultarPrecos && (
+                  <span
+                    className={`font-mono text-[11px] tabular-nums ${
+                      ativo ? "text-brand-200" : "text-text-muted"
+                    }`}
+                  >
+                    {o.custo} tk
+                  </span>
+                )}
               </span>
               <span className="text-[11px] leading-snug text-text-secondary">
                 {o.desc}

@@ -6,6 +6,8 @@ import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { getProfile, listBrands } from "@/lib/data/queries"
 import { getInitials } from "@/lib/brand-colors"
 import { getActiveBrandIdFromCookie } from "@/lib/active-brand"
+import { createClient } from "@/lib/supabase/server"
+import { lerEstadoTeste } from "@/lib/teste-gratis"
 import "./dashboard.css"
 import "./nova.css"
 
@@ -19,6 +21,8 @@ export default async function DashboardLayout({
     listBrands(),
     getActiveBrandIdFromCookie(),
   ])
+  // Conta na regra nova do teste grátis: o topo fala a regra dela (R4-3).
+  const testeGratis = await lerEstadoTeste(await createClient(), user.id)
 
   // Sem marca NÃO redireciona mais (decisão do Marcos, 10/09/2026): quem cria
   // conta cai direto no painel. O /onboarding (criar marca) abre pelo botão
@@ -75,6 +79,7 @@ export default async function DashboardLayout({
           referralCredits={profile?.referral_credits ?? 0}
           subscriptionStatus={profile?.subscription_status ?? "trial"}
           planId={profile?.plan_id ?? null}
+          testeGratis={testeGratis}
           mobileNav={
             <MobileNav
               activeBrandName={activeBrand?.name ?? null}

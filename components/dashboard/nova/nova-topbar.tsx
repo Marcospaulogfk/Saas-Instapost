@@ -19,6 +19,9 @@ import {
 import { signOut } from "@/app/actions/auth"
 import { TOKEN_COST } from "@/lib/tokens"
 
+import { TesteGratisChip } from "./teste-gratis-chip"
+import type { EstadoTeste } from "@/lib/teste-gratis-regra"
+
 interface NovaTopBarProps {
   mobileNav?: React.ReactNode
   userName: string
@@ -32,6 +35,8 @@ interface NovaTopBarProps {
   referralCredits?: number
   subscriptionStatus: string
   planId?: string | null
+  /** Conta na regra nova do teste grátis (por peça): troca o chip de uso. */
+  testeGratis?: EstadoTeste
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -76,6 +81,7 @@ export function NovaTopBar({
   referralCredits = 0,
   subscriptionStatus,
   planId,
+  testeGratis,
 }: NovaTopBarProps) {
   const router = useRouter()
   const planLabel = rotuloPlano(subscriptionStatus, planId, planCreditsMonthly)
@@ -92,18 +98,25 @@ export function NovaTopBar({
       {mobileNav}
 
       <div className="ml-auto flex items-center gap-2">
-        <UsageChip
-          credits={credits}
-          planCreditsMonthly={planCreditsMonthly}
-          creditsUsedThisMonth={creditsUsedThisMonth}
-          extras={extras}
-        />
-        <UsageChipCompact
-          credits={credits}
-          planCreditsMonthly={planCreditsMonthly}
-          creditsUsedThisMonth={creditsUsedThisMonth}
-          extras={extras}
-        />
+        {/* Conta na regra nova do grátis fala a regra dela, não "0/45". */}
+        {testeGratis?.noTeste ? (
+          <TesteGratisChip estado={testeGratis} />
+        ) : (
+          <>
+            <UsageChip
+              credits={credits}
+              planCreditsMonthly={planCreditsMonthly}
+              creditsUsedThisMonth={creditsUsedThisMonth}
+              extras={extras}
+            />
+            <UsageChipCompact
+              credits={credits}
+              planCreditsMonthly={planCreditsMonthly}
+              creditsUsedThisMonth={creditsUsedThisMonth}
+              extras={extras}
+            />
+          </>
+        )}
 
         {/* Busca (ainda placeholder — não há índice de busca no app) */}
         <button
@@ -234,7 +247,7 @@ function UsageChip({
   const used = Math.max(0, Math.min(total, creditsUsedThisMonth))
   const pct = Math.min(100, Math.round((used / total) * 100))
   const color = pct >= 95 ? "#f87171" : pct >= 80 ? "#f6c35a" : "var(--nv-brand)"
-  const title = `${used.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} créditos usados neste mês`
+  const title = `${used.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")} tokens usados neste mês`
   const restante = Math.max(0, total - used)
 
   return (

@@ -20,8 +20,8 @@ const FAQ = [
     a: 'A engine monta um roteiro de até 8 slides — gancho, desenvolvimento e CTA, 1 ideia por slide — e aplica um dos estilos visuais disponíveis com a paleta e o tom de voz da sua marca. Cada slide pode ser editado individualmente: texto, fonte, tamanho, posição e cores.',
   },
   {
-    q: 'Como funcionam os créditos e os planos?',
-    a: 'Cada plano inclui uma franquia mensal de imagens geradas por IA: Starter tem 50, Pro tem 200 e Studio tem 800. Os créditos renovam a cada ciclo de cobrança e não acumulam. Você acompanha o consumo em Configurações → Plano, e pode fazer upgrade a qualquer momento na página de planos.',
+    q: 'Como funcionam os tokens e os planos?',
+    a: 'Cada plano recarrega uma quantidade de tokens todo mês: Starter tem 300, Pro tem 1.000 e Studio tem 3.000. Os tokens do plano renovam a cada ciclo e a sobra não acumula; tokens avulsos e de indicação não vencem. No teste grátis você cria 1 carrossel de até 5 slides ou 3 posts únicos. Você acompanha o consumo na página Tokens e pode trocar de plano quando quiser na página de planos.',
   },
   {
     q: 'Como troco a marca ativa?',
@@ -37,7 +37,7 @@ const FAQ = [
   },
   {
     q: 'A geração de imagem falhou ou veio estranha. O que eu faço?',
-    a: 'Primeiro, tente gerar novamente — variações fazem parte do processo de IA. Se a imagem vier fora do estilo, refine o tema com mais contexto (ex.: cenário, clima, objeto principal) ou revise os dados de marca em "Marcas". Falhas repetidas de geração não consomem seus créditos; se persistirem, fale com o suporte.',
+    a: 'Primeiro, tente gerar novamente — variações fazem parte do processo de IA. Se a imagem vier fora do estilo, refine o tema com mais contexto (ex.: cenário, clima, objeto principal) ou revise os dados de marca em "Marcas". Falhas repetidas de geração não consomem seus tokens; se persistirem, fale com o suporte.',
   },
   {
     q: 'Como falo com o suporte?',

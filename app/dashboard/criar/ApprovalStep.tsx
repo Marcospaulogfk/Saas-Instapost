@@ -11,7 +11,9 @@ import {
   List,
   MessageSquareText,
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { eTesteEsgotado } from "@/lib/teste-gratis-regra"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { SkeletonContent } from "@/lib/single-posts/skeletons"
@@ -104,10 +106,18 @@ export function ApprovalStep({
       {!loading && error && (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
           <p className="text-sm text-destructive mb-4">{error}</p>
-          <Button variant="outline" onClick={onRegenerate}>
-            <RefreshCw className="w-4 h-4 mr-1.5" />
-            Tentar de novo
-          </Button>
+          {/* Teste esgotado: "Tentar de novo" só repetia o mesmo aviso. O
+              botão que resolve é o de assinar (R4-13). */}
+          {eTesteEsgotado(error) ? (
+            <Button asChild>
+              <Link href="/pricing">Ver planos</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={onRegenerate}>
+              <RefreshCw className="w-4 h-4 mr-1.5" />
+              Tentar de novo
+            </Button>
+          )}
         </div>
       )}
 
