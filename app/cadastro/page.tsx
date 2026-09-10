@@ -14,14 +14,17 @@ import { comOnboarding } from "@/lib/onboarding/rota"
 import "@/components/auth/auth.css"
 
 const schema = z.object({
-  name: z.string().min(2, "Informe seu nome"),
-  email: z.string().min(1, "Informe seu email").email("Email invalido"),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe seu nome"),
+  email: z.string().min(1, "Informe seu email").email("Email inválido"),
   password: z
     .string()
     .min(8, "A senha precisa ter pelo menos 8 caracteres")
-    .regex(/[0-9]/, "A senha precisa conter pelo menos 1 numero"),
+    .regex(/[0-9]/, "A senha precisa conter pelo menos 1 número"),
   acceptTerms: z.boolean().refine((v) => v === true, {
-    message: "Voce precisa aceitar os termos para continuar",
+    message: "Você precisa aceitar os termos para continuar",
   }),
 })
 type FormValues = z.infer<typeof schema>
