@@ -409,7 +409,7 @@ export function ProjectsList({
         <div>
           <h1 className="text-3xl font-bold">Biblioteca</h1>
           <p className="text-muted-foreground mt-1">
-            Todos os posts e carrosseis que voce ja criou.
+            Todos os posts e carrosséis que você já criou.
           </p>
         </div>
         {!isEmpty && (

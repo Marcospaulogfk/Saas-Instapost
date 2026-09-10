@@ -280,7 +280,10 @@ export function CarouselStyleCard({
                   e.stopPropagation()
                   setActive(i)
                 }}
-                className={`h-1.5 rounded-full transition-all ${
+                /* Área de clique real: 24x24 via pseudo-elemento absoluto (fora
+                   do fluxo), sem aumentar o pontinho visual nem empurrar o
+                   layout compacto do rodapé. */
+                className={`relative h-1.5 rounded-full transition-all after:absolute after:-inset-[9px] after:content-[''] ${
                   i === active
                     ? "w-4 bg-brand-500"
                     : "w-1.5 bg-text-subtle hover:bg-text-muted"

@@ -305,7 +305,11 @@ const BRIEFING_PLACEHOLDER_FALLBACK =
 function buildBriefingPlaceholder(brand: ActiveBrandLite | null): string {
   const nome = brand?.name?.trim()
   if (!brand || !nome) return BRIEFING_PLACEHOLDER_FALLBACK
-  const publico = brand.target_audience?.trim() || "seu público"
+  // Nunca interpola o texto de target_audience direto na frase: o campo pode
+  // ser um parágrafo inteiro e o placeholder tem que continuar curto e natural.
+  // "seu público" é o termo fixo e seguro para todas as variantes.
+  const publico = "o seu público"
+  const publicoSemArtigo = "seu público"
   // Sem objetivo definido mas com descrição → cai no tom "engajar" genérico.
   const primary =
     objetivosFromBrand(brand.main_objective)[0] ??
@@ -318,11 +322,11 @@ function buildBriefingPlaceholder(brand: ActiveBrandLite | null): string {
         : `Ex: o que ${publico} ganha ao escolher a ${nome} (e ninguém conta)`
     case "informar":
       return variante === 0
-        ? `Ex: o erro mais comum que ${publico} comete — e como evitar`
+        ? `Ex: o erro mais comum que ${publico} comete, e como evitar`
         : `Ex: guia rápido: o que ${publico} precisa saber antes de decidir`
     case "comunidade":
       return variante === 0
-        ? `Ex: pergunta pra ${publico}: qual o maior desafio de vocês hoje?`
+        ? `Ex: pergunta pro ${publicoSemArtigo}: qual o maior desafio de vocês hoje?`
         : `Ex: conta pra gente: o que faria ${publico} voltar sempre na ${nome}?`
     case "engajar":
       return variante === 0
@@ -459,7 +463,9 @@ function CriarWizard() {
   // pelo efeito abaixo — assim o botão voltar não sai do fluxo.
   function goToStep(s: StepId) {
     setStep(s)
-    router.push(`${pathname}?step=${s}`, { scroll: false })
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("step", String(s))
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   // Ref pro efeito ler o step atual sem entrar nas dependências (evita loop:
@@ -993,7 +999,9 @@ function CriarWizard() {
                   if (clickable) goToStep(s)
                 }}
                 disabled={!clickable}
-                className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-colors ${
+                /* py-2: altura clicável de pelo menos 32px (R4-22a), sem
+                   alterar o visual além do necessário pro alvo de toque. */
+                className={`flex items-center gap-1.5 py-2 text-xs sm:text-sm font-medium transition-colors ${
                   step === s
                     ? "text-brand-400"
                     : step > s

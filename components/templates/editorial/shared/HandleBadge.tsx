@@ -3,6 +3,7 @@
 import { Group, Rect, Text } from 'react-konva'
 import { EDITORIAL_FONTS } from '../editorial.config'
 import { measureTextWidth } from '../utils/measure-text'
+import { handleVisivel } from '@/lib/carousel/handle-visivel'
 
 interface HandleBadgeProps {
   handle: string
@@ -29,8 +30,9 @@ export function HandleBadge({
 }: HandleBadgeProps) {
   // Marca sem @ do Instagram: nada de pill com "@" solto ou marcador de
   // exemplo no post pronto (R4-10). O slide simplesmente não tem a linha.
-  if (!handle || !handle.replace(/^@+/, '').trim()) return null
-  const cleanHandle = handle.startsWith('@') ? handle : `@${handle}`
+  // handleVisivel também filtra marcador de exemplo gravado em peça antiga.
+  const cleanHandle = handleVisivel(handle)
+  if (!cleanHandle) return null
   const fontSize = 22
   const fontFamily = EDITORIAL_FONTS.bodyBold.family
   const handleWidth = measureTextWidth(cleanHandle, fontSize, fontFamily, '600')

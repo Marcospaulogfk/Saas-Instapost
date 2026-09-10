@@ -14,24 +14,24 @@ export function formatRelativeDate(iso: string): string {
   if (diff < minute) return "agora mesmo"
   if (diff < hour) {
     const v = Math.floor(diff / minute)
-    return `ha ${v} ${v === 1 ? "minuto" : "minutos"}`
+    return `há ${v} ${v === 1 ? "minuto" : "minutos"}`
   }
   if (diff < day) {
     const v = Math.floor(diff / hour)
-    return `ha ${v} ${v === 1 ? "hora" : "horas"}`
+    return `há ${v} ${v === 1 ? "hora" : "horas"}`
   }
   if (diff < week) {
     const v = Math.floor(diff / day)
-    return v === 1 ? "ontem" : `ha ${v} dias`
+    return v === 1 ? "ontem" : `há ${v} dias`
   }
   if (diff < month) {
     const v = Math.floor(diff / week)
-    return `ha ${v} ${v === 1 ? "semana" : "semanas"}`
+    return `há ${v} ${v === 1 ? "semana" : "semanas"}`
   }
   if (diff < year) {
     const v = Math.floor(diff / month)
-    return `ha ${v} ${v === 1 ? "mes" : "meses"}`
+    return `há ${v} ${v === 1 ? "mês" : "meses"}`
   }
   const v = Math.floor(diff / year)
-  return `ha ${v} ${v === 1 ? "ano" : "anos"}`
+  return `há ${v} ${v === 1 ? "ano" : "anos"}`
 }

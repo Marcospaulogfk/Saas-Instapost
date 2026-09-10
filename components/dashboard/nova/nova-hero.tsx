@@ -81,7 +81,9 @@ export function NovaHero({ greeting, name }: NovaHeroProps) {
             aria-label={`Ir para o slide ${i + 1}`}
             aria-current={i === slide}
             onClick={() => setSlide(i)}
-            className="h-1.5 rounded-full transition-all"
+            /* Área de clique de pelo menos 24x24 via pseudo-elemento absoluto,
+               sem mudar o visual do pontinho (R4-22c). */
+            className="relative h-1.5 rounded-full transition-all after:absolute after:-inset-[9px] after:content-['']"
             style={{
               width: i === slide ? 20 : 7,
               background: i === slide ? "var(--nv-brand-bright)" : "var(--nv-text-subtle)",

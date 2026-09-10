@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { createPortal } from "react-dom"
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -307,7 +308,8 @@ export default function CalendarioPage() {
                 key={f.id}
                 type="button"
                 onClick={() => setFilterStatus(ativo ? "todos" : f.id)}
-                className={`flex items-center gap-1.5 text-[13px] transition-colors ${
+                /* py-2: altura clicável de pelo menos 32px (R4-22b). */
+                className={`flex items-center gap-1.5 py-2 text-[13px] transition-colors ${
                   ativo
                     ? "text-text-primary font-semibold"
                     : "text-text-muted hover:text-text-secondary"
@@ -586,13 +588,19 @@ function Modal({
   title: string
   onClose: () => void
 }) {
-  return (
+  // Portal no <body> (rodada 6): o modal era `fixed` DENTRO da página, e um
+  // ancestral com animação de entrada (transform) faz o `fixed` virar relativo
+  // a ele. Resultado: nos dias das linhas de baixo o balão abria com o Salvar
+  // fora da tela (y=928 numa tela de 900) e a página não rolava. No body ele
+  // é relativo à janela de verdade, e o max-h com dvh garante que caiba.
+  if (typeof document === "undefined") return null
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl bg-background-tertiary border border-border-medium p-5 space-y-4 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md rounded-xl bg-background-tertiary border border-border-medium p-5 space-y-4 max-h-[calc(100dvh-2rem)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -603,7 +611,8 @@ function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

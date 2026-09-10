@@ -2,6 +2,7 @@
 
 import { Group, Text } from 'react-konva'
 import { EDITORIAL_SIZES, EDITORIAL_FONTS, CANVAS_CONFIG } from '../editorial.config'
+import { handleVisivel } from '@/lib/carousel/handle-visivel'
 
 interface EditorialHeaderProps {
   brandName: string
@@ -29,7 +30,8 @@ export function EditorialHeader({
   const leftText =
     mode === 'capa' ? brandName.toUpperCase() : `Powered by ${brandName.toUpperCase()}`
   const rightText = mode === 'capa' ? `${YEAR} ®` : `${YEAR} //`
-  const centerText = mode === 'standard' ? handle : null
+  // handleVisivel: sem @ ou com marcador de exemplo, o centro fica vazio (R4-10).
+  const centerText = mode === 'standard' ? handleVisivel(handle) || null : null
 
   return (
     <Group>

@@ -1,5 +1,6 @@
 "use client"
 
+import { handleVisivel } from "@/lib/carousel/handle-visivel"
 import {
   AvatarPill,
   Attribution,
@@ -61,7 +62,9 @@ export function CoverWesleyGemini({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-        <Pill>{slide.handle || "@brand"}</Pill>
+        {/* Sem @ (ou com marcador de exemplo gravado): some, e o span vazio
+            segura a categoria à direita (R4-10). */}
+        {handleVisivel(slide.handle) ? <Pill>{handleVisivel(slide.handle)}</Pill> : <span />}
         <Pill>{slide.category || "Editorial"}</Pill>
       </div>
 
@@ -136,7 +139,9 @@ export function CoverWesleyInternet({
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/15" />
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-        <Pill>{slide.handle || "@brand"}</Pill>
+        {/* Sem @ (ou com marcador de exemplo gravado): some, e o span vazio
+            segura a categoria à direita (R4-10). */}
+        {handleVisivel(slide.handle) ? <Pill>{handleVisivel(slide.handle)}</Pill> : <span />}
         <Pill>{slide.category || "Editorial"}</Pill>
       </div>
 
@@ -208,14 +213,17 @@ export function CoverWesleyLabios({
           a um gap fixo acima do título, independente do tamanho do título
           (antes eram blocos separados e o título longo encostava no handle). */}
       <div className="absolute left-6 right-6 z-10" style={{ bottom: "5rem" }}>
-        <div className="mb-6">
-          <AvatarPill
-            avatar={slide.handle_avatar}
-            handle={slide.handle || "@brand"}
-            initials={slide.handle_initials}
-            variant="light"
-          />
-        </div>
+        {/* Sem @ (ou marcador de exemplo gravado): a pílula some (R4-10). */}
+        {handleVisivel(slide.handle) && (
+          <div className="mb-6">
+            <AvatarPill
+              avatar={slide.handle_avatar}
+              handle={handleVisivel(slide.handle)}
+              initials={slide.handle_initials}
+              variant="light"
+            />
+          </div>
+        )}
         <div className="space-y-2.5">
           <FitText
             className={`text-[2rem] leading-[1.05] tracking-tight text-white ${fontClass}`}
@@ -269,7 +277,9 @@ export function CoverWesleyChurrasco({
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30" />
 
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-        <Pill>{slide.handle || "@brand"}</Pill>
+        {/* Sem @ (ou com marcador de exemplo gravado): some, e o span vazio
+            segura a categoria à direita (R4-10). */}
+        {handleVisivel(slide.handle) ? <Pill>{handleVisivel(slide.handle)}</Pill> : <span />}
         <Pill>{slide.category || "Editorial"}</Pill>
       </div>
 
@@ -412,7 +422,7 @@ export function CoverBrandsdecodedPortrait({
       <div className="relative z-10">
         <BrandsdecodedHeader
           left={slide.brand_label || slide.handle || ""}
-          center={slide.handle || "@brand"}
+          center={handleVisivel(slide.handle)}
           right={slide.year_label ?? "2026 //"}
           textColor="rgba(255,255,255,0.6)"
         />
@@ -474,7 +484,9 @@ export function CoverGradientGlow({
       />
 
       <div className="relative z-10 flex-shrink-0 px-5 pt-5 flex items-center justify-between">
-        <Pill>{slide.handle || "@brand"}</Pill>
+        {/* Sem @ (ou com marcador de exemplo gravado): some, e o span vazio
+            segura a categoria à direita (R4-10). */}
+        {handleVisivel(slide.handle) ? <Pill>{handleVisivel(slide.handle)}</Pill> : <span />}
         <Pill>{slide.category || "Viral"}</Pill>
       </div>
 
@@ -566,7 +578,7 @@ export function CoverMinimalClean({
     >
       {/* Header texto puro */}
       <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
-        <span data-edit="meta">{slide.handle || "@brand"}</span>
+        <span data-edit="meta">{handleVisivel(slide.handle)}</span>
         <span data-edit="meta">{slide.category || "Editorial"}</span>
       </div>
 
@@ -684,7 +696,7 @@ export function CoverSeamlessFlow({
       {/* Header */}
       <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
         <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold" data-edit="meta">
-          {slide.handle || "@brand"}
+          {handleVisivel(slide.handle)}
         </span>
         <span
           className="text-[10px] uppercase tracking-[0.18em] font-bold tabular-nums"
@@ -791,7 +803,7 @@ export function CoverCardsGlass({
         <div className="leading-tight">
           <div className="text-[13px] font-bold text-white" data-edit="meta">{brand}</div>
           <div className="text-[11px] text-white/70" data-edit="meta">
-            {slide.handle || "@brand"}
+            {handleVisivel(slide.handle)}
           </div>
         </div>
         <div className="text-[11px] uppercase tracking-[0.14em] font-semibold text-white/70" data-edit="meta">

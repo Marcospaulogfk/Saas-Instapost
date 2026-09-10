@@ -119,17 +119,19 @@ const BG_PRESETS: { label: string; value: string }[] = [
   { label: "Branco", value: "#FFFFFF" },
 ]
 
+// Rótulos iguais aos do passo 3 da criação (CAROUSEL_STYLES em
+// carousel-styles.ts): mesmo estilo, mesmo nome nas duas telas.
 const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
-  { value: "auto", label: "Auto (alternado)" },
-  { value: "wesley", label: "Wesley (dark/impacto)" },
-  { value: "brandsdecoded", label: "Revista (editorial)" },
-  { value: "bolo", label: "Bolo (lista cream)" },
-  { value: "mypostflow", label: "MyPostFlow" },
-  { value: "gradient", label: "Gradiente (dark/vibrante)" },
-  { value: "minimal", label: "Minimal (branco/clean)" },
-  { value: "seamless", label: "Seamless (panorâmico)" },
-  { value: "cards", label: "Cards (MyPostFlow)" },
-  { value: "perfil", label: "Perfil (post/tweet)" },
+  { value: "auto", label: "Automático" },
+  { value: "wesley", label: "Impacto" },
+  { value: "brandsdecoded", label: "Revista" },
+  { value: "bolo", label: "Lista Cream" },
+  { value: "mypostflow", label: "Chamada Final" },
+  { value: "gradient", label: "Gradiente" },
+  { value: "minimal", label: "Minimalista" },
+  { value: "seamless", label: "Seamless" },
+  { value: "cards", label: "Cards" },
+  { value: "perfil", label: "Perfil" },
 ]
 
 /** Propriedades do bloco selecionado — painel "Editar <tipo>" em abas, como o Elementor. */
@@ -603,7 +605,8 @@ export function CarouselEditor({
   initialTitle,
   caption,
   brandName,
-  handle = "@brand",
+  // Vazio, não "@brand": marcador de exemplo saía no post pronto (R4-10).
+  handle = "",
   initialAvatarInitials,
   initialChrome,
   colors: initialColors,

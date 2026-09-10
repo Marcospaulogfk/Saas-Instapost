@@ -30,11 +30,10 @@ export function TesteGratisChip({ estado }: { estado: EstadoTeste }) {
           className="nv-pill flex items-center gap-2 px-3 py-1.5"
         >
           <Gift className="h-3.5 w-3.5" style={{ color: cor }} />
+          {/* Sem fração (rodada 6): "3/3" depois de 1 carrossel era lido como
+              "3 de 3 posts". A pílula diz o estado; o detalhe fica no balão. */}
           <span className="text-[11px] font-medium" style={{ color: "var(--nv-text)" }}>
-            Teste grátis
-          </span>
-          <span className="hidden text-[11px] tabular-nums sm:inline" style={{ color: "var(--nv-text-subtle)" }}>
-            {usado}/{UNIDADES_TESTE}
+            {estado.esgotado ? "Teste grátis usado" : "Teste grátis"}
           </span>
         </button>
       </PopoverTrigger>

@@ -17,6 +17,7 @@ import {
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { BlockLayer } from "./block-layer"
+import { handleVisivel } from "@/lib/carousel/handle-visivel"
 import type { SlideBlock } from "./slide-blocks"
 import {
   applyElementOverrides,
@@ -181,7 +182,7 @@ function SlidePreviewImpl({
   fontClass,
   showDevBadges = true,
   editorialStyle = "auto",
-  handle = "@brand",
+  handle: handleBruto = "",
   handleAvatar,
   handleInitials,
   showDots = true,
@@ -197,6 +198,11 @@ function SlidePreviewImpl({
   bodyWeight,
   bodyScale,
 }: SlidePreviewProps) {
+  // Funil de TODO template DOM (R4-10): sem @ cadastrado, ou com marcador de
+  // exemplo gravado na peça ("@marca", "@brand"), o handle chega vazio e a
+  // linha some. Antes o padrão aqui era "@brand" e a marca sem @ saía com
+  // texto de exemplo no post pronto, inclusive nas peças já salvas.
+  const handle = handleVisivel(handleBruto)
   const typo =
     titleWeight != null || titleScale != null
       ? { weight: titleWeight, scale: titleScale }

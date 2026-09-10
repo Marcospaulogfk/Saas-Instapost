@@ -14,6 +14,7 @@ import { proxiedImageUrl } from "@/lib/proxy-image"
 import { fontClassById } from "./carousel-fonts"
 import { VerifiedBadge } from "./editorial-splits"
 import type { SlideBlock } from "./slide-blocks"
+import { handleVisivel } from "@/lib/carousel/handle-visivel"
 
 const TEXT_SHADOW = "0 2px 12px rgba(0,0,0,0.55)"
 const BOX_SHADOW = "0 10px 30px -8px rgba(0,0,0,0.6)"
@@ -143,7 +144,7 @@ function BlockBody({ block, fontClass }: { block: SlideBlock; fontClass?: string
       const ink = block.color ?? "#FFFFFF"
       const initials =
         block.initials?.trim() ||
-        block.handle.replace(/^@/, "").slice(0, 2).toUpperCase() ||
+        handleVisivel(block.handle).replace(/^@/, "").slice(0, 2).toUpperCase() ||
         "MP"
       const size = Math.max(24, Math.min(block.h, 64))
       return (
@@ -178,7 +179,7 @@ function BlockBody({ block, fontClass }: { block: SlideBlock; fontClass?: string
               {block.verified !== false && <VerifiedBadge size={Math.max(12, size * 0.32)} />}
             </div>
             <div className="truncate" style={{ fontSize: Math.max(10, size * 0.28), opacity: 0.75 }}>
-              {block.handle}
+              {handleVisivel(block.handle)}
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useContext } from "react"
+import { handleVisivel } from "@/lib/carousel/handle-visivel"
 import {
   Zap,
   Target,
@@ -281,7 +282,7 @@ export function SplitWesleyDark({
             <div className="mb-3">
               <AvatarPill
                 avatar={slide.handle_avatar}
-                handle={slide.handle || "@brand"}
+                handle={handleVisivel(slide.handle)}
                 initials={slide.handle_initials}
                 variant="transparent"
               />
@@ -638,7 +639,10 @@ export function SplitBoloCream({
       style={{ backgroundColor: cBg, color: cBody }}
     >
       <div className="px-4 pt-4 flex items-center justify-between flex-shrink-0">
-        <Pill variant="light">{slide.handle || "@brand"}</Pill>
+        {/* Sem @: a pílula some em vez de mostrar "@brand" (R4-10). */}
+        {handleVisivel(slide.handle) ? (
+          <Pill variant="light">{handleVisivel(slide.handle)}</Pill>
+        ) : null}
         <Pill variant="light">{slide.category || "Editorial"}</Pill>
       </div>
 
@@ -741,7 +745,7 @@ export function SplitMyPostFlowCta({
           )}
         </span>
         <span className="text-sm font-medium" data-edit="meta">
-          {slide.handle || "@brand"}
+          {handleVisivel(slide.handle)}
         </span>
       </div>
 
@@ -849,7 +853,7 @@ export function SplitGradientDark({
             <div className="mb-5">
               <AvatarPill
                 avatar={slide.handle_avatar}
-                handle={slide.handle || "@brand"}
+                handle={handleVisivel(slide.handle)}
                 initials={slide.handle_initials}
                 variant="transparent"
               />
@@ -985,7 +989,7 @@ export function SplitMinimalClean({
         className="px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold flex-shrink-0"
         style={{ color: cFaint }}
       >
-        <span data-edit="meta">{slide.handle || "@brand"}</span>
+        <span data-edit="meta">{handleVisivel(slide.handle)}</span>
       </div>
 
       {/* ZONA DE TEXTO — com imagem FIXA embaixo, o bloco inteiro ESCALA pra
@@ -1142,7 +1146,7 @@ export function SplitSeamlessFlow({
       {/* Header */}
       <div className="px-5 pt-4 flex items-center justify-between flex-shrink-0 z-10">
         <span className="text-[10px] uppercase tracking-[0.18em] text-white/80 font-semibold" data-edit="meta">
-          {slide.handle || "@brand"}
+          {handleVisivel(slide.handle)}
         </span>
         <span
           className="text-[10px] uppercase tracking-[0.18em] font-bold tabular-nums"
@@ -1372,7 +1376,7 @@ export function SplitCardsWhite({
             {brand}
           </div>
           <div className="text-[10px]" style={{ color: ct.faint }} data-edit="meta">
-            {slide.handle || "@brand"}
+            {handleVisivel(slide.handle)}
           </div>
         </div>
         <div

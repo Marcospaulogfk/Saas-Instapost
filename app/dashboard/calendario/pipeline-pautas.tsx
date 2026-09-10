@@ -158,7 +158,10 @@ export function PipelinePautas({
                           type="button"
                           onClick={() => remover(p.id)}
                           disabled={ocupado === p.id}
-                          className="text-text-muted hover:text-red-400 flex-shrink-0"
+                          /* Área de clique de 28x28 via pseudo-elemento absoluto
+                             (não empurra o layout do cartão) + ml-1.5 pra dar
+                             espaço visual em relação ao título. */
+                          className="relative ml-1.5 text-text-muted hover:text-red-400 flex-shrink-0 after:absolute after:-inset-2 after:content-['']"
                           aria-label="Remover pauta"
                         >
                           <Trash2 className="w-3 h-3" />

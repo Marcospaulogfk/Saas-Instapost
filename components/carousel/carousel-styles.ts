@@ -63,7 +63,7 @@ export const CAROUSEL_STYLES: CarouselStyleMeta[] = [
   },
   {
     style: "mypostflow",
-    name: "MyPostFlow",
+    name: "Chamada Final",
     desc: "Clean com CTA forte no último slide. Equilíbrio entre conteúdo e chamada pra ação.",
   },
   {

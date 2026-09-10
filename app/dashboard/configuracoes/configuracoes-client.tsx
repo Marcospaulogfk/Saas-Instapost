@@ -63,7 +63,7 @@ export function ConfiguracoesClient({
           <TabsTrigger value="conta">Conta</TabsTrigger>
           <TabsTrigger value="plano">Plano</TabsTrigger>
           <TabsTrigger value="integracao">Integração</TabsTrigger>
-          <TabsTrigger value="notificacoes">Notificacoes</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="perfil" className="space-y-6 pt-6">
@@ -83,7 +83,7 @@ export function ConfiguracoesClient({
           </section>
 
           <section className="rounded-xl border border-border-subtle bg-gradient-card backdrop-blur-xl p-6 space-y-4">
-            <h3 className="font-semibold">Informacoes pessoais</h3>
+            <h3 className="font-semibold">Informações pessoais</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nome">Nome</Label>
@@ -95,7 +95,7 @@ export function ConfiguracoesClient({
               </div>
             </div>
             <div className="flex justify-end">
-              <Button>Salvar alteracoes</Button>
+              <Button>Salvar alterações</Button>
             </div>
           </section>
         </TabsContent>
@@ -188,8 +188,8 @@ export function ConfiguracoesClient({
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Avisos de cobranca</p>
-                  <p className="text-xs text-muted-foreground">Alertas sobre faturas e renovacoes.</p>
+                  <p className="text-sm font-medium">Avisos de cobrança</p>
+                  <p className="text-xs text-muted-foreground">Alertas sobre faturas e renovações.</p>
                 </div>
                 <Switch defaultChecked />
               </div>
