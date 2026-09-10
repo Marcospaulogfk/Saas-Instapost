@@ -4,7 +4,6 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
-import { comOnboarding } from "@/lib/onboarding/rota"
 import { parsePrimeiroToqueCookie } from "@/lib/atribuicao/parse"
 
 const FT_COOKIE = "nx_ft"
@@ -77,7 +76,7 @@ export async function signUpWithPassword(
       // O redirect pós-confirmação passa PELA etapa de onboarding (objetivo
       // de uso) antes do destino real — signup direto (sem confirmação de
       // e-mail) faz o mesmo client-side, ver app/cadastro/page.tsx.
-      emailRedirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent(comOnboarding(next))}`,
+      emailRedirectTo: `${appOrigin()}/auth/confirm?next=${encodeURIComponent(next)}`,
       data: {
         ...(nome ? { full_name: nome } : {}),
         ...(refCode ? { ref_code: refCode } : {}),

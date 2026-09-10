@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import { NovaSidebar } from "@/components/dashboard/nova/nova-sidebar"
 import { NovaTopBar } from "@/components/dashboard/nova/nova-topbar"
 import { AssistenteBolha } from "@/components/dashboard/assistente-bolha"
@@ -21,8 +20,10 @@ export default async function DashboardLayout({
     getActiveBrandIdFromCookie(),
   ])
 
-  // Primeiro acesso (sem marca cadastrada) cai obrigatoriamente no onboarding.
-  if (brands.length === 0) redirect("/onboarding")
+  // Sem marca NÃO redireciona mais (decisão do Marcos, 10/09/2026): quem cria
+  // conta cai direto no painel. O /onboarding (criar marca) abre pelo botão
+  // "Criar marca" da barra lateral, e as telas que geram peça pedem a marca
+  // na hora (app/dashboard/criar/layout.tsx).
 
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   const displayName =

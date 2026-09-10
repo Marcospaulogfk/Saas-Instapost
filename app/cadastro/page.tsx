@@ -10,7 +10,6 @@ import { Check, Eye, EyeOff, Loader2, Mail } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
 import { AuthVisual, GoogleIcon } from "@/components/auth/auth-visual"
 import { signUpWithPassword, signInWithGoogle } from "@/app/actions/auth"
-import { comOnboarding } from "@/lib/onboarding/rota"
 import "@/components/auth/auth.css"
 
 const schema = z.object({
@@ -109,10 +108,11 @@ export default function CadastroPage() {
       if (result.needsConfirmation) {
         setSubmittedEmail(values.email)
       } else {
-        // Sem confirmação de e-mail: a sessão já existe agora, então a etapa
-        // de onboarding (objetivo de uso) entra ANTES do destino real — o
-        // fluxo com confirmação faz o mesmo via emailRedirectTo (app/actions/auth.ts).
-        router.push(comOnboarding(nextPath))
+        // Sem confirmação de e-mail: a sessão já existe agora e a pessoa vai
+        // DIRETO pro destino (painel, ou o checkout se veio da /pricing).
+        // Sem /comecar e sem /onboarding no caminho (decisão do Marcos,
+        // 10/09/2026): criar marca é escolha, aberta pelo botão do painel.
+        router.push(nextPath)
         router.refresh()
       }
     } else {
