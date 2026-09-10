@@ -28,6 +28,13 @@ function translateAuthError(message: string): string {
   if (m.includes("user not found")) return "Email nao encontrado."
   if (m.includes("network") || m.includes("fetch failed"))
     return "Falha de conexao. Verifique sua internet."
+  // Falha do NOSSO envio de e-mail (SMTP recusou, 10/09/2026: "535
+  // Authentication credentials invalid"). O Supabase desfaz o cadastro
+  // inteiro quando o e-mail de confirmação não sai, então a conta NÃO fica
+  // criada. "Tente de novo em alguns segundos" mandava a pessoa repetir algo
+  // que ia falhar igual, e escondia o problema de nós.
+  if (m.includes("sending confirmation") || m.includes("confirmation email") || m.includes("smtp"))
+    return "Não conseguimos enviar o e-mail de confirmação agora, então a conta não foi criada. O problema é nosso, não seu: tente em alguns minutos, entre com o Google, ou fale com contato@nexuscontentai.com.br."
   return "Algo deu errado. Tente novamente em alguns segundos."
 }
 
@@ -78,7 +85,12 @@ export async function signUpWithPassword(
       },
     },
   })
-  if (error) return { ok: false, error: translateAuthError(error.message) }
+  if (error) {
+    // A tela mostra a tradução; o log guarda o erro CRU. Sem isto, a falha de
+    // SMTP de 10/09/2026 só apareceu abrindo o log de Auth do Supabase.
+    console.error("[auth/signUp] erro do Supabase:", error.status, error.code, error.message)
+    return { ok: false, error: translateAuthError(error.message) }
+  }
   return { ok: true, needsConfirmation: !data.session }
 }
 
