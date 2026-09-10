@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { IntegracaoClient, type ChaveListada } from "./integracao-client"
 
 interface ConfiguracoesClientProps {
   name: string
@@ -20,6 +21,10 @@ interface ConfiguracoesClientProps {
   tokensMonthly: number
   /** Saldo atual de tokens. */
   tokensBalance: number
+  /** Chaves de integração ativas da conta (aba Integração). */
+  chaves: ChaveListada[]
+  /** Base absoluta usada nos exemplos de chamada da aba Integração. */
+  baseUrl: string
 }
 
 export function ConfiguracoesClient({
@@ -29,6 +34,8 @@ export function ConfiguracoesClient({
   tokensUsed,
   tokensMonthly,
   tokensBalance,
+  chaves,
+  baseUrl,
 }: ConfiguracoesClientProps) {
   const pct =
     tokensMonthly > 0 ? Math.min(100, (tokensUsed / tokensMonthly) * 100) : 0
@@ -55,6 +62,7 @@ export function ConfiguracoesClient({
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="conta">Conta</TabsTrigger>
           <TabsTrigger value="plano">Plano</TabsTrigger>
+          <TabsTrigger value="integracao">Integração</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificacoes</TabsTrigger>
         </TabsList>
 
@@ -154,6 +162,10 @@ export function ConfiguracoesClient({
               </Button>
             </div>
           </section>
+        </TabsContent>
+
+        <TabsContent value="integracao" className="pt-6">
+          <IntegracaoClient chaves={chaves} baseUrl={baseUrl} />
         </TabsContent>
 
         <TabsContent value="notificacoes" className="space-y-6 pt-6">

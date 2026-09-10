@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { resolverDono } from "@/lib/websync/dono"
-import { dataValida } from "@/lib/calendario/agenda"
-import { CAMPOS_PAUTA, montarItens, type PautaRow } from "@/lib/calendario/itens"
-import { erroJson, pedidoRuim } from "@/lib/calendario/resposta"
+import { listarCalendario } from "@/lib/calendario/operacoes"
+import { erroJson } from "@/lib/calendario/resposta"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -25,11 +24,13 @@ export const dynamic = "force-dynamic"
 // chamando máquina, sem cookie de sessão). Mesmo segredo e mesmo guard de dono
 // do POST e do /status — a service_role enxerga brands de clientes, e devolver
 // o calendário de peça alheia é vazamento.
+//
+// A regra do calendário em si mora em lib/calendario/operacoes.ts, dividida
+// com /api/v1/calendario (a mesma coisa, autenticada por chave de conta).
+// Aqui fica só o segredo do webhook e o guard de dono.
 // =====================================================================
 
 const SECRET_HEADER = "x-websync-secret"
-const MAX_ITENS = 200
-const MAX_DIAS = 120
 
 export async function GET(req: Request) {
   const expected = process.env.WEBSYNC_WEBHOOK_SECRET
@@ -43,84 +44,17 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url)
-  const de = (url.searchParams.get("de") ?? "").trim()
-  const ate = (url.searchParams.get("ate") ?? "").trim()
-  const brandFiltro = (url.searchParams.get("brand") ?? "").trim()
-
-  if (!dataValida(de) || !dataValida(ate)) {
-    return pedidoRuim("periodo_invalido", "informe ?de=YYYY-MM-DD&ate=YYYY-MM-DD")
-  }
-  if (de > ate) {
-    return pedidoRuim("periodo_invalido", "'de' é depois de 'ate'")
-  }
-  const dias =
-    (Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86400000 + 1
-  if (dias > MAX_DIAS) {
-    return pedidoRuim(
-      "periodo_longo",
-      `período de no máximo ${MAX_DIAS} dias (vieram ${dias})`,
-    )
-  }
-
   const admin = createAdminClient()
   const dono = await resolverDono(admin)
   if (!dono.ok) return erroJson(409, "dono_indefinido", dono.motivo)
 
-  const { data: brands, error: brandsError } = await admin
-    .from("brands")
-    .select("id, name")
-    .eq("user_id", dono.ownerId)
-  if (brandsError) {
-    console.error("[websync-os/calendario] falha ao ler brands:", brandsError.message)
-    return erroJson(500, "falha_interna", "falha ao ler as marcas")
-  }
-
-  const marcas = new Map<string, string | null>()
-  for (const b of brands ?? []) marcas.set(b.id, b.name ?? null)
-
-  // Filtro por marca só vale pra marca DO DONO: pedir a de um cliente devolve
-  // vazio, não erro — o CRM não precisa saber que aquele id existe.
-  let brandIds = [...marcas.keys()]
-  if (brandFiltro) brandIds = brandIds.filter((id) => id === brandFiltro)
-
-  if (brandIds.length === 0) {
-    return NextResponse.json({
-      ok: true,
-      periodo: { de, ate },
-      total: 0,
-      teto: MAX_ITENS,
-      itens: [],
-    })
-  }
-
-  const {
-    data: pautas,
-    error,
-    count,
-  } = await admin
-    .from("scheduled_posts")
-    .select(CAMPOS_PAUTA, { count: "exact" })
-    .in("brand_id", brandIds)
-    .gte("scheduled_date", de)
-    .lte("scheduled_date", ate)
-    .order("scheduled_date", { ascending: true })
-    .order("scheduled_time", { ascending: true, nullsFirst: true })
-    .limit(MAX_ITENS)
-
-  if (error) {
-    console.error("[websync-os/calendario] falha ao ler pautas:", error.message)
-    return erroJson(500, "falha_interna", "falha ao ler o calendário")
-  }
-
-  const itens = await montarItens(admin, (pautas ?? []) as PautaRow[], marcas)
-
-  // `total` é do PERÍODO, não da página: é o que deixa o CRM saber que bateu no
-  // teto em vez de paginar às cegas.
-  return NextResponse.json({
-    ok: true,
-    periodo: { de, ate },
-    total: count ?? itens.length,
-    teto: MAX_ITENS,
-    itens,
+  const res = await listarCalendario(admin, dono.ownerId, {
+    de: url.searchParams.get("de") ?? "",
+    ate: url.searchParams.get("ate") ?? "",
+    brand: url.searchParams.get("brand") ?? "",
   })
+  if (!res.ok) {
+    return erroJson(res.falha.status, res.falha.erro, res.falha.motivo, res.falha.extra)
+  }
+  return NextResponse.json(res.valor)
 }

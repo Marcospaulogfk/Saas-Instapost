@@ -23,6 +23,12 @@ const PROTECTED_PREFIXES = [
 // Allowlist em vez de denylist: rota nova nasce protegida.
 const PUBLIC_API_PREFIXES = [
   "/api/webhooks", // chamado por provedor externo (Asaas, WebSync OS); valida segredo próprio
+  // API de máquina por CONTA: sem cookie de sessão, autenticada pela chave
+  // (Authorization: Bearer nxc_live_...) em lib/chaves-api/autenticar.ts, que
+  // é também quem resolve de quem é a conta. Rota nova dentro de /api/v1 NASCE
+  // aberta ao middleware: cada handler começa chamando autenticar() — sem essa
+  // chamada, a rota fica pública de verdade.
+  "/api/v1",
   "/api/proxy-image", // proxy de imagem, já limitado por allowlist de host
   "/api/cron", // jobs agendados; valida CRON_SECRET no header
   // Callbacks da Meta (desautorização e exclusão de dados): sem sessão, a

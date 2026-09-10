@@ -2,11 +2,10 @@ import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { resolverDono } from "@/lib/websync/dono"
 import {
-  agendarGeracao,
-  lerImagensCrm,
-  lerBuscasCrm,
-  type ResultadoAgendamento,
-} from "@/lib/websync/gerar-arte"
+  criarPautas,
+  MAX_PAUTAS_POR_LOTE,
+  type PautaRecebida,
+} from "@/lib/calendario/operacoes"
 
 export const runtime = "nodejs"
 // Só importa quando algum item do lote pede `gerar: true` (a geração em si
@@ -37,44 +36,16 @@ export const maxDuration = 300
 // existente como 'ja_existia' pro worker poder carimbar o espelho.
 //
 // Geração automática (01/09/2026): `gerar: true` num item pede pra este
-// endpoint TAMBÉM agendar a arte (delega pra lib/websync/gerar-arte.ts —
-// mesmo motor de /gerar/route.ts). `imagens`/`buscas` são as fotos e termos
+// endpoint TAMBÉM agendar a arte. `imagens`/`buscas` são as fotos e termos
 // de busca que o CRM já escolheu por slide. O campo `arte` na resposta é o
 // desfecho do agendamento; a geração de fato roda em after(), depois desta
 // resposta ir embora.
+//
+// A criação em si mora em lib/calendario/operacoes.ts, dividida com
+// POST /api/v1/calendario (a mesma coisa, autenticada por chave de conta).
 // =====================================================================
 
 const SECRET_HEADER = "x-websync-secret"
-const MAX_POSTS = 20
-
-const FORMATOS = new Set(["post", "carrossel", "stories", "reels"])
-const OBJETIVOS = new Set(["sell", "inform", "engage", "community"])
-
-interface PostRecebido {
-  ref?: string
-  brand_id?: string
-  marca?: string
-  titulo?: string
-  descricao?: string | null
-  formato?: string
-  objetivo?: string
-  data_sugerida?: string
-  /** Pede a geração automática da arte (a Ponte, 01/09/2026). */
-  gerar?: boolean
-  /** Foto que o CRM já escolheu por slide (1-based). Shape cru — validado por lerImagensCrm. */
-  imagens?: unknown
-  /** Termo de busca visual por slide (1-based); o do slide 1 vira prompt da capa. Cru — validado por lerBuscasCrm. */
-  buscas?: unknown
-}
-
-interface ResultadoItem {
-  ref: string
-  resultado: "criado" | "ja_existia" | "brand_nao_encontrada" | "invalido"
-  id?: string
-  motivo?: string
-  /** Desfecho do agendamento de geração — só presente quando `gerar: true` veio no item. */
-  arte?: ResultadoAgendamento
-}
 
 export async function POST(req: Request) {
   // 1) Validação do secret ------------------------------------------------
@@ -93,20 +64,22 @@ export async function POST(req: Request) {
   }
 
   // 2) Parse do payload ---------------------------------------------------
-  let corpo: { posts?: PostRecebido[] }
+  let corpo: { posts?: PautaRecebida[] }
   try {
-    corpo = (await req.json()) as { posts?: PostRecebido[] }
+    corpo = (await req.json()) as { posts?: PautaRecebida[] }
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 })
   }
-  const posts = Array.isArray(corpo.posts) ? corpo.posts.slice(0, MAX_POSTS) : []
+  const posts = Array.isArray(corpo.posts)
+    ? corpo.posts.slice(0, MAX_PAUTAS_POR_LOTE)
+    : []
   if (posts.length === 0) {
     return NextResponse.json({ ok: true, resultados: [] })
   }
 
-  // 3) Os ids de brand DO DONO, uma consulta só ---------------------------
+  // 3) Quem é o dono ------------------------------------------------------
   // Filtrado por dono, e não é paranoia: este projeto tem brands de clientes.
-  // Um brand_id errado (vínculo velho, id digitado à mão) sem este filtro
+  // Um brand_id errado (vínculo velho, id digitado à mão) sem esse filtro
   // publicaria a pauta do Marcos no calendário editorial de outra empresa,
   // sem erro nenhum na hora.
   const admin = createAdminClient()
@@ -114,99 +87,13 @@ export async function POST(req: Request) {
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }
-  const { data: brands, error: brandsError } = await admin
-    .from("brands")
-    .select("id")
-    .eq("user_id", dono.ownerId)
-  if (brandsError) {
-    console.error("[websync-os] falha ao ler brands:", brandsError.message)
-    return NextResponse.json({ error: "falha ao ler brands" }, { status: 500 })
-  }
-  const existem = new Set((brands ?? []).map((b) => b.id))
 
   // 4) Um resultado por item; item ruim não derruba o lote ----------------
-  const resultados: ResultadoItem[] = []
-  for (const p of posts) {
-    const ref = typeof p.ref === "string" ? p.ref : ""
-    if (!ref || !p.titulo || !p.brand_id) {
-      resultados.push({
-        ref: ref || "sem_ref",
-        resultado: "invalido",
-        motivo: "ref, titulo e brand_id são obrigatórios",
-      })
-      continue
-    }
-
-    const brandId = p.brand_id
-    if (!existem.has(brandId)) {
-      resultados.push({
-        ref,
-        resultado: "brand_nao_encontrada",
-        motivo: `a brand ${brandId}${p.marca ? ` (marca ${p.marca})` : ""} não existe aqui, ou não é sua. Revincule na tela de Marcas do CRM.`,
-      })
-      continue
-    }
-
-    // Idempotência: mesmo título na mesma brand devolve o existente.
-    const { data: existente } = await admin
-      .from("scheduled_posts")
-      .select("id")
-      .eq("brand_id", brandId)
-      .eq("title", p.titulo.slice(0, 200))
-      .limit(1)
-      .maybeSingle()
-    if (existente) {
-      const item: ResultadoItem = { ref, resultado: "ja_existia", id: existente.id }
-      if (p.gerar) {
-        item.arte = await agendarGeracao(admin, dono.ownerId, existente.id, {
-          imagens: lerImagensCrm(p.imagens),
-          buscas: lerBuscasCrm(p.buscas),
-        })
-      }
-      resultados.push(item)
-      continue
-    }
-
-    const dataSugerida = /^\d{4}-\d{2}-\d{2}$/.test(p.data_sugerida ?? "")
-      ? (p.data_sugerida as string)
-      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-
-    const { data: criado, error: insertError } = await admin
-      .from("scheduled_posts")
-      .insert({
-        brand_id: brandId,
-        title: p.titulo.slice(0, 200),
-        // 4000 desde 24/08/2026: a copy do CRM passou a vir com slides densos
-        // (titulo + corpo por argumento) e o pior caso dela chega a ~3000. A
-        // coluna e text; o corte e defensivo contra payload malformado.
-        description: p.descricao ? String(p.descricao).slice(0, 4000) : null,
-        format: FORMATOS.has(p.formato ?? "") ? p.formato : "post",
-        objective: OBJETIVOS.has(p.objetivo ?? "") ? p.objetivo : "inform",
-        scheduled_date: dataSugerida,
-        status: "ideia",
-        source: "ia",
-      })
-      .select("id")
-      .single()
-
-    if (insertError || !criado) {
-      console.error("[websync-os] insert falhou:", insertError?.message)
-      resultados.push({
-        ref,
-        resultado: "invalido",
-        motivo: insertError?.message?.slice(0, 200) ?? "insert falhou",
-      })
-      continue
-    }
-    const item: ResultadoItem = { ref, resultado: "criado", id: criado.id }
-    if (p.gerar) {
-      item.arte = await agendarGeracao(admin, dono.ownerId, criado.id, {
-        imagens: lerImagensCrm(p.imagens),
-        buscas: lerBuscasCrm(p.buscas),
-      })
-    }
-    resultados.push(item)
+  const res = await criarPautas(admin, dono.ownerId, posts)
+  if (!res.ok) {
+    return NextResponse.json({ error: res.falha.motivo }, { status: res.falha.status })
   }
+  const resultados = res.valor
 
   const criados = resultados.filter((r) => r.resultado === "criado").length
   console.log(

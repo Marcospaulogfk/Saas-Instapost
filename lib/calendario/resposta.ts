@@ -24,6 +24,10 @@ export type CodigoErro =
   | "nao_configurado"
   | "nao_autorizado"
   | "dono_indefinido"
+  // chave de integração por conta (/api/v1/*, 10/09/2026)
+  | "chave_ausente"
+  | "chave_invalida"
+  | "limite_excedido"
   // formato do pedido
   | "json_invalido"
   | "periodo_invalido"
