@@ -10,6 +10,7 @@ import {
   CAROUSEL_STYLES,
   CarouselStyleCard,
 } from "@/components/carousel/carousel-style-gallery"
+import { MyTemplatesSection } from "@/components/carousel/my-templates-section"
 
 // Categorias reais derivadas do catálogo (ordem estável).
 const CATEGORY_ORDER = [
@@ -65,6 +66,8 @@ export default function TemplatesPage() {
           className="pl-9 max-w-md"
         />
       </div>
+
+      <MyTemplatesSection />
 
       {/* Estilos de carrossel */}
       {filteredStyles.length > 0 && (

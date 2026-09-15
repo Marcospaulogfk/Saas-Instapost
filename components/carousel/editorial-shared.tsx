@@ -40,8 +40,64 @@ export const SlideChromeContext = createContext<SlideChrome>({
   showVerified: true,
   showFooter: true,
 })
+
+// Estilo por trecho destacado do título (barrinha da edição direta): cor própria
+// e/ou marca-texto em degradê. Chave = trecho em minúsculas (o mesmo texto de
+// highlight_words). Vai por CONTEXT (provido pelo SlidePreview) pelo mesmo motivo
+// dos outros: os Highlighted* são usados em dezenas de pontos dos templates.
+export interface HighlightStyle {
+  color?: string
+  bg?: string
+}
+export const HighlightStyleContext = createContext<Record<string, HighlightStyle> | null>(null)
+
+// Colagem no espaço da foto principal (2–4 fotos em grade). Vai por CONTEXT
+// pelo mesmo motivo do ImageTransform: o SmartSlideImage da foto principal é
+// chamado de ~19 pontos dos templates de capa/split, e a colagem só troca o
+// QUE aparece ali (nunca muda a assinatura desses ~19 call sites). Só afeta a
+// chamada cujo `src` é a foto principal (`mainUrl`) — outras fotos do slide
+// (extra_images, splits de comparação) passam direto, sem colagem.
+export interface SlideImageCollage {
+  mainUrl: string | null
+  images: string[]
+  layout: CollageLayout
+}
+export const SlideImageCollageContext = createContext<SlideImageCollage | null>(null)
+
+/** Layout padrão pela contagem de fotos (usuário pode escolher outro depois). */
+export function defaultCollageLayout(count: number): CollageLayout {
+  return count >= 4 ? "4" : count === 3 ? "3" : "2h"
+}
+
+/** O layout escolhido ainda faz sentido pra essa contagem? (ex.: usuário
+ *  escolheu "2v" com 2 fotos, depois ACRESCENTOU uma 3ª — "2v" tem só 2
+ *  células, a 3ª foto cairia numa linha implícita de 0px e "sumiria"). */
+export function isValidCollageLayout(layout: CollageLayout, count: number): boolean {
+  if (count >= 4) return layout === "4"
+  if (count === 3) return layout === "3"
+  return layout === "2h" || layout === "2v"
+}
+
+/** Marca-texto em degradê atrás do trecho (vazio se o trecho não tem fundo). */
+function highlightBg(s: HighlightStyle | undefined): CSSProperties {
+  if (!s?.bg) return {}
+  // `bg` é uma cor sólida (mistura com branco pra virar um degradê sutil,
+  // comportamento de sempre) OU já um `linear-gradient(...)` pronto, escolhido
+  // na barrinha (2-3 degradês prontos) — usado direto, sem mistura.
+  const isGradient = s.bg.startsWith("linear-gradient(")
+  return {
+    backgroundImage: isGradient
+      ? s.bg
+      : `linear-gradient(100deg, ${s.bg} 0%, ${mixWithWhite(s.bg, 0.45)} 100%)`,
+    borderRadius: "0.12em",
+    padding: "0 0.14em",
+    WebkitBoxDecorationBreak: "clone",
+    boxDecorationBreak: "clone",
+  }
+}
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { isLightColor } from "@/lib/color-contrast"
+import type { CollageLayout } from "./editable-overrides"
 
 // ============================================================================
 // splitTheme — paleta de contraste derivada de um FUNDO custom (slide.bg).
@@ -239,19 +295,20 @@ export const PHOTO_FOCUS = "50% 20%"
 // aplica o style inline ANTES do export, o html-to-image copia o computed
 // style — então a exportação sai igual ao preview.
 // ============================================================================
-// Proporção (w/h) a partir da qual a imagem é "larga demais" pra um quadro
-// retrato. WORDMARK = logo/wordmark (jamais usar como imagem — some). WIDE =
-// foto panorâmica (ainda é foto real → contain, aparece inteira).
-const WIDE_RATIO = 1.7
-const WORDMARK_RATIO = 2.4
+// Proporção (w/h) a partir da qual a imagem é "extremamente larga" → contain,
+// aparece inteira com faixa. Até isso (paisagem comum 16:9, 1800×800…) COBRE o
+// espaço da foto. Imagem de slide é sempre do usuário (ou escolhida pra ele):
+// NUNCA some, por mais larga que seja (ex.: PNG 503×101).
+const WIDE_RATIO = 2.4
 
-type FitMode = "cover" | "contain" | "hidden"
+type FitMode = "cover" | "contain"
 
 export function SmartSlideImage({
   src,
   className = "",
   focus = PHOTO_FOCUS,
   containBg = "rgba(0,0,0,0.28)",
+  fill = false,
 }: {
   /** URL da imagem (já garantida != null pelo caller). */
   src: string
@@ -261,17 +318,31 @@ export function SmartSlideImage({
   focus?: string
   /** Fundo atrás da imagem no modo contain. */
   containBg?: string
+  /** Área full-bleed (capa): foto larga PREENCHE (cover), nunca sobra faixa. */
+  fill?: boolean
 }) {
   const [mode, setMode] = useState<FitMode>("cover")
   // Transform editável (posição/zoom) do slide atual, se houver.
   const t = useContext(ImageTransformContext)
+  // Colagem (2–4 fotos) na foto PRINCIPAL do slide: troca o <img> único por
+  // uma grade. Só entra quando este é o SmartSlideImage da foto principal
+  // (src === mainUrl) — as outras chamadas (extra_images, comparação) não
+  // têm colagem e continuam mostrando sua própria foto normalmente.
+  const collage = useContext(SlideImageCollageContext)
+  if (collage && collage.images.length >= 2 && src === collage.mainUrl) {
+    return <CollageGrid images={collage.images} layout={collage.layout} className={className} />
+  }
+  // Capa (fill) ou enquadramento manual do usuário → sempre cover: no contain
+  // o zoom/posição não têm efeito e a foto "voltava" ao tamanho original.
+  // Na capa isso vale até pra imagem muito larga (ex.: PNG 503×101): escala
+  // pra cobrir.
+  const fit: FitMode = mode === "contain" && (fill || t) ? "cover" : mode
   const decide = (w: number, h: number) => {
     if (!w || !h) return
-    const r = w / h
-    // REGRA: JAMAIS usar wordmark/logo como imagem. Se a imagem for larga
-    // demais (proporção de wordmark), ela é ESCONDIDA — o slide fica só com o
-    // fundo (limpo) em vez de exibir a logo esticada/irreconhecível.
-    setMode(r > WORDMARK_RATIO ? "hidden" : r > WIDE_RATIO ? "contain" : "cover")
+    // Antes, proporção > 2,4 era tratada como logo e ESCONDIDA — o slide de
+    // conteúdo ficava com um bloco cinza. Agora ela = contain (inteira);
+    // abaixo disso, cover.
+    setMode(w / h > WIDE_RATIO ? "contain" : "cover")
   }
   const measure = (img: HTMLImageElement | null) => {
     if (img?.complete) decide(img.naturalWidth, img.naturalHeight)
@@ -289,30 +360,74 @@ export function SmartSlideImage({
         data-edit="image"
         onLoad={(e) => decide(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
         style={
-          mode === "contain"
+          fit === "contain"
             ? { objectFit: "contain", objectPosition: "center", background: containBg }
-            : mode === "hidden"
-              ? { opacity: 0 } // wordmark: não mostra (mas carrega pra medir)
-              : {
-                  objectFit: "cover",
-                  // posição/zoom do usuário (se setados) sobrepõem o PHOTO_FOCUS
-                  objectPosition: t ? `${t.posX}% ${t.posY}%` : focus,
-                  transform:
-                    t && t.zoom !== 100 ? `scale(${t.zoom / 100})` : undefined,
-                  transformOrigin: "center",
-                }
+            : {
+                objectFit: "cover",
+                // posição/zoom do usuário (se setados) sobrepõem o PHOTO_FOCUS
+                objectPosition: t ? `${t.posX}% ${t.posY}%` : focus,
+                transform:
+                  t && t.zoom !== 100 ? `scale(${t.zoom / 100})` : undefined,
+                transformOrigin: "center",
+              }
         }
       />
-      {mode === "hidden" && (
-        <div
-          className={className}
-          style={{
-            background:
-              "radial-gradient(ellipse at 50% 25%, rgba(22,104,227,0.16), rgba(10,10,15,0.85))",
-          }}
-        />
-      )}
     </>
+  )
+}
+
+// ============================================================================
+// CollageGrid — grade de 2 a 4 fotos no MESMO espaço da foto principal.
+// `className` é o mesmo tamanho/posição que a foto única receberia (ex.:
+// "absolute inset-0 w-full h-full") — a grade PREENCHE esse espaço; cada
+// célula cobre a própria foto (sem letterbox). Gap mínimo (3px) só pra
+// separar visualmente as fotos, sem parecer 4 cartões soltos.
+// ============================================================================
+const COLLAGE_GRID_CLASS: Record<CollageLayout, string> = {
+  "2h": "grid-cols-2 grid-rows-1",
+  "2v": "grid-cols-1 grid-rows-2",
+  "3": "grid-cols-2 grid-rows-2",
+  "4": "grid-cols-2 grid-rows-2",
+}
+
+function collageTileClass(layout: CollageLayout, i: number): string {
+  // Layout "3": a primeira foto ocupa as duas linhas (grande + 2 pequenas).
+  return layout === "3" && i === 0 ? "row-span-2" : ""
+}
+
+function CollageGrid({
+  images,
+  layout,
+  className,
+}: {
+  images: string[]
+  layout: CollageLayout
+  className: string
+}) {
+  const shown = images.slice(0, 4)
+  // `layout` pode ser (a) um valor persistido antigo/inválido (JSONB, sem
+  // checagem de tipo em runtime) ou (b) uma escolha válida mas pra OUTRA
+  // contagem (usuário escolheu "2v" com 2 fotos, depois acrescentou uma 3ª —
+  // "2v" só define 2 células). Nos dois casos, sem grid-cols/rows certos pra
+  // contagem ATUAL, a célula extra cai numa linha implícita de 0px (só um
+  // <img> absoluto dentro, sem altura própria) e a foto "some" (fica preta).
+  const safeLayout: CollageLayout = isValidCollageLayout(layout, shown.length)
+    ? layout
+    : defaultCollageLayout(shown.length)
+  return (
+    <div className={`grid gap-[3px] ${COLLAGE_GRID_CLASS[safeLayout]} ${className}`}>
+      {shown.map((url, i) => (
+        <div key={i} className={`relative overflow-hidden ${collageTileClass(safeLayout, i)}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={proxiedImageUrl(url)}
+            alt=""
+            data-edit="image"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -383,13 +498,13 @@ export function Pill({
 }
 
 // ============================================================================
-// AvatarPill — pill com avatar circular à esquerda + handle
+// AvatarPill — pill só com o @handle. O círculo do avatar (foto ou 2 letras do
+// @) saiu do post inteiro por decisão do Marcos; avatar/initials seguem
+// aceitos só pra não quebrar quem chama.
 // ============================================================================
 
 export function AvatarPill({
-  avatar,
   handle,
-  initials: initialsOverride,
   variant = "dark",
   className = "",
 }: {
@@ -407,8 +522,7 @@ export function AvatarPill({
         ? { bg: "#FFFFFF", text: "#0A0A0F" }
         : { bg: "transparent", text: "#FFFFFF" }
 
-  const initials =
-    initialsOverride?.trim() || handle.replace(/^@/, "").slice(0, 2).toUpperCase()
+  if (!handle) return null
 
   const border =
     variant === "dark"
@@ -418,66 +532,31 @@ export function AvatarPill({
         : undefined
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 ${className}`}
+      className={`inline-flex items-center rounded-full ${variant === "transparent" ? "py-1.5" : "px-3 py-1.5"} ${className}`}
       style={{
         backgroundColor: variant === "dark" ? "#0A0A0F" : styles.bg,
         border,
         color: styles.text,
       }}
     >
-      <span
-        className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
-        style={{
-          backgroundColor: variant === "light" ? "#0A0A0F" : "rgba(255,255,255,0.15)",
-          color: variant === "light" ? "#FFFFFF" : "#FFFFFF",
-        }}
-      >
-        {avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={proxiedImageUrl(avatar)}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          initials
-        )}
-      </span>
       <span className="text-sm font-medium">{handle}</span>
     </span>
   )
 }
 
 // ============================================================================
-// PaginationDots — dots de paginação
+// PaginationDots — dots de paginação. DESLIGADOS em todos os estilos (decisão
+// do Marcos: o Instagram já mostra a paginação). Não renderiza nada; os
+// rodapés são justify-between, então tag e "arrasta" ficam nos cantos sem
+// buraco. Props mantidas pra não mexer em cada layout.
 // ============================================================================
 
-export function PaginationDots({
-  total,
-  active,
-  color,
-}: {
+export function PaginationDots(_props: {
   total: number
   active: number
   color: string
 }) {
-  const { showDots } = useContext(SlideChromeContext)
-  if (!showDots) return null
-  return (
-    <div className="flex items-center gap-1.5">
-      {Array.from({ length: total }).map((_, i) => (
-        <span
-          key={i}
-          className="h-1 w-1 rounded-full transition-all"
-          style={{
-            backgroundColor: color,
-            opacity: i === active ? 0.95 : 0.35,
-            transform: i === active ? "scale(1.4)" : "scale(1)",
-          }}
-        />
-      ))}
-    </div>
-  )
+  return null
 }
 
 // ============================================================================
@@ -579,6 +658,7 @@ export function HighlightedText({
   words: string[]
   color: string
 }) {
+  const hs = useContext(HighlightStyleContext)
   if (!words?.length) return <>{text}</>
   const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
   const re = new RegExp(`(${escaped.join("|")})`, "gi")
@@ -589,8 +669,9 @@ export function HighlightedText({
         const isHighlight = words.some(
           (w) => w.toLowerCase() === part.toLowerCase(),
         )
+        const s = hs?.[part.toLowerCase()]
         return isHighlight ? (
-          <span key={i} style={{ color }}>
+          <span key={i} style={{ color: s?.color ?? color, ...highlightBg(s) }}>
             {part}
           </span>
         ) : (
@@ -632,6 +713,7 @@ export function HighlightedGradientText({
   words: string[]
   color: string
 }) {
+  const hs = useContext(HighlightStyleContext)
   if (!words?.length) return <>{text}</>
   const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
   const re = new RegExp(`(${escaped.join("|")})`, "gi")
@@ -643,15 +725,22 @@ export function HighlightedGradientText({
         const isHighlight = words.some(
           (w) => w.toLowerCase() === part.toLowerCase(),
         )
+        const s = hs?.[part.toLowerCase()]
         return isHighlight ? (
           <span
             key={i}
-            style={{
-              backgroundImage: gradient,
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
+            style={
+              // trecho com cor/fundo escolhidos na barrinha → cor sólida (o
+              // texto em degradê não combina com marca-texto atrás)
+              s && (s.color || s.bg)
+                ? { color: s.color ?? color, ...highlightBg(s) }
+                : {
+                    backgroundImage: gradient,
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }
+            }
           >
             {part}
           </span>
@@ -678,6 +767,7 @@ export function HighlightedGlass({
   text: string
   words: string[]
 }) {
+  const hs = useContext(HighlightStyleContext)
   if (!words?.length) return <>{text}</>
   const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
   const re = new RegExp(`(${escaped.join("|")})`, "gi")
@@ -703,6 +793,9 @@ export function HighlightedGlass({
               // cada linha da palavra quebrada recebe seu próprio bloco
               WebkitBoxDecorationBreak: "clone",
               boxDecorationBreak: "clone",
+              // cor/fundo escolhidos na barrinha do título sobrepõem o vidro
+              ...(hs?.[part.toLowerCase()]?.color ? { color: hs[part.toLowerCase()].color } : {}),
+              ...highlightBg(hs?.[part.toLowerCase()]),
             }}
           >
             {part}

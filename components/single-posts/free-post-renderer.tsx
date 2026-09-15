@@ -252,7 +252,7 @@ function renderPill(b: FreePillBlock) {
       style={{
         background: b.bg,
         color: b.fg,
-        padding: b.with_avatar ? "0.7cqw 2cqw 0.7cqw 0.7cqw" : "0.9cqw 2.4cqw",
+        padding: "0.9cqw 2.4cqw",
         gap: "1.2cqw",
         borderRadius: 9999,
         border: b.border,
@@ -268,20 +268,8 @@ function renderPill(b: FreePillBlock) {
         whiteSpace: "nowrap",
       }}
     >
-      {b.with_avatar && (
-        <span
-          className="rounded-full flex items-center justify-center font-bold leading-none shrink-0"
-          style={{
-            width: "min(5.5cqw, 26px)",
-            height: "min(5.5cqw, 26px)",
-            background: "rgba(255,255,255,0.18)",
-            color: "#FFFFFF",
-            fontSize: "min(2.2cqw, 10px)",
-          }}
-        >
-          {(b.avatar_text ?? b.text.slice(0, 2)).toUpperCase()}
-        </span>
-      )}
+      {/* Sem avatar de iniciais (decisão do Marcos): with_avatar/avatar_text
+          salvos em specs antigas são ignorados, só o texto aparece. */}
       {b.text}
     </span>
   )

@@ -26,8 +26,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type DragEvent as ReactDragEvent,
   type MouseEvent as ReactMouseEvent,
-  type WheelEvent as ReactWheelEvent,
   type ComponentType,
+  type CSSProperties,
 } from "react"
 import {
   SlidePreview,
@@ -47,6 +47,7 @@ import {
   CopyPlus,
   Crop,
   ImageIcon,
+  ImagePlus,
   Move,
   Paintbrush,
   Palette,
@@ -60,6 +61,7 @@ import {
 } from "lucide-react"
 import {
   collectEditableNodes,
+  singleTextNode,
   EDITABLE_TYPE_LABEL,
   type EditableType,
   type ElementOverride,
@@ -71,9 +73,19 @@ import {
   type SlideBlock,
 } from "./slide-blocks"
 import { BLOCK_DRAG_MIME } from "./block-panel"
+import type { HighlightStyle } from "./editorial-shared"
 
 const REF_W = 420
 const SNAP_PX = 6 // tolerância do snap (px do container)
+
+/** Degradês prontos pro marca-texto (barrinha de destaque do título). `bg`
+ *  já é o `linear-gradient(...)` completo — highlightBg (editorial-shared)
+ *  usa direto, sem misturar com branco (isso só acontece pra cor sólida). */
+const HIGHLIGHT_GRADIENTS: { name: string; bg: string }[] = [
+  { name: "Azul → Violeta", bg: "linear-gradient(100deg, #1668E3 0%, #7C3AED 100%)" },
+  { name: "Laranja → Rosa", bg: "linear-gradient(100deg, #F97316 0%, #EC4899 100%)" },
+  { name: "Verde → Azul", bg: "linear-gradient(100deg, #22C55E 0%, #1668E3 100%)" },
+]
 const MIN_SCALE = 0.5
 const MAX_SCALE = 1.8
 
@@ -108,6 +120,8 @@ export type MenuAction =
   | "block-apply-all"
   // oculta o elemento nativo do layout (ElementOverride.hidden)
   | "hide"
+  // mesma coisa, no elemento equivalente de TODOS os slides
+  | "hide-all"
 
 type AlignH = "left" | "center" | "right"
 type AlignV = "top" | "middle" | "bottom"
@@ -161,7 +175,30 @@ export interface EditableSlideCanvasProps {
   onBlockPatch: (id: string, patch: Partial<SlideBlock>) => void
   /** Widget do catálogo solto no slide → cria o bloco naquele ponto (design px). */
   onBlockDrop: (type: BlockType, x: number, y: number) => void
+  /** Digitação direto no slide → mesmo campo da sidebar (sincronizados). */
+  onTextChange: (field: InlineField, value: string) => void
+  /** Botão direito → "Inserir imagem…" no ponto clicado (design px). */
+  onImageInsert: (x: number, y: number) => void
+  /** Botão direito → copiar a imagem (do slide ou bloco) pro slide `target`. */
+  onImageCopyTo: (sel: EditorSelection, target: number) => void
+  /** Botão direito num slide AINDA não selecionado: ponto clicado (fração 0–1
+   *  do slide). O canvas monta e já abre o menu ali. */
+  openMenuAt?: { fx: number; fy: number } | null
+  /** Menu pendente (openMenuAt) foi aberto → o editor limpa o pedido. */
+  onMenuOpened?: () => void
+  /** Patch direto no slide atual (barrinha de destaque do título). */
+  onSlidePatch?: (patch: Partial<PreviewSlide>) => void
 }
+
+/** Campos de texto editáveis direto no canvas. "handle" é o @ da marca (vale
+ *  pro carrossel inteiro, não mora no slide). */
+export type InlineField = "title" | "subtitle" | "body" | "cta_badge" | "handle"
+type SlideTextField = Exclude<InlineField, "handle">
+const INLINE_FIELDS: SlideTextField[] = ["title", "subtitle", "body", "cta_badge"]
+/** Texto que os layouts mostram na tag quando cta_badge está vazio. */
+const DEFAULT_TAG_TEXTS = ["editorial", "conteúdo"]
+const normText = (s: string) =>
+  s.replace(/\*\*/g, "").replace(/\s+/g, " ").trim().toLowerCase()
 
 /** Prioridade de hit-test: menor número ganha (badge por cima da imagem etc). */
 const HIT_PRIORITY: Record<EditableType, number> = {
@@ -190,6 +227,9 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     hasStyleClipboard,
     onBlockPatch,
     onBlockDrop,
+    onTextChange,
+    onImageInsert,
+    onImageCopyTo,
   } = props
   const blockOf = (key: string) => slide.blocks?.find((b) => b.id === key)
   /** Rótulo do chip: blocos mostram o tipo real ("Bloco · Título"). */
@@ -209,7 +249,38 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
   // Guias de snap: posição em px do container (null = sem guia).
   const [guides, setGuides] = useState<{ v: number | null; h: number | null }>({ v: null, h: null })
   const [dropActive, setDropActive] = useState<false | "file" | "block">(false)
-  const [menu, setMenu] = useState<{ x: number; y: number; sel: EditorSelection } | null>(null)
+  const [menu, setMenu] = useState<{
+    x: number
+    y: number
+    /** ponto clicado (px do container) — "Inserir imagem" nasce ali. */
+    px: number
+    py: number
+    sel: EditorSelection
+  } | null>(null)
+  // Edição de texto direto no slide: textarea espelhando a tipografia do nó
+  // (o nó original fica invisível enquanto digita).
+  const [editing, setEditing] = useState<{
+    key: string
+    /** null = tag/rodapé sem campo → edita slide.el[key].text */
+    field: InlineField | null
+    /** texto que o nó mostrava ao abrir (placeholder / valor inicial do override) */
+    placeholder: string
+    node: HTMLElement
+    x: number
+    y: number
+    w: number
+    h: number
+    style: CSSProperties
+  } | null>(null)
+  const editRef = useRef<HTMLTextAreaElement>(null)
+  // Trecho selecionado no textarea do título (abre a barrinha de destaque).
+  const [titleSel, setTitleSel] = useState("")
+  useLayoutEffect(() => {
+    const ta = editRef.current
+    if (!ta) return
+    ta.style.height = "auto"
+    ta.style.height = `${ta.scrollHeight}px`
+  })
 
   // ── Geometria ──────────────────────────────────────────────────────────
   const getBoxes = useCallback((): Box[] => {
@@ -290,6 +361,8 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     imgW: number
     imgH: number
     moved: boolean
+    /** o elemento já estava selecionado → clique sem arrastar abre a edição */
+    wasSelected?: boolean
   } | null>(null)
 
   const zoomCommitRef = useRef<number | null>(null)
@@ -301,7 +374,133 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     return collectEditableNodes(root).find((n) => n.key === key)?.node ?? null
   }
 
+  /** Qual campo do slide o nó mostra (texto do DOM × campos). null = sem campo. */
+  function resolveField(node: HTMLElement): InlineField | null {
+    const dom = normText(node.textContent ?? "")
+    if (!dom) return null
+    // Tag/rodapé: @ da marca, ou a tag padrão ("Editorial") de cta_badge vazio.
+    if (node.dataset.edit === "badge" || node.dataset.edit === "meta") {
+      if (props.handle && normText(props.handle) === dom) return "handle"
+      if (!slide.cta_badge?.trim() && DEFAULT_TAG_TEXTS.includes(dom)) return "cta_badge"
+    }
+    const val = (f: SlideTextField) => {
+      const v = slide[f]
+      return typeof v === "string" ? v : ""
+    }
+    const exact = INLINE_FIELDS.find((f) => val(f) && normText(val(f)) === dom)
+    if (exact) return exact
+    // nó com prefixo decorativo ("IDEIA 01 …"): o campo inteiro está contido nele
+    let best: SlideTextField | null = null
+    for (const f of INLINE_FIELDS) {
+      const v = normText(val(f))
+      if (v.length >= 3 && dom.includes(v) && (!best || v.length > normText(val(best)).length)) best = f
+    }
+    return best
+  }
+
+  /** Abre a edição inline. false = elemento sem campo (cai no painel lateral).
+   *  Tag/rodapé sem campo (ex.: "arrasta →") edita via override de texto
+   *  (field null → slide.el[key].text). */
+  function startInlineEdit(key: string, type: SelectionType): boolean {
+    if (type !== "title" && type !== "text" && type !== "badge" && type !== "meta") return false
+    const node = findNode(key)
+    const container = containerRef.current
+    if (!node || !container) return false
+    const field = resolveField(node)
+    const textOnly = (type === "badge" || type === "meta") && !!singleTextNode(node)
+    if (!field && !textOnly) return false
+    const cs = getComputedStyle(node)
+    const r = node.getBoundingClientRect()
+    const c = container.getBoundingClientRect()
+    // escala efetiva do nó na tela (canvas × escala do override)
+    const k = r.width / Math.max(node.offsetWidth, 1)
+    const px = (v: string) => `${(parseFloat(v) || 0) * k}px`
+    if (editing && editing.node !== node && !editing.node.dataset.editHidden) {
+      editing.node.style.visibility = ""
+    }
+    setEditing({
+      key,
+      field,
+      placeholder: node.textContent ?? "",
+      node,
+      x: r.left - c.left,
+      y: r.top - c.top,
+      w: r.width,
+      h: r.height,
+      style: {
+        fontFamily: cs.fontFamily,
+        fontWeight: cs.fontWeight as CSSProperties["fontWeight"],
+        fontStyle: cs.fontStyle,
+        fontSize: px(cs.fontSize),
+        lineHeight: cs.lineHeight === "normal" ? "normal" : px(cs.lineHeight),
+        letterSpacing: cs.letterSpacing === "normal" ? "normal" : px(cs.letterSpacing),
+        textTransform: cs.textTransform as CSSProperties["textTransform"],
+        textAlign: cs.textAlign as CSSProperties["textAlign"],
+        color: cs.color,
+        backgroundColor: cs.backgroundColor,
+        borderRadius: px(cs.borderTopLeftRadius),
+        padding: `${px(cs.paddingTop)} ${px(cs.paddingRight)} ${px(cs.paddingBottom)} ${px(cs.paddingLeft)}`,
+      },
+    })
+    node.style.visibility = "hidden"
+    setMenu(null)
+    setHover(null)
+    return true
+  }
+
+  function stopInlineEdit() {
+    if (!editing) return
+    if (!editing.node.dataset.editHidden) editing.node.style.visibility = ""
+    setEditing(null)
+    setTitleSel("")
+  }
+
+  // Mantém o nó ORIGINAL escondido enquanto edita — sem dep array, roda a
+  // cada render (mesmo idioma do applyElementOverrides no SlidePreview).
+  // Necessário porque o nó pode ser DESMONTADO/REMONTADO em cada tecla: a tag
+  // do handle troca entre <Pill> e <span/> conforme handleVisivel(slide.handle)
+  // fica vazio/preenchido durante a digitação (R4-10), e a referência antiga
+  // em `editing.node` passa a apontar pra um nó fora da árvore — o REACT monta
+  // um <Pill> novo, 100% visível, "atrás" do textarea (o bug da tag duplicada
+  // e mais apagada por baixo da edição). Re-resolvendo pela `key` a cada
+  // render, o nó ATUAL (ainda que seja outro objeto) sempre fica escondido.
+  useLayoutEffect(() => {
+    if (!editing) return
+    const node = findNode(editing.key)
+    if (!node) return
+    const prevVisibility = node.style.visibility
+    node.style.visibility = "hidden"
+    return () => {
+      if (!node.dataset.editHidden) node.style.visibility = prevVisibility
+    }
+  })
+
+  /** Barrinha do título: cor / marca-texto no trecho selecionado, reaproveitando
+   *  highlight_words (null = tira o destaque do trecho). Fecha a digitação pra
+   *  mostrar o resultado na hora. */
+  function applyHighlight(patch: HighlightStyle | null) {
+    const phrase = titleSel.replace(/\*\*/g, "").replace(/\s+/g, " ").trim()
+    if (!phrase || !props.onSlidePatch) return
+    const k = phrase.toLowerCase()
+    const words = (slide.highlight_words ?? []).filter((w) => w.toLowerCase() !== k)
+    const styles = { ...(slide.highlight_styles ?? {}) }
+    if (patch) {
+      styles[k] = { ...styles[k], ...patch }
+      words.push(phrase)
+    } else {
+      delete styles[k]
+    }
+    props.onSlidePatch({
+      highlight_words: words,
+      highlight_styles: Object.keys(styles).length ? styles : undefined,
+    })
+    stopInlineEdit()
+  }
+
   function onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    // clique fora do texto em edição fecha a edição (o preventDefault abaixo
+    // impediria o blur natural do textarea)
+    if (editing) stopInlineEdit()
     if (e.button !== 0) return
     const container = containerRef.current
     if (!container) return
@@ -451,6 +650,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
         moved: false,
       }
     }
+    if (dragRef.current) dragRef.current.wasSelected = selection?.key === hit.key
     container.setPointerCapture(e.pointerId)
     e.preventDefault()
   }
@@ -626,7 +826,12 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     if (container?.hasPointerCapture(e.pointerId)) {
       container.releasePointerCapture(e.pointerId)
     }
-    if (!d || !d.moved) return
+    if (!d) return
+    if (!d.moved) {
+      // 2º clique (sem arrastar) num texto já selecionado → digita no slide
+      if (d.mode === "element" && d.wasSelected) startInlineEdit(d.key, d.type)
+      return
+    }
 
     if (d.mode === "block") {
       const lx = (d as { liveX?: number }).liveX
@@ -670,8 +875,25 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     const container = containerRef.current
     if (!container) return
     const cRect = container.getBoundingClientRect()
-    const px = e.clientX - cRect.left
-    const py = e.clientY - cRect.top
+    openMenu(e.clientX - cRect.left, e.clientY - cRect.top)
+  }
+
+  // Botão direito veio de um slide que ainda não estava selecionado: abre o
+  // menu no ponto clicado assim que o canvas monta. O rAF espera o editor
+  // limpar a seleção da troca de slide (senão ela apagaria a nova).
+  const openMenuRef = useRef(openMenu)
+  openMenuRef.current = openMenu
+  const { openMenuAt, onMenuOpened } = props
+  useEffect(() => {
+    if (!openMenuAt) return
+    const id = requestAnimationFrame(() => {
+      openMenuRef.current(openMenuAt.fx * width, openMenuAt.fy * height)
+      onMenuOpened?.()
+    })
+    return () => cancelAnimationFrame(id)
+  }, [openMenuAt, onMenuOpened, width, height])
+
+  function openMenu(px: number, py: number) {
     const hit = hitTest(px, py)
     const sel: EditorSelection = hit
       ? { key: hit.key, type: hit.type }
@@ -679,17 +901,33 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     onSelect(sel)
     // clampa pro menu não vazar do canvas (overflow-hidden)
     const MENU_W = 224
-    const MENU_H = sel.type === "background" ? 190 : sel.type === "block" ? 360 : 310
+    const MENU_H = sel.type === "background" ? 210 : sel.type === "block" ? 420 : sel.type === "image" ? 300 : sel.type === "badge" ? 460 : 340
     setMenu({
       x: Math.max(4, Math.min(px, width - MENU_W - 4)),
       y: Math.max(4, Math.min(py, height - MENU_H - 4)),
+      px,
+      py,
       sel,
     })
   }
 
   function menuAct(action: MenuAction) {
     if (!menu) return
+    if (action === "edit-text" && startInlineEdit(menu.sel.key, menu.sel.type)) return
     onMenuAction(action, menu.sel)
+    setMenu(null)
+  }
+
+  /** "Inserir imagem…": bloco de imagem no ponto clicado + file picker. */
+  function insertImage() {
+    if (!menu) return
+    onImageInsert(menu.px / scale, menu.py / scale)
+    setMenu(null)
+  }
+
+  function copyImageTo(target: number) {
+    if (!menu) return
+    onImageCopyTo(menu.sel, target)
     setMenu(null)
   }
 
@@ -746,19 +984,37 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       const b = blockOf(hit.key)
       if (b?.type === "image") onMenuAction("image-replace", { key: hit.key, type: "block" })
       else onTextEdit({ key: hit.key, type: hit.type })
-    } else {
+    } else if (editing?.key !== hit.key && !startInlineEdit(hit.key, hit.type)) {
       onTextEdit({ key: hit.key, type: hit.type })
     }
   }
 
-  // Zoom da foto pela roda do mouse (imagem selecionada) — commit com debounce.
-  function onWheel(e: ReactWheelEvent<HTMLDivElement>) {
-    if (!selection || selection.type !== "image" || !slide.image.url) return
+  // Zoom da foto pela roda do mouse (imagem selecionada, ou Ctrl+roda em cima
+  // da foto) — commit com debounce. Listener NATIVO não-passivo: o onWheel do
+  // React é passivo, o preventDefault era ignorado e o Ctrl+roda dava zoom na
+  // página em vez de na foto.
+  function onWheel(e: WheelEvent) {
+    if (!slide.image.url) return
+    let key = selection?.type === "image" ? selection.key : null
+    if (!key && e.ctrlKey) {
+      const container = containerRef.current
+      if (!container) return
+      const cRect = container.getBoundingClientRect()
+      const px = e.clientX - cRect.left
+      const py = e.clientY - cRect.top
+      const img = getBoxes().find(
+        (b) => b.type === "image" && px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h,
+      )
+      if (!img) return
+      key = img.key
+      onSelect({ key: img.key, type: "image" })
+    }
+    if (!key) return
     e.preventDefault()
     const cur = zoomCommitRef.current != null ? zoomValueRef.current : (slide.image.zoom ?? 100)
     const next = Math.max(100, Math.min(250, cur + (e.deltaY < 0 ? 5 : -5)))
     zoomValueRef.current = next
-    const node = findNode(selection.key)
+    const node = findNode(key)
     if (node instanceof HTMLImageElement) {
       node.style.transform = next !== 100 ? `scale(${next / 100})` : ""
       node.style.transformOrigin = "center"
@@ -769,6 +1025,15 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       onImageZoom(zoomValueRef.current)
     }, 350)
   }
+  const wheelRef = useRef(onWheel)
+  wheelRef.current = onWheel
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const fn = (e: WheelEvent) => wheelRef.current(e)
+    el.addEventListener("wheel", fn, { passive: false })
+    return () => el.removeEventListener("wheel", fn)
+  }, [])
 
   // Drag-and-drop de arquivo de imagem direto no slide.
   function onDragOver(e: ReactDragEvent<HTMLDivElement>) {
@@ -889,6 +1154,11 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 
   const showHover = hover && (!selection || hover.key !== selection.key)
 
+  /** Amostras de cor dos menus/barrinhas: cores da marca + preto + branco. */
+  const swatches = Array.from(
+    new Set([...props.colors.slice(0, 4), "#0A0A0F", "#FFFFFF"].map((c) => c.toUpperCase())),
+  )
+
   return (
     <div
       ref={containerRef}
@@ -903,7 +1173,6 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       onPointerLeave={() => setHover(null)}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
-      onWheel={onWheel}
       onDragOver={onDragOver}
       onDragLeave={() => setDropActive(false)}
       onDrop={onDrop}
@@ -1012,6 +1281,123 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
         </div>
       )}
 
+      {/* Edição de texto direto no slide (sincroniza com o campo da sidebar) */}
+      {editing && (
+        <textarea
+          ref={editRef}
+          autoFocus
+          spellCheck={false}
+          rows={1}
+          value={
+            editing.field === "handle"
+              ? props.handle
+              : editing.field
+                ? ((slide[editing.field] as string | undefined) ?? "")
+                : (slide.el?.[editing.key]?.text ?? editing.placeholder)
+          }
+          placeholder={editing.placeholder}
+          onChange={(e) =>
+            editing.field
+              ? onTextChange(editing.field, e.target.value)
+              : onOverride(editing.key, { text: e.target.value })
+          }
+          onFocus={(e) => {
+            const len = e.currentTarget.value.length
+            e.currentTarget.setSelectionRange(len, len)
+          }}
+          onBlur={stopInlineEdit}
+          onSelect={(e) => {
+            if (editing.field !== "title") return
+            const t = e.currentTarget
+            setTitleSel(t.value.slice(t.selectionStart, t.selectionEnd))
+          }}
+          onKeyDown={(e) => {
+            const done =
+              e.key === "Escape" ||
+              (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ||
+              (e.key === "Enter" && !e.shiftKey && editing.field !== "body")
+            if (done) {
+              e.preventDefault()
+              e.stopPropagation()
+              e.currentTarget.blur()
+            }
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.stopPropagation()}
+          className="absolute z-40 m-0 resize-none overflow-hidden border-0 outline outline-2 outline-offset-2 outline-brand-500 select-text"
+          style={{
+            left: editing.x,
+            top: editing.y,
+            width: editing.w,
+            minHeight: editing.h,
+            cursor: "text",
+            ...editing.style,
+          }}
+        />
+      )}
+
+      {/* Barrinha de destaque do título — aparece com palavras selecionadas.
+          mousedown.preventDefault mantém o foco no textarea (não fecha a edição). */}
+      {editing?.field === "title" && titleSel.trim() && props.onSlidePatch && (
+        <div
+          className="absolute z-50 flex max-w-[calc(100%-8px)] flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-[#15151b] px-2 py-1.5"
+          style={{
+            left: Math.max(4, Math.min(editing.x, width - 340)),
+            top: editing.y < 48 ? editing.y + editing.h + 8 : editing.y - 40,
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-white/40">Cor</span>
+          {swatches.map((c) => (
+            <button
+              key={`c-${c}`}
+              type="button"
+              title={`Cor ${c}`}
+              onClick={() => applyHighlight({ color: c })}
+              className="h-4 w-4 rounded-full border border-white/20 transition-colors hover:border-white/60"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+          <span className="mx-1 h-4 w-px bg-white/10" />
+          <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-white/40">Fundo</span>
+          {swatches.map((c) => (
+            <button
+              key={`b-${c}`}
+              type="button"
+              title={`Marca-texto ${c}`}
+              onClick={() => applyHighlight({ bg: c })}
+              className="h-4 w-4 rounded-sm border border-white/20 transition-colors hover:border-white/60"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+          <span className="mx-1 h-4 w-px bg-white/10" />
+          <span className="mr-0.5 text-[10px] font-medium uppercase tracking-wide text-white/40">Degradê</span>
+          {HIGHLIGHT_GRADIENTS.map((g) => (
+            <button
+              key={g.bg}
+              type="button"
+              title={`Marca-texto ${g.name}`}
+              onClick={() => applyHighlight({ bg: g.bg })}
+              className="h-4 w-4 rounded-sm border border-white/20 transition-colors hover:border-white/60"
+              style={{ backgroundImage: g.bg }}
+            />
+          ))}
+          <span className="mx-1 h-4 w-px bg-white/10" />
+          <button
+            type="button"
+            title="Tirar destaque"
+            onClick={() => applyHighlight(null)}
+            className="flex h-5 w-5 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <RotateCcw className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       {/* Drop de arquivo */}
       {dropActive && (
         <div
@@ -1047,6 +1433,8 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                 disabled={!slide.bg}
               />
               <MenuSep />
+              <MenuItem icon={ImagePlus} label="Inserir imagem…" onClick={insertImage} />
+              <MenuSep />
               <MenuItem icon={CopyPlus} label="Duplicar slide" onClick={() => menuAct("slide-duplicate")} />
               <MenuItem
                 icon={Trash2}
@@ -1076,6 +1464,12 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                       <MenuItem icon={Pencil} label="Editar texto…" shortcut="2×" onClick={() => menuAct("edit-text")} />
                     )}
                     <MenuItem icon={Paintbrush} label="Propriedades…" onClick={() => menuAct("color")} />
+                    {isImg && b?.url && (
+                      <>
+                        <MenuSep />
+                        <CopyToSlideRow total={props.total} current={slide.order_index} onPick={copyImageTo} />
+                      </>
+                    )}
                   </>
                 )
               })()}
@@ -1125,6 +1519,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
               />
               {slide.image.url && (
                 <>
+                  <MenuItem icon={ImagePlus} label="Inserir outra imagem…" onClick={insertImage} />
                   <MenuItem icon={Crop} label="Ajustar enquadramento…" onClick={() => menuAct("image-adjust")} />
                   <MenuItem
                     icon={RotateCcw}
@@ -1138,6 +1533,8 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                   />
                   <MenuItem icon={Palette} label="Extrair paleta da imagem" onClick={() => menuAct("palette")} />
                   <MenuSep />
+                  <CopyToSlideRow total={props.total} current={slide.order_index} onPick={copyImageTo} />
+                  <MenuSep />
                   <MenuItem icon={Trash2} label="Remover imagem" onClick={() => menuAct("image-remove")} danger />
                 </>
               )}
@@ -1146,6 +1543,24 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
             <>
               <MenuItem icon={Pencil} label="Editar texto…" shortcut="2×" onClick={() => menuAct("edit-text")} />
               <MenuItem icon={Paintbrush} label="Cor e tamanho…" onClick={() => menuAct("color")} />
+              {menu.sel.type === "badge" && (
+                <>
+                  <MenuSep />
+                  <ColorSwatchRow
+                    label="Fundo da tag"
+                    value={slide.el?.[menu.sel.key]?.bg}
+                    colors={swatches}
+                    onPick={(c) => onOverride(menu.sel.key, { bg: c })}
+                  />
+                  <ColorSwatchRow
+                    label="Texto da tag"
+                    value={slide.el?.[menu.sel.key]?.color}
+                    colors={swatches}
+                    onPick={(c) => onOverride(menu.sel.key, { color: c })}
+                  />
+                </>
+              )}
+              <MenuItem icon={ImagePlus} label="Inserir imagem…" onClick={insertImage} />
               <MenuSep />
               <div className="px-3 pb-1 pt-1.5">
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-white/40">
@@ -1185,6 +1600,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
               />
               <MenuSep />
               <MenuItem icon={EyeOff} label="Ocultar elemento" onClick={() => menuAct("hide")} />
+              <MenuItem icon={EyeOff} label="Ocultar em todos os slides" onClick={() => menuAct("hide-all")} />
               <MenuItem
                 icon={RotateCcw}
                 label="Restaurar padrão"
@@ -1200,6 +1616,60 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
 }
 
 // ── Peças do menu de contexto ─────────────────────────────────────────────
+
+/** Linha de amostras de cor (+ cor livre + voltar ao padrão). */
+function ColorSwatchRow({
+  label,
+  value,
+  colors,
+  onPick,
+}: {
+  label: string
+  value?: string
+  colors: string[]
+  onPick: (color: string | undefined) => void
+}) {
+  return (
+    <div className="px-3 pb-1 pt-1.5">
+      <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-white/40">{label}</div>
+      <div className="flex flex-wrap items-center gap-1">
+        {colors.map((c) => (
+          <button
+            key={c}
+            type="button"
+            title={c}
+            onClick={() => onPick(c)}
+            className={`h-6 w-6 rounded-md border transition-colors ${
+              value?.toUpperCase() === c ? "border-brand-500" : "border-white/15 hover:border-white/40"
+            }`}
+            style={{ backgroundColor: c }}
+          />
+        ))}
+        <label
+          title="Outra cor"
+          className="relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-white/15 text-white/60 transition-colors hover:border-white/40"
+        >
+          <Palette className="h-3 w-3" />
+          <input
+            type="color"
+            value={value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#ffffff"}
+            onChange={(e) => onPick(e.target.value.toUpperCase())}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          />
+        </label>
+        <button
+          type="button"
+          title="Cor padrão"
+          onClick={() => onPick(undefined)}
+          disabled={!value}
+          className="flex h-6 w-6 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
+        >
+          <RotateCcw className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  )
+}
 function MenuItem({
   icon: Icon,
   label,
@@ -1237,4 +1707,39 @@ function MenuItem({
 
 function MenuSep() {
   return <div className="mx-2 my-1 h-px bg-white/10" />
+}
+
+/** Linha "Copiar imagem para o slide": um botão por slide (menos o atual). */
+function CopyToSlideRow({
+  total,
+  current,
+  onPick,
+}: {
+  total: number
+  current: number
+  onPick: (target: number) => void
+}) {
+  if (total <= 1) return null
+  return (
+    <div className="px-3 pb-1 pt-1.5">
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-white/40">
+        <CopyPlus className="h-3 w-3" /> Copiar imagem para o slide
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        {Array.from({ length: total }).map((_, i) =>
+          i === current ? null : (
+            <button
+              key={i}
+              type="button"
+              title={`Slide ${i + 1}`}
+              onClick={() => onPick(i)}
+              className="flex h-7 min-w-[28px] items-center justify-center rounded-md px-1.5 text-[11px] tabular-nums text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              {i + 1}
+            </button>
+          ),
+        )}
+      </div>
+    </div>
+  )
 }

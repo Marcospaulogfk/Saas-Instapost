@@ -10,6 +10,10 @@ import {
   Pill,
   FitText,
   ImageTransformContext,
+  HighlightStyleContext,
+  type HighlightStyle,
+  SlideImageCollageContext,
+  defaultCollageLayout,
   SlideChromeContext,
   TypographyContext,
   type SlideAttribution,
@@ -22,6 +26,7 @@ import type { SlideBlock } from "./slide-blocks"
 import {
   applyElementOverrides,
   type SlideElementOverrides,
+  type CollageLayout,
 } from "./editable-overrides"
 import {
   CoverWesleyGemini,
@@ -60,6 +65,9 @@ export interface PreviewSlide {
   order_index: number
   title: string
   highlight_words: string[]
+  /** Cor/marca-texto por trecho destacado (barrinha da edição direta do título).
+   *  Chave = trecho em minúsculas. Vazio = destaques com a cor padrão do estilo. */
+  highlight_styles?: Record<string, HighlightStyle>
   subtitle: string
   body?: string
   cta_badge?: string
@@ -85,6 +93,12 @@ export interface PreviewSlide {
     posX?: number
     posY?: number
     zoom?: number
+    /** Colagem: 2–4 fotos no MESMO espaço da foto principal, em grade. Vazio
+     *  ou 1 item = comportamento de hoje (só `url`, sem grade nenhuma). */
+    collage?: string[]
+    /** Layout da grade quando `collage` tem 2+ fotos. Vazio = padrão pela
+     *  contagem (ver defaultCollageLayout). */
+    collageLayout?: CollageLayout
   }
   /** Imagens adicionais (cenas DIFERENTES) quando a IA decide que o slide
    *  mostra mais de uma coisa. Vazio na maioria. Usadas em layouts de
@@ -227,6 +241,29 @@ function SlidePreviewImpl({
         if (base) el.style.fontSize = `${base * bodyScale}px`
       }
     })
+    // REGRA GLOBAL "texto nunca é cortado": os templates limitam a descrição
+    // com line-clamp (reticências no fim). Se o texto não cabe nas linhas do
+    // clamp, a fonte DIMINUI até caber (mín. 60%); se nem assim couber, o
+    // clamp é removido — o texto cresce, mas nunca some com "...".
+    root.querySelectorAll<HTMLElement>('p[class*="line-clamp"]').forEach((el) => {
+      el.style.webkitLineClamp = ""
+      el.style.overflow = ""
+      el.style.display = ""
+      const overflows = () => el.scrollHeight > el.clientHeight + 1
+      if (!overflows()) return
+      const base = parseFloat(getComputedStyle(el).fontSize)
+      if (!base) return
+      let size = base
+      while (overflows() && size > base * 0.6) {
+        size -= 0.5
+        el.style.fontSize = `${size}px`
+      }
+      if (overflows()) {
+        el.style.webkitLineClamp = "unset"
+        el.style.overflow = "visible"
+        el.style.display = "block"
+      }
+    })
     // Editor Canva-like: aplica mover/escalar/cor por elemento (slide.el).
     // Sem overrides é no-op — o slide gerado permanece pixel-idêntico. Roda
     // aqui (no renderizador) pra valer em TODO lugar: filmstrip, export
@@ -312,10 +349,23 @@ function SlidePreviewImpl({
         }
       : null
 
+  // Colagem só entra com 2+ fotos válidas — 1 foto (ou vazio) é o widget de
+  // sempre, pixel-idêntico a hoje.
+  const collage =
+    slide.image.collage && slide.image.collage.length >= 2
+      ? {
+          mainUrl: slide.image.url,
+          images: slide.image.collage,
+          layout: slide.image.collageLayout ?? defaultCollageLayout(slide.image.collage.length),
+        }
+      : null
+
   return (
     <TypographyContext.Provider value={typo}>
     <SlideChromeContext.Provider value={chrome}>
     <ImageTransformContext.Provider value={imgTransform}>
+    <SlideImageCollageContext.Provider value={collage}>
+    <HighlightStyleContext.Provider value={slide.highlight_styles ?? null}>
       <div className="relative" ref={rootRef}>
       {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
       <div
@@ -343,6 +393,8 @@ function SlidePreviewImpl({
         </div>
       )}
       </div>
+    </HighlightStyleContext.Provider>
+    </SlideImageCollageContext.Provider>
     </ImageTransformContext.Provider>
     </SlideChromeContext.Provider>
     </TypographyContext.Provider>
@@ -827,6 +879,7 @@ function LegacyEditorialSlide({
           <SmartSlideImage
             src={slide.image.url}
             className="absolute inset-0 w-full h-full"
+            fill
           />
         ) : (
           <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
@@ -881,6 +934,7 @@ function LegacyEditorialSlide({
           <SmartSlideImage
             src={slide.image.url}
             className="absolute inset-0 w-full h-full"
+            fill
           />
         ) : (
           <ImagePlaceholder className="absolute inset-0" label={slide.image.error} />
@@ -1081,16 +1135,7 @@ function CinematicSlide({
         </div>
       )}
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-        {Array.from({ length: totalSlides }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 rounded-full transition-all ${
-              i === slide.order_index ? "w-6 bg-white" : "w-1.5 bg-white/40"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Dots de paginação removidos (o Instagram já mostra — decisão do Marcos). */}
 
       <Attribution attribution={slide.image.attribution} textColor="#fff" />
     </div>

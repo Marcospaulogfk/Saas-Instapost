@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { CarouselEditor } from "@/components/carousel/carousel-editor"
 import { generateCarouselImages } from "@/lib/carousel/generate-images"
 import type { ImageChoice } from "@/lib/tokens"
-import { loadCarouselV2 } from "@/app/actions/carousel"
+import { loadCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
+import { getCarouselTemplate } from "@/app/actions/carousel-templates"
 import type {
   PreviewSlide,
   EditorialStyle,
@@ -58,6 +59,10 @@ export default function CarrosselEditorPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const carouselId = searchParams.get("id")
+  // "Usar como base" a partir de "Meus modelos" (kind carousel): abre um
+  // carrossel NOVO pré-preenchido com o modelo, sem savedId — salvar cria um
+  // registro próprio, o modelo em si nunca é sobrescrito.
+  const templateId = searchParams.get("templateId")
   const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">(
     "loading",
   )
@@ -132,6 +137,48 @@ export default function CarrosselEditorPage() {
         setSavedBodyWeight(d.bodyWeight)
         setSavedBodyScale(d.bodyScale)
         setSavedId(carouselId)
+        setStatus("ready")
+      })()
+      return
+    }
+
+    // Novo carrossel usando "Meus modelos" (kind carousel) como base (?templateId=...).
+    if (templateId) {
+      setProgress("Carregando modelo…")
+      ;(async () => {
+        const res = await getCarouselTemplate(templateId)
+        if (!res.ok) {
+          setStatus("error")
+          setErrorMsg(res.error || "Não foi possível carregar o modelo.")
+          return
+        }
+        if (res.item.kind !== "carousel") {
+          setStatus("error")
+          setErrorMsg("Este modelo é um slide avulso — abra-o pelo \"+ adicionar slide\" no editor.")
+          return
+        }
+        const d = res.item.data as CarouselV2Data
+        setSlides(Array.isArray(d.slides) ? d.slides : [])
+        setMeta({
+          title: d.title || "Carrossel",
+          caption: d.caption || "",
+          brandName: d.brandName || "Marca",
+          colors:
+            Array.isArray(d.colors) && d.colors.length
+              ? d.colors
+              : ["#1668E3", "#0A0A0F", "#FAF8F5"],
+          handle: d.handle || handleFromBrand(d.brandName),
+          avatarInitials: d.avatarInitials || "",
+          chrome: d.chrome,
+        })
+        setSavedStyle(d.editorialStyle || "auto")
+        setSavedFormat(d.format === "stories" ? "stories" : "feed")
+        setSavedFont(d.font)
+        setSavedTitleWeight(d.titleWeight)
+        setSavedTitleScale(d.titleScale)
+        setSavedBodyWeight(d.bodyWeight)
+        setSavedBodyScale(d.bodyScale)
+        // SEM setSavedId: salvar cria um carrossel novo, o modelo fica intacto.
         setStatus("ready")
       })()
       return

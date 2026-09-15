@@ -1,6 +1,15 @@
 "use client"
 
-import { memo, useEffect, useMemo, useRef, useState } from "react"
+import {
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   Loader2,
   Download,
@@ -27,8 +36,20 @@ import {
   Layers,
   Eye,
   EyeOff,
+  Images,
+  Columns2,
+  Rows2,
+  Grid2x2,
+  Plus,
+  FilePlus2,
+  LayoutTemplate,
 } from "lucide-react"
-import { saveCarouselV2 } from "@/app/actions/carousel"
+import { saveCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
+import {
+  saveCarouselTemplate,
+  listCarouselTemplates,
+  type CarouselTemplateItem,
+} from "@/app/actions/carousel-templates"
 import { EditorSection as Section } from "@/components/editor/editor-section"
 import { CAROUSEL_FONTS, fontClassById } from "./carousel-fonts"
 import { extractPalette } from "@/lib/carousel/extract-palette"
@@ -43,7 +64,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { proxiedImageUrl } from "@/lib/proxy-image"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import {
   SlidePreview,
   type CarouselChrome,
@@ -59,7 +88,9 @@ import {
   EDITABLE_TYPE_LABEL,
   type EditableType,
   type ElementOverride,
+  type CollageLayout,
 } from "@/components/carousel/editable-overrides"
+import { defaultCollageLayout, isValidCollageLayout } from "@/components/carousel/editorial-shared"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
 import { renderNodeToPng, uploadPngDataUrl } from "@/lib/instagram/render-upload"
@@ -82,6 +113,22 @@ import {
   type SlideBlock,
 } from "@/components/carousel/slide-blocks"
 import { isLightColor } from "@/lib/color-contrast"
+
+/**
+ * Recria `order_index` como 0..N-1 pela posição REAL no array, e o faz
+ * criando um objeto NOVO pra cada slide (spread). Duas garantias em uma:
+ * 1) nenhum estilo que decide layout por `order_index` (isCover/isMidBreak/
+ *    isLast em slide-preview.tsx — todos os estilos, não só "Impacto") pode
+ *    achar dois slides "na posição 0" e remapear conteúdo entre eles;
+ * 2) mesmo que dois slides chegassem aqui com a MESMA referência de objeto
+ *    (ex.: order_index duplicado vindo da geração por IA, que confia no
+ *    valor que o Claude devolveu — ver generate-images.ts), cada um sai
+ *    daqui com seu PRÓPRIO objeto, então texto/imagem nunca "vazam" de um
+ *    slide pro outro.
+ */
+function reindex(list: PreviewSlide[]): PreviewSlide[] {
+  return list.map((s, i) => ({ ...s, order_index: i }))
+}
 
 /** Nome de arquivo a partir do título do slide (NN- pra manter ordem no zip). */
 function slideFileName(s: PreviewSlide, i: number): string {
@@ -188,10 +235,9 @@ function BlockProps({
   const colorRow = (label: string, value: string | undefined, key: string, fallback: string) => (
     <div className="flex items-center gap-2">
       <span className="text-[11px] text-text-secondary w-16 flex-shrink-0">{label}</span>
-      <input
-        type="color"
+      <ColorPickerInput
         value={value || fallback}
-        onChange={(e) => patch({ [key]: e.target.value })}
+        onChange={(v) => patch({ [key]: v })}
         className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
       />
       <Input
@@ -264,21 +310,11 @@ function BlockProps({
                 <Input value={block.handle} onChange={(e) => patch({ handle: e.target.value })} className="h-8 text-sm" />
               </div>
               {choice(
-                "Avatar",
-                [["on", "Mostrar"], ["off", "Esconder"]],
-                block.showAvatar === false ? "off" : "on",
-                (v) => patch({ showAvatar: v === "on" }),
-              )}
-              {choice(
                 "Selo",
                 [["on", "Verificado"], ["off", "Sem selo"]],
                 block.verified === false ? "off" : "on",
                 (v) => patch({ verified: v === "on" }),
               )}
-              <Button type="button" variant="outline" size="sm" className="w-full" onClick={onPickImage}>
-                <Upload className="w-3.5 h-3.5 mr-1.5" />
-                {block.avatar ? "Trocar foto do avatar" : "Enviar foto do avatar"}
-              </Button>
             </>,
           )}
         {block.type === "shape" &&
@@ -459,6 +495,64 @@ function BlockProps({
   )
 }
 
+/**
+ * Gesto contínuo no histórico: durante o arrasto (seletor de cor, slider) a
+ * tela atualiza sem gravar passo; `commit` grava UM passo quando o gesto acaba.
+ * Não depende de tempo: o fim vem do evento (change nativo, pointerup, blur).
+ */
+const HistoryGestureContext = createContext<{ begin: () => void; commit: () => void }>({
+  begin: () => {},
+  commit: () => {},
+})
+
+/**
+ * Slide com estilo PRÓPRIO (sobrepõe o estilo do carrossel só nele). Fica no
+ * JSONB do slide, sem migration. Tipo local porque PreviewSlide mora em
+ * slide-preview.tsx; o editor passa o estilo efetivo pra cada render.
+ */
+type SlideWithStyle = PreviewSlide & { style?: EditorialStyle }
+
+/** input type=color que vira 1 passo no Desfazer por gesto. */
+function ColorPickerInput({
+  value,
+  onChange,
+  className,
+  title,
+}: {
+  value: string
+  onChange: (v: string) => void
+  className?: string
+  title?: string
+}) {
+  const gesture = useContext(HistoryGestureContext)
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // O onChange do React dispara no `input` (cada micro-passo do arrasto); o
+    // `change` nativo só vem quando o seletor fecha. Blur cobre o resto.
+    el.addEventListener("change", gesture.commit)
+    el.addEventListener("blur", gesture.commit)
+    return () => {
+      el.removeEventListener("change", gesture.commit)
+      el.removeEventListener("blur", gesture.commit)
+    }
+  }, [gesture])
+  return (
+    <input
+      ref={ref}
+      type="color"
+      value={value}
+      onChange={(e) => {
+        gesture.begin()
+        onChange(e.target.value)
+      }}
+      className={className}
+      title={title}
+    />
+  )
+}
+
 /** Slider com rótulo + valor (posição/zoom da imagem). */
 function SliderRow({
   label,
@@ -473,6 +567,22 @@ function SliderRow({
   max?: number
   onChange: (v: number) => void
 }) {
+  const gesture = useContext(HistoryGestureContext)
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // Mesma regra do seletor de cor: o onChange do React vem do `input` (cada
+    // passo do arrasto, sem histórico); o `change` nativo vem ao soltar e
+    // grava UM passo. Não depende de pointerdown (evento sintético ou teclado
+    // também fecham certo: cada seta = input + change = 1 passo).
+    el.addEventListener("change", gesture.commit)
+    el.addEventListener("blur", gesture.commit)
+    return () => {
+      el.removeEventListener("change", gesture.commit)
+      el.removeEventListener("blur", gesture.commit)
+    }
+  }, [gesture])
   return (
     <div>
       <div className="flex items-center justify-between text-[11px] text-text-muted mb-1">
@@ -480,11 +590,20 @@ function SliderRow({
         <span className="tabular-nums">{value}</span>
       </div>
       <input
+        ref={ref}
         type="range"
         min={min}
         max={max}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => {
+          gesture.begin()
+          onChange(Number(e.target.value))
+        }}
+        // Soltar fora do slider: alguns browsers não mandam `change` nesse caso.
+        onPointerDown={() => {
+          window.addEventListener("pointerup", gesture.commit, { once: true })
+          window.addEventListener("pointercancel", gesture.commit, { once: true })
+        }}
         className="w-full h-1.5 accent-brand-600 cursor-pointer"
       />
     </div>
@@ -621,8 +740,18 @@ export function CarouselEditor({
   initialBodyScale,
   pautaId,
 }: CarouselEditorProps) {
-  const [slides, setSlides] = useState<PreviewSlide[]>(initialSlides)
+  // reindex() já na primeira carga: `initialSlides` pode vir da geração por IA
+  // (que confia no order_index que o Claude devolveu, sem garantir que seja
+  // 0..N-1 único — ver generate-images.ts), de um carrossel salvo antigo, ou
+  // de "usar como base" (Meus modelos). Sem isso, um order_index duplicado
+  // entrava direto no estado e todo estilo que decide layout por posição
+  // (isCover/isMidBreak/isLast) podia achar dois slides "na mesma posição".
+  const [slides, setSlides] = useState<PreviewSlide[]>(() => reindex(initialSlides))
   const [selected, setSelected] = useState(0)
+  // Botão direito num slide não selecionado: seleciona e o canvas abre o menu
+  // no ponto clicado (fração do slide) assim que monta.
+  const [pendingMenu, setPendingMenu] = useState<{ fx: number; fy: number } | null>(null)
+  const clearPendingMenu = useCallback(() => setPendingMenu(null), [])
   const [title, setTitle] = useState(initialTitle)
   const [style, setStyle] = useState<EditorialStyle>(editorialStyle)
   const [format, setFormat] = useState<"feed" | "stories">(initialFormat)
@@ -647,17 +776,14 @@ export function CarouselEditor({
   // Handle editável — o @ que aparece nos slides. Vem do cadastro da marca
   // (instagram_handle) via props, mas o usuário pode corrigir aqui.
   const [handleValue, setHandleValue] = useState(handle)
-  // Nome da marca e iniciais do avatar — editáveis. O nome aparece no estilo
-  // "Perfil" (post de rede social) e nos rodapés; as iniciais preenchem o
-  // círculo do avatar quando a marca não tem foto. Vazio = deriva do handle.
+  // Nome da marca — editável. Aparece no estilo "Perfil" e nos rodapés.
+  // Iniciais e foto do avatar saíram da interface (o avatar não é mais
+  // desenhado); os valores já salvos só são repassados pra não se perderem.
   const [brandValue, setBrandValue] = useState(brandName)
-  const [avatarInitials, setAvatarInitials] = useState(
-    initialAvatarInitials ?? "",
-  )
-  // Enfeites do carrossel: foto do avatar, dots de paginação, selo verificado e
-  // rodapé. Tudo ligado por padrão — desligar é escolha do usuário.
-  const [avatarUrl, setAvatarUrl] = useState(initialChrome?.handleAvatar ?? "")
-  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [avatarInitials] = useState(initialAvatarInitials ?? "")
+  // Enfeites do carrossel: dots de paginação, selo verificado e rodapé.
+  // Tudo ligado por padrão — desligar é escolha do usuário.
+  const [avatarUrl] = useState(initialChrome?.handleAvatar ?? "")
   const [showDots, setShowDots] = useState(initialChrome?.showDots !== false)
   const [showVerified, setShowVerified] = useState(
     initialChrome?.showVerified !== false,
@@ -686,6 +812,89 @@ export function CarouselEditor({
   const [savedId, setSavedId] = useState<string | undefined>(initialCarouselId)
   const [saveBusy, setSaveBusy] = useState(false)
   const [saveOk, setSaveOk] = useState(false)
+  /** Nº do save mais recente: capa atrasada de um save velho não regrava. */
+  const saveSeqRef = useRef(0)
+
+  // ── "Meus modelos" (Lote 6): salvar slide/carrossel como modelo próprio da
+  //    conta, e inserir um modelo salvo via "+ adicionar slide".
+  const [tplDialogOpen, setTplDialogOpen] = useState(false)
+  const [tplScope, setTplScope] = useState<"slide" | "carousel">("carousel")
+  const [tplName, setTplName] = useState("")
+  const [tplBusy, setTplBusy] = useState(false)
+  const [tplError, setTplError] = useState<string | null>(null)
+  const [tplSaved, setTplSaved] = useState(false)
+
+  const [addSlideOpen, setAddSlideOpen] = useState(false)
+  const [slideTemplates, setSlideTemplates] = useState<CarouselTemplateItem[] | null>(null)
+  const [slideTemplatesLoading, setSlideTemplatesLoading] = useState(false)
+  const [slideTemplatesError, setSlideTemplatesError] = useState<string | null>(null)
+
+  function loadSlideTemplates() {
+    if (slideTemplatesLoading) return
+    setSlideTemplatesLoading(true)
+    setSlideTemplatesError(null)
+    listCarouselTemplates("slide")
+      .then((res) => {
+        if (!res.ok) {
+          setSlideTemplatesError(res.error)
+          return
+        }
+        setSlideTemplates(res.items)
+      })
+      .finally(() => setSlideTemplatesLoading(false))
+  }
+
+  async function handleSaveAsTemplate() {
+    const name = tplName.trim()
+    if (!name) return
+    setTplBusy(true)
+    setTplError(null)
+    try {
+      const data = tplScope === "slide" ? slide : buildTemplateCarouselData()
+      const res = await saveCarouselTemplate({ name, kind: tplScope, data })
+      if (!res.ok) {
+        setTplError(res.error)
+        return
+      }
+      setTplSaved(true)
+      // Modelo de slide recém-salvo pode reaparecer no "+ adicionar slide"
+      // sem precisar reabrir o popover.
+      setSlideTemplates(null)
+      setTimeout(() => {
+        setTplDialogOpen(false)
+        setTplSaved(false)
+        setTplName("")
+      }, 1200)
+    } catch (err) {
+      setTplError(err instanceof Error ? err.message : "Erro ao salvar o modelo.")
+    } finally {
+      setTplBusy(false)
+    }
+  }
+
+  /** Mesmo shape que handleSave grava (CarouselV2Data), só que pro modelo —
+   *  sem capa (não precisa) e sem tocar no handleSave em si. */
+  function buildTemplateCarouselData(): CarouselV2Data {
+    return {
+      _kind: "carousel-v2",
+      slides,
+      title,
+      caption: caption ?? "",
+      brandName: brandValue,
+      handle: handleValue,
+      avatarInitials,
+      chrome,
+      colors,
+      template,
+      editorialStyle: style,
+      format,
+      font,
+      titleWeight,
+      titleScale,
+      bodyWeight,
+      bodyScale,
+    }
+  }
 
   // Auto-salva na biblioteca assim que um carrossel NOVO é gerado (sem id
   // prévio). Antes só salvava no clique manual, então o carrossel gerado não
@@ -710,7 +919,14 @@ export function CarouselEditor({
 
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const avatarInputRef = useRef<HTMLInputElement>(null)
+  // Botão "Upload" do painel de imagem: input PRÓPRIO (multi-arquivo) — o
+  // `fileInputRef` acima é compartilhado com a troca de imagem de BLOCO
+  // (sempre 1 arquivo só), então não podia virar `multiple` sem afetar isso.
+  // 2+ arquivos escolhidos de uma vez aqui = colagem (handleMainImageUpload).
+  const mainImageInputRef = useRef<HTMLInputElement>(null)
+  // Colagem (2–4 fotos no espaço da foto principal): "Adicionar foto(s) à
+  // colagem" ACRESCENTA à foto/colagem que já tem (ver handleCollageUpload).
+  const collageFileInputRef = useRef<HTMLInputElement>(null)
 
   // Autosave do rascunho em localStorage — backup local imediato pra não perder
   // o trabalho ao recarregar. A persistência de VERDADE é na nuvem via
@@ -769,6 +985,27 @@ export function CarouselEditor({
   const historyRef = useRef<Snapshot[]>([])
   const histIndexRef = useRef(-1)
   const travelingRef = useRef(false)
+  /** Quando entrou o último passo (agrupa arrasto contínuo num passo só). */
+  const lastPushAtRef = useRef(0)
+  /** Gesto contínuo em andamento (arrastar cor/slider): não grava a cada passo. */
+  const gestureRef = useRef(false)
+  /** O próximo passo vem do fim de um gesto: nunca funde com o anterior. */
+  const forceNewStepRef = useRef(false)
+  const [commitTick, setCommitTick] = useState(0)
+  const historyGesture = useMemo(
+    () => ({
+      begin: () => {
+        gestureRef.current = true
+      },
+      commit: () => {
+        if (!gestureRef.current) return
+        gestureRef.current = false
+        forceNewStepRef.current = true
+        setCommitTick((t) => t + 1)
+      },
+    }),
+    [],
+  )
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   // Espelho da pilha pro painel Histórico (ref não re-renderiza).
@@ -823,16 +1060,46 @@ export function CarouselEditor({
       travelingRef.current = false
       return
     }
+    // Arrasto em curso (seletor de cor, slider): só a tela muda. O passo único
+    // entra quando o gesto termina (historyGesture.commit → commitTick).
+    if (gestureRef.current) return
+    const fimDeGesto = forceNewStepRef.current
+    forceNewStepRef.current = false
     const snap: Snapshot = { slides, title, style, format, label: "Carrossel gerado" }
     if (histIndexRef.current === -1) {
       historyRef.current = [snap]
       histIndexRef.current = 0
     } else {
+      const topo = historyRef.current[histIndexRef.current]
+      // Nada mudou de fato: efeito rodando 2x ao abrir (StrictMode do dev), ou
+      // gesto que terminou sem mudar nada. Não é passo nem alteração não salva
+      // (antes isso acendia "Salvar alterações" logo ao abrir o editor).
+      if (
+        topo.slides === slides &&
+        topo.title === title &&
+        topo.style === style &&
+        topo.format === format
+      ) {
+        return
+      }
       // corta a "cauda" de refazer e empurra o novo estado
       historyRef.current = historyRef.current.slice(0, histIndexRef.current + 1)
-      snap.label = describeChange(historyRef.current[histIndexRef.current], snap)
-      historyRef.current.push(snap)
-      histIndexRef.current = historyRef.current.length - 1
+      snap.label = describeChange(topo, snap)
+      // Digitação seguida no MESMO campo vira UM passo. Fim de gesto (cor,
+      // slider) sempre abre passo próprio. O estado inicial nunca é fundido.
+      const agora = Date.now()
+      const agrupa =
+        !fimDeGesto &&
+        histIndexRef.current > 0 &&
+        topo.label === snap.label &&
+        agora - lastPushAtRef.current < 700
+      lastPushAtRef.current = fimDeGesto ? 0 : agora
+      if (agrupa) {
+        historyRef.current[histIndexRef.current] = snap
+      } else {
+        historyRef.current.push(snap)
+        histIndexRef.current = historyRef.current.length - 1
+      }
       setDirty(true)
       // limita a pilha (memória)
       if (historyRef.current.length > 120) {
@@ -844,10 +1111,12 @@ export function CarouselEditor({
     setCanRedo(histIndexRef.current < historyRef.current.length - 1)
     syncHistoryUi()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slides, title, style, format])
+  }, [slides, title, style, format, commitTick])
 
   function applySnapshot(s: Snapshot) {
     travelingRef.current = true
+    // Depois de desfazer/refazer, a próxima mudança abre passo novo.
+    lastPushAtRef.current = 0
     setSlides(s.slides)
     setTitle(s.title)
     setStyle(s.style)
@@ -920,6 +1189,115 @@ export function CarouselEditor({
     )
   }
 
+  /** Colagem no espaço da foto principal: acrescenta fotos (até 4 no total).
+   *  `url` sempre acompanha a 1ª foto da colagem (os ~19 templates que checam
+   *  `slide.image.url` continuam funcionando iguais). Menos de 2 fotos = sem
+   *  colagem, comportamento de hoje. */
+  function patchImageCollage(add: string[]) {
+    setSlides((prev) =>
+      prev.map((s, i) => {
+        if (i !== selected) return s
+        const base = s.image.collage?.length ? s.image.collage : s.image.url ? [s.image.url] : []
+        const next = [...base, ...add].filter(Boolean).slice(0, 4)
+        if (next.length < 2) {
+          return { ...s, image: { ...s.image, url: next[0] ?? null, collage: undefined, collageLayout: undefined } }
+        }
+        return {
+          ...s,
+          image: {
+            ...s.image,
+            url: next[0],
+            collage: next,
+            // mantém a escolha do usuário SÓ se ainda fizer sentido pra nova
+            // contagem (ex.: "2v" com 2 fotos + 1 nova → 3 fotos: "2v" só tem
+            // 2 células, a 3ª sumiria numa linha implícita de 0px).
+            collageLayout:
+              s.image.collageLayout && isValidCollageLayout(s.image.collageLayout, next.length)
+                ? s.image.collageLayout
+                : defaultCollageLayout(next.length),
+          },
+        }
+      }),
+    )
+  }
+
+  /** Volta pra 1 foto só (mantém a primeira da colagem). */
+  function clearCollage() {
+    setSlides((prev) =>
+      prev.map((s, i) =>
+        i === selected
+          ? { ...s, image: { ...s.image, url: s.image.collage?.[0] ?? s.image.url, collage: undefined, collageLayout: undefined } }
+          : s,
+      ),
+    )
+  }
+
+  async function uploadImageFiles(files: File[]): Promise<string[]> {
+    const urls: string[] = []
+    for (const file of files) {
+      const fd = new FormData()
+      fd.append("file", file)
+      const res = await fetch("/api/editorial/upload-image", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.error || "erro no upload")
+      urls.push(data.url)
+    }
+    return urls
+  }
+
+  /** Botão "Adicionar foto(s) à colagem": ACRESCENTA à foto/colagem que já tem. */
+  async function handleCollageUpload(files: FileList) {
+    const list = Array.from(files).slice(0, 4)
+    if (!list.length) return
+    setImgBusy("upload")
+    setImgError(null)
+    try {
+      patchImageCollage(await uploadImageFiles(list))
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "erro no upload")
+    } finally {
+      setImgBusy(null)
+    }
+  }
+
+  /** Botão principal "Upload": 1 arquivo = troca a foto (de sempre). 2+
+   *  arquivos escolhidos DE UMA VEZ = a colagem inteira (substitui o que
+   *  tinha, não acrescenta — é isso que o usuário pediu ao selecionar
+   *  vários de uma vez). */
+  async function handleMainImageUpload(files: FileList) {
+    const list = Array.from(files)
+    if (list.length <= 1) {
+      if (list[0]) await handleUpload(list[0])
+      return
+    }
+    setImgBusy("upload")
+    setImgError(null)
+    try {
+      const urls = await uploadImageFiles(list.slice(0, 4))
+      setSlides((prev) =>
+        prev.map((s, i) =>
+          i === selected
+            ? {
+                ...s,
+                image: {
+                  ...s.image,
+                  url: urls[0],
+                  source: "ai",
+                  error: null,
+                  collage: urls,
+                  collageLayout: defaultCollageLayout(urls.length),
+                },
+              }
+            : s,
+        ),
+      )
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "erro no upload")
+    } finally {
+      setImgBusy(null)
+    }
+  }
+
   // ── EDITOR CANVA-LIKE: seleção no canvas + sections controladas ─────────
   const [selection, setSelection] = useState<EditorSelection | null>(null)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -949,6 +1327,10 @@ export function CarouselEditor({
 
   // ── PAINEL ESTILO ELEMENTOR: Elementos / Editar / Histórico ─────────────
   const [panelMode, setPanelMode] = useState<PanelMode>("editar")
+  // "Estilo do Post" vale pro carrossel todo ou só pro slide selecionado.
+  const [styleScope, setStyleScope] = useState<"todos" | "slide">("todos")
+  /** Estilo efetivo de um slide: o próprio, senão o do carrossel. */
+  const styleOf = (s: PreviewSlide | undefined) => (s as SlideWithStyle | undefined)?.style ?? style
   const [blockTab, setBlockTab] = useState<BlockTab>("conteudo")
   const blockTextRef = useRef<HTMLTextAreaElement>(null)
   // Bloco de imagem aguardando o file picker (image-replace num bloco).
@@ -1046,6 +1428,34 @@ export function CarouselEditor({
     )
   }
 
+  /** Menu "Copiar imagem para o slide N": a foto (do slide ou de um bloco)
+   *  entra como bloco de imagem no slide destino, e o editor pula pra ele. */
+  function copyImageToSlide(sel: EditorSelection, target: number) {
+    const cur = slides[selected]
+    const src = sel.type === "block" ? cur?.blocks?.find((b) => b.id === sel.key) : undefined
+    const srcImg = src?.type === "image" ? src : undefined
+    const url = srcImg ? srcImg.url : cur?.image.url
+    if (!url) return
+    setSlides((prev) =>
+      prev.map((sl, i) => {
+        if (i !== target) return sl
+        const list = sl.blocks ?? []
+        if (list.length >= BLOCK_LIMIT) return sl
+        const z = list.reduce((m, b) => Math.max(m, b.z), 0) + 1
+        const id = Math.random().toString(36).slice(2, 10)
+        const fresh = createBlock("image", {
+          slideH: designH,
+          z,
+          accent: colors[0] || "#1668E3",
+          onDark: true,
+        }) as Extract<SlideBlock, { type: "image" }>
+        const copy = srcImg ? { ...srcImg, id, z } : { ...fresh, url }
+        return { ...sl, blocks: [...list, clampBlock(copy, designH)] }
+      }),
+    )
+    setSelected(target)
+  }
+
   function reorderBlock(id: string, dir: "front" | "back") {
     setBlocks((l) => {
       const zs = l.map((b) => b.z)
@@ -1087,21 +1497,30 @@ export function CarouselEditor({
     }
   }
 
+  /** Merge do override de UM elemento num slide (undefined limpa a chave). */
+  function withElementPatch(s: PreviewSlide, key: string, patch: ElementOverride): PreviewSlide {
+    const cur = { ...(s.el?.[key] ?? {}), ...patch }
+    ;(Object.keys(cur) as (keyof ElementOverride)[]).forEach((k) => {
+      if (cur[k] === undefined) delete cur[k]
+    })
+    const el = { ...(s.el ?? {}) }
+    if (Object.keys(cur).length) el[key] = cur
+    else delete el[key]
+    return { ...s, el: Object.keys(el).length ? el : undefined }
+  }
+
   /** Merge do override de UM elemento do slide atual (undefined limpa a chave). */
   function patchElement(key: string, patch: ElementOverride) {
-    setSlides((prev) =>
-      prev.map((s, i) => {
-        if (i !== selected) return s
-        const cur = { ...(s.el?.[key] ?? {}), ...patch }
-        ;(Object.keys(cur) as (keyof ElementOverride)[]).forEach((k) => {
-          if (cur[k] === undefined) delete cur[k]
-        })
-        const el = { ...(s.el ?? {}) }
-        if (Object.keys(cur).length) el[key] = cur
-        else delete el[key]
-        return { ...s, el: Object.keys(el).length ? el : undefined }
-      }),
-    )
+    setSlides((prev) => prev.map((s, i) => (i === selected ? withElementPatch(s, key, patch) : s)))
+  }
+
+  /**
+   * Oculta/mostra o MESMO elemento em todos os slides. A chave é tipo+ordem
+   * ("badge-0" = 1ª tag), então pega a tag equivalente de cada slide; slide que
+   * não tem esse elemento só guarda a marca, sem efeito visual. 1 passo no Desfazer.
+   */
+  function setHiddenAll(key: string, hidden: boolean) {
+    setSlides((prev) => prev.map((s) => withElementPatch(s, key, { hidden: hidden || undefined })))
   }
 
   /** Ações do menu de botão direito do canvas. */
@@ -1161,6 +1580,10 @@ export function CarouselEditor({
         break
       case "hide":
         patchElement(sel.key, { hidden: true })
+        setSelection(null)
+        break
+      case "hide-all":
+        setHiddenAll(sel.key, true)
         setSelection(null)
         break
       case "image-adjust":
@@ -1264,11 +1687,14 @@ export function CarouselEditor({
     }
   }
 
+  // Define A FOTO (única) do slide — IA, URL colada ou 1 arquivo de upload.
+  // Sempre limpa a colagem: senão `collage` ficava com fotos antigas e `url`
+  // apontando pra uma foto NOVA sem relação com elas (grade desincronizada).
   function setImageUrl(url: string, source: PreviewSlide["image"]["source"]) {
     setSlides((prev) =>
       prev.map((s, i) =>
         i === selected
-          ? { ...s, image: { ...s.image, url, source, error: null } }
+          ? { ...s, image: { ...s.image, url, source, error: null, collage: undefined, collageLayout: undefined } }
           : s,
       ),
     )
@@ -1302,29 +1728,6 @@ export function CarouselEditor({
       setImgError(err instanceof Error ? err.message : "erro de rede")
     } finally {
       setImgBusy(null)
-    }
-  }
-
-  /** Upload da foto do avatar — mesmo endpoint das fotos de slide. */
-  async function handleAvatarUpload(file: File) {
-    setAvatarBusy(true)
-    setImgError(null)
-    try {
-      const fd = new FormData()
-      fd.append("file", file)
-      const res = await fetch("/api/editorial/upload-image", {
-        method: "POST",
-        body: fd,
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error || "erro no upload")
-      setAvatarUrl(data.url)
-    } catch (err) {
-      setImgError(
-        err instanceof Error ? err.message : "erro no upload do avatar",
-      )
-    } finally {
-      setAvatarBusy(false)
     }
   }
 
@@ -1370,10 +1773,8 @@ export function CarouselEditor({
   const [dirty, setDirty] = useState(false)
 
   // ── Gerência de slides (add / duplicar / deletar) — o histórico pega de graça
-  //    porque tudo passa por setSlides. order_index é reindexado pra ficar único.
-  function reindex(list: PreviewSlide[]): PreviewSlide[] {
-    return list.map((s, i) => ({ ...s, order_index: i }))
-  }
+  //    porque tudo passa por setSlides. order_index é reindexado pra ficar único
+  //    (reindex() é a função module-level lá em cima, junto de slideFileName).
   function duplicateSlide(i: number) {
     setSlides((list) =>
       reindex([...list.slice(0, i + 1), { ...list[i] }, ...list.slice(i + 1)]),
@@ -1386,6 +1787,35 @@ export function CarouselEditor({
     setSelected((s) => Math.max(0, Math.min(s, slides.length - 2)))
   }
 
+  /** Slide 100% vazio (sem texto/imagem/blocos) inserido logo após o atual. */
+  function createBlankSlide() {
+    const blank: PreviewSlide = {
+      order_index: 0,
+      title: "",
+      highlight_words: [],
+      subtitle: "",
+      image: { url: null, source: null, attribution: null, error: null },
+    }
+    setSlides((list) =>
+      reindex([...list.slice(0, selected + 1), blank, ...list.slice(selected + 1)]),
+    )
+    setSelected(selected + 1)
+  }
+
+  /** Insere uma CÓPIA de um slide salvo em "Meus modelos" logo após o atual.
+   *  Ids de bloco são regenerados (mesmo padrão de duplicateBlock) pra não
+   *  colidir se o mesmo modelo for inserido mais de uma vez. */
+  function insertSlideFromTemplate(tpl: PreviewSlide) {
+    const copy: PreviewSlide = {
+      ...tpl,
+      blocks: tpl.blocks?.map((b) => ({ ...b, id: Math.random().toString(36).slice(2, 10) })),
+    }
+    setSlides((list) =>
+      reindex([...list.slice(0, selected + 1), copy, ...list.slice(selected + 1)]),
+    )
+    setSelected(selected + 1)
+  }
+
   /**
    * Gera a CAPA: snapshot do slide 1 JÁ COMPOSTO (texto+marca), reusando o mesmo
    * pipeline do export (setSelected + waitPreviewImages + html-to-image → upload).
@@ -1395,30 +1825,25 @@ export function CarouselEditor({
     if (!previewRef.current || slides.length === 0) return null
     const prevSelected = selected
     try {
-      const { toPng } = await import("html-to-image")
       if (selected !== 0) setSelected(0)
+      console.time("[capa] imagens")
       await waitPreviewImages()
+      console.timeEnd("[capa] imagens")
       if (!previewRef.current) return null
-      const dataUrl = await toPng(previewRef.current, {
-        cacheBust: true,
-        // Sem isso a chave de cache do html-to-image ignora a query string, e
-        // TODA imagem proxiada (/api/proxy-image?url=…) colide numa chave só —
-        // o export repetia a 1a foto em todos os slides.
-        includeQueryParams: true,
-        canvasWidth: 540,
-        canvasHeight: format === "stories" ? 960 : 675,
-        pixelRatio: 1,
-      })
-      const blob = await (await fetch(dataUrl)).blob()
-      const fd = new FormData()
-      fd.append("file", new File([blob], "cover.png", { type: "image/png" }))
-      const res = await fetch("/api/editorial/upload-image", {
-        method: "POST",
-        body: fd,
-      })
-      const data = await res.json()
-      return data.success ? (data.url as string) : null
-    } catch {
+      // Mesmo render do publicar: fontes embutidas só as usadas e cacheadas
+      // (sem baixar a folha inteira do Google Fonts a cada salvar).
+      const dataUrl = await renderNodeToPng(
+        previewRef.current,
+        540,
+        format === "stories" ? 960 : 675,
+        "[capa]",
+      )
+      console.time("[capa] upload")
+      const url = await uploadPngDataUrl(dataUrl, "cover.png")
+      console.timeEnd("[capa] upload")
+      return url
+    } catch (err) {
+      console.warn("[capa] falhou", err)
       return null
     } finally {
       if (prevSelected !== 0) setSelected(prevSelected)
@@ -1428,14 +1853,17 @@ export function CarouselEditor({
   async function handleSave() {
     setSaveBusy(true)
     setImgError(null)
+    const seq = ++saveSeqRef.current
     try {
-      const coverImageUrl = await captureCover()
-      const res = await saveCarouselV2({
-        id: savedId,
-        // Origem só no insert: `saveCarouselV2` ignora quando `id` existe.
-        pautaId,
-        data: {
-          _kind: "carousel-v2",
+      // Capa não pode travar o salvar: se passar de 15s, grava sem ela e a
+      // captura CONTINUA em segundo plano (abaixo), gravando a capa quando chegar.
+      const coverPromise = captureCover()
+      const coverImageUrl = await Promise.race([
+        coverPromise,
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 15000)),
+      ])
+      const data = {
+          _kind: "carousel-v2" as const,
           slides,
           title,
           caption: caption ?? "",
@@ -1453,11 +1881,27 @@ export function CarouselEditor({
           bodyWeight,
           bodyScale,
           coverImageUrl: coverImageUrl ?? undefined,
-        },
+      }
+      console.time("[salvar] gravação")
+      const res = await saveCarouselV2({
+        id: savedId,
+        // Origem só no insert: `saveCarouselV2` ignora quando `id` existe.
+        pautaId,
+        data,
       })
+      console.timeEnd("[salvar] gravação")
       if (!res.ok) {
         setImgError(res.error || "erro ao salvar")
         return
+      }
+      if (!coverImageUrl) {
+        // Capa atrasada: quando ficar pronta, regrava com ela. Só se nenhum
+        // save mais novo começou (esse vai gerar a própria capa).
+        const savedRowId = res.id
+        void coverPromise.then(async (url) => {
+          if (!url || seq !== saveSeqRef.current) return
+          await saveCarouselV2({ id: savedRowId, data: { ...data, coverImageUrl: url } })
+        })
       }
       setSavedId(res.id)
       setSaveOk(true)
@@ -1549,11 +1993,13 @@ export function CarouselEditor({
       window.setTimeout(done, 300)
     })
     const imgs = Array.from(previewRef.current?.querySelectorAll("img") ?? [])
+    // Já carregadas antes da espera: não precisam de decode (ver abaixo).
+    const prontas = new Set(imgs.filter((im) => im.complete && im.naturalWidth > 0))
     await Promise.all(
       imgs.map(
         (im) =>
           new Promise<void>((resolve) => {
-            if (im.complete && im.naturalWidth > 0) return resolve()
+            if (prontas.has(im)) return resolve()
             let settled = false
             const done = () => {
               if (settled) return
@@ -1567,17 +2013,21 @@ export function CarouselEditor({
       ),
     )
     // Decode explícito: sem ele o html-to-image pode desenhar o frame anterior.
-    // Com corrida contra timer: em aba oculta o decode() pode nunca resolver, e
-    // sem o limite o export ficava preso aqui (mesmo problema do rAF acima).
+    // Só pras imagens que acabaram de carregar, e com teto curto: o preview
+    // fica fora da tela (-9999px) e ali o decode() de uma imagem já carregada
+    // NUNCA resolve (medido: >10s), então cada captura queimava o timer inteiro
+    // (8s) à toa. Era metade do motivo da capa estourar os 15s do salvar.
     await Promise.all(
-      imgs.map((im) =>
-        im.decode
-          ? Promise.race([
-              im.decode().catch(() => {}),
-              new Promise<void>((r) => window.setTimeout(r, timeoutMs)),
-            ])
-          : Promise.resolve(),
-      ),
+      imgs
+        .filter((im) => !prontas.has(im))
+        .map((im) =>
+          im.decode
+            ? Promise.race([
+                im.decode().catch(() => {}),
+                new Promise<void>((r) => window.setTimeout(r, 1500)),
+              ])
+            : Promise.resolve(),
+        ),
     )
   }
 
@@ -1681,6 +2131,7 @@ export function CarouselEditor({
   return (
     // Editor em TELA CHEIA por cima do dashboard (cobre a sidebar de navegação)
     // — a sidebar vira o editor, sem ficar com duas. "Voltar" fecha o overlay.
+    <HistoryGestureContext.Provider value={historyGesture}>
     <div className="fixed inset-0 z-50 bg-background flex overflow-hidden">
       {/* Coluna direita (toolbar + slides). A sidebar fica ANTES (order-1). */}
       <div className="order-2 flex-1 min-w-0 flex flex-col">
@@ -1771,6 +2222,21 @@ export function CarouselEditor({
           type="button"
           variant="outline"
           size="sm"
+          onClick={() => {
+            setTplError(null)
+            setTplSaved(false)
+            setTplName("")
+            setTplDialogOpen(true)
+          }}
+          title="Salva este slide ou o carrossel inteiro como modelo seu, pra reusar depois"
+        >
+          <LayoutTemplate className="w-3.5 h-3.5 mr-1.5" />
+          Salvar como modelo
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={handleExportAllZip}
           disabled={zipBusy || exporting}
         >
@@ -1803,7 +2269,9 @@ export function CarouselEditor({
           <div className="flex-1 overflow-auto p-6 flex items-center">
             <div className="flex gap-5 items-center w-max">
               {slides.map((s, i) => (
-                <div key={s.order_index} className="relative group flex-shrink-0">
+                // key={i}, NÃO order_index: é dado (pode vir duplicado — ver
+                // reindex()), a posição no array é que é garantidamente única.
+                <div key={i} className="relative group flex-shrink-0">
                   {i === selected ? (
                     /* Slide ATIVO = canvas interativo Canva-like: hover mostra
                        os elementos, clique seleciona (e abre a section na
@@ -1814,7 +2282,7 @@ export function CarouselEditor({
                       total={slides.length}
                       template={template}
                       colors={colors}
-                      style={style}
+                      style={styleOf(s)}
                       handle={handleValue}
                       brandName={brandValue}
                       handleInitials={avatarInitials}
@@ -1840,11 +2308,32 @@ export function CarouselEditor({
                       hasStyleClipboard={styleClipboard !== null}
                       onBlockPatch={patchBlock}
                       onBlockDrop={(type, x, y) => addBlock(type, { x, y })}
+                      onTextChange={(field, value) => {
+                        // @ digitado direto na tag = @ da marca (todos os slides)
+                        if (field === "handle") {
+                          const v = value.trim()
+                          setHandleValue(v ? (v.startsWith("@") ? v : `@${v}`) : "")
+                        } else patchSlide({ [field]: value } as Partial<PreviewSlide>)
+                      }}
+                      onImageInsert={(x, y) => addBlock("image", { x, y })}
+                      onImageCopyTo={copyImageToSlide}
+                      onSlidePatch={patchSlide}
+                      openMenuAt={pendingMenu}
+                      onMenuOpened={clearPendingMenu}
                     />
                   ) : (
                   <button
                     type="button"
                     onClick={() => setSelected(i)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      const r = e.currentTarget.getBoundingClientRect()
+                      setPendingMenu({
+                        fx: (e.clientX - r.left) / r.width,
+                        fy: (e.clientY - r.top) / r.height,
+                      })
+                      setSelected(i)
+                    }}
                     className="block text-left"
                     aria-label={`Selecionar slide ${i + 1}`}
                   >
@@ -1853,7 +2342,7 @@ export function CarouselEditor({
                       total={slides.length}
                       template={template}
                       colors={colors}
-                      style={style}
+                      style={styleOf(s)}
                       handle={handleValue}
                       brandName={brandValue}
                       handleInitials={avatarInitials}
@@ -1893,6 +2382,78 @@ export function CarouselEditor({
                   </div>
                 </div>
               ))}
+
+              {/* "+ adicionar slide" (Lote 6): slide em branco (do zero) ou
+                  inserir cópia de um modelo salvo em "Meus modelos". */}
+              <Popover
+                open={addSlideOpen}
+                onOpenChange={(open) => {
+                  setAddSlideOpen(open)
+                  if (open && slideTemplates === null) loadSlideTemplates()
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    title="Adicionar slide"
+                    aria-label="Adicionar slide"
+                    className="flex-shrink-0 w-24 h-32 rounded-xl border-2 border-dashed border-white/15 hover:border-white/30 bg-white/[0.02] hover:bg-white/[0.05] flex items-center justify-center transition-colors"
+                  >
+                    <Plus className="w-6 h-6 text-white/50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-72 bg-background-tertiary border-border-medium p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      createBlankSlide()
+                      setAddSlideOpen(false)
+                    }}
+                    className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-text-primary hover:bg-white/[0.06] transition-colors"
+                  >
+                    <FilePlus2 className="w-4 h-4 text-text-muted" />
+                    Slide em branco
+                  </button>
+                  <div className="mt-1 pt-1 border-t border-white/10">
+                    <div className="px-2.5 py-1.5 text-[11px] font-medium text-text-muted flex items-center gap-1.5">
+                      <LayoutTemplate className="w-3.5 h-3.5" />
+                      Meus modelos
+                    </div>
+                    {slideTemplatesLoading && (
+                      <div className="px-2.5 py-2 text-xs text-text-muted flex items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Carregando…
+                      </div>
+                    )}
+                    {!slideTemplatesLoading && slideTemplatesError && (
+                      <p className="px-2.5 py-2 text-xs text-text-muted">{slideTemplatesError}</p>
+                    )}
+                    {!slideTemplatesLoading && !slideTemplatesError && slideTemplates?.length === 0 && (
+                      <p className="px-2.5 py-2 text-xs text-text-muted">
+                        Nenhum modelo de slide salvo ainda.
+                      </p>
+                    )}
+                    {!slideTemplatesLoading && slideTemplates && slideTemplates.length > 0 && (
+                      <div className="max-h-48 overflow-y-auto space-y-0.5">
+                        {slideTemplates.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              insertSlideFromTemplate(t.data as PreviewSlide)
+                              setAddSlideOpen(false)
+                            }}
+                            className="w-full text-left rounded-lg px-2.5 py-2 text-sm text-text-primary hover:bg-white/[0.06] transition-colors truncate"
+                            title={t.name}
+                          >
+                            {t.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -1927,7 +2488,7 @@ export function CarouselEditor({
               template={template}
               brandColors={colors}
               fontClass={fontClassById(font)}
-              editorialStyle={style}
+              editorialStyle={styleOf(slide)}
               handle={handleValue}
               handleInitials={avatarInitials}
               {...chrome}
@@ -1945,12 +2506,22 @@ export function CarouselEditor({
       </div>
 
       {/* Sidebar de edição — coluna cheia à ESQUERDA (do topo ao fim) */}
-      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto">
-          <PanelTopBar
-            mode={panelMode}
-            onMode={setPanelMode}
-            historyCount={histEntries.length}
-          />
+      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black h-full overflow-y-auto">
+          {/* Barra de ícones FIXA no topo da sidebar: rolando o painel pra
+              baixo, logo/+/editar/histórico continuam visíveis. Ela é filha
+              direta do elemento com overflow-y-auto (o aside), que agora não
+              tem padding próprio — por isso top-0 puro gruda sem gap, sem
+              precisar do truque de margem negativa (que deixava um vão onde
+              o conteúdo rolado aparecia por cima da barra, cortando ela). O
+              padding do painel foi pro wrapper logo abaixo. */}
+          <div className="sticky top-0 z-20 bg-black px-4 pt-4">
+            <PanelTopBar
+              mode={panelMode}
+              onMode={setPanelMode}
+              historyCount={histEntries.length}
+            />
+          </div>
+          <div className="p-4 pt-0 space-y-3">
           {panelMode === "elementos" && (
             <ElementsPanel count={currentBlocks.length} onAdd={addBlock} />
           )}
@@ -2000,23 +2571,63 @@ export function CarouselEditor({
           </a>
 
           <Section icon={Bookmark} title="Estilo do Post" defaultOpen>
-            <div className="grid grid-cols-2 gap-2">
-              {STYLE_OPTIONS.map((o) => (
+            <div className="grid grid-cols-2 gap-1 rounded-lg border border-border-subtle p-1 mb-2">
+              {(
+                [
+                  ["todos", "Todos os slides"],
+                  ["slide", `Só o slide ${String(selected + 1).padStart(2, "0")}`],
+                ] as const
+              ).map(([v, label]) => (
                 <button
-                  key={o.value}
+                  key={v}
                   type="button"
-                  onClick={() => setStyle(o.value)}
-                  title={o.label}
-                  className={`h-9 rounded-lg text-xs font-medium px-2 truncate transition-colors ${
-                    style === o.value
-                      ? "bg-brand-600 text-white"
-                      : "border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-medium"
+                  onClick={() => setStyleScope(v)}
+                  className={`h-7 rounded-md text-[11px] font-medium transition-colors ${
+                    styleScope === v
+                      ? "bg-white/10 text-text-primary"
+                      : "text-text-muted hover:text-text-primary"
                   }`}
                 >
-                  {o.label.split(" ")[0]}
+                  {label}
                 </button>
               ))}
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              {STYLE_OPTIONS.map((o) => {
+                const ativo = styleScope === "slide" ? styleOf(slide) === o.value : style === o.value
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => {
+                      if (styleScope === "todos") return setStyle(o.value)
+                      // Só este slide: texto/imagem ficam; muda só o layout.
+                      // Escolher o estilo do carrossel tira o estilo próprio.
+                      patchSlide({
+                        style: o.value === style ? undefined : o.value,
+                      } as Partial<SlideWithStyle>)
+                    }}
+                    title={o.label}
+                    className={`h-9 rounded-lg text-xs font-medium px-2 truncate transition-colors ${
+                      ativo
+                        ? "bg-brand-600 text-white"
+                        : "border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-medium"
+                    }`}
+                  >
+                    {o.label.split(" ")[0]}
+                  </button>
+                )
+              })}
+            </div>
+            {(slide as SlideWithStyle | undefined)?.style && (
+              <button
+                type="button"
+                onClick={() => patchSlide({ style: undefined } as Partial<SlideWithStyle>)}
+                className="mt-2 text-[11px] text-text-muted hover:text-text-primary"
+              >
+                Slide {String(selected + 1).padStart(2, "0")} com estilo próprio · voltar ao do carrossel
+              </button>
+            )}
           </Section>
 
           <Section icon={Baseline} title="Tipografia">
@@ -2097,11 +2708,9 @@ export function CarouselEditor({
           </Section>
 
           <Section icon={Palette} title="Identidade Visual">
-            {/* Perfil da marca — o que aparece no pill/avatar dos slides.
-                Os três campos são independentes: o nome sai no estilo "Perfil"
-                e nos rodapés, o @ no pill, e as iniciais no círculo do avatar
-                (quando a marca não tem foto). Antes as iniciais eram sempre as
-                2 primeiras letras do @ e não davam pra corrigir. */}
+            {/* Perfil da marca — o nome sai no estilo "Perfil" e nos rodapés,
+                o @ no pill. O avatar (iniciais/foto) saiu do post por decisão
+                do Marcos; os valores já salvos continuam gravados, só sem campo. */}
             <p className="text-[10px] font-mono uppercase tracking-wider text-text-muted">
               Perfil da marca
             </p>
@@ -2128,84 +2737,7 @@ export function CarouselEditor({
                     className="h-9 mt-1.5"
                   />
                 </div>
-                <div className="w-[92px] flex-shrink-0">
-                  <Label className="text-xs">Iniciais</Label>
-                  <Input
-                    value={avatarInitials}
-                    onChange={(e) =>
-                      setAvatarInitials(e.target.value.slice(0, 3).toUpperCase())
-                    }
-                    placeholder={
-                      handleValue.replace(/^@/, "").slice(0, 2).toUpperCase() ||
-                      "MA"
-                    }
-                    maxLength={3}
-                    className="h-9 mt-1.5 text-center uppercase"
-                  />
-                </div>
               </div>
-              <p className="text-[10px] text-text-muted">
-                Iniciais vazias = usa as 2 primeiras letras do @.
-              </p>
-
-              {/* Foto do avatar — quando existe, substitui as iniciais em todos
-                  os pills/headers de perfil. */}
-              <div className="flex items-center gap-2 pt-1">
-                <span
-                  className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-white/10 text-[11px] font-bold text-white"
-                  aria-hidden
-                >
-                  {avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={proxiedImageUrl(avatarUrl)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    avatarInitials ||
-                    handleValue.replace(/^@/, "").slice(0, 2).toUpperCase() ||
-                    "MA"
-                  )}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  disabled={avatarBusy}
-                  onClick={() => avatarInputRef.current?.click()}
-                >
-                  {avatarBusy ? (
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  )}
-                  {avatarUrl ? "Trocar foto" : "Foto do avatar"}
-                </Button>
-                {avatarUrl && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAvatarUrl("")}
-                    title="Remover foto (volta pras iniciais)"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
-              <input
-                ref={avatarInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleAvatarUpload(file)
-                  e.target.value = ""
-                }}
-              />
             </div>
 
             {/* Enfeites do slide — o que antes era fixo no template. */}
@@ -2215,11 +2747,6 @@ export function CarouselEditor({
             <div className="space-y-2">
               {(
                 [
-                  {
-                    label: "Dots de paginação",
-                    on: showDots,
-                    set: setShowDots,
-                  },
                   {
                     label: "Selo verificado",
                     on: showVerified,
@@ -2317,12 +2844,9 @@ export function CarouselEditor({
                 onToggle={() => toggleSection("elemento")}
               >
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
+                  <ColorPickerInput
                     value={selectedOverride.color || "#ffffff"}
-                    onChange={(e) =>
-                      patchElement(selection.key, { color: e.target.value })
-                    }
+                    onChange={(v) => patchElement(selection.key, { color: v })}
                     className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
                     title="Cor do texto"
                   />
@@ -2398,6 +2922,20 @@ export function CarouselEditor({
                     <Undo2 className="w-3.5 h-3.5 mr-1.5" />
                     Restaurar
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="col-span-2"
+                    onClick={() => {
+                      setHiddenAll(selection.key, true)
+                      setSelection(null)
+                    }}
+                    title="Esconde este elemento em todos os slides do carrossel"
+                  >
+                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />
+                    Ocultar em todos os slides
+                  </Button>
                 </div>
                 <p className="text-[10px] text-text-muted">
                   Arraste o elemento direto no slide. O canto roxo redimensiona.
@@ -2420,16 +2958,25 @@ export function CarouselEditor({
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {hiddenKeys.map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => patchElement(k, { hidden: undefined })}
-                      className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[11px] text-white/70 hover:text-white hover:border-white/30"
-                      title="Mostrar de novo"
-                    >
-                      <Eye className="w-3 h-3" />
-                      {EDITABLE_TYPE_LABEL[k.split("-")[0] as EditableType] ?? k}
-                    </button>
+                    <span key={k} className="inline-flex items-stretch">
+                      <button
+                        type="button"
+                        onClick={() => patchElement(k, { hidden: undefined })}
+                        className="inline-flex items-center gap-1 rounded-l-md border border-white/10 px-2 py-1 text-[11px] text-white/70 hover:text-white hover:border-white/30"
+                        title="Mostrar de novo neste slide"
+                      >
+                        <Eye className="w-3 h-3" />
+                        {EDITABLE_TYPE_LABEL[k.split("-")[0] as EditableType] ?? k}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHiddenAll(k, false)}
+                        className="-ml-px rounded-r-md border border-white/10 px-2 py-1 text-[11px] text-white/50 hover:text-white hover:border-white/30"
+                        title="Mostrar este elemento em todos os slides"
+                      >
+                        em todos
+                      </button>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -2532,10 +3079,9 @@ export function CarouselEditor({
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="color"
+              <ColorPickerInput
                 value={slide.bg || "#0a0a0e"}
-                onChange={(e) => patchSlide({ bg: e.target.value })}
+                onChange={(v) => patchSlide({ bg: v })}
                 className="w-9 h-9 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
                 title="Cor personalizada"
               />
@@ -2586,11 +3132,10 @@ export function CarouselEditor({
                   <div className="grid grid-cols-2 gap-2">
                     {(["from", "to"] as const).map((k) => (
                       <div key={k} className="flex items-center gap-1.5">
-                        <input
-                          type="color"
+                        <ColorPickerInput
                           value={slide.bgGradient?.[k] ?? "#000000"}
-                          onChange={(e) =>
-                            patchSlide({ bgGradient: { ...slide.bgGradient!, [k]: e.target.value } })
+                          onChange={(v) =>
+                            patchSlide({ bgGradient: { ...slide.bgGradient!, [k]: v } })
                           }
                           className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
                           title={k === "from" ? "Cor inicial" : "Cor final"}
@@ -2618,10 +3163,9 @@ export function CarouselEditor({
             {(style === "gradient" || style === "seamless") && (
               <div className="flex items-center gap-2 pt-1">
                 <span className="text-[11px] font-medium text-text-secondary w-16 flex-shrink-0">Glow</span>
-                <input
-                  type="color"
+                <ColorPickerInput
                   value={slide.glow || colors[0] || "#1668E3"}
-                  onChange={(e) => patchSlide({ glow: e.target.value })}
+                  onChange={(v) => patchSlide({ glow: v })}
                   className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
                   title="Cor do brilho radial"
                 />
@@ -2711,8 +3255,9 @@ export function CarouselEditor({
                 variant="ghost"
                 size="sm"
                 className="text-xs"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => mainImageInputRef.current?.click()}
                 disabled={imgBusy !== null}
+                title="Escolha 2 a 4 fotos de uma vez pra virar colagem"
               >
                 {imgBusy === "upload" ? (
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
@@ -2747,6 +3292,8 @@ export function CarouselEditor({
                         posX: undefined,
                         posY: undefined,
                         zoom: undefined,
+                        collage: undefined,
+                        collageLayout: undefined,
                       })
                     }
                     className="text-[11px] text-red-400 hover:text-red-300 inline-flex items-center gap-1"
@@ -2772,6 +3319,68 @@ export function CarouselEditor({
                   value={slide.image.zoom ?? 100}
                   onChange={(v) => patchImage({ zoom: v })}
                 />
+
+                {/* Colagem: 2–4 fotos no mesmo espaço da foto principal. */}
+                <div className="space-y-2 pt-1 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-text-secondary inline-flex items-center gap-1.5">
+                      <Images className="w-3 h-3" />
+                      {slide.image.collage?.length
+                        ? `Colagem · ${slide.image.collage.length} fotos`
+                        : "Colagem"}
+                    </span>
+                    {slide.image.collage?.length ? (
+                      <button
+                        type="button"
+                        onClick={clearCollage}
+                        className="text-[11px] text-text-secondary hover:text-foreground"
+                      >
+                        Voltar pra 1 foto
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {(slide.image.collage?.length ?? 0) === 2 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={slide.image.collageLayout === "2v" ? "ghost" : "outline"}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => patchImage({ collageLayout: "2h" })}
+                      >
+                        <Columns2 className="w-3 h-3 mr-1" />
+                        Lado a lado
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={slide.image.collageLayout === "2v" ? "outline" : "ghost"}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => patchImage({ collageLayout: "2v" })}
+                      >
+                        <Rows2 className="w-3 h-3 mr-1" />
+                        Empilhada
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs w-full"
+                    onClick={() => collageFileInputRef.current?.click()}
+                    disabled={imgBusy !== null || (slide.image.collage?.length ?? 1) >= 4}
+                  >
+                    {imgBusy === "upload" ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <Grid2x2 className="w-3 h-3 mr-1" />
+                    )}
+                    Adicionar foto(s) à colagem
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -2814,10 +3423,103 @@ export function CarouselEditor({
                 e.target.value = ""
               }}
             />
+            <input
+              ref={collageFileInputRef}
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files
+                if (files?.length) void handleCollageUpload(files)
+                e.target.value = ""
+              }}
+            />
+            <input
+              ref={mainImageInputRef}
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files
+                if (files?.length) void handleMainImageUpload(files)
+                e.target.value = ""
+              }}
+            />
           </div>
           </Section>
           </div>
+          </div>
       </aside>
+
+      {/* "Salvar como modelo" (Lote 6): nome + escolha de escopo (este slide
+          ou o carrossel inteiro). Portal do Dialog renderiza no <body>, então
+          fica por cima mesmo dentro do editor fullscreen. */}
+      <Dialog open={tplDialogOpen} onOpenChange={setTplDialogOpen}>
+        <DialogContent className="bg-background-tertiary border-border-medium">
+          <DialogHeader>
+            <DialogTitle>Salvar como modelo</DialogTitle>
+            <DialogDescription>
+              Fica em &quot;Meus modelos&quot;, só pra você, pra reusar em outro carrossel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-1 rounded-lg border border-border-subtle p-1">
+              {(
+                [
+                  ["slide", `Este slide (${String(selected + 1).padStart(2, "0")})`],
+                  ["carousel", "Carrossel inteiro"],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setTplScope(v)}
+                  className={`h-8 rounded-md text-[11px] font-medium transition-colors ${
+                    tplScope === v
+                      ? "bg-white/10 text-text-primary"
+                      : "text-text-muted hover:text-text-primary"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <Label className="text-xs">Nome do modelo</Label>
+              <Input
+                autoFocus
+                value={tplName}
+                onChange={(e) => setTplName(e.target.value)}
+                placeholder="Ex.: Capa vermelha, Lista 3 itens…"
+                className="h-9 mt-1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && tplName.trim() && !tplBusy) void handleSaveAsTemplate()
+                }}
+              />
+            </div>
+            {tplError && <p className="text-xs text-destructive">{tplError}</p>}
+            {tplSaved && <p className="text-xs text-brand-400">Modelo salvo.</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!tplName.trim() || tplBusy}
+              onClick={() => void handleSaveAsTemplate()}
+            >
+              {tplBusy ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {tplBusy ? "Salvando…" : "Salvar modelo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    </HistoryGestureContext.Provider>
   )
 }

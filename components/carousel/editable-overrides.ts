@@ -23,6 +23,10 @@
 
 export type EditableType = "title" | "text" | "badge" | "image" | "meta" | "block"
 
+/** Grade da colagem (2–4 fotos no espaço da foto principal). "2h" = lado a
+ *  lado, "2v" = uma acima da outra, "3" = uma grande + duas pequenas, "4" = 2×2. */
+export type CollageLayout = "2h" | "2v" | "3" | "4"
+
 export interface ElementOverride {
   /** Deslocamento em px na LARGURA DE DESIGN (420) — escala junto do slide. */
   dx?: number
@@ -34,6 +38,11 @@ export interface ElementOverride {
   /** Oculta o elemento nativo (visibility:hidden — mantém o fluxo do layout,
    *  nada reflui). Usado pra trocar "arrasta"/marca pelo bloco do usuário. */
   hidden?: boolean
+  /** Texto trocado direto no slide, em tag/rodapé que não tem campo no painel
+   *  (ex.: "arrasta →"). Só vale pra nó com um único texto. */
+  text?: string
+  /** Cor de fundo da tag (botão direito → "Fundo da tag"). Só tag. */
+  bg?: string
 }
 
 export type SlideElementOverrides = Record<string, ElementOverride>
@@ -150,5 +159,51 @@ export function applyElementOverrides(
         delete node.dataset.editOrigColor
       }
     }
+
+    // ── fundo (só tag) — mesmo esquema de restauração da cor. O valor aplicado
+    //    é guardado já normalizado pelo navegador (hex → rgb) pra comparar certo.
+    if (type === "badge") {
+      if (o?.bg) {
+        if (
+          node.dataset.editAppliedBg === undefined ||
+          node.style.backgroundColor !== node.dataset.editAppliedBg
+        ) {
+          node.dataset.editOrigBg = node.style.backgroundColor
+        }
+        node.style.backgroundColor = o.bg
+        node.dataset.editAppliedBg = node.style.backgroundColor
+      } else if (node.dataset.editAppliedBg !== undefined) {
+        node.style.backgroundColor = node.dataset.editOrigBg ?? ""
+        delete node.dataset.editAppliedBg
+        delete node.dataset.editOrigBg
+      }
+    }
+
+    // ── texto (tag/rodapé sem campo) — troca o nodeValue do ÚNICO nó de texto,
+    //    sem remover nós que o React controla. Mesmo esquema de restauração da cor.
+    if (type === "badge" || type === "meta") {
+      const tn = singleTextNode(node)
+      if (tn && o?.text != null) {
+        if (
+          node.dataset.editAppliedText === undefined ||
+          tn.nodeValue !== node.dataset.editAppliedText
+        ) {
+          node.dataset.editOrigText = tn.nodeValue ?? ""
+        }
+        tn.nodeValue = o.text
+        node.dataset.editAppliedText = o.text
+      } else if (tn && node.dataset.editAppliedText !== undefined) {
+        tn.nodeValue = node.dataset.editOrigText ?? ""
+        delete node.dataset.editAppliedText
+        delete node.dataset.editOrigText
+      }
+    }
   }
+}
+
+/** O nó tem exatamente um filho, e ele é texto? (tag "arrasta →", "@marca"…) */
+export function singleTextNode(node: HTMLElement): Text | null {
+  return node.childNodes.length === 1 && node.firstChild?.nodeType === Node.TEXT_NODE
+    ? (node.firstChild as Text)
+    : null
 }

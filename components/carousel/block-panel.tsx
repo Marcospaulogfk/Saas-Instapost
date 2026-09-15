@@ -100,7 +100,7 @@ const CATALOG: Array<{
       { type: "text", icon: AlignLeft, hint: "Parágrafo curto de apoio" },
       { type: "image", icon: ImageIcon, hint: "Foto, logo ou print" },
       { type: "pill", icon: Tag, hint: "Etiqueta arredondada" },
-      { type: "brand", icon: BadgeCheck, hint: "Avatar + nome + @handle da marca" },
+      { type: "brand", icon: BadgeCheck, hint: "Nome + selo + @handle da marca" },
     ],
   },
   {

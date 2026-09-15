@@ -51,6 +51,8 @@ interface SinglePostItem {
   brand_name: string
   rendered_image_url: string | null
   created_at: string
+  /** Última edição — ordena a Biblioteca (mexeu por último, aparece primeiro). */
+  updated_at: string
   /** Briefing original — alimenta "Prompt usado" e "Recriar com este prompt". */
   raw_brief: string | null
   /** Legenda pronta pro Instagram, pra copiar sem abrir o editor. */
@@ -376,31 +378,32 @@ export function ProjectsList({
     )
   }
 
-  // Uma grade so, ordenada por data de criacao (mais novo primeiro).
-  // Antes cada tipo era um bloco separado na tela, entao um post recem
-  // criado caia depois de todos os carrosseis e projetos antigos.
+  // Uma grade so, ordenada pela ULTIMA ALTERACAO (editou por ultimo, vem
+  // primeiro). Antes cada tipo era um bloco separado na tela, entao um post
+  // recem criado caia depois de todos os carrosseis e projetos antigos.
+  // Projeto legado nao tem updated_at: usa a criacao.
   const itens = [
     ...filteredSinglePosts.map((post) => ({
       kind: "post" as const,
       id: post.id,
-      created_at: post.created_at,
+      alterado_em: post.updated_at || post.created_at,
       post,
     })),
     ...filteredCarousels.map((carrossel) => ({
       kind: "carrossel" as const,
       id: carrossel.id,
-      created_at: carrossel.created_at,
+      alterado_em: carrossel.updated_at || carrossel.created_at,
       carrossel,
     })),
     ...filtered.map((projeto) => ({
       kind: "projeto" as const,
       id: projeto.id,
-      created_at: projeto.created_at,
+      alterado_em: projeto.created_at,
       projeto,
     })),
   ].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      new Date(b.alterado_em).getTime() - new Date(a.alterado_em).getTime(),
   )
 
   return (

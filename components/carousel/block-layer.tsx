@@ -142,35 +142,14 @@ function BlockBody({ block, fontClass }: { block: SlideBlock; fontClass?: string
       )
     case "brand": {
       const ink = block.color ?? "#FFFFFF"
-      const initials =
-        block.initials?.trim() ||
-        handleVisivel(block.handle).replace(/^@/, "").slice(0, 2).toUpperCase() ||
-        "MP"
+      // O círculo do avatar (foto ou 2 letras do @) saiu do post — decisão do
+      // Marcos. Ficam só nome + selo + @.
       const size = Math.max(24, Math.min(block.h, 64))
       return (
         <div
           className={`w-full h-full flex items-center gap-2.5 overflow-hidden ${fontClass ?? ""}`}
           style={{ color: ink, textShadow: block.shadow ? TEXT_SHADOW : undefined }}
         >
-          {block.showAvatar !== false && (
-            <div
-              className="rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold"
-              style={{
-                width: size,
-                height: size,
-                backgroundColor: "rgba(127,127,140,0.35)",
-                fontSize: size * 0.36,
-                boxShadow: block.shadow ? BOX_SHADOW : undefined,
-              }}
-            >
-              {block.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={proxiedImageUrl(block.avatar)} alt="" className="w-full h-full object-cover" />
-              ) : (
-                initials
-              )}
-            </div>
-          )}
           <div className="leading-tight min-w-0">
             <div className="flex items-center gap-1">
               <span className="font-bold truncate" style={{ fontSize: Math.max(11, size * 0.34) }}>

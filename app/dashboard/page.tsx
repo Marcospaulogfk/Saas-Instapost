@@ -105,7 +105,8 @@ export default async function DashboardPage() {
       href: `/dashboard/posts-unicos/${p.id}`,
       image: p.rendered_image_url ?? null,
       brand: p.brand_name ?? null,
-      created_at: p.created_at,
+      // Ordem de alteração: o que foi editado por último vem primeiro.
+      created_at: p.updated_at || p.created_at,
       kind: "Post" as const,
     })),
     ...projects.map((p) => ({

@@ -93,7 +93,7 @@ export function CoverWesleyGemini({
         }}
       >
         {slide.image.url ? (
-          <SmartSlideImage
+          <SmartSlideImage fill
             src={slide.image.url}
             className="w-full h-full"
           />
@@ -129,7 +129,7 @@ export function CoverWesleyInternet({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -198,7 +198,7 @@ export function CoverWesleyLabios({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -267,7 +267,7 @@ export function CoverWesleyChurrasco({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -335,7 +335,7 @@ export function CoverBrandsdecodedMassive({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -410,7 +410,7 @@ export function CoverBrandsdecodedPortrait({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative bg-black flex flex-col"
       style={{ backgroundColor: bgOverride ?? "#000000" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -528,7 +528,7 @@ export function CoverGradientGlow({
           }}
         >
           {slide.image.url ? (
-            <SmartSlideImage
+            <SmartSlideImage fill
               src={slide.image.url}
               className="absolute inset-0 w-full h-full"
             />
@@ -618,7 +618,7 @@ export function CoverMinimalClean({
           style={{ border: "1px solid rgba(0,0,0,0.12)" }}
         >
           {slide.image.url ? (
-            <SmartSlideImage
+            <SmartSlideImage fill
               src={slide.image.url}
               className="absolute inset-0 w-full h-full"
             />
@@ -667,7 +667,7 @@ export function CoverSeamlessFlow({
     >
       {/* FOTO como fundo full-bleed (preenche o slide inteiro) */}
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />
@@ -768,7 +768,7 @@ export function CoverCardsGlass({
     <div className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
       style={{ backgroundColor: bgOverride ?? "#0E0E12" }}>
       {slide.image.url ? (
-        <SmartSlideImage
+        <SmartSlideImage fill
           src={slide.image.url}
           className="absolute inset-0 w-full h-full"
         />

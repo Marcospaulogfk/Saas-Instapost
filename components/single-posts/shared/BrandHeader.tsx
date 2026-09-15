@@ -9,29 +9,17 @@ interface BrandHeaderProps {
 }
 
 /**
- * Header pequeno com mini logo (monograma) + nome da marca em uppercase.
+ * Header pequeno com o nome da marca.
  * Usado em templates fitness no canto superior esquerdo.
+ * Sem círculo de iniciais (decisão do Marcos): logoBg/logoFg ficam no tipo
+ * só pra não quebrar quem ainda passa, e são ignorados.
  */
 export function BrandHeader({
   brand,
   textColor = "#1A1A1A",
-  logoBg = "#FFFFFF",
-  logoFg = "#1A1A1A",
 }: BrandHeaderProps) {
   return (
-    <div className="flex items-center" style={{ gap: "min(2cqw, 10px)" }}>
-      <span
-        className="rounded-full flex items-center justify-center font-bold leading-none"
-        style={{
-          width: "min(6cqw, 28px)",
-          height: "min(6cqw, 28px)",
-          background: logoBg,
-          color: logoFg,
-          fontSize: "min(2.6cqw, 0.78rem)",
-        }}
-      >
-        {brand.monogram}
-      </span>
+    <div className="flex items-center">
       <span
         className={inter.className}
         style={{

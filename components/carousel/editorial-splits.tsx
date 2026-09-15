@@ -725,25 +725,8 @@ export function SplitMyPostFlowCta({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col p-6"
       style={{ backgroundColor: cBg, color: cBody }}
     >
-      {/* Avatar pill — square icon (não circular) */}
+      {/* @handle (o ícone quadrado com foto/iniciais saiu — decisão do Marcos) */}
       <div className="inline-flex items-center gap-2 mb-4 flex-shrink-0">
-        <span
-          className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 flex items-center justify-center"
-          style={{ backgroundColor: "#1668E3", color: "#FFFFFF", fontSize: 11, fontWeight: 700 }}
-         data-edit="meta">
-          {slide.handle_avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={proxiedImageUrl(slide.handle_avatar)}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            slide.handle_initials?.trim() ||
-            slide.handle?.replace(/^@/, "").slice(0, 2).toUpperCase() ||
-            "MP"
-          )}
-        </span>
         <span className="text-sm font-medium" data-edit="meta">
           {handleVisivel(slide.handle)}
         </span>
@@ -1434,12 +1417,6 @@ export function SplitProfilePost({
   const post = th?.muted ?? "rgba(255,255,255,0.9)"
   const faint = th?.faint ?? "rgba(255,255,255,0.5)"
   const name = slide.brand_label || (slide.handle || "@perfil").replace(/^@/, "")
-  const initials =
-    slide.handle_initials?.trim() ||
-    (slide.handle || slide.brand_label || "SP")
-      .replace(/^@/, "")
-      .slice(0, 2)
-      .toUpperCase()
   const hasImg = !!slide.images[0]?.url
 
   return (
@@ -1447,23 +1424,9 @@ export function SplitProfilePost({
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col justify-center px-7 text-left"
       style={{ backgroundColor: bg }}
     >
-      {/* Header do perfil (avatar + nome + selo + @handle) */}
+      {/* Header do perfil (nome + selo + @handle). O círculo do avatar saiu —
+          decisão do Marcos. */}
       <div className="flex items-center gap-2.5 mb-3 flex-shrink-0">
-        <div
-          className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(127,127,140,0.28)", color: text }}
-         data-edit="meta">
-          {slide.handle_avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={proxiedImageUrl(slide.handle_avatar)}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-[11px] font-bold">{initials}</span>
-          )}
-        </div>
         <div className="leading-tight min-w-0">
           <div className="flex items-center gap-1">
             <span
