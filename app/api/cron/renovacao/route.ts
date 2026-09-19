@@ -9,6 +9,12 @@
 //   0 6 * * *  curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
 //     https://app.nexuscontentai.com.br/api/cron/renovacao
 // Rota pública no middleware (/api/cron) só com o segredo.
+//
+// UMA CONTA SÓ: `?user=<uuid>` roda a varredura apenas naquela conta.
+//   curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+//     "https://app.nexuscontentai.com.br/api/cron/renovacao?user=<uuid>"
+// Existe porque consertar uma conta não pode obrigar a rodar o job no banco
+// inteiro e torcer: o cron diário chama sem o parâmetro, o suporte chama com.
 // =====================================================================
 
 import { NextResponse } from "next/server"
@@ -16,6 +22,8 @@ import { runRenewalSweep } from "@/lib/billing/apply"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function autorizado(req: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -30,9 +38,13 @@ export async function GET(req: Request) {
   if (!autorizado(req)) {
     return NextResponse.json({ ok: false, error: "nao_autorizado" }, { status: 401 })
   }
+  const userId = new URL(req.url).searchParams.get("user")
+  if (userId && !UUID_RE.test(userId)) {
+    return NextResponse.json({ ok: false, error: "user_invalido" }, { status: 400 })
+  }
   try {
-    const out = await runRenewalSweep()
-    return NextResponse.json({ ok: true, ...out })
+    const out = await runRenewalSweep({ userId })
+    return NextResponse.json({ ok: true, ...(userId ? { user: userId } : {}), ...out })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error("[cron/renovacao]", msg)
