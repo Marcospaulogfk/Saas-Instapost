@@ -28,6 +28,8 @@ export type Profile = {
   plan_id: string | null
   plan_cycle: string | null
   plan_renews_at: string | null
+  /** Ate quando o periodo ja esta pago (migration 0031). Null = conta normal. */
+  plan_prepaid_until: string | null
   past_due_since: string | null
   billing_subscription_id: string | null
 }
@@ -117,7 +119,7 @@ export const getProfile = cache(async () => {
   const { data, error } = await supabase
     .from("users")
     .select(
-      "credits, subscription_status, plan_credits_monthly, plan_credits_used_this_month, trial_used, topup_credits, referral_credits, plan_id, plan_cycle, plan_renews_at, past_due_since, billing_subscription_id",
+      "credits, subscription_status, plan_credits_monthly, plan_credits_used_this_month, trial_used, topup_credits, referral_credits, plan_id, plan_cycle, plan_renews_at, plan_prepaid_until, past_due_since, billing_subscription_id",
     )
     .eq("id", user.id)
     .single()
@@ -142,6 +144,7 @@ export const getProfile = cache(async () => {
           plan_id: null,
           plan_cycle: null,
           plan_renews_at: null,
+          plan_prepaid_until: null,
           past_due_since: null,
           billing_subscription_id: null,
         }
@@ -161,6 +164,7 @@ export const getProfile = cache(async () => {
         plan_id: raw.plan_id ?? null,
         plan_cycle: raw.plan_cycle ?? null,
         plan_renews_at: raw.plan_renews_at ?? null,
+        plan_prepaid_until: raw.plan_prepaid_until ?? null,
         past_due_since: raw.past_due_since ?? null,
         billing_subscription_id: raw.billing_subscription_id ?? null,
       }

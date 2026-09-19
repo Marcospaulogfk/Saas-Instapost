@@ -248,7 +248,7 @@ describe("pré-pago: o robô passa a enxergar e cuidar sozinho", () => {
     expect(out.checked).toBe(1)
     expect(out.granted).toBe(1)
     expect(db.user(REINALDO).credits).toBe(1000)
-    expect(db.user(REINALDO).plan_renews_at).toBe("2026-10-09T00:00:00.000Z")
+    expect(db.user(REINALDO).plan_renews_at).toBe("2026-10-09T12:00:00.000Z")
     // Creditou pela porta de dentro: virou linha no extrato.
     expect(db.token_transactions.filter((t) => t.kind === "grant_plan")).toHaveLength(1)
   })
@@ -262,7 +262,7 @@ describe("pré-pago: o robô passa a enxergar e cuidar sozinho", () => {
     expect(out.granted).toBe(1)
     expect(db.user(REINALDO).credits).toBe(1000) // 1000, não 2000
     // Pulou direto pro próximo vencimento no futuro, sem passear pelo passado.
-    expect(db.user(REINALDO).plan_renews_at).toBe("2026-10-09T00:00:00.000Z")
+    expect(db.user(REINALDO).plan_renews_at).toBe("2026-10-09T12:00:00.000Z")
   })
 
   it("sem provedor nenhum consultado: a conta não depende do Asaas pra viver", async () => {
@@ -419,7 +419,7 @@ describe("as três datas que o dono pediu", () => {
     const out = await runRenewalSweep({ now: d("2026-10-09T06:00:00Z") })
     expect(out.granted).toBe(1)
     expect(db.user(REINALDO).credits).toBe(1000)
-    expect(db.user(REINALDO).plan_renews_at).toBe("2026-11-09T00:00:00.000Z")
+    expect(db.user(REINALDO).plan_renews_at).toBe("2026-11-09T12:00:00.000Z")
   })
 
   it("09/11/2026: recarrega de novo, zerando a sobra com linha no extrato", async () => {
@@ -427,7 +427,7 @@ describe("as três datas que o dono pediu", () => {
     const out = await runRenewalSweep({ now: d("2026-11-09T06:00:00Z") })
     expect(out.granted).toBe(1)
     expect(db.user(REINALDO).credits).toBe(1000)
-    expect(db.user(REINALDO).plan_renews_at).toBe("2026-12-09T00:00:00.000Z")
+    expect(db.user(REINALDO).plan_renews_at).toBe("2026-12-09T12:00:00.000Z")
     // A sobra de 120 não sumiu: virou linha.
     expect(db.token_transactions.some((t) => t.kind === "expire_plan" && t.delta === -120)).toBe(true)
   })
@@ -492,6 +492,59 @@ describe("uma conta só", () => {
 })
 
 // =====================================================================
+describe("a data que a tela mostra é a data em que o job age", () => {
+  // O produto desenha data em horário de Brasília (UTC-3). Meia-noite UTC
+  // vira 21h do dia anterior e a tela mostrava um dia a menos.
+  const diaEmBrasilia = (iso: string) =>
+    new Date(iso).toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      day: "2-digit",
+      month: "2-digit",
+    })
+
+  it("a próxima recarga cai num horário que o Brasil lê como o MESMO dia", async () => {
+    // Pior caso de propósito: vencimento à meia-noite UTC, como estava gravado.
+    db.addUser(contaPrePaga({ plan_renews_at: "2026-09-09T00:00:00.000Z" }))
+    await runRenewalSweep({ now: d("2026-09-19T06:00:00Z") })
+
+    const prox = db.user(REINALDO).plan_renews_at as string
+    expect(prox).toBe("2026-10-09T12:00:00.000Z")
+    expect(diaEmBrasilia(prox)).toBe("09/10") // e não 08/10
+  })
+
+  it("mês após mês a âncora se mantém, sem escorregar de volta", async () => {
+    db.addUser(contaPrePaga())
+    for (const hoje of ["2026-09-19", "2026-10-09", "2026-11-09", "2026-12-09"]) {
+      await runRenewalSweep({ now: d(`${hoje}T18:00:00Z`) })
+    }
+    const prox = db.user(REINALDO).plan_renews_at as string
+    expect(diaEmBrasilia(prox)).toBe("09/01")
+    expect(new Date(prox).getUTCHours()).toBe(12)
+  })
+
+  it("o MENSAL do provedor continua com a data crua do provedor, sem âncora", async () => {
+    db.addUser({
+      id: "99999999-0000-4000-8000-000000000009",
+      subscription_status: "active",
+      plan_id: "pro",
+      plan_cycle: "monthly",
+      plan_renews_at: "2026-09-15T00:00:00.000Z",
+      billing_subscription_id: "sub_mensal",
+      credits: 0,
+    })
+    assinaturaNoProvedor = {
+      id: "sub_mensal", customerId: "cus_9", status: "active", cycle: "monthly",
+      value: 97, nextDueDate: "2026-10-15T03:20:00.000Z", externalReference: null,
+    }
+    await runRenewalSweep({ now: d("2026-09-19T06:00:00Z") })
+    // Byte a byte o que o provedor mandou: o conserto da data não encostou aqui.
+    expect(db.user("99999999-0000-4000-8000-000000000009").plan_renews_at).toBe(
+      "2026-10-15T03:20:00.000Z",
+    )
+  })
+})
+
+// =====================================================================
 describe("cadência do pagamento: anual recarrega todo mês", () => {
   it("mensal: fim do pago e próxima recarga são o mesmo dia (nada mudou)", () => {
     const { periodEnd, renewsAt } = datasDoPagamento(d("2026-09-19T00:00:00Z"), "monthly")
@@ -502,7 +555,7 @@ describe("cadência do pagamento: anual recarrega todo mês", () => {
   it("anual: paga 12 meses, mas a próxima recarga é daqui a um mês", () => {
     const { periodEnd, renewsAt } = datasDoPagamento(d("2026-09-19T00:00:00Z"), "annual")
     expect(periodEnd.toISOString()).toBe("2027-09-19T00:00:00.000Z")
-    expect(renewsAt.toISOString()).toBe("2026-10-19T00:00:00.000Z")
+    expect(renewsAt.toISOString()).toBe("2026-10-19T12:00:00.000Z")
   })
 
   it("anual no provedor: o job não joga a recarga pra daqui a um ano", async () => {
@@ -526,7 +579,7 @@ describe("cadência do pagamento: anual recarrega todo mês", () => {
 
     expect(u.credits).toBe(1000)
     // A próxima recarga é em um mês, não em 2027.
-    expect(u.plan_renews_at).toBe("2026-10-19T00:00:00.000Z")
+    expect(u.plan_renews_at).toBe("2026-10-19T12:00:00.000Z")
     // E o fim do pago é que fica lá na frente.
     expect(u.plan_prepaid_until).toBe("2027-09-19T00:00:00.000Z")
   })

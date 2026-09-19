@@ -95,8 +95,31 @@ export default async function TokensPage({
   // Clientes marcados à mão (antes da cobrança existir) são ativos sem
   // plan_id/ciclo: tratados como ativos, só sem as linhas de cobrança.
   const ativo = status === "active"
-  const comCobranca = ativo && Boolean(planId) && Boolean(cycle)
   const renovaEm = profile?.plan_renews_at ?? null
+  // ---------------------------------------------------------------
+  // Conta PRÉ-PAGA: o período já está pago e NÃO existe assinatura no
+  // provedor pra cobrar de novo (plano anual fechado à mão, por exemplo).
+  //
+  // A distinção importa porque a tela estava contando a história errada:
+  // ela mostrava "Próxima cobrança" pra quem já tinha pago o ano inteiro.
+  // Pra um cliente que pagou adiantado, ler que vem cobrança no mês que vem
+  // é ler que vai ser cobrado duas vezes. Aqui não vem cobrança nenhuma: o
+  // que vem é RECARGA DE FICHAS, e o que ele quer saber é até quando tem.
+  //
+  // A regra é por ESTADO da conta, nunca por cliente: qualquer conta com
+  // período pago e sem assinatura no provedor cai neste caminho.
+  // ---------------------------------------------------------------
+  const pagoAte = profile?.plan_prepaid_until ?? null
+  const temProvedor = Boolean(profile?.billing_subscription_id)
+  // Só enquanto o período pago ainda corre: passou da data, o job diário
+  // encerra a assinatura e a conta volta a ser trial. Sem esta checagem a
+  // tela diria "não há cobrança a caminho" para quem já acabou.
+  const prePago = ativo && Boolean(pagoAte) && new Date(pagoAte!) > new Date() && !temProvedor
+  const comCobranca = ativo && Boolean(planId) && Boolean(cycle) && !prePago
+  // Quem TEM provedor continua lendo cobrança, como sempre leu. No anual a
+  // cobrança cai no fim do período pago, não na recarga mensal das fichas;
+  // no mensal os dois são o mesmo dia, então o valor é idêntico ao de antes.
+  const cobrancaEm = cycle === "annual" && pagoAte ? pagoAte : renovaEm
   const nomePlano =
     status === "active"
       ? planId
@@ -275,15 +298,54 @@ export default async function TokensPage({
                 </div>
                 <div className="flex justify-between">
                   <dt style={{ color: "var(--nv-text-muted)" }}>Próxima cobrança</dt>
-                  <dd style={{ color: "var(--nv-text)" }}>{renovaEm ? data(renovaEm) : "a confirmar"}</dd>
+                  <dd style={{ color: "var(--nv-text)" }}>{cobrancaEm ? data(cobrancaEm) : "a confirmar"}</dd>
                 </div>
+                {/* No anual a cobrança e a recarga deixaram de ser o mesmo dia:
+                    paga-se uma vez por ano e as fichas voltam todo mês. */}
+                {cycle === "annual" && pagoAte && renovaEm && (
+                  <div className="flex justify-between">
+                    <dt style={{ color: "var(--nv-text-muted)" }}>Próxima recarga</dt>
+                    <dd style={{ color: "var(--nv-text)" }}>{data(renovaEm)}</dd>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <dt style={{ color: "var(--nv-text-muted)" }}>Tokens por mês</dt>
                   <dd style={{ color: "var(--nv-text)" }}>{fmt(grant)}</dd>
                 </div>
               </>
             )}
-            {ativo && !comCobranca && (
+            {prePago && (
+              <>
+                {cycle && (
+                  <div className="flex justify-between">
+                    <dt style={{ color: "var(--nv-text-muted)" }}>Ciclo</dt>
+                    {/* SEM preço: em conta pré-paga o valor da tabela não é o
+                        acordo dela, e mostrar um número que o cliente não
+                        pagou é pior do que não mostrar número nenhum. */}
+                    <dd style={{ color: "var(--nv-text)" }}>
+                      {cycle === "annual" ? "Anual, pago adiantado" : "Mensal, pago adiantado"}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt style={{ color: "var(--nv-text-muted)" }}>Próxima recarga</dt>
+                  <dd style={{ color: "var(--nv-text)" }}>{renovaEm ? data(renovaEm) : "a confirmar"}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt style={{ color: "var(--nv-text-muted)" }}>Pago até</dt>
+                  <dd style={{ color: "var(--nv-text)" }}>{data(pagoAte!)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt style={{ color: "var(--nv-text-muted)" }}>Tokens por mês</dt>
+                  <dd style={{ color: "var(--nv-text)" }}>{fmt(grant)}</dd>
+                </div>
+                <p className="pt-1" style={{ color: "var(--nv-text-muted)" }}>
+                  Seu período já está pago até {data(pagoAte!)}. Não há cobrança a caminho:
+                  as fichas recarregam sozinhas todo mês até lá.
+                </p>
+              </>
+            )}
+            {ativo && !comCobranca && !prePago && (
               <div className="flex justify-between">
                 <dt style={{ color: "var(--nv-text-muted)" }}>Tokens por mês</dt>
                 <dd style={{ color: "var(--nv-text)" }}>{fmt(grant)}</dd>

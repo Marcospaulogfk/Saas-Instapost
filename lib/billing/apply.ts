@@ -48,6 +48,26 @@ function proximaRecarga(from: Date): Date {
 }
 
 /**
+ * Ancora uma data de ciclo ao MEIO-DIA UTC.
+ *
+ * O produto desenha data em horário de Brasília (UTC-3). Uma data guardada à
+ * meia-noite UTC vira 21h do dia ANTERIOR no Brasil, e a tela mostrava
+ * "renova 08/10" para uma recarga que o job faz em 09/10. Ao meio-dia UTC o
+ * dia do calendário é o mesmo nos dois fusos, então o que a tela mostra e o
+ * que o job faz passam a ser o mesmo dia.
+ *
+ * Mexe SÓ na cadência de recarga que nós mesmos calculamos. Nenhum formatador
+ * de data foi tocado, justamente pra que nenhuma outra tela do produto ande
+ * um dia por causa deste conserto. Como meio-dia UTC é sempre o mesmo dia do
+ * calendário em Brasília, esta normalização nunca empurra uma data pra trás.
+ */
+function aoMeioDiaUTC(d: Date): Date {
+  const out = new Date(d)
+  out.setUTCHours(12, 0, 0, 0)
+  return out
+}
+
+/**
  * Onde cai a próxima recarga depois de `vencimento`, sem passar do fim do
  * período pago e sem creditar histórico.
  *
@@ -59,7 +79,8 @@ function proximaRecarga(from: Date): Date {
 function proximoVencimento(vencimento: Date, agora: Date, fimDoPago: Date): Date {
   let prox = proximaRecarga(vencimento)
   while (prox <= agora && prox < fimDoPago) prox = proximaRecarga(prox)
-  return prox > fimDoPago ? fimDoPago : prox
+  if (prox > fimDoPago) return fimDoPago
+  return aoMeioDiaUTC(prox)
 }
 
 /**
@@ -84,7 +105,10 @@ export function datasDoPagamento(
   const periodEnd = nextRenewal(paidAt, cycle)
   return {
     periodEnd,
-    renewsAt: cycle === "annual" ? proximaRecarga(paidAt) : periodEnd,
+    // No MENSAL a recarga é o próprio fim do período: mesma data de sempre,
+    // vinda do pagamento, sem normalização nenhuma — é o caso de quem já
+    // existe e não pode mudar. No ANUAL a cadência é nossa, então ancora.
+    renewsAt: cycle === "annual" ? aoMeioDiaUTC(proximaRecarga(paidAt)) : periodEnd,
   }
 }
 
