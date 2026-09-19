@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { type ClienteDaPonte, conferirSegredo, resolverDono } from "@/lib/websync/dono"
 
 export const runtime = "nodejs"
 
@@ -23,23 +23,14 @@ export const runtime = "nodejs"
 // um clique de cair no calendário de outra empresa.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
-
-function autorizado(req: Request): { ok: true } | { ok: false; resp: NextResponse } {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/brands] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return {
-      ok: false,
-      resp: NextResponse.json({ error: "webhook não configurado" }, { status: 503 }),
-    }
+function autorizado(
+  req: Request,
+): { ok: true; cliente: ClienteDaPonte | null } | { ok: false; resp: NextResponse } {
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return { ok: false, resp: NextResponse.json({ error: auth.erro }, { status: auth.status }) }
   }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os/brands] secret inválido")
-    return { ok: false, resp: NextResponse.json({ error: "não autorizado" }, { status: 401 }) }
-  }
-  return { ok: true }
+  return { ok: true, cliente: auth.cliente }
 }
 
 /** Normaliza handle pra gravar sempre do mesmo jeito: com @, minúsculo. */
@@ -53,7 +44,7 @@ export async function GET(req: Request) {
   if (!auth.ok) return auth.resp
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }
@@ -108,7 +99,7 @@ export async function POST(req: Request) {
     typeof corpo.instagram_handle === "string" ? normalizarHandle(corpo.instagram_handle) : null
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }

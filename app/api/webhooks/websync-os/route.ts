@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import {
   criarPautas,
   MAX_PAUTAS_POR_LOTE,
@@ -45,22 +45,14 @@ export const maxDuration = 300
 // POST /api/v1/calendario (a mesma coisa, autenticada por chave de conta).
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
-
 export async function POST(req: Request) {
   // 1) Validação do secret ------------------------------------------------
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
     return NextResponse.json(
-      { error: "webhook não configurado" },
-      { status: 503 },
+      { error: auth.status === 503 ? "webhook não configurado" : "não autorizado" },
+      { status: auth.status },
     )
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os] secret inválido no webhook")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
   }
 
   // 2) Parse do payload ---------------------------------------------------
@@ -83,7 +75,7 @@ export async function POST(req: Request) {
   // publicaria a pauta do Marcos no calendário editorial de outra empresa,
   // sem erro nenhum na hora.
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }

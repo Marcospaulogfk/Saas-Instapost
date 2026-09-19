@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import { listarCalendario } from "@/lib/calendario/operacoes"
 import { erroJson } from "@/lib/calendario/resposta"
 
@@ -30,22 +30,19 @@ export const dynamic = "force-dynamic"
 // Aqui fica só o segredo do webhook e o guard de dono.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
-
 export async function GET(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/calendario] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
-  }
-  if (req.headers.get(SECRET_HEADER) !== expected) {
-    console.warn("[websync-os/calendario] secret inválido")
-    return erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
+  // Aceita o segredo do WebSync-OS E o de cada CRM cliente: quem chegou
+  // decide de quem são as marcas (lib/websync/dono.ts).
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return auth.status === 503
+      ? erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
+      : erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
   }
 
   const url = new URL(req.url)
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) return erroJson(409, "dono_indefinido", dono.motivo)
 
   const res = await listarCalendario(admin, dono.ownerId, {

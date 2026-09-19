@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import {
   MAX_GERACOES_POR_LOTE,
   pedirGeracao,
@@ -25,18 +25,16 @@ export const maxDuration = 300
 // O miolo mora em lib/calendario/operacoes.ts, dividido com POST /api/v1/gerar.
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
-
 export async function POST(req: Request) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/gerar] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return NextResponse.json({ error: "webhook não configurado" }, { status: 503 })
-  }
-  const provided = req.headers.get(SECRET_HEADER)
-  if (!provided || provided !== expected) {
-    console.warn("[websync-os/gerar] secret inválido")
-    return NextResponse.json({ error: "não autorizado" }, { status: 401 })
+  // Esta rota nasceu depois da ponte multi-cliente (01/09) e ficou com a
+  // checagem antiga: com o segredo de um CRM cliente ela respondia 401
+  // enquanto o POST das pautas, ao lado, aceitava. Mesmo helper das outras.
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 503 ? "webhook não configurado" : "não autorizado" },
+      { status: auth.status },
+    )
   }
 
   let corpo: { itens?: ItemGeracao[] }
@@ -53,7 +51,7 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) {
     return NextResponse.json({ error: dono.motivo }, { status: 409 })
   }

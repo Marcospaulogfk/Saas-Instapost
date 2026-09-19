@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { resolverDono } from "@/lib/websync/dono"
+import { conferirSegredo, resolverDono } from "@/lib/websync/dono"
 import { atualizarPauta, type PatchPauta } from "@/lib/calendario/operacoes"
 import { erroJson, pedidoRuim } from "@/lib/calendario/resposta"
 
@@ -38,19 +38,15 @@ export const dynamic = "force-dynamic"
 // PATCH /api/v1/calendario/<id> (a mesma coisa, autenticada por chave).
 // =====================================================================
 
-const SECRET_HEADER = "x-websync-secret"
-
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const expected = process.env.WEBSYNC_WEBHOOK_SECRET
-  if (!expected) {
-    console.error("[websync-os/calendario] WEBSYNC_WEBHOOK_SECRET ausente no ambiente")
-    return erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
-  }
-  if (req.headers.get(SECRET_HEADER) !== expected) {
-    return erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
+  const auth = conferirSegredo(req)
+  if (!auth.ok) {
+    return auth.status === 503
+      ? erroJson(503, "nao_configurado", "webhook não configurado neste ambiente")
+      : erroJson(401, "nao_autorizado", "segredo ausente ou inválido")
   }
 
   const { id } = await params
@@ -62,7 +58,7 @@ export async function PATCH(
   }
 
   const admin = createAdminClient()
-  const dono = await resolverDono(admin)
+  const dono = await resolverDono(admin, auth.cliente)
   if (!dono.ok) return erroJson(409, "dono_indefinido", dono.motivo)
 
   const res = await atualizarPauta(admin, dono.ownerId, id, corpo)
