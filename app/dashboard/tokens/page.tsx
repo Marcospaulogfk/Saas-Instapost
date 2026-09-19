@@ -23,6 +23,7 @@ import {
 import { getProfile, requireUser, tokensDisponiveis } from "@/lib/data/queries"
 import { TOKEN_COST, tokenCostForCarousel, tokenCostForSinglePost } from "@/lib/tokens"
 import { CYCLE_INFO, PLAN_LABEL, priceFor, isPaidPlan, isBillingCycle } from "@/lib/billing/plans"
+import { plano as planoNaTela } from "@/lib/billing/plano-na-tela"
 import { INDICACAO_HABILITADA, AFILIADOS_HABILITADO, POST_UNICO_HABILITADO } from "@/lib/features"
 import { REFERRAL_TOKENS } from "@/lib/indicacao/config"
 import { getConsumoDoMes, getExtrato, KIND_LABEL, linkDaPeca } from "@/lib/extrato/queries"
@@ -109,17 +110,22 @@ export default async function TokensPage({
   // A regra é por ESTADO da conta, nunca por cliente: qualquer conta com
   // período pago e sem assinatura no provedor cai neste caminho.
   // ---------------------------------------------------------------
-  const pagoAte = profile?.plan_prepaid_until ?? null
-  const temProvedor = Boolean(profile?.billing_subscription_id)
-  // Só enquanto o período pago ainda corre: passou da data, o job diário
-  // encerra a assinatura e a conta volta a ser trial. Sem esta checagem a
-  // tela diria "não há cobrança a caminho" para quem já acabou.
-  const prePago = ativo && Boolean(pagoAte) && new Date(pagoAte!) > new Date() && !temProvedor
-  const comCobranca = ativo && Boolean(planId) && Boolean(cycle) && !prePago
-  // Quem TEM provedor continua lendo cobrança, como sempre leu. No anual a
-  // cobrança cai no fim do período pago, não na recarga mensal das fichas;
-  // no mensal os dois são o mesmo dia, então o valor é idêntico ao de antes.
-  const cobrancaEm = cycle === "annual" && pagoAte ? pagoAte : renovaEm
+  // A decisão mora em lib/billing/plano-na-tela.ts, onde dá pra testar os
+  // dois casos (pré-pago e mensalista do provedor) sem conta de mentira no
+  // banco de produção.
+  const cartao = planoNaTela({
+    subscription_status: status,
+    plan_id: profile?.plan_id,
+    plan_cycle: profile?.plan_cycle,
+    plan_renews_at: profile?.plan_renews_at,
+    plan_prepaid_until: profile?.plan_prepaid_until,
+    billing_subscription_id: profile?.billing_subscription_id,
+  })
+  const prePago = cartao.modo === "prepago"
+  const comCobranca = cartao.modo === "cobranca"
+  const pagoAte = cartao.modo === "prepago" ? cartao.pagoAte : null
+  const cobrancaEm = cartao.modo === "cobranca" ? cartao.cobrancaEm : null
+  const recargaSeparada = cartao.modo === "cobranca" ? cartao.proximaRecarga : null
   const nomePlano =
     status === "active"
       ? planId
@@ -302,10 +308,10 @@ export default async function TokensPage({
                 </div>
                 {/* No anual a cobrança e a recarga deixaram de ser o mesmo dia:
                     paga-se uma vez por ano e as fichas voltam todo mês. */}
-                {cycle === "annual" && pagoAte && renovaEm && (
+                {recargaSeparada && (
                   <div className="flex justify-between">
                     <dt style={{ color: "var(--nv-text-muted)" }}>Próxima recarga</dt>
-                    <dd style={{ color: "var(--nv-text)" }}>{data(renovaEm)}</dd>
+                    <dd style={{ color: "var(--nv-text)" }}>{data(recargaSeparada)}</dd>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -316,15 +322,13 @@ export default async function TokensPage({
             )}
             {prePago && (
               <>
-                {cycle && (
+                {cartao.modo === "prepago" && cartao.cicloLabel && (
                   <div className="flex justify-between">
                     <dt style={{ color: "var(--nv-text-muted)" }}>Ciclo</dt>
                     {/* SEM preço: em conta pré-paga o valor da tabela não é o
                         acordo dela, e mostrar um número que o cliente não
                         pagou é pior do que não mostrar número nenhum. */}
-                    <dd style={{ color: "var(--nv-text)" }}>
-                      {cycle === "annual" ? "Anual, pago adiantado" : "Mensal, pago adiantado"}
-                    </dd>
+                    <dd style={{ color: "var(--nv-text)" }}>{cartao.cicloLabel}</dd>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -345,7 +349,7 @@ export default async function TokensPage({
                 </p>
               </>
             )}
-            {ativo && !comCobranca && !prePago && (
+            {cartao.modo === "ativo_sem_cobranca" && (
               <div className="flex justify-between">
                 <dt style={{ color: "var(--nv-text-muted)" }}>Tokens por mês</dt>
                 <dd style={{ color: "var(--nv-text)" }}>{fmt(grant)}</dd>
