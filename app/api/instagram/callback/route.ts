@@ -1,13 +1,40 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import {
+  appId,
   baseDoApp,
+  redirectUri,
+  redirectUriVeioDe,
+  redirectUriTinhaLixo,
   exchangeCodeForToken,
   getLongLivedToken,
   getInstagramProfile,
 } from "@/lib/instagram/meta"
 
 export const runtime = "nodejs"
+
+/**
+ * Codes já vistos, na memória deste container. A Meta só aceita cada code UMA
+ * vez, e "Error validating verification code" é a MESMA frase que ela devolve
+ * pra code já gasto e pra redirect_uri diferente — então sem saber se o code
+ * chegou duas vezes não dá pra separar as duas causas. Se o callback estiver
+ * sendo chamado em dobro (retry do proxy, extensão do navegador, o que for),
+ * a segunda chegada aparece no motivo. Some quando o container reinicia, e
+ * isso está ok: é diagnóstico, não é controle de acesso — quem barra repetição
+ * de verdade é a própria Meta.
+ */
+const codesVistos = new Map<string, number>()
+
+/** Devolve há quantos ms este code já tinha passado por aqui, ou null. */
+function chegouAntes(code: string): number | null {
+  const agora = Date.now()
+  for (const [c, t] of codesVistos) {
+    if (agora - t > 10 * 60_000) codesVistos.delete(c)
+  }
+  const antes = codesVistos.get(code)
+  codesVistos.set(code, agora)
+  return antes === undefined ? null : agora - antes
+}
 
 /**
  * Callback do OAuth do Instagram. Troca o code por token de longa duração,
@@ -45,7 +72,7 @@ export async function GET(req: Request) {
   const back = (status: string, motivo?: string) => {
     const u = new URL(returnPath, origin)
     u.searchParams.set("ig", status)
-    if (motivo) u.searchParams.set("motivo", motivo.slice(0, 300))
+    if (motivo) u.searchParams.set("motivo", motivo.slice(0, 500))
     const res = NextResponse.redirect(u.toString())
     // Apaga com os mesmos atributos com que foram criados no /connect —
     // cookie SameSite=None só é aceito junto de Secure, inclusive pra morrer.
@@ -63,6 +90,11 @@ export async function GET(req: Request) {
     return back("erro", `meta_recusou: ${err} ${desc}`.trim())
   }
   if (!code) return back("erro", "sem_code: a Meta voltou sem ?code")
+
+  const repetido = chegouAntes(code)
+  if (repetido !== null) {
+    console.error(`[instagram/callback] code repetido, ${repetido}ms depois`)
+  }
 
   // CSRF: state tem que bater com o cookie setado no /connect.
   const cookieState = cookies.ig_oauth_state
@@ -119,6 +151,20 @@ export async function GET(req: Request) {
   } catch (e) {
     console.error(`[instagram/callback] ${etapa}:`, e)
     const msg = e instanceof Error ? e.message : String(e)
-    return back("erro", `${etapa}: ${msg}`)
+    // Na troca do code a Meta responde a mesma frase genérica pra três causas
+    // diferentes (redirect_uri diferente, code já gasto, code vencido). Então
+    // a resposta vai acompanhada do que EU mandei, entre colchetes pra espaço
+    // no fim aparecer, e de quantas vezes este code passou por aqui. É
+    // temporário, igual ao motivo: sai quando a conexão estiver de pé.
+    const extra =
+      etapa === "troca_code"
+        ? ` | enviei redirect_uri=[${redirectUri(origin)}] (${redirectUriVeioDe()})` +
+          ` client_id=${appId()} code=${code.slice(0, 8)}…(${code.length} chars)` +
+          (repetido === null
+            ? " 1a chegada deste code"
+            : ` 2a CHEGADA deste code, ${repetido}ms depois da 1a`) +
+          (redirectUriTinhaLixo() ? " ENV_TINHA_ESPACO_NO_FIM" : "")
+        : ""
+    return back("erro", `${etapa}: ${msg}${extra}`)
   }
 }

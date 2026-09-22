@@ -30,8 +30,16 @@ import { origemPublica } from "@/lib/auth/origem-publica"
 const GRAPH_VERSION = "v23.0"
 const GRAPH = `https://graph.instagram.com`
 
+/** App ID e segredo, sem o lixo de espaço que o painel costuma colar junto. */
+export function appId(): string {
+  return (process.env.INSTAGRAM_APP_ID ?? "").trim()
+}
+export function appSecret(): string {
+  return (process.env.INSTAGRAM_APP_SECRET ?? "").trim()
+}
+
 export function isInstagramConfigured(): boolean {
-  return Boolean(process.env.INSTAGRAM_APP_ID && process.env.INSTAGRAM_APP_SECRET)
+  return Boolean(appId() && appSecret())
 }
 
 export function instagramScopes(): string {
@@ -54,17 +62,40 @@ export function baseDoApp(req: Request): string {
   return origemPublica(req)
 }
 
+/**
+ * O redirect_uri que vai nas DUAS pontas: no authorize (buildAuthorizeUrl) e
+ * na troca do code (exchangeCodeForToken). É a mesma função de propósito — a
+ * Meta compara as duas strings byte a byte e recusa a troca se diferirem.
+ *
+ * trim(): valor colado no painel do Coolify vem com espaço ou quebra de linha
+ * no fim com uma facilidade absurda, e byte a byte quer dizer byte a byte.
+ */
 export function redirectUri(origin: string): string {
   return (
-    process.env.INSTAGRAM_REDIRECT_URI ||
+    process.env.INSTAGRAM_REDIRECT_URI?.trim() ||
     `${origin}/api/instagram/callback`
   )
+}
+
+/** De onde saiu o redirect_uri. Só pra contar no diagnóstico. */
+export function redirectUriVeioDe(): "env" | "derivado" {
+  return process.env.INSTAGRAM_REDIRECT_URI?.trim() ? "env" : "derivado"
+}
+
+/**
+ * A env vinha com espaço/quebra de linha grudada? Agora que o trim() acontece,
+ * essa é a única forma de saber que o problema ERA esse — e é uma explicação
+ * que encaixa no sintoma: a Meta aceita no authorize e recusa na troca.
+ */
+export function redirectUriTinhaLixo(): boolean {
+  const cru = process.env.INSTAGRAM_REDIRECT_URI
+  return Boolean(cru && cru !== cru.trim())
 }
 
 /** URL pra onde mandamos o usuário logar/autorizar no Instagram. */
 export function buildAuthorizeUrl(origin: string, state: string): string {
   const p = new URLSearchParams({
-    client_id: process.env.INSTAGRAM_APP_ID!,
+    client_id: appId(),
     redirect_uri: redirectUri(origin),
     response_type: "code",
     scope: instagramScopes(),
@@ -84,8 +115,8 @@ export async function exchangeCodeForToken(
   origin: string,
 ): Promise<ShortToken> {
   const body = new URLSearchParams({
-    client_id: process.env.INSTAGRAM_APP_ID!,
-    client_secret: process.env.INSTAGRAM_APP_SECRET!,
+    client_id: appId(),
+    client_secret: appSecret(),
     grant_type: "authorization_code",
     redirect_uri: redirectUri(origin),
     code,
@@ -111,7 +142,7 @@ interface LongToken {
 export async function getLongLivedToken(shortToken: string): Promise<LongToken> {
   const p = new URLSearchParams({
     grant_type: "ig_exchange_token",
-    client_secret: process.env.INSTAGRAM_APP_SECRET!,
+    client_secret: appSecret(),
     access_token: shortToken,
   })
   const res = await fetch(`${GRAPH}/access_token?${p.toString()}`)
