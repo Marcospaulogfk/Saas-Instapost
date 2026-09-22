@@ -8,11 +8,23 @@
  *   - Long-lived: https://graph.instagram.com/access_token     (short → 60 dias)
  *   - Graph:      https://graph.instagram.com/{version}/...
  *
- * Config via env (Coolify):
- *   INSTAGRAM_APP_ID        — App ID (público)
- *   INSTAGRAM_APP_SECRET    — Chave secreta do app (sensível)
- *   INSTAGRAM_REDIRECT_URI  — opcional; default {origin}/api/instagram/callback
+ * Config via env (Coolify) — ESTAS são as variáveis que mandam:
+ *   INSTAGRAM_APP_ID        — App ID do Instagram (público). Do produto
+ *                             "API setup with Instagram login", NÃO o App ID
+ *                             do app do Facebook.
+ *   INSTAGRAM_APP_SECRET    — Chave secreta do MESMO app do ID acima
+ *                             (sensível). Trocar os dois pares é o erro que
+ *                             passa no authorize e só estoura na troca do code.
+ *   NEXT_PUBLIC_APP_URL     — base pública do app
+ *                             (https://app.nexuscontentai.com.br). Sem ela o
+ *                             container cai no X-Forwarded-Host e, na falta
+ *                             dele, em localhost:3000.
+ *   INSTAGRAM_REDIRECT_URI  — opcional; trava o endereço de retorno exato
+ *                             registrado na Meta. Default:
+ *                             {NEXT_PUBLIC_APP_URL}/api/instagram/callback
  */
+
+import { origemPublica } from "@/lib/auth/origem-publica"
 
 // v22+: `impressions` saiu, `views` entrou (insights dependem disso).
 const GRAPH_VERSION = "v23.0"
@@ -24,6 +36,22 @@ export function isInstagramConfigured(): boolean {
 
 export function instagramScopes(): string {
   return "instagram_business_basic,instagram_business_content_publish,instagram_business_manage_insights"
+}
+
+/**
+ * Base pública do app (https://app.nexuscontentai.com.br), na ordem:
+ *   1. NEXT_PUBLIC_APP_URL  — é a que o Marcos seta no Coolify;
+ *   2. X-Forwarded-Host     — o domínio real atrás do proxy;
+ *   3. url.origin           — só vale em dev: no container do Coolify isso
+ *                             vira localhost:3000 (ver lib/auth/origem-publica).
+ *
+ * /connect e /callback usam ESTA função, então o redirect_uri do authorize e o
+ * da troca do code saem idênticos mesmo sem INSTAGRAM_REDIRECT_URI.
+ */
+export function baseDoApp(req: Request): string {
+  const env = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (env) return env.replace(/\/+$/, "")
+  return origemPublica(req)
 }
 
 export function redirectUri(origin: string): string {

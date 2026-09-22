@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { buildAuthorizeUrl, isInstagramConfigured } from "@/lib/instagram/meta"
+import { baseDoApp, buildAuthorizeUrl, isInstagramConfigured } from "@/lib/instagram/meta"
 
 export const runtime = "nodejs"
 
@@ -21,11 +21,13 @@ export async function GET(req: Request) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) {
-    const origin = new URL(req.url).origin
-    return NextResponse.redirect(`${origin}/login?redirect=/dashboard`)
+    return NextResponse.redirect(`${baseDoApp(req)}/login?redirect=/dashboard`)
   }
 
-  const origin = new URL(req.url).origin
+  // Mesma base do /callback (baseDoApp): `new URL(req.url).origin` vira
+  // localhost:3000 dentro do container do Coolify, e aí o redirect_uri do
+  // authorize sairia diferente do da troca do code.
+  const origin = baseDoApp(req)
   const state = crypto.randomUUID()
   const url = buildAuthorizeUrl(origin, state)
 

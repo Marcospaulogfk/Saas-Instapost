@@ -52,7 +52,13 @@ export function PublishToInstagram({
       setOpen(true)
     } else if (ig === "erro") {
       setOpen(true)
-      setError("Não deu pra conectar o Instagram. Tente de novo.")
+      // Mesmo motivo da tela de métricas: o erro precisa aparecer pra alguém.
+      const motivo = p.get("motivo")
+      setError(
+        motivo
+          ? `Não deu pra conectar o Instagram. Motivo: ${motivo}`
+          : "Não deu pra conectar o Instagram. Tente de novo.",
+      )
     }
     if (ig) {
       p.delete("ig")

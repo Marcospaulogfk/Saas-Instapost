@@ -235,7 +235,17 @@ export function MetricasClient() {
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     const ig = p.get("ig")
-    if (ig === "erro") setAviso("Não deu pra conectar o Instagram. Tente de novo.")
+    // O motivo vem do /api/instagram/callback. Fica na tela E na URL de
+    // propósito: sem log do container, é a única forma de saber o que a Meta
+    // respondeu.
+    const motivo = p.get("motivo")
+    if (ig === "erro") {
+      setAviso(
+        motivo
+          ? `Não deu pra conectar o Instagram. Motivo: ${motivo}`
+          : "Não deu pra conectar o Instagram. Tente de novo.",
+      )
+    }
     if (ig) {
       p.delete("ig")
       const qs = p.toString()
