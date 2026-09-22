@@ -47,8 +47,11 @@ export async function GET(req: Request) {
     u.searchParams.set("ig", status)
     if (motivo) u.searchParams.set("motivo", motivo.slice(0, 300))
     const res = NextResponse.redirect(u.toString())
-    res.cookies.set("ig_oauth_state", "", { maxAge: 0, path: "/" })
-    res.cookies.set("ig_oauth_return", "", { maxAge: 0, path: "/" })
+    // Apaga com os mesmos atributos com que foram criados no /connect —
+    // cookie SameSite=None só é aceito junto de Secure, inclusive pra morrer.
+    const morre = { maxAge: 0, path: "/", secure: true, sameSite: "none" as const }
+    res.cookies.set("ig_oauth_state", "", morre)
+    res.cookies.set("ig_oauth_return", "", morre)
     return res
   }
 
@@ -65,7 +68,14 @@ export async function GET(req: Request) {
   const cookieState = cookies.ig_oauth_state
   if (!state) return back("erro", "sem_state: a Meta voltou sem ?state")
   if (!cookieState) {
-    return back("erro", "sem_cookie_state: o cookie ig_oauth_state não voltou")
+    // O state carrega a hora de emissão (ver /connect). Sem o cookie, ela é a
+    // única pista de qual dos dois problemas foi: o navegador segurou o
+    // cookie na volta, ou a pessoa demorou mais que os 15 min e ele expirou.
+    const emitidoEm = Number(state.split(".")[1])
+    const minutos = Number.isFinite(emitidoEm)
+      ? ` (a volta levou ${Math.round((Date.now() - emitidoEm) / 60000)} min; o cookie vale 15)`
+      : ""
+    return back("erro", `sem_cookie_state: o cookie ig_oauth_state não voltou${minutos}`)
   }
   if (state !== cookieState) return back("erro", "state_divergente")
 

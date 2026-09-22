@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Loader2, Instagram, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +23,19 @@ interface Status {
   connected: boolean
   username: string | null
   configured: boolean
+}
+
+/**
+ * Recado de erro dentro do quadro. O motivo que vem do OAuth
+ * (?ig=erro&motivo=...) é uma frase comprida com palavras coladas tipo
+ * ig_oauth_state: sem break-words ela vazava pra fora da caixa.
+ */
+function Aviso({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-xs text-destructive break-words whitespace-pre-wrap rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
+      {children}
+    </p>
+  )
 }
 
 /**
@@ -129,8 +142,11 @@ export function PublishToInstagram({
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={reset}
         >
+          {/* max-h + scroll: com recado de erro comprido o quadro crescia, e
+              como ele é centralizado na tela o topo (título e X de fechar)
+              saía pra fora. */}
           <div
-            className="bg-background border border-border rounded-xl max-w-md w-full p-5 space-y-4"
+            className="bg-background border border-border rounded-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -197,7 +213,7 @@ export function PublishToInstagram({
                   <Instagram className="w-4 h-4 mr-1.5" />
                   Conectar Instagram
                 </Button>
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                {error && <Aviso>{error}</Aviso>}
               </div>
             ) : (
               <div className="space-y-3">
@@ -250,7 +266,7 @@ export function PublishToInstagram({
                     </>
                   )}
                 </Button>
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                {error && <Aviso>{error}</Aviso>}
               </div>
             )}
           </div>
