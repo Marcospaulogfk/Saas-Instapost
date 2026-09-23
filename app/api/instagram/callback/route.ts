@@ -6,6 +6,7 @@ import {
   redirectUri,
   redirectUriVeioDe,
   redirectUriTinhaLixo,
+  limpaCode,
   exchangeCodeForToken,
   getLongLivedToken,
   getInstagramProfile,
@@ -72,7 +73,7 @@ export async function GET(req: Request) {
   const back = (status: string, motivo?: string) => {
     const u = new URL(returnPath, origin)
     u.searchParams.set("ig", status)
-    if (motivo) u.searchParams.set("motivo", motivo.slice(0, 500))
+    if (motivo) u.searchParams.set("motivo", motivo.slice(0, 700))
     const res = NextResponse.redirect(u.toString())
     // Apaga com os mesmos atributos com que foram criados no /connect —
     // cookie SameSite=None só é aceito junto de Secure, inclusive pra morrer.
@@ -159,7 +160,11 @@ export async function GET(req: Request) {
     const extra =
       etapa === "troca_code"
         ? ` | enviei redirect_uri=[${redirectUri(origin)}] (${redirectUriVeioDe()})` +
-          ` client_id=${appId()} code=${code.slice(0, 8)}…(${code.length} chars)` +
+          ` client_id=${appId()}` +
+          // As DUAS pontas do code: o fim é onde o "#_" apareceria, e sem ver
+          // o fim não dá pra descartar a pegadinha.
+          ` code=${code.slice(0, 8)}…${code.slice(-6)} (${code.length} chars` +
+          (code === limpaCode(code) ? ")" : ", TINHA SUFIXO #_)") +
           (repetido === null
             ? " 1a chegada deste code"
             : ` 2a CHEGADA deste code, ${repetido}ms depois da 1a`) +

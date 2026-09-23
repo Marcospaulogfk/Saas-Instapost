@@ -104,9 +104,38 @@ export function buildAuthorizeUrl(origin: string, state: string): string {
   return `https://www.instagram.com/oauth/authorize?${p.toString()}`
 }
 
+/**
+ * A resposta de erro da Meta, inteira. Só a `error_message` não basta: a frase
+ * "Error validating verification code..." é a MESMA pra redirect_uri diferente,
+ * code já gasto e credencial errada. Quem separa as três é o par
+ * error_type/code/error_subcode, que só existe no corpo completo. O fbtrace_id
+ * vem junto porque é o que o suporte da Meta pede. Não há segredo aqui: é a
+ * resposta de erro, não a requisição.
+ */
+function erroDaMeta(status: number, data: unknown, fallback: string): string {
+  try {
+    const corpo = JSON.stringify(data)
+    if (corpo && corpo !== "{}") return `HTTP ${status} ${corpo}`
+  } catch {
+    // corpo não serializável: cai no fallback
+  }
+  return `HTTP ${status} ${fallback}`
+}
+
 interface ShortToken {
   access_token: string
   user_id: string | number
+}
+
+/**
+ * Tira o `#_` que o Instagram gruda no fim do code (e a documentação da Meta
+ * manda remover), mais espaço perdido. Normalmente o navegador trata isso como
+ * fragmento e o servidor nem vê, mas quando vem escapado o sufixo chega aqui e
+ * a Meta recusa a troca com uma frase que fala de redirect_uri — ou seja,
+ * mentindo sobre a causa. É defensivo: sem o sufixo, não muda nada.
+ */
+export function limpaCode(code: string): string {
+  return code.trim().replace(/#_$/, "")
 }
 
 /** Troca o `code` do callback por um token de curta duração + user_id. */
@@ -119,7 +148,7 @@ export async function exchangeCodeForToken(
     client_secret: appSecret(),
     grant_type: "authorization_code",
     redirect_uri: redirectUri(origin),
-    code,
+    code: limpaCode(code),
   })
   const res = await fetch("https://api.instagram.com/oauth/access_token", {
     method: "POST",
@@ -128,7 +157,7 @@ export async function exchangeCodeForToken(
   })
   const data = await res.json()
   if (!res.ok || !data?.access_token) {
-    throw new Error(data?.error_message || data?.error?.message || "falha ao trocar code por token")
+    throw new Error(erroDaMeta(res.status, data, "falha ao trocar code por token"))
   }
   return { access_token: data.access_token, user_id: data.user_id }
 }
@@ -148,7 +177,7 @@ export async function getLongLivedToken(shortToken: string): Promise<LongToken> 
   const res = await fetch(`${GRAPH}/access_token?${p.toString()}`)
   const data = await res.json()
   if (!res.ok || !data?.access_token) {
-    throw new Error(data?.error?.message || "falha ao obter token de longa duração")
+    throw new Error(erroDaMeta(res.status, data, "falha ao obter token de longa duração"))
   }
   return { access_token: data.access_token, expiresInSec: data.expires_in ?? 60 * 24 * 3600 }
 }
@@ -164,7 +193,7 @@ export async function getInstagramProfile(
   const res = await fetch(`${GRAPH}/me?${p.toString()}`)
   const data = await res.json()
   if (!res.ok || (!data?.user_id && !data?.id)) {
-    throw new Error(data?.error?.message || "falha ao ler o perfil do Instagram")
+    throw new Error(erroDaMeta(res.status, data, "falha ao ler o perfil do Instagram"))
   }
   return {
     igUserId: String(data.user_id ?? data.id),
