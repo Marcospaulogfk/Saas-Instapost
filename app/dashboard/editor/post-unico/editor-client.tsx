@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Baseline,
+  Camera,
   Check,
   Copy,
   Download,
@@ -23,6 +24,15 @@ import {
   Type,
 } from "lucide-react"
 import { Logo } from "@/components/brand/logo"
+import {
+  BarraBaixoMobile,
+  BarraTopoMobile,
+  useEditorMobile,
+  type AbaMobile,
+} from "@/components/editor/mobile-editor"
+import { useTecladoAberto } from "@/hooks/use-teclado-aberto"
+import { lerImagemReduzida, LIMITE_BYTES } from "@/lib/single-posts/ler-imagem"
+import { listarImagens, trocarImagem } from "@/lib/single-posts/trocar-imagem"
 import { EditorSection as Section } from "@/components/editor/editor-section"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
 import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
@@ -165,6 +175,16 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
 
   const previewRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  // Troca de imagem: galeria e câmera são dois campos de arquivo, pra o celular
+  // oferecer as duas saídas. `capture` num campo só esconderia a galeria.
+  const trocaGaleriaRef = useRef<HTMLInputElement | null>(null)
+  const trocaCameraRef = useRef<HTMLInputElement | null>(null)
+  const cameraAddRef = useRef<HTMLInputElement | null>(null)
+  const alvoTrocaRef = useRef<"fundo" | string | null>(null)
+  // Celular: abas "Arte" e "Editar" no lugar da sidebar ao lado do canvas.
+  const mobile = useEditorMobile()
+  const tecladoAberto = useTecladoAberto()
+  const [aba, setAba] = useState<AbaMobile>("arte")
   const bootstrapped = useRef(false)
   /**
    * Armado ao fim de uma geração NOVA; desarmado pelo efeito que salva.
@@ -507,17 +527,37 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     const file = e.target.files?.[0]
     e.target.value = "" // permite re-selecionar o mesmo arquivo
     if (!file || !spec) return
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Imagem muito grande (max 5MB).")
+    if (file.size > LIMITE_BYTES) {
+      setError("Imagem muito grande (max 12MB).")
       return
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const url = typeof reader.result === "string" ? reader.result : null
-      if (url) setSpec((cur) => (cur ? addImageBlock(cur, url) : cur))
+    lerImagemReduzida(file)
+      .then((url) => setSpec((cur) => (cur ? addImageBlock(cur, url) : cur)))
+      .catch(() => setError("Não consegui ler a imagem."))
+  }
+
+  /** Abre a galeria ou a câmera pra TROCAR uma imagem que já está no post. */
+  function pedirTroca(alvo: "fundo" | string, origem: "galeria" | "camera") {
+    alvoTrocaRef.current = alvo
+    ;(origem === "camera" ? trocaCameraRef : trocaGaleriaRef).current?.click()
+  }
+
+  function handleTrocarImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    const alvo = alvoTrocaRef.current
+    if (!file || !alvo) return
+    if (file.size > LIMITE_BYTES) {
+      setError("Imagem muito grande (max 12MB).")
+      return
     }
-    reader.onerror = () => setError("Nao consegui ler a imagem.")
-    reader.readAsDataURL(file)
+    lerImagemReduzida(file)
+      .then((url) => {
+        setSpec((cur) => (cur ? trocarImagem(cur, alvo, url) : cur))
+        // A arte pintada (modo bitmap) deixou de ser a que está na tela.
+        if (alvo === "fundo") setBitmapTexts(null)
+      })
+      .catch(() => setError("Não consegui ler a imagem."))
   }
 
   async function copyCaption() {
@@ -530,17 +570,43 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     }
   }
 
+  /** URLs públicas da arte final pra publicar (bitmap já hospedado vai direto). */
+  async function getPublishUrls(): Promise<string[]> {
+    if (isBitmap && artUrl) return [artUrl]
+    if (!previewRef.current) throw new Error("preview indisponível")
+    const png = await renderSpecToPng(previewRef.current, format)
+    return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
+  }
+  async function getAgendarUrls(): Promise<string[]> {
+    if (!previewRef.current) throw new Error("preview indisponivel")
+    const png = await renderSpecToPng(previewRef.current, format)
+    return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
+  }
+
   const canSave = !!spec && !!brand && isRealBrandId(brand.id) && !saving
   const insufficient = balance < cost
 
   return (
     // Mesmo shell do editor de carrossel: TELA CHEIA por cima do dashboard.
     // A sidebar do editor substitui a de navegação — sem ficar com duas.
-    <div className="fixed inset-0 z-50 bg-background flex overflow-hidden">
-      {/* Coluna direita (toolbar + canvas). A sidebar fica ANTES (order-1). */}
-      <div className="order-2 flex-1 min-w-0 flex flex-col">
-        {/* Toolbar de topo — ações sempre visíveis */}
-        <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
+    <div className="editor-mobile fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+      {/* Celular: voltar + abas Arte/Editar. No computador não aparece. */}
+      <BarraTopoMobile aba={aba} onAba={setAba} voltarHref="/dashboard/projetos" />
+      <div className="flex flex-1 min-h-0 min-w-0">
+      {/* Coluna direita (toolbar + canvas). A sidebar fica ANTES (order-1).
+          No celular, na aba "Editar" a coluna sai da tela mas continua montada:
+          salvar e publicar renderizam a arte a partir dela. */}
+      <div
+        className={`order-2 flex-1 min-w-0 flex flex-col ${
+          aba === "arte"
+            ? ""
+            : "max-lg:fixed max-lg:-left-[9999px] max-lg:top-0 max-lg:w-[375px] max-lg:pointer-events-none"
+        }`}
+        aria-hidden={mobile === true && aba !== "arte" ? true : undefined}
+      >
+        {/* Toolbar de topo — ações sempre visíveis (só no computador; no celular
+            as ações moram na barra de baixo) */}
+        <div className="max-lg:hidden flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
           {/* Formato do canvas — mesmo lugar e mesmo controle do editor de
               carrossel. Aqui ele ADAPTA a arte (reposiciona as camadas em TS),
               não regenera nada: por isso não custa tokens. */}
@@ -595,33 +661,23 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 renderizada do preview e hospedada na hora de publicar, então
                 funciona tanto pro bitmap quanto pro post de camadas (antes só
                 o bitmap com URL pública mostrava o botão). */}
-            {spec && (
+            {spec && mobile === false && (
               <PublishToInstagram
                 kind="post"
                 imageCount={1}
                 caption={caption}
-                getImageUrls={async () => {
-                  // Bitmap já hospedado: manda a URL direto, sem re-render.
-                  if (isBitmap && artUrl) return [artUrl]
-                  if (!previewRef.current) throw new Error("preview indisponível")
-                  const png = await renderSpecToPng(previewRef.current, format)
-                  return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
-                }}
+                getImageUrls={getPublishUrls}
               />
             )}
             {/* Preparar pra agendar: guarda a arte final pra publicacao
                 automatica. NAO usa o atalho do bitmap do Fal (que a publicacao
                 manual usa): aquela URL expira, e agendamento so aceita arquivo
                 do nosso Storage. */}
-            {spec && (
+            {spec && mobile === false && (
               <PrepararAgendamento
                 tipo="single_post"
                 pecaId={savedId}
-                getImageUrls={async () => {
-                  if (!previewRef.current) throw new Error("preview indisponivel")
-                  const png = await renderSpecToPng(previewRef.current, format)
-                  return [await uploadPngDataUrl(png, `post-unico-${format}.png`)]
-                }}
+                getImageUrls={getAgendarUrls}
               />
             )}
             <Button
@@ -654,8 +710,30 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         {/* Área do canvas */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-start gap-3"
+          className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col items-center justify-start gap-3"
         >
+          {/* Celular: formato do canvas no topo da aba Arte. */}
+          <div className="lg:hidden w-full max-w-[440px] flex items-center gap-2">
+            <Select
+              value={format}
+              onValueChange={(v) => handleFormat(v as PostFormat)}
+              disabled={!spec || adapting}
+            >
+              <SelectTrigger className="flex-1 h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {POST_FORMAT_LIST.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.label} {f.ratio}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-[11px] text-text-muted flex-shrink-0">
+              {adapting ? "Adaptando…" : "grátis"}
+            </span>
+          </div>
           {error && (
             <div className="w-full max-w-[440px] rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
               {error}
@@ -690,17 +768,58 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               </Button>
             </div>
           )}
+
+          {/* Celular: demais ações da peça, em botões largos. Publicar e Salvar
+              ficam na barra de baixo. */}
+          {spec && mobile === true && (
+            <div className="lg:hidden w-full max-w-[440px] space-y-2 pb-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => brand && briefing && generate(brand, briefing, usedIds)}
+                disabled={loading || insufficient || !brand || !briefing}
+              >
+                <RefreshCw className="w-4 h-4 mr-1.5" />
+                Outra versão ({cost} tokens)
+              </Button>
+              <PrepararAgendamento
+                cheio
+                tipo="single_post"
+                pecaId={savedId}
+                getImageUrls={getAgendarUrls}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleExport}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-1.5" />
+                )}
+                Baixar imagem (PNG)
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Sidebar de edição — coluna cheia à ESQUERDA */}
-      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto">
-        <div className="px-1 pb-5">
+      <aside
+        className={`order-1 lg:w-[320px] lg:flex-shrink-0 border-r border-white/10 bg-black p-4 space-y-3 h-full overflow-y-auto ${
+          aba === "editar" ? "max-lg:w-full max-lg:flex-1" : "max-lg:hidden"
+        }`}
+      >
+        <div className="px-1 pb-5 max-lg:hidden">
           <Logo size={28} variant="content" />
         </div>
         <Link
           href="/dashboard/projetos"
-          className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
+          className="max-lg:hidden flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Voltar para Dashboard
@@ -787,6 +906,24 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="lg:hidden h-8 text-[11px]"
+                  onClick={() => cameraAddRef.current?.click()}
+                >
+                  <Camera className="w-3 h-3 mr-1" />
+                  Foto agora
+                </Button>
+                <input
+                  ref={cameraAddRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleAddImage}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   className="h-8 text-[11px]"
                   onClick={() => setSpec(addShapeBlock(spec, "rounded"))}
                 >
@@ -801,6 +938,69 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 className="hidden"
                 onChange={handleAddImage}
               />
+            </Section>
+
+            {/* Trocar imagem: galeria ou câmera do celular. */}
+            <Section icon={ImageIcon} title="Imagens do post" defaultOpen={mobile === true}>
+              <input
+                ref={trocaGaleriaRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleTrocarImagem}
+              />
+              <input
+                ref={trocaCameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleTrocarImagem}
+              />
+              {listarImagens(spec).length === 0 && (
+                <p className="text-[11px] text-text-muted">
+                  Este post não tem imagem. Use “Imagem” em Adicionar ao canvas.
+                </p>
+              )}
+              {listarImagens(spec).map((img) => (
+                <div
+                  key={img.alvo}
+                  className="flex items-center gap-2 rounded-lg border border-border-subtle bg-background-secondary/40 p-2"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-14 h-14 rounded-md object-cover bg-black flex-shrink-0"
+                  />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <p className="text-xs text-text-secondary truncate">{img.rotulo}</p>
+                    <div className="flex gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-9 text-xs"
+                        onClick={() => pedirTroca(img.alvo, "galeria")}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 mr-1" />
+                        Trocar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="lg:hidden flex-1 h-9 text-xs"
+                        onClick={() => pedirTroca(img.alvo, "camera")}
+                        aria-label="Tirar uma foto agora"
+                      >
+                        <Camera className="w-3.5 h-3.5 mr-1" />
+                        Câmera
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </Section>
 
             <Section icon={Baseline} title="Tipografia">
@@ -848,6 +1048,38 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
           </>
         )}
       </aside>
+      </div>
+
+      {/* Celular: barra de baixo, com o polegar. Some com o teclado aberto. */}
+      {mobile === true && (
+        <BarraBaixoMobile tecladoAberto={tecladoAberto}>
+          {spec && (
+            <PublishToInstagram
+              kind="post"
+              imageCount={1}
+              caption={caption}
+              getImageUrls={getPublishUrls}
+              label="Publicar"
+              className="flex-1 h-11"
+            />
+          )}
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={!canSave}
+            className="flex-1 h-11"
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : saveOk ? (
+              <Check className="w-4 h-4 mr-1.5" />
+            ) : (
+              <Save className="w-4 h-4 mr-1.5" />
+            )}
+            {saveOk ? "Salvo" : savedId ? "Atualizar" : "Salvar"}
+          </Button>
+        </BarraBaixoMobile>
+      )}
     </div>
   )
 }

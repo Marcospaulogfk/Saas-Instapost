@@ -17,6 +17,10 @@ interface Props {
   caption: string
   /** Rótulo do conteúdo na mensagem de sucesso. */
   kind?: "carrossel" | "post"
+  /** Texto do botão. No celular o editor usa "Publicar" (cabe na barra de baixo). */
+  label?: string
+  /** Classes extras do botão (ex.: largura total na barra do celular). */
+  className?: string
 }
 
 interface Status {
@@ -49,6 +53,8 @@ export function PublishToInstagram({
   imageCount,
   caption,
   kind = "carrossel",
+  label = "Publicar no Instagram",
+  className,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
@@ -132,9 +138,15 @@ export function PublishToInstagram({
 
   return (
     <>
-      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className={className}
+        onClick={() => setOpen(true)}
+      >
         <Instagram className="w-3.5 h-3.5 mr-1.5" />
-        Publicar no Instagram
+        {label}
       </Button>
 
       {open && (
@@ -146,7 +158,7 @@ export function PublishToInstagram({
               como ele é centralizado na tela o topo (título e X de fechar)
               saía pra fora. */}
           <div
-            className="bg-background border border-border rounded-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto"
+            className="bg-background border border-border rounded-xl max-w-md w-full p-5 space-y-4 max-h-[calc(100dvh-2rem)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

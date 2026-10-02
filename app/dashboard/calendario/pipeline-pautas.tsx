@@ -192,7 +192,7 @@ export function PipelinePautas({
                           onClick={() => onEditar?.(p)}
                           disabled={!onEditar}
                           title="Editar pauta"
-                          className="text-left text-[12px] font-medium text-text-primary leading-snug flex-1 hover:text-brand-300 disabled:hover:text-text-primary"
+                          className="text-left text-[12px] font-medium text-text-primary leading-snug flex-1 min-h-11 sm:min-h-0 hover:text-brand-300 disabled:hover:text-text-primary"
                         >
                           {p.title}
                         </button>
@@ -203,7 +203,7 @@ export function PipelinePautas({
                           /* Área de clique de 28x28 via pseudo-elemento absoluto
                              (não empurra o layout do cartão) + ml-1.5 pra dar
                              espaço visual em relação ao título. */
-                          className="relative ml-1.5 text-text-muted hover:text-red-400 flex-shrink-0 after:absolute after:-inset-2 after:content-['']"
+                          className="relative ml-1.5 text-text-muted hover:text-red-400 flex-shrink-0 flex items-center justify-center w-11 h-11 -mt-2 -mr-2 sm:w-auto sm:h-auto sm:m-0 sm:after:absolute sm:after:-inset-2 sm:after:content-['']"
                           aria-label="Remover pauta"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -247,7 +247,7 @@ export function PipelinePautas({
                           type="button"
                           onClick={() => gerarPost(p)}
                           disabled={ocupado === p.id}
-                          className="w-full flex items-center justify-center gap-1.5 h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-medium transition-colors disabled:opacity-60"
+                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-medium transition-colors disabled:opacity-60"
                         >
                           <Wand2 className="w-3 h-3" />
                           Gerar post
@@ -262,7 +262,7 @@ export function PipelinePautas({
                             avancar(p.id, PROXIMO[col.status]!.status)
                           }
                           disabled={ocupado === p.id}
-                          className="w-full flex items-center justify-center gap-1.5 h-8 rounded-md border border-border-subtle hover:border-hairline-strong text-text-secondary text-[11px] transition-colors disabled:opacity-60"
+                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md border border-border-subtle hover:border-hairline-strong text-text-secondary text-[11px] transition-colors disabled:opacity-60"
                         >
                           {PROXIMO[col.status]!.label}
                           <ArrowRight className="w-3 h-3" />

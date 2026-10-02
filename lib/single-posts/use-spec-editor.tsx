@@ -321,8 +321,8 @@ function SpecPanel({
   return (
     <div className="space-y-2">
       <p className="text-[10px] text-text-muted">
-        Clique e arraste qualquer bloco no preview pra mover. Edite texto, fonte,
-        tamanho e cor aqui.
+        Edite texto, fonte, tamanho e cor aqui. Pra mover um bloco, arraste ele na
+        arte (no celular, toque nele primeiro e depois arraste).
       </p>
       {items.map((entry) => {
         const label = entry.kind === "text" ? `Texto ${++textIdx}` : `Pill ${++pillIdx}`

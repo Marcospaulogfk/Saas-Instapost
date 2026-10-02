@@ -1198,3 +1198,56 @@
 }
 
 
+
+/* ===========================================================================
+   Editores no celular (post único e carrossel)
+   Valem só dentro de `.editor-mobile`, abaixo de 1024px, e não mexem no
+   desktop. Três regras de dedo:
+   1) campo de texto com 16px: abaixo disso o iPhone dá zoom na página inteira
+      ao tocar no campo, e o editor sai do enquadramento;
+   2) alvo de toque de pelo menos 44px;
+   3) respeita a barra de baixo do iPhone (safe-area).
+   =========================================================================== */
+@media (max-width: 1023px) {
+  .editor-mobile input:not([type="range"]):not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .editor-mobile textarea,
+  .editor-mobile select {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+  .editor-mobile textarea {
+    line-height: 1.4;
+  }
+  .editor-mobile button:not([data-mini]),
+  .editor-mobile [role="button"]:not([data-mini]),
+  .editor-mobile summary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .editor-mobile input[type="range"] {
+    height: 44px;
+    background: transparent;
+  }
+  .editor-mobile input[type="color"] {
+    width: 44px;
+    height: 44px;
+  }
+  /* Painel do carrossel no celular: Conteúdo e Imagem do slide vêm primeiro. */
+  .editor-mobile .editor-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .editor-mobile .editor-sections > * {
+    margin-top: 0 !important;
+  }
+  .editor-mobile .editor-sections > #sec-conteudo {
+    order: -2;
+  }
+  .editor-mobile .editor-sections > #sec-imagem {
+    order: -1;
+  }
+  .editor-mobile-barra {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

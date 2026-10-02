@@ -181,7 +181,7 @@ export function ProjectsList({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
             >
               {deletingId === post.id ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -287,7 +287,7 @@ export function ProjectsList({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
               onClick={(e) => e.preventDefault()}
             >
               {deletingId === carousel.id ? (
@@ -341,7 +341,7 @@ export function ProjectsList({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
               onClick={(e) => e.preventDefault()}
             >
               <MoreHorizontal className="w-4 h-4" />
@@ -407,10 +407,10 @@ export function ProjectsList({
   )
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold">Biblioteca</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Biblioteca</h1>
           <p className="text-muted-foreground mt-1">
             Todos os posts e carrosséis que você já criou.
           </p>
@@ -418,7 +418,7 @@ export function ProjectsList({
         {!isEmpty && (
           <Button
             asChild
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-11 lg:h-9 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Link href="/dashboard/criar">
               <Plus className="w-4 h-4 mr-2" />
@@ -456,12 +456,12 @@ export function ProjectsList({
                 placeholder="Buscar projetos..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-11 lg:h-9"
               />
             </div>
             {brands.length > 0 && (
               <Select value={brandFilter} onValueChange={setBrandFilter}>
-                <SelectTrigger className="sm:w-56">
+                <SelectTrigger className="sm:w-56 !h-11 lg:!h-9">
                   <SelectValue placeholder="Filtrar por marca" />
                 </SelectTrigger>
                 <SelectContent>

@@ -9,6 +9,7 @@ import type {
   PostStatus,
 } from "@/lib/planejar"
 import type { PautaScheduledPost } from "@/lib/pautas/types"
+import { ehDestino, validarEdicaoPauta } from "@/lib/pautas/editar"
 
 type Result<T = undefined> =
   | (T extends undefined ? { ok: true } : { ok: true; data: T })
@@ -176,6 +177,10 @@ export async function updateScheduledPost(
     scheduledDate: string
     scheduledTime?: string | null
     format: PostFormato
+    /** Status editorial novo (ideia, em criação, pronto, agendado). Omitido = não muda. */
+    status?: PostStatus
+    /** Destino (rede). Omitido = não muda. */
+    network?: string
   },
 ): Promise<Result> {
   const { supabase, user } = await getUser()
@@ -195,13 +200,22 @@ export async function updateScheduledPost(
   // do PATCH do calendário compartilhado, lib/calendario/operacoes.ts).
   const { data: atual } = await supabase
     .from("scheduled_posts")
-    .select("status")
+    .select("status, scheduled_date, scheduled_time")
     .eq("id", id)
     .maybeSingle()
   if (!atual) return { ok: false, error: "Pauta não encontrada." }
-  if (atual.status === "publicado") {
-    return { ok: false, error: "Esta peça já foi publicada: a data dela não muda mais." }
+  if (input.network !== undefined && !ehDestino(input.network)) {
+    return { ok: false, error: "Destino inválido." }
   }
+  const recusa = validarEdicaoPauta({
+    statusAtual: atual.status as PostStatus,
+    status: input.status,
+    data: input.scheduledDate,
+    hora,
+    dataAntes: atual.scheduled_date as string,
+    horaAntes: (atual.scheduled_time as string | null)?.slice(0, 5) ?? null,
+  })
+  if (recusa) return { ok: false, error: recusa }
 
   const { error } = await supabase
     .from("scheduled_posts")
@@ -210,13 +224,55 @@ export async function updateScheduledPost(
       scheduled_date: input.scheduledDate,
       scheduled_time: hora,
       format: input.format,
+      ...(input.status ? { status: input.status } : {}),
+      // `network` só entra quando a tela mandou: em banco sem a coluna, o
+      // resto da edição continua salvando.
+      ...(input.network ? { network: input.network } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
-  if (error) return { ok: false, error: error.message }
+  if (error) {
+    if (input.network && /network/i.test(error.message)) {
+      return { ok: false, error: "Não consegui salvar o destino. O resto não foi alterado." }
+    }
+    return { ok: false, error: error.message }
+  }
 
   revalidatePath("/dashboard/calendario")
   return { ok: true }
+}
+
+/**
+ * Acha a arte (post ou carrossel) que nasceu desta pauta, pra o calendário
+ * abrir direto no editor. A RLS garante que só enxerga a arte do próprio dono.
+ */
+export async function buscarPecaDaPauta(
+  id: string,
+): Promise<{ tipo: "post" | "carrossel"; href: string } | null> {
+  const { supabase, user } = await getUser()
+  if (!user) return null
+  const [post, carrossel] = await Promise.all([
+    supabase
+      .from("single_posts")
+      .select("id, created_at")
+      .eq("scheduled_post_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("editorial_carousels")
+      .select("id, created_at")
+      .eq("scheduled_post_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1),
+  ])
+  const p = post.data?.[0]
+  const c = carrossel.data?.[0]
+  if (!p && !c) return null
+  // Mais recente vence quando a pauta virou as duas coisas.
+  if (p && (!c || String(p.created_at) >= String(c.created_at))) {
+    return { tipo: "post", href: `/dashboard/posts-unicos/${p.id}` }
+  }
+  return { tipo: "carrossel", href: `/dashboard/carrossel?id=${c!.id}` }
 }
 
 export async function deleteScheduledPost(id: string): Promise<Result> {

@@ -81,9 +81,9 @@ export function FreePostViewer({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <Button asChild variant="ghost" size="sm" className="h-8 px-2">
+          <Button asChild variant="ghost" size="sm" className="h-11 lg:h-8 px-2">
             <Link href="/dashboard/projetos">
               <ArrowLeft className="w-4 h-4 mr-1" />
               <span className="text-xs">Biblioteca</span>
@@ -93,7 +93,7 @@ export function FreePostViewer({
         </div>
         <div className="flex items-center gap-2">
           {postId && (
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="h-11 lg:h-8">
               <Link href={`/dashboard/editor/post-unico?post=${postId}`}>
                 <Pencil className="w-3.5 h-3.5 mr-1.5" />
                 Editar
@@ -103,6 +103,7 @@ export function FreePostViewer({
           <Button
           type="button"
           size="sm"
+          className="h-11 lg:h-8"
           onClick={handleExport}
           disabled={exporting}
         >
@@ -116,7 +117,7 @@ export function FreePostViewer({
         </div>
       </div>
 
-      <main className="p-6 flex flex-col items-center gap-3">
+      <main className="p-4 sm:p-6 flex flex-col items-center gap-3">
         {error && <p className="text-xs text-destructive">{error}</p>}
         <div
           ref={previewRef}
@@ -132,7 +133,7 @@ export function FreePostViewer({
               <button
                 type="button"
                 onClick={copyCaption}
-                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary"
+                className="flex items-center justify-center gap-1 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 text-[11px] text-text-muted hover:text-text-primary"
               >
                 {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copied ? "Copiado" : "Copiar"}

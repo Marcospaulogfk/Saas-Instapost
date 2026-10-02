@@ -582,11 +582,19 @@ function makeDragHandler(
     position: { left: string; top: string; width: string },
   ) => void,
   onSelect: () => void,
+  /** Bloco já selecionado? No toque, o 1º toque só seleciona; arrastar é do 2º em diante. */
+  jaSelecionado = true,
 ) {
-  return (e: React.MouseEvent) => {
+  return (e: React.PointerEvent) => {
     const container = containerRef.current
     if (!container) return
     e.stopPropagation()
+    // Dedo: o primeiro toque seleciona e deixa a página rolar normalmente.
+    // Só um bloco já selecionado (touch-action: none) vira arrasto.
+    if (e.pointerType === "touch" && !jaSelecionado) {
+      onSelect()
+      return
+    }
     e.preventDefault()
     onSelect()
     const containerRect = container.getBoundingClientRect()
@@ -599,7 +607,7 @@ function makeDragHandler(
     const widthPx = blockRect.width
     const containerWidth = containerRect.width
     const containerHeight = containerRect.height
-    const onMove = (ev: MouseEvent) => {
+    const onMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startMouseX
       const dy = ev.clientY - startMouseY
       const newLeftPx = Math.max(0, Math.min(containerWidth - widthPx, startLeftPx + dx))
@@ -611,11 +619,13 @@ function makeDragHandler(
       })
     }
     const onUp = () => {
-      window.removeEventListener("mousemove", onMove)
-      window.removeEventListener("mouseup", onUp)
+      window.removeEventListener("pointermove", onMove)
+      window.removeEventListener("pointerup", onUp)
+      window.removeEventListener("pointercancel", onUp)
     }
-    window.addEventListener("mousemove", onMove)
-    window.addEventListener("mouseup", onUp)
+    window.addEventListener("pointermove", onMove)
+    window.addEventListener("pointerup", onUp)
+    window.addEventListener("pointercancel", onUp)
   }
 }
 
@@ -743,6 +753,7 @@ export function FreePostRenderer({
               containerRef,
               onPositionChange,
               () => onSelectBlock?.(path),
+              isSelected,
             )
           : undefined
         return (
@@ -757,8 +768,11 @@ export function FreePostRenderer({
                 : "1px dashed rgba(18, 165, 245,0.45)",
               outlineOffset: 2,
               zIndex: b.z ?? 5,
+              // Dedo: só o bloco selecionado "prende" o gesto (arrasta); os
+              // outros deixam a página rolar.
+              touchAction: isSelected ? "none" : "auto",
             }}
-            onMouseDown={dragHandler}
+            onPointerDown={dragHandler}
             onClick={(ev) => {
               ev.stopPropagation()
               onSelectBlock?.(path)

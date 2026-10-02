@@ -12,16 +12,27 @@ import {
   Trash2,
   Info,
   Filter,
+  Pencil,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  DESTINOS,
+  DESTINO_LABEL,
+  STATUS_ESCOLHIVEIS,
+  ehDestino,
+  validarEdicaoPauta,
+  type Destino,
+} from "@/lib/pautas/editar"
 import { getProximasDatas } from "@/lib/datas-comemorativas"
 import {
   listActiveScheduledPosts,
   createScheduledPost,
   deleteScheduledPost,
   updateScheduledPost,
+  buscarPecaDaPauta,
 } from "@/app/actions/scheduled-posts"
 import {
   statusColor,
@@ -66,7 +77,34 @@ function fmtHora(t: string | null): string {
   return t.slice(0, 5)
 }
 
+/** Tela de celular (abaixo de 640px)? Muda o que o toque num dia faz. */
+function useCelular(): boolean {
+  const [celular, setCelular] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 639px)")
+    const on = () => setCelular(mql.matches)
+    on()
+    mql.addEventListener("change", on)
+    return () => mql.removeEventListener("change", on)
+  }, [])
+  return celular
+}
+
+const DIAS_SEMANA_LONGO = [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+]
+
 export default function CalendarioPage() {
+  const celular = useCelular()
+  // Celular: tocar num dia que já tem pauta abre a lista do dia (as barrinhas da
+  // grade são pequenas demais pro dedo).
+  const [diaAberto, setDiaAberto] = useState<Date | null>(null)
   const [today] = useState(() => new Date())
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -197,6 +235,7 @@ export default function CalendarioPage() {
     data: string,
     hora: string,
     formato: PostFormato,
+    extras?: { status: PostStatus; network?: Destino },
   ) {
     if (!editando) return
     const id = editando.id
@@ -206,6 +245,9 @@ export default function CalendarioPage() {
       scheduledDate: data,
       scheduledTime: hora || null,
       format: formato,
+      status: extras && extras.status !== editando.status ? extras.status : undefined,
+      network:
+        extras?.network && extras.network !== editando.network ? extras.network : undefined,
     })
     setSaving(false)
     if (!res.ok) {
@@ -215,7 +257,15 @@ export default function CalendarioPage() {
     setScheduled((list) =>
       list.map((s) =>
         s.id === id
-          ? { ...s, title: titulo, scheduled_date: data, scheduled_time: hora || null, format: formato }
+          ? {
+              ...s,
+              title: titulo,
+              scheduled_date: data,
+              scheduled_time: hora || null,
+              format: formato,
+              ...(extras ? { status: extras.status } : {}),
+              ...(extras?.network ? { network: extras.network } : {}),
+            }
           : s,
       ),
     )
@@ -258,27 +308,27 @@ export default function CalendarioPage() {
             Planeje, vincule e agende seus conteúdos.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => navMonth(-1)}
-            className="w-9 h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
+            className="w-11 h-11 sm:w-9 sm:h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
             aria-label="Mês anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="px-4 h-9 rounded-lg border border-border-subtle bg-background-tertiary/40 flex items-center text-sm font-semibold text-text-primary min-w-[140px] justify-center">
+          <div className="px-3 h-11 sm:h-9 rounded-lg border border-border-subtle bg-background-tertiary/40 flex items-center text-sm font-semibold text-text-primary flex-1 sm:flex-none sm:min-w-[140px] justify-center">
             {MESES_LONG[month]} {year}
           </div>
           <button
             type="button"
             onClick={() => navMonth(1)}
-            className="w-9 h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
+            className="w-11 h-11 sm:w-9 sm:h-9 rounded-lg border border-border-subtle hover:border-hairline-strong flex items-center justify-center transition-colors"
             aria-label="Próximo mês"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <Button onClick={() => setNovaModal({ data: toISODate(today) })} className="ml-1">
+          <Button onClick={() => setNovaModal({ data: toISODate(today) })} className="w-full sm:w-auto sm:ml-1 h-11 sm:h-9">
             <Plus className="w-4 h-4 mr-1.5" />
             Nova Pauta
           </Button>
@@ -309,7 +359,7 @@ export default function CalendarioPage() {
                 type="button"
                 onClick={() => setFilterStatus(ativo ? "todos" : f.id)}
                 /* py-2: altura clicável de pelo menos 32px (R4-22b). */
-                className={`flex items-center gap-1.5 py-2 text-[13px] transition-colors ${
+                className={`flex items-center gap-1.5 py-3 sm:py-2 text-[13px] transition-colors ${
                   ativo
                     ? "text-text-primary font-semibold"
                     : "text-text-muted hover:text-text-secondary"
@@ -324,7 +374,7 @@ export default function CalendarioPage() {
         <button
           type="button"
           onClick={() => setFilterStatus("todos")}
-          className={`flex items-center gap-1.5 text-[13px] px-3 h-9 rounded-lg border transition-colors ${
+          className={`flex items-center gap-1.5 text-[13px] px-3 h-11 sm:h-9 rounded-lg border transition-colors ${
             filterStatus === "todos"
               ? "border-border-subtle text-text-secondary"
               : "border-brand-600 text-text-primary"
@@ -358,15 +408,20 @@ export default function CalendarioPage() {
             return (
               <div
                 key={i}
-                className={`min-h-[80px] sm:min-h-[110px] p-1.5 sm:p-2 border-b border-r border-border-subtle ${
+                className={`min-h-[80px] sm:min-h-[110px] p-0 sm:p-2 border-b border-r border-border-subtle ${
                   cell ? "" : "bg-background-tertiary/10"
                 } ${isOtherMonth ? "opacity-40" : ""}`}
               >
                 {cell && (
                   <button
                     type="button"
-                    onClick={() => setNovaModal({ data: toISODate(cell) })}
-                    className="w-full h-full flex flex-col gap-1 text-left hover:bg-background-tertiary/30 rounded transition-colors"
+                    aria-label={`Dia ${cell.getDate()}${dayItems.length ? `, ${dayItems.length} pauta(s)` : ""}`}
+                    onClick={() =>
+                      celular && dayItems.length > 0
+                        ? setDiaAberto(cell)
+                        : setNovaModal({ data: toISODate(cell) })
+                    }
+                    className="w-full h-full p-1 sm:p-0 flex flex-col gap-1 text-left hover:bg-background-tertiary/30 rounded transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <span
@@ -389,7 +444,18 @@ export default function CalendarioPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex-1 space-y-1 overflow-hidden">
+                    {/* Celular: só as bolinhas de status; o toque abre a lista do dia. */}
+                    {dayItems.length > 0 && (
+                      <div className="sm:hidden flex flex-wrap gap-1 pt-0.5">
+                        {dayItems.slice(0, 4).map((s) => (
+                          <span
+                            key={s.id}
+                            className={`w-2 h-2 rounded-full ${statusColor(s.status)}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="hidden sm:block flex-1 space-y-1 overflow-hidden">
                       {dayItems.slice(0, 3).map((s) => (
                         <div
                           key={s.id}
@@ -459,12 +525,12 @@ export default function CalendarioPage() {
             {monthList.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-background-tertiary/30 border border-border-subtle hover:border-hairline-strong transition-colors"
+                className="flex items-center gap-2 sm:gap-3 pl-3 pr-1 sm:p-3 rounded-lg bg-background-tertiary/30 border border-border-subtle hover:border-hairline-strong transition-colors"
               >
                 <span
                   className={`w-2 h-2 rounded-full ${statusColor(s.status)} flex-shrink-0`}
                 />
-                <span className="text-[11px] tabular-nums text-text-muted w-20 flex-shrink-0">
+                <span className="text-[11px] tabular-nums text-text-muted w-14 sm:w-20 flex-shrink-0 leading-tight">
                   {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
                   {s.scheduled_time ? ` ${fmtHora(s.scheduled_time)}` : ""}
                 </span>
@@ -473,9 +539,12 @@ export default function CalendarioPage() {
                   type="button"
                   onClick={() => setEditando(s)}
                   title="Editar pauta"
-                  className="text-left text-sm font-medium text-text-primary flex-1 truncate hover:text-brand-300"
+                  className="text-left text-sm font-medium text-text-primary flex-1 min-w-0 min-h-14 sm:min-h-0 py-2 sm:py-0 hover:text-brand-300"
                 >
-                  {s.title}
+                  <span className="block truncate">{s.title}</span>
+                  <span className="sm:hidden block text-[11px] font-normal text-text-muted">
+                    {statusLabel(s.status)} · {FORMATO_LABEL[s.format] ?? s.format}
+                  </span>
                 </button>
                 {s.created_at && (
                   <span className="hidden sm:inline text-[10px] text-text-subtle flex-shrink-0">
@@ -498,8 +567,9 @@ export default function CalendarioPage() {
                 <button
                   type="button"
                   onClick={() => handleDelete(s.id)}
-                  className="text-text-muted hover:text-red-400 p-1"
+                  className="text-text-muted hover:text-red-400 w-11 h-11 sm:w-auto sm:h-auto sm:p-1 flex items-center justify-center flex-shrink-0"
                   title="Remover do calendário"
+                  aria-label="Remover do calendário"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -533,12 +603,64 @@ export default function CalendarioPage() {
         </Modal>
       )}
 
+      {/* Celular: lista do dia tocado. */}
+      {diaAberto && (
+        <Modal
+          onClose={() => setDiaAberto(null)}
+          title={`${DIAS_SEMANA_LONGO[diaAberto.getDay()]}, ${diaAberto.getDate()} de ${MESES_LONG[diaAberto.getMonth()].toLowerCase()}`}
+        >
+          <div className="space-y-2">
+            {itensNoDia(diaAberto).map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setDiaAberto(null)
+                  setEditando(s)
+                }}
+                className="w-full flex items-center gap-3 min-h-14 rounded-lg border border-border-subtle bg-background-secondary/40 px-3 py-2 text-left"
+              >
+                <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusColor(s.status)}`} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-text-primary">{s.title}</span>
+                  <span className="block text-[11px] text-text-muted">
+                    {s.scheduled_time ? `${fmtHora(s.scheduled_time)} · ` : ""}
+                    {statusLabel(s.status)} · {FORMATO_LABEL[s.format] ?? s.format}
+                  </span>
+                </span>
+                <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+              </button>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11"
+              onClick={() => {
+                const d = diaAberto
+                setDiaAberto(null)
+                setNovaModal({ data: toISODate(d) })
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nova pauta neste dia
+            </Button>
+          </div>
+        </Modal>
+      )}
+
       {/* Modal: Editar Pauta (R4-17/R4-19). Mover a pauta = trocar a data. */}
       {editando && (
         <Modal onClose={() => setEditando(null)} title="Editar pauta">
           <NovaPautaForm
             key={editando.id}
+            pautaId={editando.id}
             initialData={editando.scheduled_date}
+            edicao={{
+              status: editando.status,
+              network: ehDestino(editando.network) ? editando.network : null,
+              temDestino: editando.network !== undefined,
+              horaAntes: fmtHora(editando.scheduled_time),
+            }}
             inicial={{
               titulo: editando.title,
               hora: fmtHora(editando.scheduled_time),
@@ -596,17 +718,24 @@ function Modal({
   if (typeof document === "undefined") return null
   return createPortal(
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
+      {/* Celular: folha colada embaixo (o polegar alcança), com o título e o X
+          sempre à vista; no computador, o balão centralizado de sempre. */}
       <div
-        className="w-full max-w-md rounded-xl bg-background-tertiary border border-border-medium p-5 space-y-4 max-h-[calc(100dvh-2rem)] overflow-y-auto"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-xl bg-background-tertiary border border-border-medium p-4 sm:p-5 pt-0 sm:pt-5 space-y-4 max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-2rem)] overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
-          <button type="button" onClick={onClose} className="text-text-muted hover:text-text-primary">
-            <X className="w-4 h-4" />
+        <div className="sticky top-0 z-10 -mx-4 sm:mx-0 px-4 sm:px-0 pt-4 sm:pt-0 pb-2 sm:pb-0 bg-background-tertiary flex items-center justify-between">
+          <h3 className="text-base sm:text-sm font-semibold text-text-primary">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="w-11 h-11 sm:w-auto sm:h-auto -mr-2 sm:mr-0 flex items-center justify-center text-text-muted hover:text-text-primary"
+          >
+            <X className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </div>
         {children}
@@ -619,6 +748,8 @@ function Modal({
 function NovaPautaForm({
   initialData,
   inicial,
+  edicao,
+  pautaId,
   saving,
   onSave,
   onCancel,
@@ -626,31 +757,100 @@ function NovaPautaForm({
   initialData: string
   /** Preenchido na EDIÇÃO de uma pauta existente (R4-17/R4-19). */
   inicial?: { titulo: string; hora: string; formato: PostFormato }
+  /** Só na edição: status e destino atuais (e se o banco tem a coluna de destino). */
+  edicao?: {
+    status: PostStatus
+    network: Destino | null
+    temDestino: boolean
+    horaAntes: string
+  }
+  /** Só na edição: usado pra achar a arte e oferecer "Abrir post". */
+  pautaId?: string
   saving: boolean
-  onSave: (titulo: string, data: string, hora: string, formato: PostFormato) => void
+  onSave: (
+    titulo: string,
+    data: string,
+    hora: string,
+    formato: PostFormato,
+    extras?: { status: PostStatus; network?: Destino },
+  ) => void
   onCancel: () => void
 }) {
   const [titulo, setTitulo] = useState(inicial?.titulo ?? "")
   const [data, setData] = useState(initialData)
   const [hora, setHora] = useState(inicial?.hora ?? "")
   const [formato, setFormato] = useState<PostFormato>(inicial?.formato ?? "post")
+  const [status, setStatus] = useState<PostStatus>(edicao?.status ?? "agendado")
+  const [destino, setDestino] = useState<Destino>(edicao?.network ?? "instagram")
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [peca, setPeca] = useState<{ tipo: "post" | "carrossel"; href: string } | null>(null)
+
+  // Achar a arte desta pauta pra oferecer "Abrir post". Falha = só não mostra o botão.
+  useEffect(() => {
+    if (!pautaId) return
+    let vivo = true
+    buscarPecaDaPauta(pautaId)
+      .then((p) => vivo && setPeca(p))
+      .catch(() => {})
+    return () => {
+      vivo = false
+    }
+  }, [pautaId])
+
+  const publicada = edicao?.status === "publicado"
+  // Status que a pessoa pode escolher; o atual entra mesmo que não seja
+  // "escolhível" (ex.: publicado), só pra aparecer marcado.
+  const statusOpcoes: PostStatus[] =
+    edicao && !STATUS_ESCOLHIVEIS.includes(edicao.status)
+      ? [edicao.status, ...STATUS_ESCOLHIVEIS]
+      : STATUS_ESCOLHIVEIS
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
         if (!titulo.trim()) return
+        if (edicao) {
+          const recado = validarEdicaoPauta({
+            statusAtual: edicao.status,
+            status: status !== edicao.status ? status : undefined,
+            data,
+            hora: hora || null,
+            dataAntes: initialData,
+            horaAntes: edicao.horaAntes || null,
+          })
+          if (recado) {
+            setAviso(recado)
+            return
+          }
+          setAviso(null)
+          onSave(titulo.trim(), data, hora, formato, {
+            status,
+            network: edicao.temDestino ? destino : undefined,
+          })
+          return
+        }
         onSave(titulo.trim(), data, hora, formato)
       }}
       className="space-y-3"
     >
+      {/* Abrir o post que nasceu desta pauta (editar texto e imagem). */}
+      {peca && (
+        <Button asChild type="button" variant="outline" className="w-full h-11">
+          <Link href={peca.href}>
+            <Pencil className="w-4 h-4 mr-1.5" />
+            {peca.tipo === "carrossel" ? "Abrir o carrossel" : "Abrir o post"}
+          </Link>
+        </Button>
+      )}
       <div className="space-y-1">
         <Label className="text-xs">Título</Label>
         <Input
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
           placeholder="Ex: Quebra mito do nicho"
-          autoFocus
+          autoFocus={!edicao}
+          className="h-11 sm:h-9"
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -661,6 +861,8 @@ function NovaPautaForm({
             value={data}
             onChange={(e) => setData(e.target.value)}
             style={{ colorScheme: "dark" }}
+            disabled={publicada}
+            className="h-11 sm:h-9"
           />
         </div>
         <div className="space-y-1">
@@ -670,6 +872,8 @@ function NovaPautaForm({
             value={hora}
             onChange={(e) => setHora(e.target.value)}
             style={{ colorScheme: "dark" }}
+            disabled={publicada}
+            className="h-11 sm:h-9"
           />
         </div>
       </div>
@@ -681,7 +885,7 @@ function NovaPautaForm({
               key={f}
               type="button"
               onClick={() => setFormato(f)}
-              className={`text-xs h-9 rounded border capitalize ${
+              className={`text-xs h-11 sm:h-9 rounded border capitalize ${
                 formato === f
                   ? "bg-brand-600 border-brand-600 text-white"
                   : "border-border-subtle text-text-secondary hover:text-text-primary"
@@ -692,11 +896,72 @@ function NovaPautaForm({
           ))}
         </div>
       </div>
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+      {edicao && (
+        <div className="space-y-1">
+          <Label className="text-xs">Situação</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {statusOpcoes.map((s) => (
+              <button
+                key={s}
+                type="button"
+                disabled={publicada}
+                onClick={() => {
+                  setStatus(s)
+                  setAviso(null)
+                }}
+                className={`text-xs h-11 sm:h-9 rounded border flex items-center justify-center gap-1.5 ${
+                  status === s
+                    ? "bg-brand-600 border-brand-600 text-white"
+                    : "border-border-subtle text-text-secondary hover:text-text-primary"
+                } disabled:opacity-60`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${statusColor(s)}`} />
+                {statusLabel(s)}
+              </button>
+            ))}
+          </div>
+          {publicada && (
+            <p className="text-[11px] text-text-muted">
+              Esta peça já foi publicada: situação, data e hora não mudam mais.
+            </p>
+          )}
+        </div>
+      )}
+
+      {edicao?.temDestino && (
+        <div className="space-y-1">
+          <Label className="text-xs">Destino</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {DESTINOS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDestino(d)}
+                className={`text-xs h-11 sm:h-9 rounded border ${
+                  destino === d
+                    ? "bg-brand-600 border-brand-600 text-white"
+                    : "border-border-subtle text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {DESTINO_LABEL[d]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {aviso && (
+        <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          {aviso}
+        </p>
+      )}
+
+      {/* Salvar e Cancelar ficam colados no fim da folha: sempre à vista, sem rolar. */}
+      <div className="flex gap-2 pt-2 sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pb-1 bg-background-tertiary">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 sm:h-9">
           Cancelar
         </Button>
-        <Button type="submit" disabled={!titulo.trim() || saving} className="flex-1">
+        <Button type="submit" disabled={!titulo.trim() || saving} className="flex-1 h-11 sm:h-9">
           {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>

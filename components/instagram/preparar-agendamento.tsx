@@ -20,6 +20,8 @@ interface Props {
   getImageUrls: () => Promise<string[]>
   /** Chamado depois de preparar, pra tela poder refletir o estado novo. */
   onPreparado?: (imagens: number) => void
+  /** Largura total (usado na lista de ações do celular). */
+  cheio?: boolean
 }
 
 /**
@@ -30,7 +32,7 @@ interface Props {
  * botão é o momento em que a peça deixa de depender da tela: renderiza,
  * hospeda e guarda. Depois disso o worker consegue publicar sozinho.
  */
-export function PrepararAgendamento({ tipo, pecaId, getImageUrls, onPreparado }: Props) {
+export function PrepararAgendamento({ tipo, pecaId, getImageUrls, onPreparado, cheio }: Props) {
   const [estado, setEstado] = useState<"idle" | "render" | "salvando" | "ok">("idle")
   const [erro, setErro] = useState<string | null>(null)
 
@@ -63,7 +65,7 @@ export function PrepararAgendamento({ tipo, pecaId, getImageUrls, onPreparado }:
   }
 
   return (
-    <div className="inline-flex flex-col items-start gap-1">
+    <div className={cheio ? "flex flex-col items-stretch gap-1 w-full" : "inline-flex flex-col items-start gap-1"}>
       <Button
         type="button"
         size="sm"

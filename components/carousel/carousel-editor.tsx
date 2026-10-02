@@ -43,7 +43,18 @@ import {
   Plus,
   FilePlus2,
   LayoutTemplate,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
+import {
+  BarraBaixoMobile,
+  BarraTopoMobile,
+  useEditorMobile,
+  type AbaMobile,
+} from "@/components/editor/mobile-editor"
+import { useTecladoAberto } from "@/hooks/use-teclado-aberto"
+import { reduzirArquivo } from "@/lib/single-posts/ler-imagem"
 import { saveCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
 import {
   saveCarouselTemplate,
@@ -748,6 +759,19 @@ export function CarouselEditor({
   // (isCover/isMidBreak/isLast) podia achar dois slides "na mesma posição".
   const [slides, setSlides] = useState<PreviewSlide[]>(() => reindex(initialSlides))
   const [selected, setSelected] = useState(0)
+  // Celular: abas "Arte" (slide em modo visualização) e "Editar" (painel),
+  // largura da tela pra dimensionar o slide e teclado virtual aberto/fechado.
+  const mobile = useEditorMobile()
+  const tecladoAberto = useTecladoAberto()
+  const [aba, setAba] = useState<AbaMobile>("arte")
+  const [larguraTela, setLarguraTela] = useState(375)
+  useEffect(() => {
+    const on = () => setLarguraTela(window.innerWidth)
+    on()
+    window.addEventListener("resize", on)
+    return () => window.removeEventListener("resize", on)
+  }, [])
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   // Botão direito num slide não selecionado: seleciona e o canvas abre o menu
   // no ponto clicado (fração do slide) assim que monta.
   const [pendingMenu, setPendingMenu] = useState<{ fx: number; fy: number } | null>(null)
@@ -1305,6 +1329,11 @@ export function CarouselEditor({
     conteudo: true,
     imagem: true,
   })
+  // Celular: "Estilo do Post" nasce fechado, pra o texto e a imagem do slide (o
+  // que a pessoa veio mexer) aparecerem logo, sem rolar por 8 botões de estilo.
+  useEffect(() => {
+    if (mobile === true) setOpenSections((s) => ({ ...s, estilo: false }))
+  }, [mobile])
   const toggleSection = (id: string) =>
     setOpenSections((s) => ({ ...s, [id]: !s[id] }))
   const openSection = (id: string) =>
@@ -1731,10 +1760,12 @@ export function CarouselEditor({
     }
   }
 
-  async function handleUpload(file: File) {
+  async function handleUpload(original: File) {
     setImgBusy("upload")
     setImgError(null)
     try {
+      // Foto de câmera de celular passa fácil de 8MB; o servidor recusa acima de 10MB.
+      const file = await reduzirArquivo(original)
       const fd = new FormData()
       fd.append("file", file)
       const res = await fetch("/api/editorial/upload-image", {
@@ -1780,6 +1811,17 @@ export function CarouselEditor({
       reindex([...list.slice(0, i + 1), { ...list[i] }, ...list.slice(i + 1)]),
     )
     setSelected(i + 1)
+  }
+  /** Troca o slide i de lugar com o vizinho (dir = -1 sobe, +1 desce). Pelo toque, sem arrastar. */
+  function moveSlide(i: number, dir: -1 | 1) {
+    const j = i + dir
+    if (j < 0 || j >= slides.length) return
+    setSlides((list) => {
+      const next = [...list]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return reindex(next)
+    })
+    setSelected(j)
   }
   function deleteSlide(i: number) {
     if (slides.length <= 1) return
@@ -2128,15 +2170,63 @@ export function CarouselEditor({
     }
   }
 
+  /** Celular: faixa de números pra escolher o slide (1 2 3 …) e adicionar um em branco. */
+  const seletorSlidesMobile = (
+    <div className="flex items-center gap-1.5 overflow-x-auto w-full pb-1" role="tablist" aria-label="Slides">
+      {slides.map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          role="tab"
+          aria-selected={i === selected}
+          aria-label={`Slide ${i + 1}`}
+          onClick={() => setSelected(i)}
+          className={`flex-shrink-0 w-11 h-11 rounded-lg text-sm font-semibold tabular-nums transition-colors ${
+            i === selected
+              ? "bg-brand-600 text-white"
+              : "border border-border-subtle text-text-secondary"
+          }`}
+        >
+          {i + 1}
+        </button>
+      ))}
+      <button
+        type="button"
+        aria-label="Adicionar slide em branco"
+        onClick={createBlankSlide}
+        className="flex-shrink-0 w-11 h-11 rounded-lg border-2 border-dashed border-white/20 text-white/60 flex items-center justify-center"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+    </div>
+  )
+  const larguraSlideMobile = Math.max(
+    200,
+    Math.min(format === "stories" ? 280 : 420, larguraTela - 40),
+  )
+
   return (
     // Editor em TELA CHEIA por cima do dashboard (cobre a sidebar de navegação)
     // — a sidebar vira o editor, sem ficar com duas. "Voltar" fecha o overlay.
     <HistoryGestureContext.Provider value={historyGesture}>
-    <div className="fixed inset-0 z-50 bg-background flex overflow-hidden">
-      {/* Coluna direita (toolbar + slides). A sidebar fica ANTES (order-1). */}
-      <div className="order-2 flex-1 min-w-0 flex flex-col">
-      {/* Toolbar de topo (ações sempre visíveis) */}
-      <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
+    <div className="editor-mobile fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+      {/* Celular: voltar + abas Arte/Editar. No computador não aparece. */}
+      <BarraTopoMobile aba={aba} onAba={setAba} voltarHref="/dashboard/projetos" />
+      <div className="flex flex-1 min-h-0 min-w-0">
+      {/* Coluna direita (toolbar + slides). A sidebar fica ANTES (order-1).
+          No celular, na aba "Editar" ela sai da tela mas segue montada: o
+          render oculto de export/publicação mora aqui dentro. */}
+      <div
+        className={`order-2 flex-1 min-w-0 flex flex-col ${
+          aba === "arte"
+            ? ""
+            : "max-lg:fixed max-lg:-left-[9999px] max-lg:top-0 max-lg:w-[375px] max-lg:pointer-events-none"
+        }`}
+        aria-hidden={mobile === true && aba !== "arte" ? true : undefined}
+      >
+      {/* Toolbar de topo (ações sempre visíveis) — só no computador; no celular
+          as ações moram na barra de baixo e na aba Arte. */}
+      <div className="max-lg:hidden flex-shrink-0 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center gap-2 flex-wrap">
         {/* Formato do post (feed/stories) — no topo, estilo Studio */}
         <Select
           value={format}
@@ -2205,19 +2295,23 @@ export function CarouselEditor({
             {saveBusy ? "Salvando…" : "Salvar alterações"}
           </Button>
         )}
-        <PublishToInstagram
-          getImageUrls={renderSlidesForPublish}
-          imageCount={slides.length}
-          caption={caption ?? ""}
-        />
+        {mobile === false && (
+          <PublishToInstagram
+            getImageUrls={renderSlidesForPublish}
+            imageCount={slides.length}
+            caption={caption ?? ""}
+          />
+        )}
         {/* Guarda a arte final (os N slides, na ordem) pra publicacao
             automatica. Mesmo render do botao de publicar; a diferenca e que
             aqui o resultado fica salvo em vez de ser descartado. */}
-        <PrepararAgendamento
-          tipo="carousel"
-          pecaId={savedId}
-          getImageUrls={renderSlidesForPublish}
-        />
+        {mobile === false && (
+          <PrepararAgendamento
+            tipo="carousel"
+            pecaId={savedId}
+            getImageUrls={renderSlidesForPublish}
+          />
+        )}
         <Button
           type="button"
           variant="outline"
@@ -2266,6 +2360,157 @@ export function CarouselEditor({
         {/* Área central: filmstrip horizontal (estilo Studio) */}
         <main className="min-w-0 flex-1 flex flex-col overflow-hidden">
           {/* Filmstrip: centrado na vertical, alinhado à esquerda (próximo espia) */}
+          {mobile === true && (
+            <div className="lg:hidden flex-1 min-h-0 overflow-y-auto p-4 flex flex-col items-center gap-3 [&>*]:flex-shrink-0">
+              {/* Formato do post */}
+              <Select
+                value={format}
+                onValueChange={(v) => setFormat(v as "feed" | "stories")}
+              >
+                <SelectTrigger className="w-full h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feed">Feed 4:5</SelectItem>
+                  <SelectItem value="stories">Stories 9:16</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {seletorSlidesMobile}
+
+              {slide && (
+                <SlideCanvas
+                  slide={slide}
+                  total={slides.length}
+                  template={template}
+                  colors={colors}
+                  style={styleOf(slide)}
+                  handle={handleValue}
+                  brandName={brandValue}
+                  handleInitials={avatarInitials}
+                  chrome={chrome}
+                  format={format}
+                  width={larguraSlideMobile}
+                  active
+                  fontClass={fontClassById(font)}
+                  titleWeight={titleWeight}
+                  titleScale={titleScale}
+                  bodyWeight={bodyWeight}
+                  bodyScale={bodyScale}
+                />
+              )}
+              <p className="text-[11px] text-text-muted text-center">
+                Slide {selected + 1} de {slides.length}. Pra mudar o texto ou a
+                imagem, toque em Editar.
+              </p>
+
+              {/* Ordem dos slides por toque */}
+              <div className="grid grid-cols-4 gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => moveSlide(selected, -1)}
+                  disabled={selected === 0}
+                  aria-label="Mover slide para antes"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => moveSlide(selected, 1)}
+                  disabled={selected >= slides.length - 1}
+                  aria-label="Mover slide para depois"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => duplicateSlide(selected)}
+                  aria-label="Duplicar slide"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => deleteSlide(selected)}
+                  disabled={slides.length <= 1}
+                  aria-label="Excluir slide"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {imgError && <p className="text-xs text-destructive w-full">{imgError}</p>}
+
+              {/* Demais ações, em botões largos. Publicar e Salvar ficam na barra de baixo. */}
+              <div className="w-full space-y-2 pb-2">
+                {(canUndo || canRedo) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" onClick={undo} disabled={!canUndo}>
+                      <Undo2 className="w-4 h-4 mr-1.5" />
+                      Desfazer
+                    </Button>
+                    <Button type="button" variant="outline" onClick={redo} disabled={!canRedo}>
+                      <Redo2 className="w-4 h-4 mr-1.5" />
+                      Refazer
+                    </Button>
+                  </div>
+                )}
+                <PrepararAgendamento
+                  cheio
+                  tipo="carousel"
+                  pecaId={savedId}
+                  getImageUrls={renderSlidesForPublish}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleExport}
+                  disabled={exporting || zipBusy}
+                >
+                  {exporting ? (
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1.5" />
+                  )}
+                  Baixar este slide
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleExportAllZip}
+                  disabled={zipBusy || exporting}
+                >
+                  {zipBusy ? (
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1.5" />
+                  )}
+                  {zipBusy ? (exportPaused ? "Pausado" : "Gerando…") : "Baixar todos (ZIP)"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setTplError(null)
+                    setTplSaved(false)
+                    setTplName("")
+                    setTplDialogOpen(true)
+                  }}
+                >
+                  <LayoutTemplate className="w-4 h-4 mr-1.5" />
+                  Salvar como modelo
+                </Button>
+              </div>
+            </div>
+          )}
+          {mobile !== true && (
           <div className="flex-1 overflow-auto p-6 flex items-center">
             <div className="flex gap-5 items-center w-max">
               {slides.map((s, i) => (
@@ -2456,6 +2701,7 @@ export function CarouselEditor({
               </Popover>
             </div>
           </div>
+          )}
 
           {/* Render OCULTO em tamanho de design (420px) pro export/captura de capa.
               `[&_.rounded-xl]:!rounded-none` zera o border-radius do slide SÓ neste
@@ -2506,7 +2752,11 @@ export function CarouselEditor({
       </div>
 
       {/* Sidebar de edição — coluna cheia à ESQUERDA (do topo ao fim) */}
-      <aside className="order-1 w-[320px] flex-shrink-0 border-r border-white/10 bg-black h-full overflow-y-auto">
+      <aside
+        className={`order-1 lg:w-[320px] lg:flex-shrink-0 border-r border-white/10 bg-black h-full overflow-y-auto ${
+          aba === "editar" ? "max-lg:w-full max-lg:flex-1" : "max-lg:hidden"
+        }`}
+      >
           {/* Barra de ícones FIXA no topo da sidebar: rolando o painel pra
               baixo, logo/+/editar/histórico continuam visíveis. Ela é filha
               direta do elemento com overflow-y-auto (o aside), que agora não
@@ -2515,6 +2765,8 @@ export function CarouselEditor({
               o conteúdo rolado aparecia por cima da barra, cortando ela). O
               padding do painel foi pro wrapper logo abaixo. */}
           <div className="sticky top-0 z-20 bg-black px-4 pt-4">
+            {/* Celular: o slide que está sendo editado, sempre à mão. */}
+            <div className="lg:hidden pb-2">{seletorSlidesMobile}</div>
             <PanelTopBar
               mode={panelMode}
               onMode={setPanelMode}
@@ -2561,10 +2813,10 @@ export function CarouselEditor({
               Selecione um bloco no slide pra editar.
             </p>
           )}
-          <div className={panelMode === "editar" ? "space-y-3" : "hidden"}>
+          <div className={panelMode === "editar" ? "editor-sections space-y-3" : "hidden"}>
           <a
             href="/dashboard/projetos"
-            className="flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
+            className="max-lg:hidden flex items-center gap-2 text-xs text-text-muted hover:text-text-primary px-1 pb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Voltar para Dashboard
@@ -3278,6 +3530,31 @@ export function CarouselEditor({
               </Button>
             </div>
 
+            {/* Celular: tirar a foto na hora (a galeria já vem no Upload). */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="lg:hidden w-full text-xs"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={imgBusy !== null}
+            >
+              <Camera className="w-3 h-3 mr-1" />
+              Tirar foto agora
+            </Button>
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleUpload(file)
+                e.target.value = ""
+              }}
+            />
+
             {slide.image.url && (
               <div className="space-y-2.5 pt-1">
                 <div className="flex items-center justify-between">
@@ -3452,6 +3729,35 @@ export function CarouselEditor({
           </div>
           </div>
       </aside>
+      </div>
+
+      {/* Celular: barra de baixo, com o polegar. Some com o teclado aberto. */}
+      {mobile === true && (
+        <BarraBaixoMobile tecladoAberto={tecladoAberto}>
+          <PublishToInstagram
+            getImageUrls={renderSlidesForPublish}
+            imageCount={slides.length}
+            caption={caption ?? ""}
+            label="Publicar"
+            className="flex-1 h-11"
+          />
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saveBusy || (!dirty && !!savedId)}
+            className="flex-1 h-11"
+          >
+            {saveBusy ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : saveOk || (!dirty && !!savedId) ? (
+              <Check className="w-4 h-4 mr-1.5" />
+            ) : (
+              <Save className="w-4 h-4 mr-1.5" />
+            )}
+            {saveBusy ? "Salvando…" : saveOk || (!dirty && !!savedId) ? "Salvo" : "Salvar"}
+          </Button>
+        </BarraBaixoMobile>
+      )}
 
       {/* "Salvar como modelo" (Lote 6): nome + escolha de escopo (este slide
           ou o carrossel inteiro). Portal do Dialog renderiza no <body>, então
