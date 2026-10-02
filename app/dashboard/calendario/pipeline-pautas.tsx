@@ -10,7 +10,7 @@ import {
 import { FORMATO_LABEL, statusColor, type PostStatus } from "@/lib/planejar"
 import { briefingDaPauta, type PautaScheduledPost } from "@/lib/pautas/types"
 import { tokenCostForSinglePost } from "@/lib/tokens"
-import { temCopyPronta } from "@/lib/websync/copy-crm"
+import { avisoDaGeracao, copiaDoDono, type AvisoDaGeracao } from "@/lib/websync/aviso-pauta"
 
 // =====================================================================
 // Pipeline do calendário: ideias da IA -> em criação -> prontos -> agendados.
@@ -49,6 +49,8 @@ export function PipelinePautas({
 }) {
   const router = useRouter()
   const [ocupado, setOcupado] = useState<string | null>(null)
+  // O Nexus não monta toast; o aviso fica inline, no padrão das outras telas do calendário.
+  const [aviso, setAviso] = useState<AvisoDaGeracao | null>(null)
 
   const porStatus = useMemo(() => {
     const mapa = new Map<PostStatus, PautaScheduledPost[]>()
@@ -75,16 +77,29 @@ export function PipelinePautas({
 
   async function gerarPost(p: PautaScheduledPost) {
     // REGRA DE OURO: o que o dono escreveu é respeitado ao pé da letra, e a IA
-    // só gera o que está vazio. Pauta com a copy pronta (veio do CRM) é só
-    // diagramada: nada de wizard, que reescreveria o texto a partir de um briefing.
-    if (p.format === "carrossel" && temCopyPronta(p.description)) {
+    // só gera o que está vazio. O critério é o CONTEÚDO (a pauta veio com o
+    // texto pronto do CRM), não o formato: o wizard reescreveria o texto a
+    // partir de um briefing.
+    const copia = copiaDoDono(p.description)
+    if (copia) {
+      setAviso(null)
       setOcupado(p.id)
       try {
-        await fetch("/api/calendario/pauta-pronta", {
+        if (copia === "imagem_unica") {
+          // Post único: não há motor que diagrame sem IA de texto. Melhor
+          // avisar do que reescrever o que o dono escreveu.
+          setAviso(avisoDaGeracao(true, "formato_nao_suportado"))
+          return
+        }
+        const res = await fetch("/api/calendario/pauta-pronta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: p.id }),
         })
+        const corpo = (await res.json().catch(() => null)) as { arte?: string } | null
+        setAviso(avisoDaGeracao(res.ok, corpo?.arte))
+      } catch {
+        setAviso(avisoDaGeracao(false, undefined))
       } finally {
         setOcupado(null)
         onChanged()
@@ -121,6 +136,15 @@ export function PipelinePautas({
           resto é grátis.
         </p>
       </div>
+
+      {aviso && (
+        <p
+          role="alert"
+          className={`mb-3 text-xs ${aviso.tom === "ok" ? "text-emerald-400" : "text-red-400"}`}
+        >
+          {aviso.texto}
+        </p>
+      )}
 
       {vazio ? (
         <p className="text-sm text-text-muted">

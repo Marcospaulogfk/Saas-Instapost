@@ -221,7 +221,9 @@ describe("o botao Gerar post do Pipeline", () => {
     )
     const posRota = fonte.indexOf("/api/calendario/pauta-pronta")
     const posWizard = fonte.indexOf("briefingDaPauta({")
-    expect(fonte).toContain("temCopyPronta(p.description)")
+    expect(fonte).toContain("copiaDoDono(p.description)")
+    expect(fonte).not.toMatch(/p.format === "carrossel"/)
+    expect(fonte).toContain("res.ok")
     expect(posRota).toBeGreaterThan(-1)
     // O desvio vem ANTES de montar o briefing que o wizard entrega ao modelo.
     expect(posRota).toBeLessThan(posWizard)

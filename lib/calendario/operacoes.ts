@@ -250,6 +250,14 @@ export interface ResultadoItem {
 export const MAX_PAUTAS_POR_LOTE = 20
 
 /**
+ * Teto da descrição: 16000, o MESMO do CRM (worker/src/agents/conteudo-limites.ts,
+ * onde está a conta: pior caso medido ~10700). Subir só um lado é continuar
+ * cortando. Passou do teto, a pauta é RECUSADA com o motivo, nunca cortada:
+ * cortar calado perdia legenda, hashtags e CTA.
+ */
+export const MAX_DESCRICAO_PAUTA = 16000
+
+/**
  * Cria as pautas de um lote. Item ruim não derruba o lote: cada um tem o
  * seu desfecho, na ordem em que veio.
  *
@@ -287,6 +295,18 @@ export async function criarPautas(
     }
 
     const brandId = p.brand_id
+
+    if (typeof p.descricao === "string" && p.descricao.length > MAX_DESCRICAO_PAUTA) {
+      console.warn(
+        `[calendario] pauta ${ref} recusada: descricao de ${p.descricao.length} caracteres passa do teto de ${MAX_DESCRICAO_PAUTA}`,
+      )
+      resultados.push({
+        ref,
+        resultado: "invalido",
+        motivo: `o texto tem ${p.descricao.length} caracteres e o limite é ${MAX_DESCRICAO_PAUTA}. Não cortei nada: encurte no CRM.`,
+      })
+      continue
+    }
     if (!existem.has(brandId)) {
       resultados.push({
         ref,
@@ -324,9 +344,8 @@ export async function criarPautas(
       .insert({
         brand_id: brandId,
         title: p.titulo.slice(0, 200),
-        // 4000: a copy pode vir com slides densos (titulo + corpo por
-        // argumento). A coluna é text; o corte é defensivo.
-        description: p.descricao ? String(p.descricao).slice(0, 4000) : null,
+        // Sem corte: acima do teto o item já foi recusado lá em cima.
+        description: p.descricao ? String(p.descricao) : null,
         format: FORMATOS.has(p.formato ?? "") ? p.formato : "post",
         objective: OBJETIVOS.has(p.objetivo ?? "") ? p.objetivo : "inform",
         scheduled_date: dataSugerida,

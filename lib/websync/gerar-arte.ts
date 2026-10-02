@@ -179,7 +179,11 @@ export async function agendarGeracao(
     .maybeSingle()
   if (!brand) return "nao_encontrado"
 
-  if (pauta.format !== "carrossel") return "formato_nao_suportado"
+  // O critério é a copy do dono, não o formato: slides prontos viram carrossel
+  // mesmo que a pauta tenha chegado marcada como outro formato.
+  if (pauta.format !== "carrossel" && !temCopyPronta(pauta.description)) {
+    return "formato_nao_suportado"
+  }
 
   const { data: existente } = await admin
     .from("editorial_carousels")
