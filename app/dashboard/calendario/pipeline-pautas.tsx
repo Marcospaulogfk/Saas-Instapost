@@ -10,6 +10,7 @@ import {
 import { FORMATO_LABEL, statusColor, type PostStatus } from "@/lib/planejar"
 import { briefingDaPauta, type PautaScheduledPost } from "@/lib/pautas/types"
 import { tokenCostForSinglePost } from "@/lib/tokens"
+import { temCopyPronta } from "@/lib/websync/copy-crm"
 
 // =====================================================================
 // Pipeline do calendário: ideias da IA -> em criação -> prontos -> agendados.
@@ -73,6 +74,23 @@ export function PipelinePautas({
   }
 
   async function gerarPost(p: PautaScheduledPost) {
+    // REGRA DE OURO: o que o dono escreveu é respeitado ao pé da letra, e a IA
+    // só gera o que está vazio. Pauta com a copy pronta (veio do CRM) é só
+    // diagramada: nada de wizard, que reescreveria o texto a partir de um briefing.
+    if (p.format === "carrossel" && temCopyPronta(p.description)) {
+      setOcupado(p.id)
+      try {
+        await fetch("/api/calendario/pauta-pronta", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: p.id }),
+        })
+      } finally {
+        setOcupado(null)
+        onChanged()
+      }
+      return
+    }
     // Move pra "em criação" ANTES de navegar: o usuário sai da página e, se a
     // marcação ficasse pro retorno, a pauta continuaria parada em "ideia" e
     // ele geraria o mesmo post duas vezes — pagando duas vezes.
