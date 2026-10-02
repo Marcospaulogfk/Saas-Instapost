@@ -23,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -185,6 +186,7 @@ export function ProjectsList({
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              aria-label="Mais opções do post"
             >
               {deletingId === post.id ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -193,7 +195,7 @@ export function ProjectsList({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="[&_[role=menuitem]]:min-h-11 lg:[&_[role=menuitem]]:min-h-0 min-w-52">
             <DropdownMenuItem asChild>
               <Link href={`/dashboard/posts-unicos/${post.id}`}>
                 <Pencil className="w-4 h-4 mr-2" />
@@ -238,6 +240,7 @@ export function ProjectsList({
                 </Link>
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator className="my-2" />
             <DropdownMenuItem
               className="text-destructive"
               onSelect={(e) => {
@@ -291,6 +294,7 @@ export function ProjectsList({
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              aria-label="Mais opções do carrossel"
               onClick={(e) => e.preventDefault()}
             >
               {deletingId === carousel.id ? (
@@ -300,13 +304,14 @@ export function ProjectsList({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="[&_[role=menuitem]]:min-h-11 lg:[&_[role=menuitem]]:min-h-0 min-w-52">
             <DropdownMenuItem asChild>
               <Link href={`/dashboard/carrossel?id=${carousel.id}`}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Abrir no editor
               </Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator className="my-2" />
             <DropdownMenuItem
               className="text-destructive"
               onSelect={(e) => {
@@ -345,12 +350,13 @@ export function ProjectsList({
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-11 w-11 lg:h-8 lg:w-8 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 hover:text-white"
+              aria-label="Mais opções do projeto"
               onClick={(e) => e.preventDefault()}
             >
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="[&_[role=menuitem]]:min-h-11 lg:[&_[role=menuitem]]:min-h-0 min-w-52">
             <DropdownMenuItem>
               <Pencil className="w-4 h-4 mr-2" />
               Editar

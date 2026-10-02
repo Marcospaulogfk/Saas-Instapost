@@ -59,7 +59,7 @@ export function CarouselNavPreview({
                 type="button"
                 aria-label={`Ver slide ${i + 1}`}
                 onClick={stop(() => setActive(i))}
-                className="h-1.5 rounded-full transition-all [@media(hover:none)]:pointer-events-none"
+                className="h-1.5 rounded-full transition-all max-lg:pointer-events-none"
                 style={{
                   width: i === active ? 16 : 6,
                   background: i === active ? "#2A79EA" : "rgba(255,255,255,0.55)",
