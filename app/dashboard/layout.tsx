@@ -88,7 +88,10 @@ export default async function DashboardLayout({
             />
           }
         />
-        <main className="nova-scroll flex-1 overflow-y-auto">{children}</main>
+        {/* pb-28 no celular: respiro no fim de TODA tela do dashboard, pra o
+            botão flutuante do assistente ficar sobre espaço vazio e não sobre
+            o último item. Vale pra qualquer tela nova. */}
+        <main className="nova-scroll flex-1 overflow-y-auto pb-28 md:pb-0">{children}</main>
       </div>
       {/* Assistente em todas as telas do dashboard — o contexto de marca vem
           do servidor a cada request, entao a bolha nao precisa de props. */}

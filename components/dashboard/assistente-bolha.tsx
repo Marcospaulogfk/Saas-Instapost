@@ -161,9 +161,9 @@ export function AssistenteBolha({ marcaAtiva = null }: Props) {
           type="button"
           onClick={() => setAberto(true)}
           aria-label="Falar com o Nexus"
-          className="group fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-border-subtle bg-background-secondary/95 py-1.5 pl-1.5 pr-4 shadow-xl backdrop-blur transition-all hover:border-brand-500/60 hover:shadow-2xl active:scale-95"
+          className="group fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border border-border-subtle bg-background-secondary/95 py-1 pl-1 pr-1 sm:py-1.5 sm:pl-1.5 sm:pr-4 shadow-xl backdrop-blur transition-all hover:border-brand-500/60 hover:shadow-2xl active:scale-95"
         >
-          <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+          <span className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center">
             <Image
               src="/mascote-nexus.png"
               alt=""
@@ -175,7 +175,9 @@ export function AssistenteBolha({ marcaAtiva = null }: Props) {
             {/* Ponto de "disponível" — o mesmo sinal de chat de suporte. */}
             <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full border-2 border-background-secondary bg-success" />
           </span>
-          <span className="text-sm font-semibold text-text-primary">
+          {/* No celular só o mascote (56px): com o texto a bolha media 212x78 e
+              cobria itens da tela. O aria-label do botão continua dizendo o que é. */}
+          <span className="hidden sm:inline text-sm font-semibold text-text-primary">
             Fale com o Nexus
           </span>
         </button>
