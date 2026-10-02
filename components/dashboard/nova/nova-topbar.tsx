@@ -123,7 +123,7 @@ export function NovaTopBar({
           type="button"
           aria-label="Buscar"
           title="Buscar"
-          className="nv-pill flex h-9 w-9 items-center justify-center"
+          className="nv-pill flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center"
           style={{ color: "var(--nv-text)" }}
         >
           <Search className="h-4 w-4" />
@@ -135,7 +135,7 @@ export function NovaTopBar({
             <button
               type="button"
               aria-label="Notificações"
-              className="nv-pill relative flex h-9 w-9 items-center justify-center"
+              className="nv-pill relative flex h-11 w-11 lg:h-9 lg:w-9 items-center justify-center"
               style={{ color: "var(--nv-text)" }}
             >
               <Bell className="h-4 w-4" />
@@ -310,7 +310,7 @@ function UsageChipCompact({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="nv-pill flex items-center gap-1.5 px-2.5 py-1.5 lg:hidden"
+          className="nv-pill flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 py-1.5 lg:hidden"
         >
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
           <span className="text-[11px] font-semibold tabular-nums" style={{ color }}>

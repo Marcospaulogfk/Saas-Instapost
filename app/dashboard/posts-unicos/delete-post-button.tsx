@@ -45,7 +45,7 @@ export function DeletePostButton({ postId, title }: Props) {
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          className="text-text-muted hover:text-destructive transition-colors p-1"
+          className="flex items-center justify-center w-11 h-11 lg:w-auto lg:h-auto lg:p-1 text-text-muted hover:text-destructive transition-colors"
           aria-label="Excluir"
         >
           <Trash2 className="w-3.5 h-3.5" />

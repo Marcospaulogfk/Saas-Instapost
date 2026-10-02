@@ -44,7 +44,7 @@ export function MobileNav({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Abrir menu"
-        className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
+        className="flex items-center justify-center w-11 h-11 rounded-lg transition-colors"
         style={{ color: "var(--text-primary)", background: "rgba(255,255,255,0.04)" }}
       >
         <Menu className="w-5 h-5" />

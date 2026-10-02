@@ -130,6 +130,8 @@ export function ProjectsList({
   })
 
   function handleDeleteCarousel(id: string) {
+    // Excluir some pra sempre: pede confirmação (o toque no menu é fácil de errar).
+    if (!window.confirm("Excluir este carrossel? Essa ação não pode ser desfeita.")) return
     setDeletingId(id)
     startTransition(async () => {
       await deleteCarouselV2(id)
@@ -139,6 +141,7 @@ export function ProjectsList({
   }
 
   function handleDeleteSinglePost(id: string) {
+    if (!window.confirm("Excluir este post? Essa ação não pode ser desfeita.")) return
     setDeletingId(id)
     startTransition(async () => {
       await deleteSinglePost(id)

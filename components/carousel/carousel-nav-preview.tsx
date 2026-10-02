@@ -38,7 +38,7 @@ export function CarouselNavPreview({
             type="button"
             aria-label="Slide anterior"
             onClick={stop(() => go(active - 1))}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-7 h-7 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 lg:w-7 lg:h-7 rounded-full text-white opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-all backdrop-blur-sm"
             style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -47,7 +47,7 @@ export function CarouselNavPreview({
             type="button"
             aria-label="Próximo slide"
             onClick={stop(() => go(active + 1))}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-7 h-7 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-11 h-11 lg:w-7 lg:h-7 rounded-full text-white opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-all backdrop-blur-sm"
             style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}
           >
             <ChevronRight className="w-4 h-4" />
@@ -59,7 +59,7 @@ export function CarouselNavPreview({
                 type="button"
                 aria-label={`Ver slide ${i + 1}`}
                 onClick={stop(() => setActive(i))}
-                className="h-1.5 rounded-full transition-all"
+                className="h-1.5 rounded-full transition-all [@media(hover:none)]:pointer-events-none"
                 style={{
                   width: i === active ? 16 : 6,
                   background: i === active ? "#2A79EA" : "rgba(255,255,255,0.55)",

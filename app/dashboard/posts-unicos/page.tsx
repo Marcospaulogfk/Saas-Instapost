@@ -22,7 +22,7 @@ export default async function PostsUnicosPage() {
               : `${posts.length} post${posts.length === 1 ? "" : "s"} salvo${posts.length === 1 ? "" : "s"}.`}
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="h-11 lg:h-9">
           <Link href="/dashboard/criar?tipo=post-unico&step=2">
             <Plus className="w-4 h-4 mr-2" />
             Criar post único
@@ -77,7 +77,7 @@ export default async function PostsUnicosPage() {
                 <div className="p-3 space-y-1">
                   <Link
                     href={`/dashboard/posts-unicos/${p.id}`}
-                    className="font-semibold text-sm text-text-primary truncate block hover:text-brand-400"
+                    className="font-semibold text-sm text-text-primary truncate block py-3 lg:py-0 hover:text-brand-400"
                   >
                     {p.title}
                   </Link>

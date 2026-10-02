@@ -73,7 +73,7 @@ export function IndicacaoBanner() {
       </p>
       <Link
         href="/dashboard/indicacao"
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[12.5px] font-bold text-[#0d2a63] transition-colors hover:bg-white/90"
+        className="flex h-11 lg:h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[12.5px] font-bold text-[#0d2a63] transition-colors hover:bg-white/90"
       >
         Pegar meu link
         <ArrowRight className="h-3.5 w-3.5" />
@@ -82,7 +82,7 @@ export function IndicacaoBanner() {
         type="button"
         onClick={fechar}
         aria-label="Fechar aviso"
-        className="shrink-0 rounded-md p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+        className="flex h-11 w-11 lg:h-auto lg:w-auto items-center justify-center shrink-0 rounded-md lg:p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
       >
         <X className="h-4 w-4" />
       </button>
