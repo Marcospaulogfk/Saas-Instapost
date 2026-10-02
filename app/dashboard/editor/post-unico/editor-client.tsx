@@ -692,7 +692,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               ) : (
                 <Download className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Exportar PNG
+              Baixar imagem
             </Button>
             <Button type="button" size="sm" onClick={handleSave} disabled={!canSave}>
               {saving ? (
@@ -702,7 +702,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               ) : (
                 <Save className="w-3.5 h-3.5 mr-1.5" />
               )}
-              {saveOk ? "Salvo" : savedId ? "Atualizar" : "Salvar"}
+              {saveOk ? "Salvo" : "Salvar"}
             </Button>
           </div>
         </div>
@@ -1076,7 +1076,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
             ) : (
               <Save className="w-4 h-4 mr-1.5" />
             )}
-            {saveOk ? "Salvo" : savedId ? "Atualizar" : "Salvar"}
+            {saveOk ? "Salvo" : "Salvar"}
           </Button>
         </BarraBaixoMobile>
       )}

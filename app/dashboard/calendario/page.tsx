@@ -71,6 +71,14 @@ const STATUS_FILTERS: Array<{ id: "todos" | PostStatus; label: string; color: st
   { id: "publicado", label: "Publicados", color: "bg-brand-600" },
 ]
 
+/** Forma singular dos contadores ("1 pronto", e não "1 prontos"). */
+const SINGULAR: Partial<Record<PostStatus, string>> = {
+  ideia: "ideia",
+  pronto: "pronto",
+  agendado: "agendado",
+  publicado: "publicado",
+}
+
 /** Mostra a hora HH:MM (ignora segundos) ou vazio. */
 function fmtHora(t: string | null): string {
   if (!t) return ""
@@ -366,7 +374,8 @@ export default function CalendarioPage() {
                 }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${f.color}`} />
-                {count} {f.label.toLowerCase()}
+                {count}{" "}
+                {count === 1 ? (SINGULAR[f.id as PostStatus] ?? f.label.toLowerCase()) : f.label.toLowerCase()}
               </button>
             )
           })}
@@ -394,7 +403,7 @@ export default function CalendarioPage() {
       <div className="rounded-xl border border-border-subtle overflow-hidden bg-background-secondary/30">
         <div className="grid grid-cols-7 border-b border-border-subtle bg-background-tertiary/40">
           {DIAS_SEMANA.map((d) => (
-            <div key={d} className="px-2 py-2 text-[10px] font-bold text-text-muted text-center">
+            <div key={d} className="px-2 py-2 text-xs font-bold text-text-muted text-center">
               {d}
             </div>
           ))}
@@ -425,7 +434,7 @@ export default function CalendarioPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span
-                        className={`text-[11px] font-semibold tabular-nums w-5 h-5 flex items-center justify-center rounded-full ${
+                        className={`text-xs font-semibold tabular-nums w-5 h-5 flex items-center justify-center rounded-full ${
                           isToday
                             ? "bg-brand-600 text-white"
                             : isOtherMonth
@@ -437,7 +446,7 @@ export default function CalendarioPage() {
                       </span>
                       {dataCom && (
                         <span
-                          className="text-[9px] font-bold text-orange-400 leading-none truncate max-w-[60%]"
+                          className="text-xs font-bold text-orange-400 leading-none truncate max-w-[60%]"
                           title={dataCom.nome}
                         >
                           ✦ {dataCom.nome.slice(0, 14)}
@@ -475,7 +484,7 @@ export default function CalendarioPage() {
                               setEditando(s)
                             }
                           }}
-                          className="rounded px-1.5 py-0.5 text-[10px] truncate flex items-center gap-1 cursor-pointer hover:ring-1 hover:ring-brand-500/60"
+                          className="rounded px-1.5 py-0.5 text-xs truncate flex items-center gap-1 cursor-pointer hover:ring-1 hover:ring-brand-500/60"
                           style={{
                             background:
                               s.source === "ia"
@@ -500,7 +509,7 @@ export default function CalendarioPage() {
                         </div>
                       ))}
                       {dayItems.length > 3 && (
-                        <p className="text-[9px] text-text-muted">+{dayItems.length - 3} mais</p>
+                        <p className="text-xs text-text-muted">+{dayItems.length - 3} mais</p>
                       )}
                     </div>
                   </button>
@@ -530,7 +539,7 @@ export default function CalendarioPage() {
                 <span
                   className={`w-2 h-2 rounded-full ${statusColor(s.status)} flex-shrink-0`}
                 />
-                <span className="text-[11px] tabular-nums text-text-muted w-14 sm:w-20 flex-shrink-0 leading-tight">
+                <span className="text-xs tabular-nums text-text-muted w-14 sm:w-20 flex-shrink-0 leading-tight">
                   {s.scheduled_date.split("-").reverse().slice(0, 2).join("/")}
                   {s.scheduled_time ? ` ${fmtHora(s.scheduled_time)}` : ""}
                 </span>
@@ -542,12 +551,12 @@ export default function CalendarioPage() {
                   className="text-left text-sm font-medium text-text-primary flex-1 min-w-0 min-h-14 sm:min-h-0 py-2 sm:py-0 hover:text-brand-300"
                 >
                   <span className="block truncate">{s.title}</span>
-                  <span className="sm:hidden block text-[11px] font-normal text-text-muted">
+                  <span className="sm:hidden block text-xs font-normal text-text-muted">
                     {statusLabel(s.status)} · {FORMATO_LABEL[s.format] ?? s.format}
                   </span>
                 </button>
                 {s.created_at && (
-                  <span className="hidden sm:inline text-[10px] text-text-subtle flex-shrink-0">
+                  <span className="hidden sm:inline text-xs text-text-subtle flex-shrink-0">
                     criada em{" "}
                     {new Date(s.created_at).toLocaleDateString("pt-BR", {
                       day: "2-digit",
@@ -558,10 +567,10 @@ export default function CalendarioPage() {
                 {s.source === "ia" && (
                   <Sparkles className="hidden sm:inline w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
                 )}
-                <span className="hidden sm:inline text-[10px] text-text-muted">
+                <span className="hidden sm:inline text-xs text-text-muted">
                   {FORMATO_LABEL[s.format] ?? s.format}
                 </span>
-                <span className="hidden sm:inline text-[10px] text-text-muted">
+                <span className="hidden sm:inline text-xs text-text-muted">
                   {statusLabel(s.status)}
                 </span>
                 <button
@@ -623,7 +632,7 @@ export default function CalendarioPage() {
                 <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${statusColor(s.status)}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-text-primary">{s.title}</span>
-                  <span className="block text-[11px] text-text-muted">
+                  <span className="block text-xs text-text-muted">
                     {s.scheduled_time ? `${fmtHora(s.scheduled_time)} · ` : ""}
                     {statusLabel(s.status)} · {FORMATO_LABEL[s.format] ?? s.format}
                   </span>
@@ -921,7 +930,7 @@ function NovaPautaForm({
             ))}
           </div>
           {publicada && (
-            <p className="text-[11px] text-text-muted">
+            <p className="text-xs text-text-muted">
               Esta peça já foi publicada: situação, data e hora não mudam mais.
             </p>
           )}

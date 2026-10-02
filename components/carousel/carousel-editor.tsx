@@ -55,6 +55,7 @@ import {
 } from "@/components/editor/mobile-editor"
 import { useTecladoAberto } from "@/hooks/use-teclado-aberto"
 import { reduzirArquivo } from "@/lib/single-posts/ler-imagem"
+import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 import { saveCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
 import {
   saveCarouselTemplate,
@@ -1823,10 +1824,17 @@ export function CarouselEditor({
     })
     setSelected(j)
   }
+  // Aviso "Slide excluído. Desfazer": a lixeira apaga na hora, então o aviso
+  // aparece logo depois do toque, com o Desfazer ao alcance do mesmo dedo.
+  const [slideExcluido, setSlideExcluido] = useState<number | null>(null)
+  const avisoExclusaoTimer = useRef<number | undefined>(undefined)
   function deleteSlide(i: number) {
     if (slides.length <= 1) return
     setSlides((list) => reindex(list.filter((_, idx) => idx !== i)))
     setSelected((s) => Math.max(0, Math.min(s, slides.length - 2)))
+    setSlideExcluido(i + 1)
+    window.clearTimeout(avisoExclusaoTimer.current)
+    avisoExclusaoTimer.current = window.setTimeout(() => setSlideExcluido(null), 7000)
   }
 
   /** Slide 100% vazio (sem texto/imagem/blocos) inserido logo após o atual. */
@@ -2871,6 +2879,14 @@ export function CarouselEditor({
                 )
               })}
             </div>
+            {/* Uma linha dizendo o que o estilo faz: Seamless, Cards, Impacto etc. são só nomes. */}
+            <p className="mt-2 text-[12px] leading-snug text-text-muted">
+              {
+                CAROUSEL_STYLES.find(
+                  (c) => c.style === (styleScope === "slide" ? styleOf(slide) : style),
+                )?.desc
+              }
+            </p>
             {(slide as SlideWithStyle | undefined)?.style && (
               <button
                 type="button"
@@ -3256,7 +3272,7 @@ export function CarouselEditor({
                   value={slide.body || ""}
                   onChange={(e) => patchSlide({ body: e.target.value })}
                   rows={3}
-                  placeholder="Texto do slide. Suporta **bold** e \n\n."
+                  placeholder="Escreva o texto do slide. Use **assim** para negrito."
                 />
               </div>
               <div>
@@ -3598,6 +3614,9 @@ export function CarouselEditor({
                 />
 
                 {/* Colagem: 2–4 fotos no mesmo espaço da foto principal. */}
+                <p className="text-[12px] leading-snug text-text-muted">
+                  Colagem junta de 2 a 4 fotos no lugar da foto principal do slide.
+                </p>
                 <div className="space-y-2 pt-1 border-t border-border/60">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium text-text-secondary inline-flex items-center gap-1.5">
@@ -3730,6 +3749,25 @@ export function CarouselEditor({
           </div>
       </aside>
       </div>
+
+      {slideExcluido !== null && (
+        <div
+          role="status"
+          className="fixed left-1/2 -translate-x-1/2 bottom-24 lg:bottom-6 z-[60] flex items-center gap-1 rounded-xl border border-border-medium bg-background-tertiary shadow-lg pl-4 pr-1 max-w-[calc(100vw-1.5rem)]"
+        >
+          <span className="text-sm text-text-primary">Slide {slideExcluido} excluído.</span>
+          <button
+            type="button"
+            onClick={() => {
+              undo()
+              setSlideExcluido(null)
+            }}
+            className="min-h-11 min-w-11 px-3 text-sm font-semibold text-brand-400"
+          >
+            Desfazer
+          </button>
+        </div>
+      )}
 
       {/* Celular: barra de baixo, com o polegar. Some com o teclado aberto. */}
       {mobile === true && (

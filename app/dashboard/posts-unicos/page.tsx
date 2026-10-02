@@ -82,7 +82,10 @@ export default async function PostsUnicosPage() {
                     {p.title}
                   </Link>
                   <p className="text-[11px] text-text-muted truncate">
-                    {template?.label ?? p.template_id} · {p.brand_name}
+                    {/* "free:xyz" é identificador interno: não aparece pro dono. */}
+                    {template?.label ??
+                      (p.template_id.startsWith("free:") ? "Post livre" : p.template_id)}{" "}
+                    · {p.brand_name}
                   </p>
                   <div className="flex items-center justify-between pt-1">
                     <p className="text-[10px] text-text-muted">

@@ -376,7 +376,7 @@ export function PostUnicoEditor({
             ) : (
               <Save className="w-3.5 h-3.5 mr-1.5" />
             )}
-            {postId ? "Atualizar" : "Salvar"}
+            Salvar
           </Button>
           <Button type="button" size="sm" onClick={handleExport} disabled={exporting}>
             {exporting ? (

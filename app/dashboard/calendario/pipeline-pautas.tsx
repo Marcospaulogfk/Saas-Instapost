@@ -131,7 +131,7 @@ export function PipelinePautas({
     <div className="mt-8">
       <div className="flex items-baseline gap-2 mb-3">
         <h3 className="text-sm font-semibold text-text-primary">Pipeline</h3>
-        <p className="text-[11px] text-text-muted">
+        <p className="text-xs text-text-muted">
           Da ideia ao agendamento. Gerar o post custa {custoPost} tokens; o
           resto é grátis.
         </p>
@@ -167,15 +167,15 @@ export function PipelinePautas({
                   <p className="text-xs font-semibold text-text-primary">
                     {col.label}
                   </p>
-                  <span className="text-[10px] text-text-muted tabular-nums ml-auto">
+                  <span className="text-xs text-text-muted tabular-nums ml-auto">
                     {itens.length}
                   </span>
                 </div>
-                <p className="text-[10px] text-text-muted mb-2">{col.hint}</p>
+                <p className="text-xs text-text-muted mb-2">{col.hint}</p>
 
                 <div className="space-y-2">
                   {itens.length === 0 && (
-                    <p className="text-[11px] text-text-subtle">—</p>
+                    <p className="text-xs text-text-subtle">—</p>
                   )}
                   {itens.map((p) => (
                     <div
@@ -211,20 +211,20 @@ export function PipelinePautas({
                       </div>
 
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[10px] tabular-nums text-text-muted">
+                        <span className="text-xs tabular-nums text-text-muted">
                           {p.scheduled_date
                             .split("-")
                             .reverse()
                             .slice(0, 2)
                             .join("/")}
                         </span>
-                        <span className="text-[10px] text-text-muted">
+                        <span className="text-xs text-text-muted">
                           {FORMATO_LABEL[p.format] ?? p.format}
                         </span>
                       </div>
 
                       {p.created_at && (
-                        <p className="text-[9px] text-text-subtle mb-1.5">
+                        <p className="text-xs text-text-subtle mb-1.5">
                           criada em{" "}
                           {new Date(p.created_at).toLocaleDateString("pt-BR", {
                             day: "2-digit",
@@ -237,7 +237,7 @@ export function PipelinePautas({
                           token — some nas colunas seguintes, onde a escolha
                           já foi feita. */}
                       {col.status === "ideia" && p.rationale && (
-                        <p className="text-[10px] text-text-muted leading-snug mb-2">
+                        <p className="text-xs text-text-muted leading-snug mb-2">
                           {p.rationale}
                         </p>
                       )}
@@ -247,11 +247,11 @@ export function PipelinePautas({
                           type="button"
                           onClick={() => gerarPost(p)}
                           disabled={ocupado === p.id}
-                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-[11px] font-medium transition-colors disabled:opacity-60"
+                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors disabled:opacity-60"
                         >
                           <Wand2 className="w-3 h-3" />
                           Gerar post
-                          <span className="text-[10px] font-semibold opacity-80">
+                          <span className="text-xs font-semibold opacity-80">
                             {custoPost} tokens
                           </span>
                         </button>
@@ -262,7 +262,7 @@ export function PipelinePautas({
                             avancar(p.id, PROXIMO[col.status]!.status)
                           }
                           disabled={ocupado === p.id}
-                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md border border-border-subtle hover:border-hairline-strong text-text-secondary text-[11px] transition-colors disabled:opacity-60"
+                          className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md border border-border-subtle hover:border-hairline-strong text-text-secondary text-xs transition-colors disabled:opacity-60"
                         >
                           {PROXIMO[col.status]!.label}
                           <ArrowRight className="w-3 h-3" />

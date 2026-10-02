@@ -112,7 +112,7 @@ export function FreePostViewer({
           ) : (
             <Download className="w-3.5 h-3.5 mr-1.5" />
           )}
-          Exportar PNG
+          Baixar imagem
           </Button>
         </div>
       </div>

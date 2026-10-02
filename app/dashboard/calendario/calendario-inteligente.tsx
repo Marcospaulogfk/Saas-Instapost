@@ -86,7 +86,7 @@ export function CalendarioInteligenteCard({
 /** Badge de custo zero. Repetido no card e no botão — é o argumento. */
 export function BadgeGratis() {
   return (
-    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+    <span className="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
       0 tokens
     </span>
   )
@@ -269,7 +269,7 @@ function ModalCalendario({
               </div>
               {/* O usuário precisa entender o efeito da combinação antes de
                   gerar — senão só descobre olhando o calendário depois. */}
-              <p className="text-[11px] text-text-muted">
+              <p className="text-xs text-text-muted">
                 {total} pauta{total === 1 ? "" : "s"} no total
                 {porSemana > dias.length && dias.length > 0
                   ? " — como você pediu mais posts que dias, algum dia recebe mais de um."
@@ -309,7 +309,7 @@ function ModalCalendario({
                 {gerando ? "Gerando…" : "Gerar Calendário"}
               </Button>
             </div>
-            <p className="text-[11px] text-text-muted text-center">
+            <p className="text-xs text-text-muted text-center">
               Gerar as pautas não consome tokens. Você só paga ao gerar o post.
             </p>
           </div>
@@ -328,10 +328,10 @@ function ModalCalendario({
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] tabular-nums text-text-muted">
+                        <span className="text-xs tabular-nums text-text-muted">
                           {p.data.split("-").reverse().slice(0, 2).join("/")}
                         </span>
-                        <span className="text-[10px] text-text-muted">
+                        <span className="text-xs text-text-muted">
                           {FORMATO_LABEL[p.formato]} · {OBJETIVO_LABEL[p.objetivo]}
                         </span>
                       </div>
@@ -339,12 +339,12 @@ function ModalCalendario({
                         {p.titulo}
                       </p>
                       {p.descricao && (
-                        <p className="text-[11px] text-text-secondary mt-0.5">
+                        <p className="text-xs text-text-secondary mt-0.5">
                           {p.descricao}
                         </p>
                       )}
                       {p.motivo && (
-                        <p className="text-[11px] text-text-muted mt-1">
+                        <p className="text-xs text-text-muted mt-1">
                           Por quê: {p.motivo}
                         </p>
                       )}
