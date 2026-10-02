@@ -141,7 +141,16 @@ export function AssistenteBolha({ marcaAtiva = null }: Props) {
   // no meio do botão abria o chat em vez de avançar. Ali a pessoa está no
   // meio de um fluxo; conselho de pauta ela pede antes ou depois.
   const pathname = usePathname()
-  if (pathname?.startsWith("/dashboard/criar")) return null
+  // Mesma razão nos EDITORES (post único e carrossel): no celular a bolha caía
+  // por cima do Salvar/Atualizar e do Publicar da barra de baixo, e o toque no
+  // meio do botão abria o chat em vez de salvar.
+  if (
+    pathname?.startsWith("/dashboard/criar") ||
+    pathname?.startsWith("/dashboard/editor") ||
+    pathname?.startsWith("/dashboard/carrossel")
+  ) {
+    return null
+  }
 
   return (
     <>
