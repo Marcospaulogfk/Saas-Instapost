@@ -250,10 +250,12 @@ export function PipelinePautas({
                           className="w-full flex items-center justify-center gap-1.5 h-11 sm:h-8 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors disabled:opacity-60"
                         >
                           <Wand2 className="w-3 h-3" />
-                          Gerar post
-                          <span className="text-xs font-semibold opacity-80">
-                            {custoPost} tokens
-                          </span>
+                          {ocupado === p.id ? "Abrindo…" : "Gerar post"}
+                          {ocupado !== p.id && (
+                            <span className="text-xs font-semibold opacity-80">
+                              {custoPost} tokens
+                            </span>
+                          )}
                         </button>
                       ) : PROXIMO[col.status] ? (
                         <button
