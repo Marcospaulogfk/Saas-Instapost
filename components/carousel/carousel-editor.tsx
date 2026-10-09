@@ -2093,7 +2093,9 @@ export function CarouselEditor({
    * Diferente do ZIP, aqui um slide que falha derruba tudo: carrossel pela
    * metade no feed é pior que erro.
    */
-  async function renderSlidesForPublish(): Promise<string[]> {
+  async function renderSlidesForPublish(
+    onProgress?: (feitas: number, total: number) => void,
+  ): Promise<string[]> {
     if (!previewRef.current || slides.length === 0) return []
     const prevSelected = selected
     const urls: string[] = []
@@ -2120,6 +2122,7 @@ export function CarouselEditor({
           )
         }
         urls.push(await uploadPngDataUrl(dataUrl, `${slideFileName(slides[i], i)}.png`))
+        onProgress?.(urls.length, slides.length)
       }
       return urls
     } finally {
