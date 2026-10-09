@@ -9,9 +9,10 @@ interface Props {
    * Produz as URLs PÚBLICAS das artes finais, na ordem, só na hora de
    * publicar. É callback (e não lista pronta) porque a arte final só existe
    * como HTML no preview: o editor renderiza em PNG, hospeda e devolve as
-   * URLs. Lança com mensagem legível se algo falhar.
+   * URLs. Lança com mensagem legível se algo falhar. `onProgress` (opcional)
+   * recebe quantas já ficaram prontas, pra tela dizer em que slide está.
    */
-  getImageUrls: () => Promise<string[]>
+  getImageUrls: (onProgress?: (feitas: number, total: number) => void) => Promise<string[]>
   /** Quantas imagens vão ser publicadas (só pra mostrar no modal). */
   imageCount: number
   caption: string
@@ -28,6 +29,9 @@ interface Status {
   username: string | null
   configured: boolean
 }
+
+/** Sem nenhum slide novo pronto por este tempo, a tela avisa que está demorando. */
+const ALERTA_PARADO_MS = 45_000
 
 /**
  * Recado de erro dentro do quadro. O motivo que vem do OAuth
@@ -61,6 +65,26 @@ export function PublishToInstagram({
   const [busy, setBusy] = useState<"render" | "publish" | "disconnect" | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Aba em segundo plano: o navegador congela a renderização das artes e o
+  // botão ficava cinza em "Preparando…" sem ninguém saber por quê.
+  const [abaEscondida, setAbaEscondida] = useState(false)
+  // Andamento da montagem das artes. `desde` é o último instante em que algo
+  // andou: se passar de ALERTA_PARADO_MS sem mexer, a tela avisa em vez de
+  // deixar o botão cinza sem explicação.
+  const [progresso, setProgresso] = useState<{ feitas: number; total: number; desde: number } | null>(null)
+  const [agora, setAgora] = useState(() => Date.now())
+  useEffect(() => {
+    if (busy !== "render") return
+    const t = window.setInterval(() => setAgora(Date.now()), 3000)
+    return () => window.clearInterval(t)
+  }, [busy])
+
+  useEffect(() => {
+    const on = () => setAbaEscondida(document.hidden)
+    on()
+    document.addEventListener("visibilitychange", on)
+    return () => document.removeEventListener("visibilitychange", on)
+  }, [])
 
   // Mostra resultado do OAuth (redirect ?ig=ok|erro) ao voltar.
   useEffect(() => {
@@ -99,7 +123,10 @@ export function PublishToInstagram({
     setError(null)
     try {
       // Primeiro a arte final vira PNG hospedado; só então a Meta recebe.
-      const imageUrls = await getImageUrls()
+      setProgresso({ feitas: 0, total: imageCount, desde: Date.now() })
+      const imageUrls = await getImageUrls((feitas, total) =>
+        setProgresso({ feitas, total, desde: Date.now() }),
+      )
       if (!imageUrls.length) {
         setError("Nenhuma imagem pronta pra publicar.")
         return
@@ -117,9 +144,16 @@ export function PublishToInstagram({
       }
       setDone(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro de rede.")
+      // A captura da arte pode rejeitar com um Event (foto que não carregou),
+      // que não é Error: antes virava "Erro de rede." sem dizer o que fazer.
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : "Não deu pra montar as artes: uma das fotos não carregou. Troque ou tire a foto que estiver quebrada no editor e tente de novo.",
+      )
     } finally {
       setBusy(null)
+      setProgresso(null)
     }
   }
 
@@ -251,9 +285,34 @@ export function PublishToInstagram({
                   </button>
                 </div>
 
-                <p className="text-xs text-text-secondary">
-                  {imageCount} imagem(ns) + legenda prontos pra publicar.
-                </p>
+                {imageCount === 0 ? (
+                  <Aviso>
+                    Este {kind} está sem slides, então não há o que publicar.
+                    Feche esta janela e adicione ao menos um slide no editor.
+                    Se os slides tinham sumido, recarregue a página.
+                  </Aviso>
+                ) : (
+                  <p className="text-xs text-text-secondary">
+                    {imageCount} imagem(ns) + legenda prontos pra publicar.
+                  </p>
+                )}
+                {busy === "render" && (
+                  <p className="text-xs text-text-secondary">
+                    {abaEscondida
+                      ? "A preparação pausou porque esta aba está em segundo plano. Volte pra esta aba pra ela continuar."
+                      : progresso && progresso.total > 0
+                        ? `Montando o slide ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}. Deixe esta aba aberta e à frente.`
+                        : "Montando cada arte. Pode levar até alguns minutos: deixe esta aba aberta e à frente."}
+                  </p>
+                )}
+                {busy === "render" && !abaEscondida && progresso && agora - progresso.desde > ALERTA_PARADO_MS && (
+                  <Aviso>
+                    Está demorando mais que o normal neste slide. Se não andar
+                    em mais um minuto, feche esta janela, recarregue a página e
+                    tente de novo. Se repetir, mande este recado pro suporte:
+                    “travou no slide {Math.min(progresso.feitas + 1, progresso.total)}”.
+                  </Aviso>
+                )}
 
                 <Button
                   type="button"

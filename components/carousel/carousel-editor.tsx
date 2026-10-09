@@ -2093,7 +2093,9 @@ export function CarouselEditor({
    * Diferente do ZIP, aqui um slide que falha derruba tudo: carrossel pela
    * metade no feed é pior que erro.
    */
-  async function renderSlidesForPublish(): Promise<string[]> {
+  async function renderSlidesForPublish(
+    onProgress?: (feitas: number, total: number) => void,
+  ): Promise<string[]> {
     if (!previewRef.current || slides.length === 0) return []
     const prevSelected = selected
     const urls: string[] = []
@@ -2103,12 +2105,24 @@ export function CarouselEditor({
         await whenVisible()
         await waitPreviewImages()
         if (!previewRef.current) throw new Error("preview indisponível")
-        const dataUrl = await renderNodeToPng(
-          previewRef.current,
-          1080,
-          format === "stories" ? 1920 : 1350,
-        )
+        let dataUrl: string
+        try {
+          dataUrl = await renderNodeToPng(
+            previewRef.current,
+            1080,
+            format === "stories" ? 1920 : 1350,
+          )
+        } catch (err) {
+          // Foto que não carrega rejeita com um Event, não com Error: sem
+          // isso o aviso saía vazio e ninguém sabia qual slide consertar.
+          throw new Error(
+            err instanceof Error && err.message
+              ? `Não deu pra montar o slide ${i + 1} (${err.message}). Tente de novo; se repetir, troque a foto desse slide.`
+              : `Não deu pra montar o slide ${i + 1}: a foto dele não carregou. Troque ou tire a foto desse slide e tente de novo.`,
+          )
+        }
         urls.push(await uploadPngDataUrl(dataUrl, `${slideFileName(slides[i], i)}.png`))
+        onProgress?.(urls.length, slides.length)
       }
       return urls
     } finally {

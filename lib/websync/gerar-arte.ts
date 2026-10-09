@@ -50,9 +50,38 @@ export interface BuscaCrmInput {
   termo: string
 }
 
+/**
+ * Como a arte nasce. `criar` (o padrão, o de sempre): foto do CRM onde veio e
+ * capa gerada por IA quando o slide 1 não tem foto. `fotos_do_crm`: o Nexus só
+ * diagrama com as fotos que o CRM mandou e NUNCA chama geração de imagem.
+ */
+export type ModoArte = "criar" | "fotos_do_crm"
+
 export interface ExtrasGeracao {
   imagens?: ImagemCrmInput[]
   buscas?: BuscaCrmInput[]
+  /** Ausente = `criar` (comportamento anterior ao campo existir). */
+  modoArte?: ModoArte
+  /** Quantidade de slides que o CRM diz ter mandado — só conferência, a descrição manda. */
+  nSlides?: number
+}
+
+/**
+ * `modo_arte` vindo do JSON do CRM. Ausente → "criar" sem barulho; valor
+ * desconhecido → "criar" com aviso (nunca derruba o item, e o CRM vê no eco
+ * da resposta que o valor dele não foi entendido).
+ */
+export function lerModoArte(raw: unknown): ModoArte {
+  if (raw === "fotos_do_crm") return "fotos_do_crm"
+  if (raw !== undefined && raw !== null && raw !== "criar") {
+    console.warn(`[websync-os/gerar] modo_arte desconhecido (${JSON.stringify(raw)}), usando "criar"`)
+  }
+  return "criar"
+}
+
+/** `n_slides` vindo do JSON do CRM: só inteiro positivo; qualquer outra coisa é ignorada. */
+export function lerNSlides(raw: unknown): number | undefined {
+  return typeof raw === "number" && Number.isInteger(raw) && raw > 0 ? raw : undefined
 }
 
 /**
@@ -256,6 +285,13 @@ export async function gerarArteDaPauta(
       // description ter mudado entre o agendamento e a execução.
       throw new Error("copy não encontrada na description (mudou entre agendar e gerar?)")
     }
+    // O CRM manda n_slides só pra conferência: quem manda é a descrição.
+    if (extras.nSlides !== undefined && extras.nSlides !== copy.slides.length) {
+      console.warn(
+        `[websync-os/gerar] n_slides=${extras.nSlides} mas a descrição tem ${copy.slides.length} slide(s) (pauta ${pautaTag}), seguindo a descrição`,
+      )
+    }
+    const soFotosDoCrm = extras.modoArte === "fotos_do_crm"
     const imagensCrm = new Map<number, { url: string }>(
       (extras.imagens ?? []).map((img) => [img.slide, { url: img.url }]),
     )
@@ -287,8 +323,10 @@ export async function gerarArteDaPauta(
     // 4) Capa (slide 0) -----------------------------------------------------
     // Se o CRM já mandou foto pro slide 1, `slides[0].image.url` já veio
     // preenchido do montarSlides — não gera nada. Senão, é a única imagem
-    // que justifica o modelo caro (Nano Banana 2, ver ai-images.ts).
-    if (!slides[0].image.url) {
+    // que justifica o modelo caro (Nano Banana 2, ver ai-images.ts). No modo
+    // fotos_do_crm nada disso roda: sem foto no slide 1, a capa fica só com
+    // texto sobre as cores da marca.
+    if (!slides[0].image.url && !soFotosDoCrm) {
       try {
         const termoBusca =
           extras.buscas?.find((b) => b.slide === 1)?.termo ?? null

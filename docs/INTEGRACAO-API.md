@@ -324,8 +324,21 @@ Opcionalmente você manda as fotos e os termos de busca que já escolheu:
 ```
 
 ```json
-{ "ok": true, "itens": [{ "id": "b21e...", "resultado": "iniciado" }] }
+{ "ok": true, "itens": [{ "id": "b21e...", "resultado": "iniciado", "modo_arte": "criar" }] }
 ```
+
+**`modo_arte`** (opcional, também aceito no item de `posts[]` do webhook com `gerar: true`):
+
+- `"criar"` (padrão, igual a antes de o campo existir): usa as fotos de `imagens` e,
+  se o slide 1 ficou sem foto, gera a capa por IA.
+- `"fotos_do_crm"`: o Nexus **nunca gera imagem** (nem a capa). Usa só as fotos de
+  `imagens` (slide a slide, começando em 1) e aplica as cores da marca. Slide sem
+  foto fica só com texto. Foto com `slide` fora de 1..N é ignorada.
+
+O número de slides é sempre o de linhas `Slide N:` da `descricao`. O webhook também
+aceita `n_slides` (inteiro) só pra conferência: se divergir da descrição, vale a
+descrição. A resposta devolve o eco do que foi entendido (`modo_arte` e, no webhook,
+`n_slides` lido da descrição) — resposta sem o eco é de um Nexus antigo.
 
 A resposta volta **na hora**; a arte fica pronta depois (a geração roda em
 segundo plano). Desfechos possíveis:
