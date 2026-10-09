@@ -61,6 +61,16 @@ export function PublishToInstagram({
   const [busy, setBusy] = useState<"render" | "publish" | "disconnect" | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Aba em segundo plano: o navegador congela a renderização das artes e o
+  // botão ficava cinza em "Preparando…" sem ninguém saber por quê.
+  const [abaEscondida, setAbaEscondida] = useState(false)
+
+  useEffect(() => {
+    const on = () => setAbaEscondida(document.hidden)
+    on()
+    document.addEventListener("visibilitychange", on)
+    return () => document.removeEventListener("visibilitychange", on)
+  }, [])
 
   // Mostra resultado do OAuth (redirect ?ig=ok|erro) ao voltar.
   useEffect(() => {
@@ -117,7 +127,13 @@ export function PublishToInstagram({
       }
       setDone(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro de rede.")
+      // A captura da arte pode rejeitar com um Event (foto que não carregou),
+      // que não é Error: antes virava "Erro de rede." sem dizer o que fazer.
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : "Não deu pra montar as artes: uma das fotos não carregou. Troque ou tire a foto que estiver quebrada no editor e tente de novo.",
+      )
     } finally {
       setBusy(null)
     }
@@ -251,9 +267,24 @@ export function PublishToInstagram({
                   </button>
                 </div>
 
-                <p className="text-xs text-text-secondary">
-                  {imageCount} imagem(ns) + legenda prontos pra publicar.
-                </p>
+                {imageCount === 0 ? (
+                  <Aviso>
+                    Este {kind} está sem slides, então não há o que publicar.
+                    Feche esta janela e adicione ao menos um slide no editor.
+                    Se os slides tinham sumido, recarregue a página.
+                  </Aviso>
+                ) : (
+                  <p className="text-xs text-text-secondary">
+                    {imageCount} imagem(ns) + legenda prontos pra publicar.
+                  </p>
+                )}
+                {busy === "render" && (
+                  <p className="text-xs text-text-secondary">
+                    {abaEscondida
+                      ? "A preparação pausou porque esta aba está em segundo plano. Volte pra esta aba pra ela continuar."
+                      : "Montando cada arte. Pode levar até alguns minutos: deixe esta aba aberta e à frente."}
+                  </p>
+                )}
 
                 <Button
                   type="button"
