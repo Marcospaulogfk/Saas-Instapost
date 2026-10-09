@@ -7,8 +7,13 @@ import {
   agendarGeracao,
   lerBuscasCrm,
   lerImagensCrm,
+  lerModoArte,
+  lerNSlides,
+  type ExtrasGeracao,
+  type ModoArte,
   type ResultadoAgendamento,
 } from "@/lib/websync/gerar-arte"
+import { lerCopyDoCrm } from "@/lib/websync/copy-crm"
 
 // =====================================================================
 // lib/calendario/operacoes.ts
@@ -236,6 +241,25 @@ export interface PautaRecebida {
   gerar?: boolean
   imagens?: unknown
   buscas?: unknown
+  /** 'criar' (padrão) | 'fotos_do_crm'. Ausente = comportamento de sempre. */
+  modo_arte?: unknown
+  /** Quantos 'Slide N:' o CRM diz ter mandado — só conferência. */
+  n_slides?: unknown
+}
+
+/** Fotos, buscas e modo de um item, no formato que o motor de geração consome. */
+function extrasDoItem(p: {
+  imagens?: unknown
+  buscas?: unknown
+  modo_arte?: unknown
+  n_slides?: unknown
+}): ExtrasGeracao {
+  return {
+    imagens: lerImagensCrm(p.imagens),
+    buscas: lerBuscasCrm(p.buscas),
+    modoArte: lerModoArte(p.modo_arte),
+    nSlides: lerNSlides(p.n_slides),
+  }
 }
 
 export interface ResultadoItem {
@@ -245,6 +269,20 @@ export interface ResultadoItem {
   motivo?: string
   /** Desfecho do agendamento de geração — só quando `gerar: true` veio no item. */
   arte?: ResultadoAgendamento
+  /**
+   * Eco do que o Nexus entendeu, só quando `gerar: true`. É assim que o CRM
+   * percebe um Nexus antigo (que ignora o campo e não devolve o eco).
+   */
+  modo_arte?: ModoArte
+  /** Quantos 'Slide N:' o Nexus leu na descrição enviada neste item. */
+  n_slides?: number
+}
+
+/** Preenche o eco (modo_arte, n_slides) de um item que pediu geração. */
+function comEco(item: ResultadoItem, p: PautaRecebida): void {
+  item.modo_arte = lerModoArte(p.modo_arte)
+  const copy = typeof p.descricao === "string" ? lerCopyDoCrm(p.descricao) : null
+  if (copy) item.n_slides = copy.slides.length
 }
 
 export const MAX_PAUTAS_POR_LOTE = 20
@@ -326,10 +364,8 @@ export async function criarPautas(
     if (existente) {
       const item: ResultadoItem = { ref, resultado: "ja_existia", id: existente.id }
       if (p.gerar) {
-        item.arte = await agendarGeracao(admin, ownerId, existente.id, {
-          imagens: lerImagensCrm(p.imagens),
-          buscas: lerBuscasCrm(p.buscas),
-        })
+        item.arte = await agendarGeracao(admin, ownerId, existente.id, extrasDoItem(p))
+        comEco(item, p)
       }
       resultados.push(item)
       continue
@@ -366,10 +402,8 @@ export async function criarPautas(
     }
     const item: ResultadoItem = { ref, resultado: "criado", id: criado.id }
     if (p.gerar) {
-      item.arte = await agendarGeracao(admin, ownerId, criado.id, {
-        imagens: lerImagensCrm(p.imagens),
-        buscas: lerBuscasCrm(p.buscas),
-      })
+      item.arte = await agendarGeracao(admin, ownerId, criado.id, extrasDoItem(p))
+      comEco(item, p)
     }
     resultados.push(item)
   }
@@ -645,11 +679,15 @@ export interface ItemGeracao {
   id?: string
   imagens?: unknown
   buscas?: unknown
+  modo_arte?: unknown
+  n_slides?: unknown
 }
 
 export interface ResultadoGeracao {
   id: string
   resultado: ResultadoAgendamento
+  /** Eco do modo que o Nexus entendeu (ver ResultadoItem.modo_arte). */
+  modo_arte?: ModoArte
 }
 
 export const MAX_GERACOES_POR_LOTE = 10
@@ -670,11 +708,9 @@ export async function pedirGeracao(
       resultados.push({ id: id || "sem_id", resultado: "nao_encontrado" })
       continue
     }
-    const resultado = await agendarGeracao(admin, ownerId, id, {
-      imagens: lerImagensCrm(item.imagens),
-      buscas: lerBuscasCrm(item.buscas),
-    })
-    resultados.push({ id, resultado })
+    const extras = extrasDoItem(item)
+    const resultado = await agendarGeracao(admin, ownerId, id, extras)
+    resultados.push({ id, resultado, modo_arte: extras.modoArte })
   }
   return resultados
 }
