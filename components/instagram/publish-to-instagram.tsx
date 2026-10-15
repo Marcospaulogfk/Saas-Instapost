@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { Loader2, Instagram, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -183,7 +184,12 @@ export function PublishToInstagram({
         {label}
       </Button>
 
-      {open && (
+      {/* No body, e nao aqui dentro: as barras do editor (topo no computador,
+          base no celular) tem backdrop-blur, e o blur faz o "fixed" do quadro
+          contar a partir da barra, nao da janela. O quadro ficava espremido na
+          barra, a area dos slides por cima, e o "Publicar agora" aparecia mas
+          o clique caia nos slides (relato do Reinaldo de 13/10). */}
+      {open && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={reset}
@@ -341,7 +347,8 @@ export function PublishToInstagram({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )
