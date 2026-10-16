@@ -220,6 +220,82 @@ async function graphPost(
   return { id: data.id }
 }
 
+// ── Espera o Instagram processar ────────────────────────────────────────────
+//
+// Criar o container so ENTREGA a imagem: o Instagram ainda baixa e processa.
+// Publicar antes disso da "Media ID is not available" e nada sai. Era o erro
+// do Reinaldo de 16/10, no primeiro carrossel com o botao funcionando.
+
+const ESPERA_MAX_MS = 60_000
+const INTERVALO_MS = 2_000
+const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * Espera cada container ficar FINISHED. `rotulos` diz, para cada id, como
+ * chamar a peca na mensagem de erro ("slide 3", "o carrossel").
+ */
+async function esperarProcessar(
+  rotulos: Map<string, string>,
+  accessToken: string,
+): Promise<void> {
+  const limite = Date.now() + ESPERA_MAX_MS
+  let pendentes = [...rotulos.keys()]
+  for (;;) {
+    const estados = await Promise.all(
+      pendentes.map((id) =>
+        graphGet<{ status_code?: string }>(id, { fields: "status_code" }, accessToken).then(
+          (d) => ({ id, status: d.status_code }),
+        ),
+      ),
+    )
+    const ruim = estados.find((e) => e.status === "ERROR" || e.status === "EXPIRED")
+    if (ruim) {
+      throw new Error(
+        `O Instagram não aceitou a imagem do ${rotulos.get(ruim.id)}. ` +
+          "Troque essa imagem no editor e tente de novo.",
+      )
+    }
+    // Sem status_code a Meta nao tem o que esperar: conta como pronto.
+    pendentes = estados
+      .filter((e) => e.status && e.status !== "FINISHED" && e.status !== "PUBLISHED")
+      .map((e) => e.id)
+    if (!pendentes.length) return
+    if (Date.now() > limite) {
+      throw new Error(
+        "O Instagram ainda está processando as imagens e nada foi publicado. " +
+          "Espere um minuto e tente de novo.",
+      )
+    }
+    await dormir(INTERVALO_MS)
+  }
+}
+
+/**
+ * Publica um container ja processado. Se a Meta ainda disser que a midia
+ * nao esta disponivel, tenta mais duas vezes antes de desistir.
+ */
+async function publicarContainer(
+  igUserId: string,
+  creationId: string,
+  accessToken: string,
+): Promise<{ id: string }> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await graphPost(igUserId, "media_publish", { creation_id: creationId }, accessToken)
+    } catch (e) {
+      const naoPronta = e instanceof Error && /media id is not available/i.test(e.message)
+      if (!naoPronta) throw e
+      if (tentativa >= 3) {
+        throw new Error(
+          "O Instagram ainda está processando as imagens e nada foi publicado. " +
+            "Espere um minuto e tente de novo.",
+        )
+      }
+      await dormir(3_000)
+    }
+  }
+}
+
 /**
  * Publica um carrossel (2+ imagens) OU um post único (1 imagem).
  * As imagens precisam estar em URLs PÚBLICAS acessíveis pela Meta.
@@ -241,11 +317,13 @@ export async function publishCarousel(
       { image_url: imageUrls[0], caption },
       accessToken,
     )
-    return graphPost(igUserId, "media_publish", { creation_id: container.id }, accessToken)
+    await esperarProcessar(new Map([[container.id, "post"]]), accessToken)
+    return publicarContainer(igUserId, container.id, accessToken)
   }
 
   // Carrossel: 1 container por imagem (is_carousel_item) → container pai → publish
   const childIds: string[] = []
+  const rotulos = new Map<string, string>()
   for (const url of imageUrls.slice(0, 10)) {
     const child = await graphPost(
       igUserId,
@@ -254,14 +332,17 @@ export async function publishCarousel(
       accessToken,
     )
     childIds.push(child.id)
+    rotulos.set(child.id, `slide ${childIds.length}`)
   }
+  await esperarProcessar(rotulos, accessToken)
   const parent = await graphPost(
     igUserId,
     "media",
     { media_type: "CAROUSEL", children: childIds.join(","), caption },
     accessToken,
   )
-  return graphPost(igUserId, "media_publish", { creation_id: parent.id }, accessToken)
+  await esperarProcessar(new Map([[parent.id, "carrossel"]]), accessToken)
+  return publicarContainer(igUserId, parent.id, accessToken)
 }
 
 // ── Token de longa duração: renovação ───────────────────────────────────────
