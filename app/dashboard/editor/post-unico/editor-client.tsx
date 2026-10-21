@@ -663,6 +663,8 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 o bitmap com URL pública mostrava o botão). */}
             {spec && mobile === false && (
               <PublishToInstagram
+                tipo="single_post"
+                pecaId={savedId}
                 kind="post"
                 imageCount={1}
                 caption={caption}
@@ -1055,6 +1057,8 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
         <BarraBaixoMobile tecladoAberto={tecladoAberto}>
           {spec && (
             <PublishToInstagram
+              tipo="single_post"
+              pecaId={savedId}
               kind="post"
               imageCount={1}
               caption={caption}

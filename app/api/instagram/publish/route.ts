@@ -2,16 +2,32 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { publishCarousel } from "@/lib/instagram/meta"
 import { getValidConnection } from "@/lib/instagram/connection"
+import { createAdminClient } from "@/lib/supabase/admin"
+import {
+  avisoDeRepeticao,
+  pautaDaPeca,
+  registrarPublicacaoManual,
+} from "@/lib/calendario/publicacao-manual"
 
 export const runtime = "nodejs"
 export const maxDuration = 120
 
 /**
  * Publica o carrossel/post no Instagram do usuário conectado.
- * Body: { imageUrls: string[], caption: string }
+ * Body: { imageUrls: string[], caption: string, tipo?, pecaId?, forcar? }
+ *
+ * `tipo` + `pecaId` ligam a publicação à pauta do calendário: sem isso o
+ * agendamento publicava de novo o que já tinha saído na mão. Se a pauta já
+ * saiu, responde 409 `ja_publicado` e só publica com `forcar: true`.
  */
 export async function POST(req: Request) {
-  let body: { imageUrls?: string[]; caption?: string }
+  let body: {
+    imageUrls?: string[]
+    caption?: string
+    tipo?: unknown
+    pecaId?: unknown
+    forcar?: boolean
+  }
   try {
     body = await req.json()
   } catch {
@@ -45,6 +61,18 @@ export async function POST(req: Request) {
     )
   }
 
+  const pautaId = await pautaDaPeca(supabase, body.tipo, body.pecaId)
+  const admin = pautaId ? createAdminClient() : null
+  if (pautaId && admin && body.forcar !== true) {
+    const aviso = await avisoDeRepeticao(admin, pautaId)
+    if (aviso) {
+      return NextResponse.json(
+        { ok: false, erro: "ja_publicado", error: aviso },
+        { status: 409 },
+      )
+    }
+  }
+
   try {
     const result = await publishCarousel(conn.igUserId, conn.accessToken, imageUrls, caption)
     // Registro do que saiu daqui: é o que liga métrica a conteúdo gerado.
@@ -61,6 +89,9 @@ export async function POST(req: Request) {
       .then(({ error }) => {
         if (error) console.warn("[instagram/publish] registro falhou", error.message)
       })
+    if (pautaId && admin) {
+      await registrarPublicacaoManual(admin, pautaId, result.id, imageUrls.length)
+    }
     return NextResponse.json({ ok: true, id: result.id })
   } catch (e) {
     const message = e instanceof Error ? e.message : "erro ao publicar"

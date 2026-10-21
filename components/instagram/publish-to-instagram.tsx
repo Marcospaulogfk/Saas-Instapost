@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Loader2, Instagram, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,12 @@ interface Props {
   label?: string
   /** Classes extras do botão (ex.: largura total na barra do celular). */
   className?: string
+  /**
+   * A peça salva. Liga a publicação à pauta do calendário: publicou aqui, a
+   * pauta vira 'publicado' e o agendamento não publica de novo.
+   */
+  tipo?: "carousel" | "single_post"
+  pecaId?: string | null
 }
 
 interface Status {
@@ -60,12 +66,18 @@ export function PublishToInstagram({
   kind = "carrossel",
   label = "Publicar no Instagram",
   className,
+  tipo,
+  pecaId,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
   const [busy, setBusy] = useState<"render" | "publish" | "disconnect" | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Recado de "este post já saiu": publicar de novo só com um segundo clique.
+  const [repetir, setRepetir] = useState<string | null>(null)
+  // As artes já montadas: confirmar a repetição não monta tudo outra vez.
+  const urlsMontadas = useRef<string[] | null>(null)
   // Aba em segundo plano: o navegador congela a renderização das artes e o
   // botão ficava cinza em "Preparando…" sem ninguém saber por quê.
   const [abaEscondida, setAbaEscondida] = useState(false)
@@ -119,26 +131,35 @@ export function PublishToInstagram({
       .catch(() => setStatus({ connected: false, username: null, configured: false }))
   }, [open])
 
-  async function handlePublish() {
-    setBusy("render")
+  async function handlePublish(forcar = false) {
     setError(null)
+    setRepetir(null)
     try {
-      // Primeiro a arte final vira PNG hospedado; só então a Meta recebe.
-      setProgresso({ feitas: 0, total: imageCount, desde: Date.now() })
-      const imageUrls = await getImageUrls((feitas, total) =>
-        setProgresso({ feitas, total, desde: Date.now() }),
-      )
+      let imageUrls = forcar ? urlsMontadas.current : null
+      if (!imageUrls) {
+        setBusy("render")
+        // Primeiro a arte final vira PNG hospedado; só então a Meta recebe.
+        setProgresso({ feitas: 0, total: imageCount, desde: Date.now() })
+        imageUrls = await getImageUrls((feitas, total) =>
+          setProgresso({ feitas, total, desde: Date.now() }),
+        )
+      }
       if (!imageUrls.length) {
         setError("Nenhuma imagem pronta pra publicar.")
         return
       }
+      urlsMontadas.current = imageUrls
       setBusy("publish")
       const res = await fetch("/api/instagram/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls, caption }),
+        body: JSON.stringify({ imageUrls, caption, tipo, pecaId, forcar }),
       })
       const data = await res.json()
+      if (res.status === 409 && data.erro === "ja_publicado") {
+        setRepetir(data.error || "Este post já foi publicado no Instagram.")
+        return
+      }
       if (!res.ok || !data.ok) {
         setError(data.error || "Falha ao publicar.")
         return
@@ -169,6 +190,8 @@ export function PublishToInstagram({
     setOpen(false)
     setDone(false)
     setError(null)
+    setRepetir(null)
+    urlsMontadas.current = null
   }
 
   return (
@@ -320,10 +343,31 @@ export function PublishToInstagram({
                   </Aviso>
                 )}
 
+                {repetir ? (
+                  <div className="space-y-3">
+                    {/* Âmbar e não vermelho: não deu erro, é uma pergunta. */}
+                    <p className="text-xs text-amber-300 break-words rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                      {repetir}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" className="flex-1" onClick={reset}>
+                        Não publicar
+                      </Button>
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        onClick={() => handlePublish(true)}
+                        disabled={busy !== null}
+                      >
+                        Publicar de novo
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                 <Button
                   type="button"
                   className="w-full"
-                  onClick={handlePublish}
+                  onClick={() => handlePublish()}
                   disabled={busy !== null || imageCount === 0}
                 >
                   {busy === "render" ? (
@@ -343,6 +387,7 @@ export function PublishToInstagram({
                     </>
                   )}
                 </Button>
+                )}
                 {error && <Aviso>{error}</Aviso>}
               </div>
             )}

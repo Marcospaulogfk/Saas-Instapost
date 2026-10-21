@@ -2319,6 +2319,8 @@ export function CarouselEditor({
         )}
         {mobile === false && (
           <PublishToInstagram
+            tipo="carousel"
+            pecaId={savedId}
             getImageUrls={renderSlidesForPublish}
             imageCount={slides.length}
             caption={caption ?? ""}
@@ -3787,6 +3789,8 @@ export function CarouselEditor({
       {mobile === true && (
         <BarraBaixoMobile tecladoAberto={tecladoAberto}>
           <PublishToInstagram
+            tipo="carousel"
+            pecaId={savedId}
             getImageUrls={renderSlidesForPublish}
             imageCount={slides.length}
             caption={caption ?? ""}
