@@ -185,6 +185,7 @@ describe("modelo de edição: rótulos dos elementos editáveis", () => {
       badge: "Tag",
       image: "Imagem",
       meta: "Rodapé",
+      shape: "Forma",
       block: "Bloco",
     })
   })

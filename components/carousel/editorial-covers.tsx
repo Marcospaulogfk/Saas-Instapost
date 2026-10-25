@@ -592,7 +592,7 @@ export function CoverMinimalClean({
           Tamanho adapta ao comprimento: títulos longos encolhem pra sobrar mais
           espaço pra imagem embaixo (senão o título come o slide inteiro). */}
       <div className="relative flex-shrink-0 px-6 pt-7 space-y-4">
-        <div className="h-1 w-12" style={{ backgroundColor: accent }} />
+        <div data-edit="shape" className="h-1 w-12" style={{ backgroundColor: accent }} />
         <FitText
           className={`${
             slide.title.length > 46
@@ -639,7 +639,7 @@ export function CoverMinimalClean({
 
       {/* Footer no FLUXO: linha + contador tabular + arrasta */}
       <div className="flex-shrink-0 px-6 pt-3 pb-5">
-        <div
+        <div data-edit="shape"
           className="h-px w-full bg-black/10 mb-3"
           style={th ? { backgroundColor: th.line } : undefined}
         />

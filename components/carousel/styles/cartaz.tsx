@@ -23,7 +23,7 @@ import {
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
-import { PhotoBox, TinyLabel, titleSizeFor } from "./shared"
+import { PhotoBox, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 /** Foto P&B preenchendo o pai (o PhotoBox é `relative`; o pai absoluto dá o tamanho). */
@@ -124,7 +124,7 @@ function CoverCartaz(ctx: StyleRouteContext) {
             {slide.subtitle}
           </p>
         )}
-        <div className="mt-3 h-[2px] w-8" style={{ backgroundColor: p.accent }} />
+        <div {...shapeAttrs()} className="mt-3 h-[2px] w-8" style={{ backgroundColor: p.accent }} />
         <div className="mt-2 flex items-center gap-3">
           <TinyLabel color="rgba(10,10,15,0.55)">{handle}</TinyLabel>
           <TinyLabel color="rgba(10,10,15,0.55)">{counter(orderIndex, totalSlides)}</TinyLabel>
@@ -169,7 +169,7 @@ function SplitCartazPhotoTop(ctx: StyleRouteContext) {
 
       {/* ZONA DE TEXTO — escala pra caber no que sobra (nunca invade a foto) */}
       <ShrinkToFit className="flex-1" innerClassName="px-5 pt-4">
-        <div className="h-[3px] w-10 mb-3" style={{ backgroundColor: p.accent }} />
+        <div {...shapeAttrs()} className="h-[3px] w-10 mb-3" style={{ backgroundColor: p.accent }} />
         <FitText
           className={`${sizeClass} uppercase tracking-[-0.02em] ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.95, color: p.text }}
@@ -250,7 +250,7 @@ function SplitCartazBigCard(ctx: StyleRouteContext) {
 
         <div className="flex-shrink-0 px-5 py-3 flex items-center justify-between">
           <TinyLabel color="rgba(10,10,15,0.55)">{handle}</TinyLabel>
-          <div className="h-[2px] w-8" style={{ backgroundColor: p.accent }} />
+          <div {...shapeAttrs()} className="h-[2px] w-8" style={{ backgroundColor: p.accent }} />
         </div>
       </div>
 

@@ -1697,7 +1697,7 @@ export function CarouselEditor({
       }, 140)
       return
     }
-    if (sel.type === "meta") {
+    if (sel.type === "meta" || sel.type === "shape") {
       openSection("elemento")
       scrollToSection("elemento")
       return
@@ -3166,7 +3166,7 @@ export function CarouselEditor({
                     value={selectedOverride.color || "#ffffff"}
                     onChange={(v) => patchElement(selection.key, { color: v })}
                     className="w-8 h-8 rounded-lg border border-border-subtle bg-transparent cursor-pointer p-0.5 flex-shrink-0"
-                    title="Cor do texto"
+                    title={selection.type === "shape" ? "Cor da forma" : "Cor do texto"}
                   />
                   <Input
                     ref={elementColorRef}
@@ -3176,10 +3176,28 @@ export function CarouselEditor({
                         color: e.target.value || undefined,
                       })
                     }
-                    placeholder="Cor padrão do estilo"
+                    placeholder={selection.type === "shape" ? "Cor da forma (padrão do estilo)" : "Cor padrão do estilo"}
                     className="h-8 flex-1 font-mono text-[11px]"
                   />
                 </div>
+                {selection.type === "shape" && colors.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(new Set([...colors.slice(0, 4), "#0A0A0F", "#FFFFFF"])).map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        title={c}
+                        onClick={() => patchElement(selection.key, { color: c })}
+                        style={{ backgroundColor: c }}
+                        className={`w-7 h-7 rounded-md border transition-all ${
+                          (selectedOverride.color || "").toLowerCase() === c.toLowerCase()
+                            ? "ring-2 ring-brand-500 ring-offset-2 ring-offset-black border-transparent"
+                            : "border-white/15 hover:border-white/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <SliderRow
                   label="Tamanho"
                   min={50}
@@ -3221,7 +3239,7 @@ export function CarouselEditor({
                     title="Esconde este elemento do layout (pra trocar por um bloco seu, por exemplo)"
                   >
                     <EyeOff className="w-3.5 h-3.5 mr-1.5" />
-                    Ocultar
+                    {selection.type === "shape" ? "Apagar" : "Ocultar"}
                   </Button>
                   <Button
                     type="button"
@@ -3258,6 +3276,8 @@ export function CarouselEditor({
                 <p className="text-[10px] text-text-muted">
                   Arraste o elemento direto no slide. O canto roxo redimensiona.
                   Esc desseleciona.
+                  {selection.type === "shape" &&
+                    " Delete apaga a forma; ela volta em \"Elementos ocultos\" ou em Restaurar."}
                 </p>
               </Section>
             )}

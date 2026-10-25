@@ -61,6 +61,7 @@ import {
 } from "lucide-react"
 import {
   collectEditableNodes,
+  composeEditTransform,
   singleTextNode,
   EDITABLE_TYPE_LABEL,
   type EditableType,
@@ -200,6 +201,9 @@ const DEFAULT_TAG_TEXTS = ["editorial", "conteúdo"]
 const normText = (s: string) =>
   s.replace(/\*\*/g, "").replace(/\s+/g, " ").trim().toLowerCase()
 
+/** Área mínima de clique (px de tela) de uma forma fina. */
+const SHAPE_MIN_HIT = 12
+
 /** Prioridade de hit-test: menor número ganha (badge por cima da imagem etc). */
 const HIT_PRIORITY: Record<EditableType, number> = {
   block: -1,
@@ -208,6 +212,9 @@ const HIT_PRIORITY: Record<EditableType, number> = {
   text: 1,
   title: 2,
   image: 3,
+  // Forma decorativa perde pra tudo: fica atrás do conteúdo, e clicar no
+  // texto em cima dela tem que pegar o texto.
+  shape: 4,
 }
 
 export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
@@ -292,7 +299,7 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       .filter(({ node }) => !node.dataset.editHidden)
       .map(({ node, key, type }) => {
         const r = node.getBoundingClientRect()
-        return {
+        const box = {
           key,
           type,
           x: r.left - cRect.left,
@@ -300,6 +307,19 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
           w: r.width,
           h: r.height,
         }
+        // Forma fina (régua de 1–3px, linha de rodapé): ganha uma área mínima
+        // de clique centrada nela, senão é impossível de pegar com o mouse.
+        if (type === "shape") {
+          if (box.h < SHAPE_MIN_HIT) {
+            box.y -= (SHAPE_MIN_HIT - box.h) / 2
+            box.h = SHAPE_MIN_HIT
+          }
+          if (box.w < SHAPE_MIN_HIT) {
+            box.x -= (SHAPE_MIN_HIT - box.w) / 2
+            box.w = SHAPE_MIN_HIT
+          }
+        }
+        return box
       })
       .filter((b) => b.w >= 4 && b.h >= 4)
   }, [])
@@ -771,11 +791,9 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       // aplica direto no DOM (fluido) — commit só no soltar
       const designDx = nx / scale
       const designDy = ny / scale
-      const parts: string[] = []
-      if (designDx || designDy) parts.push(`translate(${designDx}px, ${designDy}px)`)
-      if (d.startScale !== 1) parts.push(`scale(${d.startScale})`)
-      d.node.style.transform = parts.join(" ")
-      d.node.style.transformOrigin = "top left"
+      const t = composeEditTransform(d.node, designDx, designDy, d.startScale)
+      d.node.style.transform = t.transform
+      d.node.style.transformOrigin = t.origin
       setSelBox({
         key: d.key,
         type: d.type,
@@ -787,12 +805,9 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
     } else if (d.mode === "scale") {
       const ratio = (d.baseW + dxPx) / d.baseW
       const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, d.startScale * ratio))
-      const parts: string[] = []
-      if (d.startDx || d.startDy)
-        parts.push(`translate(${d.startDx}px, ${d.startDy}px)`)
-      if (next !== 1) parts.push(`scale(${next})`)
-      d.node.style.transform = parts.join(" ")
-      d.node.style.transformOrigin = "top left"
+      const t = composeEditTransform(d.node, d.startDx, d.startDy, next)
+      d.node.style.transform = t.transform
+      d.node.style.transformOrigin = t.origin
       // guarda o valor corrente pra commitar no soltar
       ;(d as { liveScale?: number }).liveScale = next
       setSelBox({
@@ -1116,6 +1131,11 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
       }
 
       if (selection.type === "image") return
+      if (selection.type === "shape" && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault()
+        onMenuAction("hide", selection)
+        return
+      }
       if (!e.key.startsWith("Arrow")) return
       e.preventDefault()
       const box = getBoxes().find((b) => b.key === selection.key)
@@ -1541,8 +1561,23 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
             </>
           ) : (
             <>
-              <MenuItem icon={Pencil} label="Editar texto…" shortcut="2×" onClick={() => menuAct("edit-text")} />
-              <MenuItem icon={Paintbrush} label="Cor e tamanho…" onClick={() => menuAct("color")} />
+              {menu.sel.type === "shape" ? (
+                <>
+                  <ColorSwatchRow
+                    label="Cor da forma"
+                    value={slide.el?.[menu.sel.key]?.color}
+                    colors={swatches}
+                    onPick={(c) => onOverride(menu.sel.key, { color: c })}
+                  />
+                  <MenuItem icon={Paintbrush} label="Cor e tamanho…" onClick={() => menuAct("color")} />
+                  <MenuItem icon={Trash2} label="Apagar forma" shortcut="Del" onClick={() => menuAct("hide")} danger />
+                </>
+              ) : (
+                <>
+                  <MenuItem icon={Pencil} label="Editar texto…" shortcut="2×" onClick={() => menuAct("edit-text")} />
+                  <MenuItem icon={Paintbrush} label="Cor e tamanho…" onClick={() => menuAct("color")} />
+                </>
+              )}
               {menu.sel.type === "badge" && (
                 <>
                   <MenuSep />

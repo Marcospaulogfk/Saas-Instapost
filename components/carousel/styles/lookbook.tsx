@@ -23,7 +23,7 @@ import {
   splitTheme,
   type SlideAttribution,
 } from "../editorial-shared"
-import { SERIF_ITALIC_CLASS, StyledWords, TinyLabel, titleSizeFor } from "./shared"
+import { SERIF_ITALIC_CLASS, StyledWords, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 type Img = { url: string | null; error?: string | null; attribution?: SlideAttribution | null }
@@ -79,9 +79,9 @@ function BackgroundPhotos({ images }: { images: Img[] }) {
 /** Ícone pequeno do canto superior direito (quadrado arredondado, como na ref). */
 function CornerMark({ color }: { color: string }) {
   return (
-    <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
-      <rect x="1.5" y="1.5" width="13" height="13" rx="3.5" stroke={color} strokeWidth="1.6" />
-      <rect x="5" y="5" width="6" height="6" rx="1.5" fill={color} />
+    <svg {...shapeAttrs("text")} aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0" style={{ color }}>
+      <rect x="1.5" y="1.5" width="13" height="13" rx="3.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="5" y="5" width="6" height="6" rx="1.5" fill="currentColor" />
     </svg>
   )
 }

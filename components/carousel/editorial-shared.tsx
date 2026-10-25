@@ -637,7 +637,7 @@ export function BrandsdecodedFooter({
   if (!showFooter) return null
   return (
     <div className="flex items-center gap-3 px-5 pb-4">
-      <div className="flex-1 h-px" style={{ backgroundColor: lineColor }} />
+      <div data-edit="shape" className="flex-1 h-px" style={{ backgroundColor: lineColor }} />
       <span className="text-[10px] tabular-nums" style={{ color: textColor }}>
         {pageNumber}/{totalPages}
       </span>

@@ -22,7 +22,7 @@ import {
   splitTheme,
   type SlideAttribution,
 } from "../editorial-shared"
-import { SERIF_ITALIC_CLASS, StyledWords, TinyLabel, titleSizeFor } from "./shared"
+import { SERIF_ITALIC_CLASS, StyledWords, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 type Img = { url: string | null; error?: string | null; attribution?: SlideAttribution | null }
@@ -281,7 +281,7 @@ export const cinemaStyle: StyleRenderer = {
           brandSlot={brandSlot}
         >
           <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-end pb-5 gap-4">
-            <div className="h-px w-10 flex-shrink-0" style={{ backgroundColor: accent }} />
+            <div {...shapeAttrs()} className="h-px w-10 flex-shrink-0" style={{ backgroundColor: accent }} />
             <CinemaTitle
               title={splitData.title}
               words={words}
@@ -327,7 +327,7 @@ export const cinemaStyle: StyleRenderer = {
         brandSlot={brandSlot}
       >
         <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-end pb-4 gap-3">
-          <div className="h-px w-10 flex-shrink-0" style={{ backgroundColor: accent }} />
+          <div {...shapeAttrs()} className="h-px w-10 flex-shrink-0" style={{ backgroundColor: accent }} />
           <CinemaTitle
             title={splitData.title}
             words={words}

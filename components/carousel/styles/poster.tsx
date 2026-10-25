@@ -25,7 +25,7 @@ import {
 } from "../editorial-shared"
 import type { CoverSlideData } from "../editorial-covers"
 import type { SplitSlideData } from "../editorial-splits"
-import { PhotoBox, TinyLabel, titleSizeFor } from "./shared"
+import { PhotoBox, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 /** Fundo padrão do Pôster: marrom bem escuro (não é preto chapado). */
@@ -114,7 +114,7 @@ function PosterCover({
 
       {/* Título + subtítulo ancorados embaixo (zona sólida) */}
       <div className="relative z-10 flex-shrink-0 px-6 pb-7 space-y-3">
-        <div className="h-1 w-10" style={{ backgroundColor: accent }} aria-hidden />
+        <div {...shapeAttrs()} className="h-1 w-10" style={{ backgroundColor: accent }} aria-hidden />
         <FitText
           className={`${sizeClass} ${TITLE_CLASS} ${fontClass}`}
           style={{ fontWeight: 900, lineHeight: 0.9, color: accent }}
@@ -211,6 +211,7 @@ function PosterContent({
         </div>
         {slide.subtitle && (
           <div
+            {...shapeAttrs()}
             className="absolute -bottom-1 -right-1 w-[54%] rotate-[2deg] px-3 py-2.5 rounded-[2px]"
             style={{
               backgroundColor: accent,

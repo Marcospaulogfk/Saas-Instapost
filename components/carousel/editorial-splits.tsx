@@ -960,7 +960,7 @@ export function SplitMinimalClean({
       style={{ backgroundColor: cBg, color: cBody }}
     >
       {/* Ghost number gigante */}
-      <div
+      <div data-edit="shape" data-edit-paint="text"
         className={`absolute top-1 right-4 text-[6.5rem] ${fontClass}`}
         style={{ fontWeight: 900, color: cGhost, lineHeight: 1 }}
       >
@@ -1044,7 +1044,7 @@ export function SplitMinimalClean({
 
       {/* Footer no FLUXO (flex-shrink-0): linha + contador + arrasta */}
       <div className="relative z-10 flex-shrink-0 px-6 pt-3 pb-5">
-        <div className="h-px w-full mb-3" style={{ backgroundColor: cLine }} />
+        <div data-edit="shape" className="h-px w-full mb-3" style={{ backgroundColor: cLine }} />
         <div
           className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold"
           style={{ color: cFaint }}
@@ -1319,7 +1319,7 @@ export function SplitCardsWhite({
 
               {/* Hairline entre título e corpo (igual MyPostFlow) */}
               {bodyParts.length > 0 && (
-                <div
+                <div data-edit="shape"
                   className="flex-shrink-0 h-px -mt-1"
                   style={{ backgroundColor: "rgba(10,10,15,0.08)" }}
                 />

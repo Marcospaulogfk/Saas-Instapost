@@ -19,9 +19,25 @@
 //
 // Usado também pelo overlay de interação (editable-canvas) pra hit-test e
 // posicionamento dos contornos — mesma derivação de chave nos dois lados.
+//
+// FORMAS DECORATIVAS ("shape"): círculos, faixas, post-its, palavras-fantasma.
+// O estilo marca o nó com data-edit="shape" (helper shapeAttrs em
+// styles/shared.tsx) e diz ONDE a cor pinta com data-edit-paint:
+//   "bg" (padrão) = preenchimento · "text" = cor do texto/SVG currentColor ·
+//   "border" = contorno. Mover/escalar somam ao giro que a forma já tinha.
 // ============================================================================
 
-export type EditableType = "title" | "text" | "badge" | "image" | "meta" | "block"
+export type EditableType =
+  | "title"
+  | "text"
+  | "badge"
+  | "image"
+  | "meta"
+  | "shape"
+  | "block"
+
+/** Onde a cor de uma forma pinta (data-edit-paint). */
+export type ShapePaint = "bg" | "text" | "border"
 
 /** Grade da colagem (2–4 fotos no espaço da foto principal). "2h" = lado a
  *  lado, "2v" = uma acima da outra, "3" = uma grande + duas pequenas, "4" = 2×2. */
@@ -33,7 +49,8 @@ export interface ElementOverride {
   dy?: number
   /** Escala visual do elemento (1 = padrão). */
   scale?: number
-  /** Cor do texto (título/texto/badge). */
+  /** Cor do texto (título/texto/badge) ou da forma (preenchimento,
+   *  contorno ou texto, conforme data-edit-paint). */
   color?: string
   /** Oculta o elemento nativo (visibility:hidden — mantém o fluxo do layout,
    *  nada reflui). Usado pra trocar "arrasta"/marca pelo bloco do usuário. */
@@ -60,7 +77,38 @@ export const EDITABLE_TYPE_LABEL: Record<EditableType, string> = {
   badge: "Tag",
   image: "Imagem",
   meta: "Rodapé",
+  shape: "Forma",
   block: "Bloco",
+}
+
+/**
+ * Transform de mover/escalar SOMADO ao transform inline que o layout já tinha
+ * (ex.: post-it girado com style={{ transform: "rotate(-2deg)" }}). O original
+ * é guardado em data-edit-orig-transform na primeira edição. Com giro original,
+ * a origem fica a do layout (girar em volta do centro); sem, "top left".
+ * Usado pelo apply abaixo e pelo arrastar ao vivo do canvas.
+ */
+export function composeEditTransform(
+  node: HTMLElement,
+  dx: number,
+  dy: number,
+  scale: number,
+): { transform: string; origin: string } {
+  if (node.dataset.editOrigTransform === undefined) {
+    node.dataset.editOrigTransform = node.dataset.editTransformed ? "" : node.style.transform
+  }
+  const orig = node.dataset.editOrigTransform
+  const parts: string[] = []
+  if (dx || dy) parts.push(`translate(${dx}px, ${dy}px)`)
+  if (orig) parts.push(orig)
+  if (scale && scale !== 1) parts.push(`scale(${scale})`)
+  return { transform: parts.join(" "), origin: orig ? "" : "top left" }
+}
+
+/** Propriedade CSS que a cor da forma pinta. */
+function shapePaintProp(node: HTMLElement): "background" | "color" | "borderColor" {
+  const paint = node.getAttribute("data-edit-paint") as ShapePaint | null
+  return paint === "text" ? "color" : paint === "border" ? "borderColor" : "background"
 }
 
 /**
@@ -116,17 +164,18 @@ export function applyElementOverrides(
 
     // ── transform (mover/escalar) — não se aplica à imagem ──
     if (type !== "image") {
-      const parts: string[] = []
-      if (o?.dx || o?.dy) parts.push(`translate(${o.dx ?? 0}px, ${o.dy ?? 0}px)`)
-      if (o?.scale && o.scale !== 1) parts.push(`scale(${o.scale})`)
-      if (parts.length) {
-        node.style.transform = parts.join(" ")
-        node.style.transformOrigin = "top left"
+      const moved = !!(o?.dx || o?.dy || (o?.scale && o.scale !== 1))
+      if (moved) {
+        const t = composeEditTransform(node, o?.dx ?? 0, o?.dy ?? 0, o?.scale ?? 1)
+        node.style.transform = t.transform
+        node.style.transformOrigin = t.origin
         node.dataset.editTransformed = "1"
       } else if (node.dataset.editTransformed) {
-        node.style.transform = ""
+        // Devolve o transform do layout (giro do post-it etc.), não "".
+        node.style.transform = node.dataset.editOrigTransform ?? ""
         node.style.transformOrigin = ""
         delete node.dataset.editTransformed
+        delete node.dataset.editOrigTransform
       }
     }
 
@@ -137,6 +186,27 @@ export function applyElementOverrides(
     } else if (node.dataset.editHidden) {
       node.style.visibility = ""
       delete node.dataset.editHidden
+    }
+
+    // ── cor da forma: pinta preenchimento, contorno ou texto (data-edit-paint).
+    //    Mesmo esquema de guardar/restaurar o valor inline original.
+    if (type === "shape") {
+      const prop = shapePaintProp(node)
+      if (o?.color) {
+        if (
+          node.dataset.editAppliedPaint === undefined ||
+          node.style[prop] !== node.dataset.editAppliedPaint
+        ) {
+          node.dataset.editOrigPaint = node.style[prop]
+        }
+        node.style[prop] = o.color
+        node.dataset.editAppliedPaint = node.style[prop]
+      } else if (node.dataset.editAppliedPaint !== undefined) {
+        node.style[prop] = node.dataset.editOrigPaint ?? ""
+        delete node.dataset.editAppliedPaint
+        delete node.dataset.editOrigPaint
+      }
+      continue
     }
 
     // ── cor (título/texto/badge) ──

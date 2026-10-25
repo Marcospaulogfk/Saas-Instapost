@@ -51,6 +51,16 @@ Confere a camada de escurecer/clarear, a intensidade e a posição; que a cor
 da marca continua legível sobre a foto (clareia ou escurece só o necessário);
 e que os 18 estilos abrem com o título, com a foto escurecida e clareada.
 
+### Formas decorativas (`formas-editaveis.test.ts` e `formas-estilos.test.tsx`)
+
+Enfeites do slide (círculos, faixas, réguas, post-its, palavras-fantasma) são
+"formas": o usuário clica, troca a cor, move, escala e apaga. Os testes
+conferem onde a cor pinta (preenchimento, letras ou contorno), que o giro
+original da forma continua depois de mover, que restaurar devolve tudo, e
+quantas formas cada estilo tem. Forma nova ou removida de propósito: atualize
+o número em `formas-estilos.test.tsx`. Para marcar uma forma num estilo novo,
+use `{...shapeAttrs()}` de `components/carousel/styles/shared.tsx`.
+
 ### 4. O modelo de edição (`tests/regressao/modelo-edicao.test.ts`)
 
 Blocos livres (nascem centralizados, não saem do slide, limite de 12), a

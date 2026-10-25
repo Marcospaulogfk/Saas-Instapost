@@ -28,7 +28,7 @@ import {
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
-import { ArrowCta, PhotoBox, TinyLabel, titleSizeFor } from "./shared"
+import { ArrowCta, PhotoBox, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 const BLACK = "#0B0B0B"
@@ -155,6 +155,7 @@ function BodyText({
 function AccentLine({ color, top, angle }: { color: string; top: string; angle: number }) {
   return (
     <div
+      {...shapeAttrs()}
       aria-hidden
       className="absolute left-[-20%] right-[-20%] h-px pointer-events-none z-[1]"
       style={{ top, backgroundColor: color, transform: `rotate(${angle}deg)`, opacity: 0.9 }}
@@ -320,11 +321,13 @@ function AgencyContent(ctx: StyleRouteContext) {
       >
         {/* arcos decorativos na cor da marca (canto inferior direito) */}
         <div
+          {...shapeAttrs("border")}
           aria-hidden
           className="absolute -right-24 -bottom-28 w-72 h-72 rounded-full pointer-events-none"
           style={{ border: `2px solid ${p.accent}` }}
         />
         <div
+          {...shapeAttrs("border")}
           aria-hidden
           className="absolute -right-32 -bottom-36 w-96 h-96 rounded-full pointer-events-none"
           style={{ border: `1px solid ${p.accent}`, opacity: 0.4 }}

@@ -27,7 +27,7 @@ import {
 } from "../editorial-shared"
 import type { CoverSlideData } from "../editorial-covers"
 import type { SplitSlideData } from "../editorial-splits"
-import { GhostWord, PhotoBox, TinyLabel, titleSizeFor } from "./shared"
+import { GhostWord, PhotoBox, TinyLabel, shapeAttrs, titleSizeFor } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
 
 const GEO_LIGHT_BG = "#FFFFFF"
@@ -79,7 +79,8 @@ function brandName(brand: string | undefined, handle: string | undefined): strin
 type ShapeVariant = "cover" | "band" | "corner" | "dark"
 
 /**
- * Formas decorativas na cor da marca, atrás de tudo (sem data-edit).
+ * Formas decorativas na cor da marca, atrás de tudo. Cada forma é editável
+ * (shapeAttrs: cor, mover, escalar, apagar); o wrapper de tela cheia não.
  * REGRA: forma SÓLIDA nunca fica atrás da zona do título — a palavra
  * destacada é da mesma cor e sumiria. Sólidas ficam atrás da FOTO e nas
  * bordas; perto do título só anel fino ou risquinho.
@@ -93,12 +94,12 @@ function Shapes({ accent, variant }: { accent: string; variant: ShapeVariant }) 
     return (
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* círculo grande saindo pela direita, atrás da foto */}
-        <div className={`${base} -right-24 top-[48%] w-64 h-64 rounded-full`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} -right-24 top-[48%] w-64 h-64 rounded-full`} style={solid} />
         {/* faixa inclinada atravessando atrás da foto */}
-        <div className={`${base} -left-16 bottom-[20%] w-[80%] h-9 rotate-12`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} -left-16 bottom-[20%] w-[80%] h-9 rotate-12`} style={solid} />
         {/* risquinhos nos cantos de cima (longe do título) */}
-        <div className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
-        <div className={`${base} right-0 top-0 w-1.5 h-14`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} right-0 top-0 w-1.5 h-14`} style={solid} />
       </div>
     )
   }
@@ -106,13 +107,14 @@ function Shapes({ accent, variant }: { accent: string; variant: ShapeVariant }) 
     return (
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* faixa larga inclinada atravessando atrás da foto */}
-        <div className={`${base} -left-20 bottom-[16%] w-[150%] h-12 rotate-[-12deg]`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} -left-20 bottom-[16%] w-[150%] h-12 rotate-[-12deg]`} style={solid} />
         {/* anel fino saindo pelo canto superior direito */}
         <div
+          {...shapeAttrs("border")}
           className={`${base} -top-20 -right-20 w-40 h-40 rounded-full`}
           style={{ border: `10px solid ${accent}` }}
         />
-        <div className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
       </div>
     )
   }
@@ -120,21 +122,21 @@ function Shapes({ accent, variant }: { accent: string; variant: ShapeVariant }) 
     return (
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* bloco "L" no canto inferior esquerdo (na calha, atrás da foto) */}
-        <div className={`${base} left-0 bottom-0 w-5 h-48`} style={solid} />
-        <div className={`${base} left-0 bottom-0 w-40 h-4`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} left-0 bottom-0 w-5 h-48`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} left-0 bottom-0 w-40 h-4`} style={solid} />
         {/* círculo cheio saindo pela direita, na altura da foto */}
-        <div className={`${base} -right-24 top-[50%] w-56 h-56 rounded-full`} style={solid} />
-        <div className={`${base} right-0 top-0 w-1.5 h-14`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} -right-24 top-[50%] w-56 h-56 rounded-full`} style={solid} />
+        <div {...shapeAttrs()} className={`${base} right-0 top-0 w-1.5 h-14`} style={solid} />
       </div>
     )
   }
   // dark: foto em cima → sólidas na metade de cima, título embaixo fica limpo
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className={`${base} -top-24 -right-24 w-48 h-48 rounded-full`} style={solid} />
-      <div className={`${base} -left-16 top-[40%] w-[120%] h-10 rotate-[-12deg]`} style={solid} />
-      <div className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
-      <div className={`${base} right-0 bottom-0 w-24 h-1.5`} style={solid} />
+      <div {...shapeAttrs()} className={`${base} -top-24 -right-24 w-48 h-48 rounded-full`} style={solid} />
+      <div {...shapeAttrs()} className={`${base} -left-16 top-[40%] w-[120%] h-10 rotate-[-12deg]`} style={solid} />
+      <div {...shapeAttrs()} className={`${base} left-0 top-0 w-14 h-1.5`} style={solid} />
+      <div {...shapeAttrs()} className={`${base} right-0 bottom-0 w-24 h-1.5`} style={solid} />
     </div>
   )
 }
@@ -174,6 +176,7 @@ function ShadowPhoto({
   return (
     <div className="relative h-full w-full pr-[10px] pb-[10px]">
       <div
+        {...shapeAttrs()}
         aria-hidden
         className="absolute inset-0 translate-x-[10px] translate-y-[10px] pointer-events-none"
         style={{ backgroundColor: accent }}

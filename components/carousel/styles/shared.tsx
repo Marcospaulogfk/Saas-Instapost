@@ -7,6 +7,8 @@
 //   - texto descritivo = <p> (vira "text" em runtime)
 //   - tag = Pill (data-edit="badge"), foto = SmartSlideImage (data-edit="image")
 //   - rodapé/marca/contador/seta = data-edit="meta"
+//   - forma decorativa (círculo, faixa, post-it, palavra-fantasma, linha) =
+//     {...shapeAttrs()} → o usuário clica, troca a cor, move, escala e apaga
 // Sem backdrop-filter (vira mancha no export PNG).
 // ============================================================================
 import { useContext, type CSSProperties, type ReactNode } from "react"
@@ -17,6 +19,19 @@ import {
   SmartSlideImage,
   type SlideAttribution,
 } from "../editorial-shared"
+import type { ShapePaint } from "../editable-overrides"
+
+/**
+ * Marca um elemento decorativo como FORMA editável no editor. `paint` diz onde
+ * a cor escolhida pinta: "bg" (preenchimento, padrão), "text" (letras ou SVG
+ * com currentColor) ou "border" (contorno). Espalhe no elemento da forma:
+ * `<div {...shapeAttrs()} className="absolute ..." style={{ backgroundColor }} />`
+ */
+export function shapeAttrs(paint: ShapePaint = "bg"): Record<string, string> {
+  return paint === "bg"
+    ? { "data-edit": "shape" }
+    : { "data-edit": "shape", "data-edit-paint": paint }
+}
 
 /** Serifa itálica pras palavras de destaque "de revista" (Playfair, itálico). */
 export const SERIF_ITALIC_CLASS = `${fontClassById("playfair")} italic`
@@ -99,6 +114,7 @@ export function GhostWord({
   return (
     <div
       aria-hidden
+      {...shapeAttrs("text")}
       className={`absolute pointer-events-none select-none whitespace-nowrap leading-none ${className}`}
       style={{ color, fontWeight: 900, ...style }}
     >
