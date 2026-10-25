@@ -55,6 +55,8 @@ import {
 } from "@/components/editor/mobile-editor"
 import { useTecladoAberto } from "@/hooks/use-teclado-aberto"
 import { reduzirArquivo } from "@/lib/single-posts/ler-imagem"
+import { proxiedImageUrl } from "@/lib/proxy-image"
+import { BG_IMAGE_DEFAULT_SHADE, BG_IMAGE_MAX_SHADE, type SlideBgImage } from "./slide-bg-image"
 import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 import { saveCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
 import {
@@ -944,6 +946,11 @@ export function CarouselEditor({
   // Colagem (2–4 fotos no espaço da foto principal): "Adicionar foto(s) à
   // colagem" ACRESCENTA à foto/colagem que já tem (ver handleCollageUpload).
   const collageFileInputRef = useRef<HTMLInputElement>(null)
+  // "Fundo do Slide" -> Imagem de fundo: input e estado proprios (nao mexe na
+  // foto do conteudo nem na colagem).
+  const bgImageInputRef = useRef<HTMLInputElement>(null)
+  const [bgImgBusy, setBgImgBusy] = useState(false)
+  const [bgImgError, setBgImgError] = useState<string | null>(null)
 
   // Autosave do rascunho em localStorage — backup local imediato pra não perder
   // o trabalho ao recarregar. A persistência de VERDADE é na nuvem via
@@ -1049,7 +1056,8 @@ export function CarouselEditor({
       if (a.subtitle !== b.subtitle || a.body !== b.body) return `${n}: texto`
       if (a.cta_badge !== b.cta_badge) return `${n}: tag`
       if (a.highlight_words !== b.highlight_words) return `${n}: destaques`
-      if (a.bg !== b.bg || a.bgGradient !== b.bgGradient) return `${n}: fundo`
+      if (a.bg !== b.bg || a.bgGradient !== b.bgGradient || a.bgImage !== b.bgImage)
+        return `${n}: fundo`
       if (a.glow !== b.glow) return `${n}: glow`
       if (a.image !== b.image) {
         if (a.image.url !== b.image.url) return `${n}: imagem`
@@ -1196,6 +1204,40 @@ export function CarouselEditor({
     setSlides((prev) =>
       prev.map((s, i) => (i === selected ? { ...s, ...patch } : s)),
     )
+  }
+
+  /** Ajusta a imagem de fundo do slide atual (tom, intensidade, posicao). */
+  function patchBgImage(patch: Partial<SlideBgImage>) {
+    setSlides((prev) =>
+      prev.map((s, i) =>
+        i === selected && s.bgImage ? { ...s, bgImage: { ...s.bgImage, ...patch } } : s,
+      ),
+    )
+  }
+
+  /** Envia a foto e poe como fundo do slide que estava aberto no clique. */
+  async function handleBgImageUpload(original: File) {
+    const target = selected
+    setBgImgBusy(true)
+    setBgImgError(null)
+    try {
+      const file = await reduzirArquivo(original)
+      const [url] = await uploadImageFiles([file])
+      setSlides((prev) =>
+        prev.map((s, i) => (i === target ? { ...s, bgImage: { ...s.bgImage, url } } : s)),
+      )
+    } catch (err) {
+      setBgImgError(err instanceof Error ? err.message : "erro no upload")
+    } finally {
+      setBgImgBusy(false)
+    }
+  }
+
+  /** Mesma imagem de fundo (com os mesmos ajustes) em todos os slides. */
+  function applyBgImageToAll() {
+    const img = slides[selected]?.bgImage
+    if (!img) return
+    setSlides((prev) => prev.map((s) => ({ ...s, bgImage: { ...img } })))
   }
 
   function patchImage(patch: Partial<PreviewSlide["image"]>) {
@@ -3436,6 +3478,124 @@ export function CarouselEditor({
                 </>
               )}
             </div>
+            {/* Imagem de fundo: foto atrás do layout, com camada pra o texto
+                continuar legível. Sobrepõe cor e degradê. */}
+            <div className="space-y-2 pt-1" data-testid="fundo-imagem">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-text-secondary">Imagem de fundo</span>
+                {slide.bgImage && (
+                  <button
+                    type="button"
+                    onClick={() => patchSlide({ bgImage: undefined })}
+                    className="text-[11px] text-text-muted hover:text-text-primary"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              {slide.bgImage?.url ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-12 h-12 rounded-lg border border-border-subtle bg-cover bg-center flex-shrink-0"
+                      style={{ backgroundImage: `url("${proxiedImageUrl(slide.bgImage.url)}")` }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={() => bgImageInputRef.current?.click()}
+                      disabled={bgImgBusy}
+                    >
+                      {bgImgBusy ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Upload className="w-3 h-3 mr-1" />
+                      )}
+                      Trocar imagem
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ["dark", "Escurecer"],
+                      ["light", "Clarear"],
+                    ] as const).map(([tone, label]) => {
+                      const active = (slide.bgImage?.tone ?? "dark") === tone
+                      return (
+                        <button
+                          key={tone}
+                          type="button"
+                          onClick={() => patchBgImage({ tone })}
+                          className={`h-8 rounded-lg border text-[11px] font-medium transition-colors ${
+                            active
+                              ? "border-brand-500 ring-1 ring-brand-500 text-text-primary"
+                              : "border-border-subtle text-text-muted hover:border-border-medium"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <SliderRow
+                    label="Intensidade da camada"
+                    min={0}
+                    max={BG_IMAGE_MAX_SHADE}
+                    value={slide.bgImage.shade ?? BG_IMAGE_DEFAULT_SHADE}
+                    onChange={(v) => patchBgImage({ shade: v })}
+                  />
+                  <SliderRow
+                    label="Posição horizontal"
+                    value={slide.bgImage.posX ?? 50}
+                    onChange={(v) => patchBgImage({ posX: v })}
+                  />
+                  <SliderRow
+                    label="Posição vertical"
+                    value={slide.bgImage.posY ?? 50}
+                    onChange={(v) => patchBgImage({ posY: v })}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={applyBgImageToAll}
+                  >
+                    <Layers className="w-3 h-3 mr-1" />
+                    Usar este fundo em todos os slides
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => bgImageInputRef.current?.click()}
+                  disabled={bgImgBusy}
+                >
+                  {bgImgBusy ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3 mr-1" />
+                  )}
+                  Enviar imagem de fundo
+                </Button>
+              )}
+              <input
+                ref={bgImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ""
+                  if (file) void handleBgImageUpload(file)
+                }}
+              />
+              {bgImgError && <p className="text-xs text-destructive">{bgImgError}</p>}
+            </div>
             {(style === "gradient" || style === "seamless") && (
               <div className="flex items-center gap-2 pt-1">
                 <span className="text-[11px] font-medium text-text-secondary w-16 flex-shrink-0">Glow</span>
@@ -3455,7 +3615,8 @@ export function CarouselEditor({
             )}
             <p className="text-[10px] text-text-muted">
               Vale pra capa e pros slides de conteúdo. O texto ajusta o contraste
-              sozinho pela cor inicial.
+              sozinho pela cor inicial. Com imagem de fundo, a foto do conteúdo
+              continua por cima.
             </p>
           </Section>
 

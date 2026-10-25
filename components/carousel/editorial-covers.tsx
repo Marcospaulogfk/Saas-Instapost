@@ -17,6 +17,7 @@ import {
   SeamlessProgressLine,
   SmartSlideImage,
   mixWithWhite,
+  splitTheme,
   type SlideAttribution,
 } from "./editorial-shared"
 
@@ -571,13 +572,18 @@ export function CoverMinimalClean({
   fontClass,
   bgOverride,
 }: CoverProps) {
+  // Fundo escolhido (cor escura ou imagem de fundo): o texto preto sumia. Sem
+  // override, th = null e o HTML fica idêntico ao de sempre.
+  const th = splitTheme(bgOverride)
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
       style={{ backgroundColor: bgOverride ?? "#FFFFFF" }}
     >
       {/* Header texto puro */}
-      <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
+      <div className="flex-shrink-0 px-6 pt-5 flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45"
+        style={th ? { color: th.faint } : undefined}
+      >
         <span data-edit="meta">{handleVisivel(slide.handle)}</span>
         <span data-edit="meta">{slide.category || "Editorial"}</span>
       </div>
@@ -595,7 +601,7 @@ export function CoverMinimalClean({
                 ? "text-[2.5rem]"
                 : "text-[2.9rem]"
           } uppercase tracking-tight text-black ${fontClass}`}
-          style={{ fontWeight: 900, lineHeight: 0.95 }}
+          style={{ fontWeight: 900, lineHeight: 0.95, ...(th ? { color: th.text } : null) }}
           maxLines={4}
         >
           <HighlightedText
@@ -605,7 +611,10 @@ export function CoverMinimalClean({
           />
         </FitText>
         {slide.subtitle && (
-          <p className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-2">
+          <p
+            className="text-sm text-black/60 leading-[1.5] max-w-[85%] line-clamp-2"
+            style={th ? { color: th.muted } : undefined}
+          >
             {slide.subtitle}
           </p>
         )}
@@ -615,7 +624,7 @@ export function CoverMinimalClean({
       <div className="flex-1 min-h-0 px-6 pt-3">
         <div
           className="relative h-full w-full rounded-lg overflow-hidden"
-          style={{ border: "1px solid rgba(0,0,0,0.12)" }}
+          style={{ border: `1px solid ${th ? th.line : "rgba(0,0,0,0.12)"}` }}
         >
           {slide.image.url ? (
             <SmartSlideImage fill
@@ -630,8 +639,14 @@ export function CoverMinimalClean({
 
       {/* Footer no FLUXO: linha + contador tabular + arrasta */}
       <div className="flex-shrink-0 px-6 pt-3 pb-5">
-        <div className="h-px w-full bg-black/10 mb-3" />
-        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45">
+        <div
+          className="h-px w-full bg-black/10 mb-3"
+          style={th ? { backgroundColor: th.line } : undefined}
+        />
+        <div
+          className="flex items-center justify-between text-[10px] uppercase tracking-[0.18em] font-semibold text-black/45"
+          style={th ? { color: th.faint } : undefined}
+        >
           <span className="tabular-nums" data-edit="meta">
             {String(orderIndex + 1).padStart(2, "0")} / {String(totalSlides).padStart(2, "0")}
           </span>
@@ -639,7 +654,7 @@ export function CoverMinimalClean({
         </div>
       </div>
 
-      <Attribution attribution={slide.image.attribution} textColor="#000" />
+      <Attribution attribution={slide.image.attribution} textColor={th ? th.text : "#000"} />
     </div>
   )
 }

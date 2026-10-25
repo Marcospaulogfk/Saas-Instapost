@@ -14,6 +14,10 @@ mypostflow, gradient, minimal, seamless, cards, perfil). Para `minimal`,
 `gradient` e `cards` ele também fotografa com o fundo trocado pelo usuário
 (claro e escuro), porque esses estilos respeitam a cor de fundo escolhida.
 
+Desde 25/10/2026 ele também fotografa a **imagem de fundo** do slide
+(escurecida e clareada) em `wesley`, `minimal`, `cards` e `poster`, um de
+cada família de layout. Na prévia isso é `?fundo=dark` ou `?fundo=light`.
+
 Ele usa a página de prévia sem login `http://localhost:3010/preview-estilos`
 (fora do produto) com textos e fotos fixos, então a foto só muda se o
 layout mudar.

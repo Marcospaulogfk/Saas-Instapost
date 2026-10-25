@@ -25,6 +25,12 @@ import { EXTRA_STYLE_RENDERERS } from "./styles"
 import { handleVisivel } from "@/lib/carousel/handle-visivel"
 import type { SlideBlock } from "./slide-blocks"
 import {
+  accentOnBgImage,
+  bgImageCss,
+  bgImageToneColor,
+  type SlideBgImage,
+} from "./slide-bg-image"
+import {
   applyElementOverrides,
   type SlideElementOverrides,
   type CollageLayout,
@@ -76,6 +82,9 @@ export interface PreviewSlide {
   bg?: string
   /** Degradê de fundo (sobrepõe `bg`). `from` define a luminância do tema. */
   bgGradient?: { from: string; to: string; angle: number }
+  /** Imagem de fundo (sobrepõe cor e degradê). A foto do conteúdo continua
+   *  por cima. Ver slide-bg-image.ts. */
+  bgImage?: SlideBgImage
   /** Cor do glow radial nos estilos gradient/seamless. Vazio = accent. */
   glow?: string
   /** Overrides por elemento do editor Canva-like (mover/escalar/cor).
@@ -288,11 +297,23 @@ function SlidePreviewImpl({
     const layoutRoot = root.firstElementChild?.firstElementChild as HTMLElement | null
     if (layoutRoot) {
       const g = slide.bgGradient
-      if (g) {
+      const bgImg = slide.bgImage?.url ? slide.bgImage : null
+      if (bgImg) {
+        // Imagem de fundo: mesma regra do degradê (pinta no nó raiz do layout),
+        // com a camada de escurecer/clarear por cima da foto.
+        Object.assign(layoutRoot.style, bgImageCss(bgImg))
+        layoutRoot.dataset.editGradient = "1"
+      } else if (g) {
         layoutRoot.style.backgroundImage = `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})`
+        layoutRoot.style.backgroundSize = ""
+        layoutRoot.style.backgroundPosition = ""
+        layoutRoot.style.backgroundRepeat = ""
         layoutRoot.dataset.editGradient = "1"
       } else if (layoutRoot.dataset.editGradient) {
         layoutRoot.style.backgroundImage = ""
+        layoutRoot.style.backgroundSize = ""
+        layoutRoot.style.backgroundPosition = ""
+        layoutRoot.style.backgroundRepeat = ""
         delete layoutRoot.dataset.editGradient
       }
     }
@@ -301,8 +322,15 @@ function SlidePreviewImpl({
   // sobre o fundo onde aparece. Paletas monocromáticas (ex: preto/branco/cinza)
   // escolhiam preto como destaque e ele sumia em fundos escuros/fotos.
   const accentCandidates = brandColors.length > 0 ? brandColors : ["#FBBF24"]
-  const accentOnDark = readableAccent(accentCandidates, darkBg, "#FFFFFF")
-  const accentOnLight = readableAccent(accentCandidates, lightBg, "#0A0A0F")
+  const baseAccentOnDark = readableAccent(accentCandidates, darkBg, "#FFFFFF")
+  const baseAccentOnLight = readableAccent(accentCandidates, lightBg, "#0A0A0F")
+  // Imagem de fundo: o destaque do lado do tom escolhido sobe pra 4.5:1 (a foto
+  // por baixo da camada tem manchas). O outro lado fica como sempre.
+  const bgImg = slide.bgImage?.url ? slide.bgImage : null
+  const accentOnDark =
+    bgImg && bgImg.tone !== "light" ? accentOnBgImage(baseAccentOnDark, bgImg) : baseAccentOnDark
+  const accentOnLight =
+    bgImg && bgImg.tone === "light" ? accentOnBgImage(baseAccentOnLight, bgImg) : baseAccentOnLight
   const dark = brandColors[1] || "#1A1A1A"
   const light = brandColors[2] || "#FAF8F5"
 
@@ -564,7 +592,11 @@ function EditorialSlideRouter(props: RouterProps) {
   // Fundo escolhido pelo usuário (slide.bg): vale pra capas e splits. Com
   // degradê, a cor sólida vira o `from` (tema claro/escuro + base do layout);
   // o degradê em si é pintado no SlidePreview (layout effect).
-  const bgOverride = slide.bgGradient?.from ?? slide.bg
+  // Com imagem de fundo, a cor do TOM (escurecer/clarear) faz o papel da cor
+  // sólida: decide texto claro ou escuro e o destaque legível.
+  const bgOverride = slide.bgImage?.url
+    ? bgImageToneColor(slide.bgImage)
+    : (slide.bgGradient?.from ?? slide.bg)
   const glow = slide.glow
   const basePropsDark = {
     totalSlides,
@@ -757,7 +789,13 @@ function EditorialSlideRouter(props: RouterProps) {
   // ===== STYLE: MINIMAL (branco suíço) =====
   if (editorialStyle === "minimal") {
     if (isCover) {
-      return <CoverMinimalClean slide={coverData} {...basePropsLight} />
+      return (
+        <CoverMinimalClean
+          slide={coverData}
+          {...basePropsLight}
+          accent={accentForBg(accentOnLight)}
+        />
+      )
     }
     // Imagem SEMPRE embaixo do texto, em TODO slide de conteúdo (nunca acima
     // da descrição, nunca slide sem foto).

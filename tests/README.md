@@ -44,6 +44,13 @@ Também confere que a lista de estilos do catálogo e a lista do código batem
 uma a uma, sem nome repetido ou descrição vazia. **Estilo novo que nascer sem
 alguma dessas peças falha aqui na hora.**
 
+### Imagem de fundo (`tests/regressao/fundo-imagem.test.tsx`)
+
+A foto que o usuário põe atrás do slide ("Fundo do Slide" → Imagem de fundo).
+Confere a camada de escurecer/clarear, a intensidade e a posição; que a cor
+da marca continua legível sobre a foto (clareia ou escurece só o necessário);
+e que os 18 estilos abrem com o título, com a foto escurecida e clareada.
+
 ### 4. O modelo de edição (`tests/regressao/modelo-edicao.test.ts`)
 
 Blocos livres (nascem centralizados, não saem do slide, limite de 12), a

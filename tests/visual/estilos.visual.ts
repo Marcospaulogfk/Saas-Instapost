@@ -15,14 +15,27 @@ const ESTILOS_COM_FUNDO = ["minimal", "gradient", "cards"]
 const FUNDO_CLARO = "#FAF8F5"
 const FUNDO_ESCURO = "#0A0A0F"
 
+// Imagem de fundo (?fundo=dark|light na prévia): um estilo de cada família —
+// conteúdo com foto embaixo (wesley), capa clara que vira escura (minimal),
+// cartões por cima do fundo (cards) e estilo novo com título na cor da marca
+// (poster). A foto de fundo é a mesma fixa da prévia (BG_IMG).
+const ESTILOS_COM_IMAGEM_DE_FUNDO = ["wesley", "minimal", "cards", "poster"]
+const IMAGEM_DE_FUNDO = "/refs-posts-unicos/empresa/03/referencia.jpg"
+
 const ESTILOS = CAROUSEL_STYLES.map((s) => s.style).filter(
   (id) => !ESTILOS_EM_CONSTRUCAO.includes(id),
 )
 
 /** Abre a prévia e espera fontes, imagens e o ajuste de fonte (FitText) assentarem. */
-async function abrirPrevia(page: Page, estilo: string, bg?: string) {
+async function abrirPrevia(
+  page: Page,
+  estilo: string,
+  bg?: string,
+  fundo?: "dark" | "light",
+) {
   const params = new URLSearchParams({ estilo, todos: "1" })
   if (bg) params.set("bg", bg)
+  if (fundo) params.set("fundo", fundo)
   await page.goto(`/preview-estilos?${params.toString()}`)
 
   const todos = page.getByTestId("slides-todos")
@@ -39,6 +52,19 @@ async function abrirPrevia(page: Page, estilo: string, bg?: string) {
     const imgs = Array.from(raiz.querySelectorAll("img"))
     return imgs.every((img) => img.complete && img.naturalWidth > 0)
   })
+
+  // A imagem de fundo é CSS (não é <img>): espera ela carregar também.
+  if (fundo) {
+    await page.evaluate(
+      (src) =>
+        new Promise<void>((ok) => {
+          const im = new Image()
+          im.onload = im.onerror = () => ok()
+          im.src = src
+        }),
+      IMAGEM_DE_FUNDO,
+    )
+  }
 
   // FitText e afins ajustam o tamanho da letra em efeitos; dá um fôlego.
   await page.waitForTimeout(300)
@@ -61,6 +87,18 @@ for (const estilo of ESTILOS) {
       test("fundo escuro trocado", async ({ page }) => {
         const todos = await abrirPrevia(page, estilo, FUNDO_ESCURO)
         await expect(todos).toHaveScreenshot(`${estilo}-fundo-escuro.png`)
+      })
+    }
+
+    if (ESTILOS_COM_IMAGEM_DE_FUNDO.includes(estilo)) {
+      test("imagem de fundo escurecida", async ({ page }) => {
+        const todos = await abrirPrevia(page, estilo, undefined, "dark")
+        await expect(todos).toHaveScreenshot(`${estilo}-imagem-escura.png`)
+      })
+
+      test("imagem de fundo clareada", async ({ page }) => {
+        const todos = await abrirPrevia(page, estilo, undefined, "light")
+        await expect(todos).toHaveScreenshot(`${estilo}-imagem-clara.png`)
       })
     }
   })
