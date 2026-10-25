@@ -6,7 +6,7 @@
  * e sem login. Escolhe o estilo e navega slide por slide em tamanho grande.
  */
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Inter } from "next/font/google"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import {
@@ -14,10 +14,24 @@ import {
   type PreviewSlide,
   type EditorialStyle,
 } from "@/components/carousel/slide-preview"
+import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 
 const inter = Inter({ subsets: ["latin"], weight: ["900"] })
 
-const IMG = (seed: string) => `https://picsum.photos/seed/${seed}/800/500`
+// Fotos LOCAIS e fixas (eram do picsum.photos): o teste visual compara
+// screenshot com screenshot, então a foto não pode mudar nem depender de rede.
+const LOCAL_IMGS = [
+  "/refs-posts-unicos/beauty/01/referencia.jpg",
+  "/refs-posts-unicos/comercial/01/referencia.jpg",
+  "/refs-posts-unicos/fitness/01/referencia.jpg",
+  "/refs-posts-unicos/empresa/03/referencia.jpg",
+  "/refs-posts-unicos/beauty/03/referencia.jpg",
+  "/refs-posts-unicos/comercial/03/referencia.jpg",
+]
+const IMG = (seed: string) => {
+  const n = Number(seed.replace(/\D/g, "")) || 0
+  return LOCAL_IMGS[n % LOCAL_IMGS.length]
+}
 
 function mockSlide(i: number, total: number, bg?: string): PreviewSlide {
   const titles = [
@@ -62,18 +76,11 @@ const BG_SWATCHES: { label: string; value?: string }[] = [
   { label: "Rosa", value: "#FCE7F3" },
 ]
 
-const STYLES: { style: EditorialStyle; name: string }[] = [
-  { style: "gradient", name: "Gradiente (dark/vibrante)" },
-  { style: "minimal", name: "Minimal (branco/clean)" },
-  { style: "seamless", name: "Seamless (panorâmico)" },
-  { style: "wesley", name: "Wesley (dark/impacto)" },
-  { style: "brandsdecoded", name: "Revista (editorial)" },
-  { style: "bolo", name: "Bolo (lista cream)" },
-  { style: "mypostflow", name: "MyPostFlow" },
-  { style: "cards", name: "Cards (MyPostFlow novo)" },
-  { style: "perfil", name: "Perfil (post/tweet)" },
-  { style: "auto", name: "Auto (alternado)" },
-]
+// Mesma lista do produto (carousel-styles.ts): estilo novo aparece aqui sozinho.
+const STYLES: { style: EditorialStyle; name: string }[] = CAROUSEL_STYLES.map((s) => ({
+  style: s.style,
+  name: s.name,
+}))
 
 const TOTAL = 5
 
@@ -81,7 +88,36 @@ export default function PreviewEstilosPage() {
   const [styleIdx, setStyleIdx] = useState(0)
   const [slideIdx, setSlideIdx] = useState(0)
   const [bg, setBg] = useState<string | undefined>(undefined)
+  const [todos, setTodos] = useState(false)
   const { style, name } = STYLES[styleIdx]
+
+  // Parâmetros de URL: ?estilo=lookbook&slide=2&bg=%23FAF8F5&todos=1
+  // Abre direto num estilo/slide (teste visual automático e revisão dos
+  // estilos). `todos=1` mostra os 5 slides lado a lado numa tela só.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const i = STYLES.findIndex((s) => s.style === p.get("estilo"))
+    if (i >= 0) setStyleIdx(i)
+    const n = Number(p.get("slide"))
+    if (Number.isInteger(n) && n >= 1 && n <= TOTAL) setSlideIdx(n - 1)
+    const b = p.get("bg")
+    if (b) setBg(b)
+    if (p.get("todos")) setTodos(true)
+  }, [])
+
+  const renderSlide = (i: number) => (
+    <SlidePreview
+      slide={mockSlide(i, TOTAL, bg)}
+      totalSlides={TOTAL}
+      template="editorial"
+      brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
+      fontClass={inter.className}
+      showDevBadges={false}
+      editorialStyle={style}
+      handle="@syncpost"
+      brandLabel="Nexus Content"
+    />
+  )
 
   const go = (d: number) =>
     setSlideIdx((s) => Math.min(TOTAL - 1, Math.max(0, s + d)))
@@ -151,20 +187,20 @@ export default function PreviewEstilosPage() {
         </button>
       </div>
 
-      {/* Slide grande */}
-      <div className="w-full max-w-[440px]">
-        <SlidePreview
-          slide={mockSlide(slideIdx, TOTAL, bg)}
-          totalSlides={TOTAL}
-          template="editorial"
-          brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}
-          fontClass={inter.className}
-          showDevBadges={false}
-          editorialStyle={style}
-          handle="@syncpost"
-          brandLabel="Nexus Content"
-        />
-      </div>
+      {/* Slide grande (ou os 5 lado a lado com ?todos=1) */}
+      {todos ? (
+        <div className="flex flex-wrap justify-center gap-4" data-testid="slides-todos">
+          {Array.from({ length: TOTAL }).map((_, i) => (
+            <div key={i} className="w-[320px]" data-testid={`slide-${i + 1}`}>
+              {renderSlide(i)}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="w-full max-w-[440px]" data-testid="slide-preview">
+          {renderSlide(slideIdx)}
+        </div>
+      )}
 
       {/* Miniaturas pra pular */}
       <div className="flex gap-2">

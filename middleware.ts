@@ -41,6 +41,11 @@ const PUBLIC_API_PREFIXES = [
 // 404 em produção por conta própria; a exceção só existe fora dela.
 if (process.env.NODE_ENV !== "production") {
   PUBLIC_API_PREFIXES.push("/api/dev/pilot")
+  // Prévia dos estilos de carrossel (dados de mentira, sem nada do usuário):
+  // fora de produção fica aberta, porque é onde o teste visual automático
+  // (tests/visual) e a revisão dos estilos abrem os slides sem login. Em
+  // produção continua trancada pelo PROTECTED_PREFIXES.
+  PUBLIC_PREFIXES.push("/preview-estilos")
 }
 
 // === Split de domínio ===

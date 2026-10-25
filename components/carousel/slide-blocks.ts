@@ -169,7 +169,9 @@ export function createBlock(
         shape: "rect", fill: accent, radius: 16, opacity: 0.9,
       }
     case "divider":
-      return { id, type, z, ...center(240, 10), color: accent, thickness: 3 }
+      // Altura = BLOCK_MIN_SIZE: o clampBlock impõe 16, então nascer com 10
+      // fazia o bloco "pular" de tamanho no primeiro gesto.
+      return { id, type, z, ...center(240, BLOCK_MIN_SIZE), color: accent, thickness: 3 }
     case "brand":
       return {
         id, type, z, ...center(220, 44),

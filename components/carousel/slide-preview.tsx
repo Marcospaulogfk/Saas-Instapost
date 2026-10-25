@@ -21,6 +21,7 @@ import {
 import { readableAccent, isLightColor } from "@/lib/color-contrast"
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { BlockLayer } from "./block-layer"
+import { EXTRA_STYLE_RENDERERS } from "./styles"
 import { handleVisivel } from "@/lib/carousel/handle-visivel"
 import type { SlideBlock } from "./slide-blocks"
 import {
@@ -118,6 +119,16 @@ export type EditorialStyle =
   | "brandsdecoded" // capas brandsdecoded + splits light/dark-serif
   | "bolo" // capa wesley-labios + splits bolo-cream
   | "mypostflow" // capa wesley + splits mypostflow
+  // Estilos novos (um arquivo por estilo em ./styles/, registrados em
+  // ./styles/index.ts — o router consulta o mapa antes dos estilos acima).
+  | "lookbook" // foto quente fullbleed + título branco com palavra serifada itálica
+  | "cinema" // foto escurecida + título maiúsculo centrado + rodapé 3 colunas
+  | "estudio" // creme + título minúsculo em cor forte + etiquetas + seta
+  | "colagem" // fundo na cor da marca + foto P&B recortada + palavra manuscrita
+  | "cartaz" // foto P&B + cartão branco + título curto + detalhe na cor da marca
+  | "agencia" // preto/creme alternando + palavra na cor da marca + seta
+  | "poster" // escuro + título condensado na cor da marca + véu + post-it
+  | "geometrico" // branco/preto + formas na cor da marca + marca fantasma
   | "gradient" // dark vibrante com glow do accent + highlights em gradiente
   | "minimal" // branco suíço: tipografia gigante + ghost numbers + hairlines
   | "seamless" // panorâmico: linha de progresso avança pelos slides (+completion)
@@ -578,6 +589,32 @@ function EditorialSlideRouter(props: RouterProps) {
   // override, mantém o accent padrão do estilo (fallback).
   const accentForBg = (fallback: string) =>
     bgOverride ? (isLightColor(bgOverride) ? accentOnLight : accentOnDark) : fallback
+
+  // ===== ESTILOS NOVOS (./styles/*.tsx) — um arquivo por estilo =====
+  const extra = EXTRA_STYLE_RENDERERS[editorialStyle]
+  if (extra) {
+    return extra.render({
+      slide,
+      coverData,
+      splitData,
+      totalSlides,
+      orderIndex: slide.order_index,
+      isCover,
+      isLast,
+      isMidBreak,
+      imgCount,
+      fontClass,
+      format,
+      accentOnDark,
+      accentOnLight,
+      accentForBg,
+      bgOverride,
+      glow,
+      basePropsDark,
+      basePropsLight,
+      resolveImageSlot,
+    })
+  }
 
   // ===== STYLE: WESLEY =====
   if (editorialStyle === "wesley") {

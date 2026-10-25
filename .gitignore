@@ -34,3 +34,8 @@ supabase/.temp/
 # Arquivos de trava do LibreOffice ao abrir .docx
 .~lock.*#
 .pilot/
+
+# Teste visual (Playwright): fotos de erro/diff e relatório HTML de cada rodada.
+# As referências ficam versionadas em tests/visual/__referencias__/.
+tests/visual/.saida/
+playwright-report/

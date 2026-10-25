@@ -178,20 +178,12 @@ const BG_PRESETS: { label: string; value: string }[] = [
   { label: "Branco", value: "#FFFFFF" },
 ]
 
-// Rótulos iguais aos do passo 3 da criação (CAROUSEL_STYLES em
-// carousel-styles.ts): mesmo estilo, mesmo nome nas duas telas.
-const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = [
-  { value: "auto", label: "Automático" },
-  { value: "wesley", label: "Impacto" },
-  { value: "brandsdecoded", label: "Revista" },
-  { value: "bolo", label: "Lista Cream" },
-  { value: "mypostflow", label: "Chamada Final" },
-  { value: "gradient", label: "Gradiente" },
-  { value: "minimal", label: "Minimalista" },
-  { value: "seamless", label: "Seamless" },
-  { value: "cards", label: "Cards" },
-  { value: "perfil", label: "Perfil" },
-]
+// Rótulos iguais aos do passo 3 da criação: derivados da MESMA lista
+// (CAROUSEL_STYLES em carousel-styles.ts). Estilo novo entra lá e aparece
+// aqui sozinho — nunca mais uma lista descasada da outra.
+const STYLE_OPTIONS: { value: EditorialStyle; label: string }[] = CAROUSEL_STYLES.map(
+  (s) => ({ value: s.style, label: s.name }),
+)
 
 /** Propriedades do bloco selecionado — painel "Editar <tipo>" em abas, como o Elementor. */
 function BlockProps({

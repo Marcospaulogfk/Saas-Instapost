@@ -1416,7 +1416,10 @@ export function SplitProfilePost({
   // Texto do post: um cinza-claro uniforme (como o tweet do MyPostFlow).
   const post = th?.muted ?? "rgba(255,255,255,0.9)"
   const faint = th?.faint ?? "rgba(255,255,255,0.5)"
-  const name = slide.brand_label || (slide.handle || "@perfil").replace(/^@/, "")
+  // R4-10: sem @ cadastrado (ou com marcador de exemplo gravado), nada de
+  // "@perfil" no post pronto: a linha do @ fica vazia e o nome usa o brand_label.
+  const handle = handleVisivel(slide.handle)
+  const name = slide.brand_label || handle.replace(/^@/, "")
   const hasImg = !!slide.images[0]?.url
 
   return (
@@ -1439,7 +1442,7 @@ export function SplitProfilePost({
             <VerifiedBadge size={15} />
           </div>
           <div className="text-[12px]" style={{ color: faint }} data-edit="meta">
-            {slide.handle || "@perfil"}
+            {handle}
           </div>
         </div>
       </div>
