@@ -33,6 +33,9 @@ const IMG = (seed: string) => {
   return LOCAL_IMGS[n % LOCAL_IMGS.length]
 }
 
+// Foto recortada de teste (?recorte=1): PNG sem fundo, local e fixo.
+const RECORTE_IMG = "/preview/recorte-pessoa.png"
+
 // Imagem de fundo de teste (?fundo=dark|light): foto local fixa.
 const BG_IMG = "/refs-posts-unicos/empresa/03/referencia.jpg"
 
@@ -42,6 +45,7 @@ function mockSlide(
   bg?: string,
   fundo?: "dark" | "light",
   semFoto?: boolean,
+  recorte?: boolean,
 ): PreviewSlide {
   const titles = [
     "Tom Cruise está correndo pro Oscar de novo",
@@ -67,7 +71,8 @@ function mockSlide(
     bg,
     bgImage: fundo ? { url: BG_IMG, tone: fundo } : undefined,
     image: {
-      url: semFoto ? null : IMG(`syncpost-${i}`),
+      url: semFoto ? null : recorte ? RECORTE_IMG : IMG(`syncpost-${i}`),
+      cutout: recorte && !semFoto ? { url: RECORTE_IMG, from: IMG(`syncpost-${i}`) } : undefined,
       source: "ai",
       attribution: null,
       error: null,
@@ -101,9 +106,10 @@ export default function PreviewEstilosPage() {
   const [todos, setTodos] = useState(false)
   const [fundo, setFundo] = useState<"dark" | "light" | undefined>(undefined)
   const [semFoto, setSemFoto] = useState(false)
+  const [recorte, setRecorte] = useState(false)
   const { style, name } = STYLES[styleIdx]
 
-  // Parâmetros de URL: ?estilo=lookbook&slide=2&bg=%23FAF8F5&todos=1&fundo=dark&semfoto=1
+  // Parâmetros de URL: ?estilo=lookbook&slide=2&bg=%23FAF8F5&todos=1&fundo=dark&semfoto=1&recorte=1
   // Abre direto num estilo/slide (teste visual automático e revisão dos
   // estilos). `todos=1` mostra os 5 slides lado a lado numa tela só.
   useEffect(() => {
@@ -119,11 +125,12 @@ export default function PreviewEstilosPage() {
     const f = p.get("fundo")
     if (f === "dark" || f === "light") setFundo(f)
     if (p.get("semfoto")) setSemFoto(true)
+    if (p.get("recorte")) setRecorte(true)
   }, [])
 
   const renderSlide = (i: number) => (
     <SlidePreview
-      slide={mockSlide(i, TOTAL, bg, fundo, semFoto)}
+      slide={mockSlide(i, TOTAL, bg, fundo, semFoto, recorte)}
       totalSlides={TOTAL}
       template="editorial"
       brandColors={["#1668E3", "#1A1A1A", "#FAF8F5"]}

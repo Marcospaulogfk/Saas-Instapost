@@ -13,6 +13,8 @@ import {
   HighlightStyleContext,
   type HighlightStyle,
   SlideImageCollageContext,
+  SlideImageCutoutContext,
+  isCutoutActive,
   defaultCollageLayout,
   SlideChromeContext,
   TypographyContext,
@@ -109,6 +111,10 @@ export interface PreviewSlide {
     /** Layout da grade quando `collage` tem 2+ fotos. Vazio = padrão pela
      *  contagem (ver defaultCollageLayout). */
     collageLayout?: CollageLayout
+    /** Foto recortada (PNG sem fundo, "Recortar fundo" no editor). Vale só
+     *  enquanto `url === cutout.url`: trocar a foto desliga o recorte sozinho.
+     *  `from` = foto original, pra "Voltar à foto original". */
+    cutout?: { url: string; from: string }
   }
   /** Imagens adicionais (cenas DIFERENTES) quando a IA decide que o slide
    *  mostra mais de uma coisa. Vazio na maioria. Usadas em layouts de
@@ -399,11 +405,15 @@ function SlidePreviewImpl({
         }
       : null
 
+  // Foto recortada: só a foto PRINCIPAL, e só enquanto ela é o próprio PNG.
+  const cutoutUrl = isCutoutActive(slide.image) ? slide.image.url : null
+
   return (
     <TypographyContext.Provider value={typo}>
     <SlideChromeContext.Provider value={chrome}>
     <ImageTransformContext.Provider value={imgTransform}>
     <SlideImageCollageContext.Provider value={collage}>
+    <SlideImageCutoutContext.Provider value={cutoutUrl}>
     <HighlightStyleContext.Provider value={slide.highlight_styles ?? null}>
       <div className="relative" ref={rootRef}>
       {/* Em "stories" força o frame pra 9:16 (estica), sem tocar nos layouts. */}
@@ -433,6 +443,7 @@ function SlidePreviewImpl({
       )}
       </div>
     </HighlightStyleContext.Provider>
+    </SlideImageCutoutContext.Provider>
     </SlideImageCollageContext.Provider>
     </ImageTransformContext.Provider>
     </SlideChromeContext.Provider>

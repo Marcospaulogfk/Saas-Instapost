@@ -61,6 +61,13 @@ quantas formas cada estilo tem. Forma nova ou removida de propósito: atualize
 o número em `formas-estilos.test.tsx`. Para marcar uma forma num estilo novo,
 use `{...shapeAttrs()}` de `components/carousel/styles/shared.tsx`.
 
+### Foto recortada (`tests/regressao/foto-recortada.test.tsx`)
+
+"Recortar fundo" tira o fundo da foto (Fal, 2 tokens). Confere que URL vai
+pra Fal, que o recorte desliga sozinho quando a foto é trocada, e que nos 18
+estilos a foto recortada sai inteira e clicável. O teste visual fotografa os
+5 estilos desenhados pra recorte (`?recorte=1` na prévia).
+
 ### 4. O modelo de edição (`tests/regressao/modelo-edicao.test.ts`)
 
 Blocos livres (nascem centralizados, não saem do slide, limite de 12), a

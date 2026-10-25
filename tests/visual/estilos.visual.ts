@@ -22,6 +22,9 @@ const FUNDO_ESCURO = "#0A0A0F"
 const ESTILOS_COM_IMAGEM_DE_FUNDO = ["wesley", "minimal", "cards", "poster"]
 const IMAGEM_DE_FUNDO = "/refs-posts-unicos/empresa/03/referencia.jpg"
 
+// Foto recortada (?recorte=1 na prévia): os 5 estilos desenhados pra ela.
+const ESTILOS_COM_RECORTE = ["geometrico", "colagem", "agencia", "cartaz", "poster"]
+
 const ESTILOS = CAROUSEL_STYLES.map((s) => s.style).filter(
   (id) => !ESTILOS_EM_CONSTRUCAO.includes(id),
 )
@@ -32,10 +35,12 @@ async function abrirPrevia(
   estilo: string,
   bg?: string,
   fundo?: "dark" | "light",
+  recorte?: boolean,
 ) {
   const params = new URLSearchParams({ estilo, todos: "1" })
   if (bg) params.set("bg", bg)
   if (fundo) params.set("fundo", fundo)
+  if (recorte) params.set("recorte", "1")
   await page.goto(`/preview-estilos?${params.toString()}`)
 
   const todos = page.getByTestId("slides-todos")
@@ -99,6 +104,13 @@ for (const estilo of ESTILOS) {
       test("imagem de fundo clareada", async ({ page }) => {
         const todos = await abrirPrevia(page, estilo, undefined, "light")
         await expect(todos).toHaveScreenshot(`${estilo}-imagem-clara.png`)
+      })
+    }
+
+    if (ESTILOS_COM_RECORTE.includes(estilo)) {
+      test("foto recortada", async ({ page }) => {
+        const todos = await abrirPrevia(page, estilo, undefined, undefined, true)
+        await expect(todos).toHaveScreenshot(`${estilo}-recorte.png`)
       })
     }
   })

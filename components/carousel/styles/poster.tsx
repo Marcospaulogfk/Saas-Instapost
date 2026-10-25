@@ -20,6 +20,7 @@ import {
   HighlightedText,
   Pill,
   ShrinkToFit,
+  isCutoutActive,
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
@@ -79,11 +80,13 @@ function PosterCover({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: CoverSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride)
   const handle = handleVisivel(slide.handle)
@@ -97,9 +100,33 @@ function PosterCover({
     >
       {/* Foto de fundo (ou placeholder) com véu escuro subindo do rodapé.
           Wrapper absoluto próprio: o PhotoBox é `relative` por dentro. */}
-      <div className="absolute inset-0">
-        <PhotoBox image={slide.image} className="h-full w-full" overlay={veil} />
-      </div>
+      {cutout ? (
+        // Foto RECORTADA: pessoa grande à direita, saindo de um "post-it" da
+        // cor da marca girado atrás dela (só na metade de cima: nunca atrás
+        // do título, que é da mesma cor). Véu só embaixo, pro título.
+        <div className="absolute inset-0">
+          <div
+            {...shapeAttrs()}
+            aria-hidden
+            className="absolute left-[40%] right-[5%] top-[6%] h-[20%] rotate-[4deg] rounded-[2px] pointer-events-none"
+            style={{ backgroundColor: accent }}
+          />
+          <div className="absolute left-[16%] -right-[12%] top-[6%] bottom-0">
+            <PhotoBox image={slide.image} className="h-full w-full" />
+          </div>
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(to top, ${rgba(p.bg, 0.96)} 0%, ${rgba(p.bg, 0.78)} 38%, ${rgba(p.bg, 0)} 66%)`,
+            }}
+          />
+        </div>
+      ) : (
+        <div className="absolute inset-0">
+          <PhotoBox image={slide.image} className="h-full w-full" overlay={veil} />
+        </div>
+      )}
 
       {/* Topo: @ da marca e categoria, miúdos em caixa alta */}
       <div className="relative z-10 flex-shrink-0 px-6 pt-5 flex items-center justify-between">
@@ -149,11 +176,13 @@ function PosterContent({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: SplitSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride)
   const handle = handleVisivel(slide.handle)
@@ -200,15 +229,32 @@ function PosterContent({
 
       {/* ZONA DE IMAGEM — tamanho fixo: polaroid girada + post-it por cima */}
       <div className="relative flex-[0_0_40%] min-h-0 mt-4">
-        <div
-          className="absolute inset-x-3 inset-y-2 rotate-[-2deg] p-1.5 rounded-[3px]"
-          style={{
-            backgroundColor: "#F4EFE6",
-            boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
-          }}
-        >
-          <PhotoBox image={image} className="h-full w-full" rounded="rounded-[2px]" />
-        </div>
+        {cutout ? (
+          // Foto RECORTADA: sem polaroid. A pessoa "sai" de uma moldura fina
+          // da cor da marca (a cabeça passa por cima da borda de cima) e
+          // desce até a base do slide; o post-it (texto) continua na frente.
+          <>
+            <div
+              {...shapeAttrs("border")}
+              aria-hidden
+              className="absolute left-[2%] right-[30%] top-[24%] -bottom-12 rotate-[-2deg] pointer-events-none"
+              style={{ border: `3px solid ${accent}` }}
+            />
+            <div className="absolute -left-6 right-[24%] -top-2 -bottom-6">
+              <PhotoBox image={image} className="h-full w-full" />
+            </div>
+          </>
+        ) : (
+          <div
+            className="absolute inset-x-3 inset-y-2 rotate-[-2deg] p-1.5 rounded-[3px]"
+            style={{
+              backgroundColor: "#F4EFE6",
+              boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
+            }}
+          >
+            <PhotoBox image={image} className="h-full w-full" rounded="rounded-[2px]" />
+          </div>
+        )}
         {slide.subtitle && (
           <div
             {...shapeAttrs()}
@@ -311,11 +357,13 @@ function PosterLast({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: SplitSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride)
   const handle = handleVisivel(slide.handle)
@@ -351,16 +399,28 @@ function PosterLast({
 
       {/* ZONA DE IMAGEM (água) com o cartão de depoimento por cima, embaixo */}
       <div className="relative flex-1 min-h-0 mt-4">
-        <div className="absolute inset-0">
-          <PhotoBox
-            image={image}
-            className="h-full w-full"
-            rounded="rounded-lg"
-            overlay={`linear-gradient(to top, ${rgba(p.bg, 0.6)} 0%, transparent 55%)`}
-          />
-        </div>
+        {cutout ? (
+          // Foto RECORTADA: sem caixa arredondada nem véu; pessoa à direita
+          // sangrando até a borda e a base do slide, atrás do cartão.
+          <div className="absolute left-[22%] -right-6 top-0 -bottom-6">
+            <PhotoBox image={image} className="h-full w-full" />
+          </div>
+        ) : (
+          <div className="absolute inset-0">
+            <PhotoBox
+              image={image}
+              className="h-full w-full"
+              rounded="rounded-lg"
+              overlay={`linear-gradient(to top, ${rgba(p.bg, 0.6)} 0%, transparent 55%)`}
+            />
+          </div>
+        )}
         <div
-          className="absolute left-0 right-8 bottom-1 rotate-[-1deg] rounded-md px-4 py-3.5"
+          className={
+            cutout
+              ? "absolute left-0 right-[36%] bottom-1 rotate-[-1deg] rounded-md px-4 py-3.5"
+              : "absolute left-0 right-8 bottom-1 rotate-[-1deg] rounded-md px-4 py-3.5"
+          }
           style={{ backgroundColor: "#FFFFFF", boxShadow: "0 14px 30px rgba(0,0,0,0.45)" }}
         >
           {slide.body && (
@@ -390,9 +450,13 @@ export const posterStyle: StyleRenderer = {
     // fundo escolhido.
     const accent = ctx.accentForBg(ctx.accentOnDark)
     const common = { accent, fontClass: ctx.fontClass, bgOverride: ctx.bgOverride }
-    if (ctx.isCover) return <PosterCover slide={ctx.coverData} {...common} />
-    if (ctx.isLast) return <PosterLast slide={ctx.splitData} {...common} />
+    // Foto recortada (PNG sem fundo): capa, conteúdo e último trocam a caixa
+    // da foto pelo recorte solto. O meio (foto de fundo com véu forte) não
+    // muda: o recorte já fica inteiro, apoiado embaixo, atrás do título.
+    const cutout = isCutoutActive(ctx.slide.image)
+    if (ctx.isCover) return <PosterCover slide={ctx.coverData} cutout={cutout} {...common} />
+    if (ctx.isLast) return <PosterLast slide={ctx.splitData} cutout={cutout} {...common} />
     if (ctx.isMidBreak) return <PosterMidBreak slide={ctx.splitData} {...common} />
-    return <PosterContent slide={ctx.splitData} {...common} />
+    return <PosterContent slide={ctx.splitData} cutout={cutout} {...common} />
   },
 }

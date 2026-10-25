@@ -25,6 +25,7 @@ import {
   FitText,
   HighlightedText,
   ShrinkToFit,
+  isCutoutActive,
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
@@ -172,12 +173,16 @@ function CutoutPhoto({
   side,
   accent,
   className,
+  cutout = false,
 }: {
   image: StyleRouteContext["splitData"]["images"][number] | undefined
   side: "right" | "left"
   accent: string
   className: string
+  /** Foto é PNG sem fundo: sem caixa arredondada, recorte solto (CutoutStage). */
+  cutout?: boolean
 }) {
+  if (cutout) return <CutoutStage image={image} side={side} accent={accent} className={className} />
   return (
     <div className={`relative ${className}`}>
       <div
@@ -188,6 +193,59 @@ function CutoutPhoto({
         <PhotoBox image={image} className="h-full w-full" />
       </div>
       <AccentLine color={accent} top={side === "right" ? "30%" : "68%"} angle={-9} />
+    </div>
+  )
+}
+
+/**
+ * Foto RECORTADA (PNG sem fundo), como os objetos soltos da referência: sem a
+ * caixa de canto arredondado. Camadas (todas abaixo do texto, que é z-[2]):
+ * forma/linha da marca z-[1] atrás → recorte z-[1] por cima delas.
+ *   right (slides pretos, foto embaixo) → recorte grande à direita, desce até
+ *     a base do slide passando ATRÁS do rodapé; anel fino da marca atrás.
+ *   left (slides creme, foto em cima, texto embaixo) → recorte à esquerda
+ *     "saindo" de um bloco da cor da marca (canto arredondado da referência)
+ *     que esconde o corte do busto no meio do slide.
+ */
+function CutoutStage({
+  image,
+  side,
+  accent,
+  className,
+}: {
+  image: StyleRouteContext["splitData"]["images"][number] | undefined
+  side: "right" | "left"
+  accent: string
+  className: string
+}) {
+  if (side === "right") {
+    return (
+      <div className={`relative ${className}`}>
+        <div
+          {...shapeAttrs("border")}
+          aria-hidden
+          className="absolute left-[26%] w-[92%] aspect-square top-[4%] rounded-full pointer-events-none z-[1]"
+          style={{ border: `2px solid ${accent}` }}
+        />
+        <AccentLine color={accent} top="30%" angle={-9} />
+        <div className="absolute z-[1] left-[16%] -right-[6%] top-0 -bottom-16">
+          <PhotoBox image={image} className="h-full w-full" />
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className={`relative ${className}`}>
+      <AccentLine color={accent} top="40%" angle={-9} />
+      <div className="absolute z-[1] -left-[6%] right-[26%] top-0 bottom-[10%]">
+        <PhotoBox image={image} className="h-full w-full" />
+      </div>
+      <div
+        {...shapeAttrs()}
+        aria-hidden
+        className="absolute left-0 right-[30%] bottom-0 h-[16%] rounded-tr-[2.75rem] pointer-events-none z-[1]"
+        style={{ backgroundColor: accent }}
+      />
     </div>
   )
 }
@@ -286,7 +344,13 @@ function AgencyCover(ctx: StyleRouteContext) {
       </div>
 
       {/* ZONA DE FOTO — água, recortada à direita */}
-      <CutoutPhoto image={d.image} side="right" accent={p.accent} className="flex-1 min-h-0 mt-4" />
+      <CutoutPhoto
+        image={d.image}
+        side="right"
+        accent={p.accent}
+        className="flex-1 min-h-0 mt-4"
+        cutout={isCutoutActive(ctx.slide.image)}
+      />
 
       <AgencyFooter left={<Counter text={counter} color={p.faint} />} accent={p.accent} dark={p.dark} />
 
@@ -309,6 +373,7 @@ function AgencyContent(ctx: StyleRouteContext) {
   const words = s.highlight_words || []
   const image = s.images[0]
   const counter = `${pad2(ctx.orderIndex + 1)} / ${pad2(ctx.totalSlides)}`
+  const cutout = isCutoutActive(ctx.slide.image)
 
   // ----- último: fechamento com botão cta_badge -----
   if (ctx.isLast) {
@@ -389,7 +454,13 @@ function AgencyContent(ctx: StyleRouteContext) {
         </ShrinkToFit>
 
         {/* FOTO — tamanho fixo (uniforme entre slides) */}
-        <CutoutPhoto image={image} side="right" accent={p.accent} className="flex-[0_0_38%] min-h-0 mt-3" />
+        <CutoutPhoto
+          image={image}
+          side="right"
+          accent={p.accent}
+          className="flex-[0_0_38%] min-h-0 mt-3"
+          cutout={cutout}
+        />
 
         <AgencyFooter left={<FooterNote text={s.subtitle} color={p.muted} />} accent={p.accent} dark={p.dark} />
 
@@ -407,7 +478,13 @@ function AgencyContent(ctx: StyleRouteContext) {
       <AgencyHeader brand={brand} tags={tags} accent={p.accent} color={p.faint} />
 
       {/* FOTO — tamanho fixo (uniforme entre slides) */}
-      <CutoutPhoto image={image} side="left" accent={p.accent} className="flex-[0_0_38%] min-h-0 mt-4" />
+      <CutoutPhoto
+        image={image}
+        side="left"
+        accent={p.accent}
+        className="flex-[0_0_38%] min-h-0 mt-4"
+        cutout={cutout}
+      />
 
       {/* TEXTO — encolhe no máximo 15%; o resto o line-clamp corta na linha */}
       <ShrinkToFit className="flex-1 z-[2]" innerClassName="px-6 pt-5" minScale={0.85}>

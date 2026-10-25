@@ -47,6 +47,8 @@ export const TOKEN_COST = {
   imageSlide: 2,
   /** Edição cirúrgica do bitmap do post único (nano-banana /edit). */
   editBitmap: 15,
+  /** Recortar o fundo de uma foto (BiRefNet na Fal, ~US$0,002). */
+  imageCutout: 2,
   /** Pauta/inspiração além das 3 grátis por dia. */
   ideas: 4,
 } as const

@@ -58,6 +58,7 @@ import {
   SendToBack,
   EyeOff,
   Layers,
+  Scissors,
 } from "lucide-react"
 import {
   collectEditableNodes,
@@ -108,6 +109,8 @@ export type MenuAction =
   | "image-adjust"
   | "image-reset"
   | "image-remove"
+  | "image-cutout"
+  | "image-uncut"
   | "palette"
   | "bg-color"
   | "bg-default"
@@ -1551,6 +1554,13 @@ export function EditableSlideCanvas(props: EditableSlideCanvasProps) {
                       slide.image.zoom == null
                     }
                   />
+                  {slide.image.cutout && slide.image.cutout.url === slide.image.url ? (
+                    <MenuItem icon={RotateCcw} label="Voltar à foto com fundo" onClick={() => menuAct("image-uncut")} />
+                  ) : (
+                    !slide.image.collage?.length && (
+                      <MenuItem icon={Scissors} label="Recortar fundo" onClick={() => menuAct("image-cutout")} />
+                    )
+                  )}
                   <MenuItem icon={Palette} label="Extrair paleta da imagem" onClick={() => menuAct("palette")} />
                   <MenuSep />
                   <CopyToSlideRow total={props.total} current={slide.order_index} onPick={copyImageTo} />

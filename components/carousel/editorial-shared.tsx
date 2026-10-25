@@ -64,6 +64,26 @@ export interface SlideImageCollage {
 }
 export const SlideImageCollageContext = createContext<SlideImageCollage | null>(null)
 
+/**
+ * Foto recortada (PNG sem fundo) do slide atual: a URL dela, ou null. O
+ * SmartSlideImage da foto principal (src === esta URL) passa a mostrar a foto
+ * INTEIRA (contain), apoiada embaixo, sem caixa de fundo e com uma sombra leve
+ * — o assunto fica "solto" sobre o slide. Estilos que quiserem desenhar o
+ * recorte saindo do quadro leem slide.image.cutout via isCutoutActive().
+ */
+export const SlideImageCutoutContext = createContext<string | null>(null)
+
+/** O recorte está valendo? Só enquanto a foto do slide é o próprio PNG. */
+export function isCutoutActive(image: {
+  url: string | null
+  cutout?: { url: string; from: string }
+}): boolean {
+  return !!image.url && !!image.cutout && image.cutout.url === image.url
+}
+
+/** Sombra do recorte: dá chão ao assunto sem parecer adesivo. */
+export const CUTOUT_SHADOW = "drop-shadow(0 14px 18px rgba(0,0,0,0.28))"
+
 /** Layout padrão pela contagem de fotos (usuário pode escolher outro depois). */
 export function defaultCollageLayout(count: number): CollageLayout {
   return count >= 4 ? "4" : count === 3 ? "3" : "2h"
@@ -329,8 +349,33 @@ export function SmartSlideImage({
   // (src === mainUrl) — as outras chamadas (extra_images, comparação) não
   // têm colagem e continuam mostrando sua própria foto normalmente.
   const collage = useContext(SlideImageCollageContext)
+  const cutout = useContext(SlideImageCutoutContext)
   if (collage && collage.images.length >= 2 && src === collage.mainUrl) {
     return <CollageGrid images={collage.images} layout={collage.layout} className={className} />
+  }
+  if (cutout && src === cutout) {
+    return (
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={proxiedImageUrl(src)}
+          alt=""
+          className={className}
+          data-edit="image"
+          data-cutout="1"
+          style={{
+            objectFit: "contain",
+            // Recorte apoia embaixo (pessoa/produto "em pé" no quadro). O
+            // enquadramento manual do usuário continua valendo.
+            objectPosition: t ? `${t.posX}% ${t.posY}%` : "center bottom",
+            transform: t && t.zoom !== 100 ? `scale(${t.zoom / 100})` : undefined,
+            transformOrigin: "center bottom",
+            filter: CUTOUT_SHADOW,
+            background: "transparent",
+          }}
+        />
+      </>
+    )
   }
   // Capa (fill) ou enquadramento manual do usuário → sempre cover: no contain
   // o zoom/posição não têm efeito e a foto "voltava" ao tamanho original.

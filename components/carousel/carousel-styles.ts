@@ -120,3 +120,21 @@ export const CAROUSEL_STYLES: CarouselStyleMeta[] = [
     desc: "A inteligência artificial alterna slides escuros e claros e escolhe o melhor jeito para cada um. Você não precisa decidir nada.",
   },
 ]
+
+/**
+ * Estilos desenhados pra foto RECORTADA (sem fundo), como nas referências:
+ * no editor, "IA" já gera a foto isolada e recorta o fundo sozinha (dá pra
+ * desligar). Os outros estilos também aceitam recorte pelo botão "Recortar
+ * fundo", só não começam ligados.
+ */
+export const CUTOUT_FRIENDLY_STYLES: ReadonlySet<EditorialStyle> = new Set<EditorialStyle>([
+  "geometrico",
+  "colagem",
+  "agencia",
+  "cartaz",
+  "poster",
+])
+
+/** Complemento do prompt pra IA gerar o assunto isolado (recorte limpo). */
+export const ISOLATED_SUBJECT_PROMPT =
+  "single main subject isolated and centered, whole subject inside the frame, plain seamless light grey studio background, soft even light, no text, no other objects"

@@ -22,6 +22,7 @@ import {
   HighlightedText,
   Pill,
   ShrinkToFit,
+  isCutoutActive,
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
@@ -186,6 +187,65 @@ function ShadowPhoto({
   )
 }
 
+type StageShape = "block-right" | "block-left" | "circle"
+
+/**
+ * Foto RECORTADA (PNG sem fundo): sem caixa e sem sombra chapada. O bloco da
+ * cor da marca que era a "sombra" vira forma ATRÁS da pessoa, e o recorte
+ * cresce sangrando nas laterais. Fica numa camada abaixo do texto (o wrapper
+ * da zona usa z-[5]; título, etiqueta e rodapé são z-10): imagem é água,
+ * texto é sólido — o rodapé passa por cima do recorte, nunca o contrário.
+ *   toBase=true  → recorte desce até a base do slide (passa atrás do rodapé)
+ *   toBase=false → zona no meio do slide: o recorte sobe até o topo e apoia
+ *                  num "degrau" da cor da marca que esconde o corte do busto
+ */
+function CutoutStage({
+  image,
+  accent,
+  shape,
+  toBase = true,
+}: {
+  image: SplitSlideData["images"][number] | CoverSlideData["image"] | undefined
+  accent: string
+  shape: StageShape
+  toBase?: boolean
+}) {
+  const base = "absolute pointer-events-none"
+  const solid = { backgroundColor: accent }
+  // Bloco desce até a base do slide; no meio do slide para no degrau (nunca
+  // invade a zona do título, onde a palavra destacada tem a mesma cor).
+  const blockY = toBase ? "top-[14%] -bottom-24" : "top-[2%] bottom-0"
+  return (
+    <>
+      {shape === "block-right" && (
+        <div {...shapeAttrs()} aria-hidden className={`${base} left-[24%] -right-6 ${blockY}`} style={solid} />
+      )}
+      {shape === "block-left" && (
+        <div {...shapeAttrs()} aria-hidden className={`${base} -left-6 right-[24%] ${blockY}`} style={solid} />
+      )}
+      {shape === "circle" && (
+        <div
+          {...shapeAttrs()}
+          aria-hidden
+          className={`${base} left-[10%] w-[90%] aspect-square top-[6%] rounded-full`}
+          style={solid}
+        />
+      )}
+      {/* recorte puxado pro lado da forma (fica "na frente" dela) */}
+      <div
+        className={`absolute ${shape === "block-left" ? "-left-6 right-[8%]" : "left-[8%] -right-6"} ${
+          toBase ? "top-0 -bottom-[3.75rem]" : "-top-14 bottom-2"
+        }`}
+      >
+        <PhotoBox image={image} className="h-full w-full" />
+      </div>
+      {!toBase && (
+        <div {...shapeAttrs()} aria-hidden className={`${base} -left-6 -right-6 bottom-0 h-3`} style={solid} />
+      )}
+    </>
+  )
+}
+
 /** Rodapé: categoria (tag) | marca na pílula preta | @ */
 function Footer({
   brand,
@@ -255,11 +315,13 @@ function GeoCover({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: CoverSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride, false)
   const brand = brandName(slide.brand_label, slide.handle)
@@ -300,9 +362,15 @@ function GeoCover({
       </div>
 
       {/* Foto (água) com a sombra chapada da cor da marca */}
-      <div className="relative z-10 flex-1 min-h-0 mt-5">
-        <ShadowPhoto image={slide.image} accent={accent} />
-      </div>
+      {cutout ? (
+        <div className="relative z-[5] flex-1 min-h-0 mt-5">
+          <CutoutStage image={slide.image} accent={accent} shape="block-right" />
+        </div>
+      ) : (
+        <div className="relative z-10 flex-1 min-h-0 mt-5">
+          <ShadowPhoto image={slide.image} accent={accent} />
+        </div>
+      )}
 
       <Footer brand={brand} handle={handle} category={slide.category} isDark={p.isDark} faint={p.faint} />
 
@@ -320,12 +388,14 @@ function GeoContent({
   fontClass,
   bgOverride,
   orderIndex,
+  cutout,
 }: {
   slide: SplitSlideData
   accent: string
   fontClass: string
   bgOverride?: string
   orderIndex: number
+  cutout: boolean
 }) {
   const p = palette(bgOverride, false)
   const brand = brandName(slide.brand_label, slide.handle)
@@ -368,9 +438,16 @@ function GeoContent({
       </ShrinkToFit>
 
       {/* ZONA DE IMAGEM — tamanho fixo (~45%) com sombra chapada */}
-      <div className="relative z-10 flex-[0_0_45%] min-h-0 mt-4">
-        <ShadowPhoto image={image} accent={accent} />
-      </div>
+      {cutout ? (
+        <div className="relative z-[5] flex-[0_0_45%] min-h-0 mt-4">
+          {/* ímpar = círculo atrás da pessoa; par = bloco à esquerda */}
+          <CutoutStage image={image} accent={accent} shape={orderIndex % 2 === 1 ? "circle" : "block-left"} />
+        </div>
+      ) : (
+        <div className="relative z-10 flex-[0_0_45%] min-h-0 mt-4">
+          <ShadowPhoto image={image} accent={accent} />
+        </div>
+      )}
 
       <Footer brand={brand} handle={handle} category={slide.category} isDark={p.isDark} faint={p.faint} />
 
@@ -387,11 +464,13 @@ function GeoMidBreak({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: SplitSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride, true)
   const brand = brandName(slide.brand_label, slide.handle)
@@ -410,9 +489,15 @@ function GeoMidBreak({
       <TopLabel brand={brand} color={p.faint} />
 
       {/* Foto em cima (tamanho fixo) */}
-      <div className="relative z-10 flex-[0_0_40%] min-h-0 mt-5 mx-4">
-        <ShadowPhoto image={image} accent={accent} />
-      </div>
+      {cutout ? (
+        <div className="relative z-[5] flex-[0_0_40%] min-h-0 mt-5">
+          <CutoutStage image={image} accent={accent} shape="block-right" toBase={false} />
+        </div>
+      ) : (
+        <div className="relative z-10 flex-[0_0_40%] min-h-0 mt-5 mx-4">
+          <ShadowPhoto image={image} accent={accent} />
+        </div>
+      )}
 
       {/* Título + corpo centralizados (escala pra caber) */}
       <ShrinkToFit className="relative z-10 flex-1" innerClassName="pt-5 text-center">
@@ -452,11 +537,13 @@ function GeoLast({
   accent,
   fontClass,
   bgOverride,
+  cutout,
 }: {
   slide: SplitSlideData
   accent: string
   fontClass: string
   bgOverride?: string
+  cutout: boolean
 }) {
   const p = palette(bgOverride, false)
   const brand = brandName(slide.brand_label, slide.handle)
@@ -512,9 +599,15 @@ function GeoLast({
         </div>
       </ShrinkToFit>
 
-      <div className="relative z-10 flex-[0_0_36%] min-h-0 mt-4">
-        <ShadowPhoto image={image} accent={accent} />
-      </div>
+      {cutout ? (
+        <div className="relative z-[5] flex-[0_0_36%] min-h-0 mt-4">
+          <CutoutStage image={image} accent={accent} shape="block-right" />
+        </div>
+      ) : (
+        <div className="relative z-10 flex-[0_0_36%] min-h-0 mt-4">
+          <ShadowPhoto image={image} accent={accent} />
+        </div>
+      )}
 
       <Footer brand={brand} handle={handle} isDark={p.isDark} faint={p.faint} />
 
@@ -528,7 +621,8 @@ function GeoLast({
 // ============================================================================
 export const geometricoStyle: StyleRenderer = {
   render(ctx: StyleRouteContext) {
-    const common = { fontClass: ctx.fontClass, bgOverride: ctx.bgOverride }
+    // Foto recortada (PNG sem fundo): cada slide troca a caixa por CutoutStage.
+    const common = { fontClass: ctx.fontClass, bgOverride: ctx.bgOverride, cutout: isCutoutActive(ctx.slide.image) }
     if (ctx.isCover) {
       return <GeoCover slide={ctx.coverData} accent={ctx.accentForBg(ctx.accentOnLight)} {...common} />
     }

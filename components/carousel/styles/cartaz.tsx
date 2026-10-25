@@ -20,6 +20,7 @@ import {
   HighlightedText,
   Pill,
   ShrinkToFit,
+  isCutoutActive,
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
@@ -32,6 +33,39 @@ function PhotoFill({ image, overlay }: { image: Parameters<typeof PhotoBox>[0]["
     <div className="absolute inset-0">
       <PhotoBox image={image} grayscale className="h-full w-full" overlay={overlay} />
     </div>
+  )
+}
+
+/**
+ * FOTO RECORTADA (PNG sem fundo) — o assunto "sai do cartaz": um bloco reto
+ * (forma editável) fica ATRÁS, a cabeça passa por cima da borda de cima do
+ * bloco e a base do recorte coincide com a base do bloco (o corte da foto vira
+ * a borda do bloco, não uma linha solta). Sem moldura, sem véu, P&B.
+ */
+function PopOut({
+  image,
+  blockColor,
+  blockClass,
+  cutClass,
+  blockBorder,
+}: {
+  image: Parameters<typeof PhotoBox>[0]["image"]
+  blockColor: string
+  blockClass: string
+  cutClass: string
+  blockBorder?: string
+}) {
+  return (
+    <>
+      <div
+        {...shapeAttrs()}
+        className={`absolute ${blockClass}`}
+        style={{ backgroundColor: blockColor, border: blockBorder }}
+      />
+      <div className={`absolute ${cutClass}`}>
+        <PhotoBox image={image} grayscale className="h-full w-full" />
+      </div>
+    </>
   )
 }
 
@@ -90,17 +124,28 @@ function CoverCartaz(ctx: StyleRouteContext) {
   const p = palette(ctx)
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[1.8rem]", "text-[1.55rem]", "text-[1.3rem]")
+  // Recorte: fundo claro do estilo + bloco em accent atrás do assunto.
+  const cut = isCutoutActive(ctx.slide.image)
 
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
-      style={{ backgroundColor: ctx.bgOverride ?? "#1A1A1A" }}
+      style={{ backgroundColor: cut ? p.bg : ctx.bgOverride ?? "#1A1A1A" }}
     >
-      <PhotoFill image={slide.image} overlay={PHOTO_VEIL} />
+      {cut ? (
+        <PopOut
+          image={slide.image}
+          blockColor={p.accent}
+          blockClass="left-[13%] right-[13%] top-[27%] bottom-0"
+          cutClass="left-[2%] right-[2%] top-[9%] bottom-0"
+        />
+      ) : (
+        <PhotoFill image={slide.image} overlay={PHOTO_VEIL} />
+      )}
 
       <div className="absolute z-10 top-4 left-4 right-4 flex items-center justify-between">
-        <TinyLabel color="rgba(255,255,255,0.9)">{slide.brand_label || handle}</TinyLabel>
-        <Pill variant="light">{slide.category || "Editorial"}</Pill>
+        <TinyLabel color={cut ? p.faint : "rgba(255,255,255,0.9)"}>{slide.brand_label || handle}</TinyLabel>
+        <Pill variant={cut ? "dark" : "light"}>{slide.category || "Editorial"}</Pill>
       </div>
 
       {/* CARTÃO — reto, branco, texto preto; título encolhe pra caber */}
@@ -131,7 +176,7 @@ function CoverCartaz(ctx: StyleRouteContext) {
         </div>
       </div>
 
-      <Attribution attribution={slide.image.attribution} textColor="#FFFFFF" />
+      <Attribution attribution={slide.image.attribution} textColor={cut ? p.text : "#FFFFFF"} />
     </div>
   )
 }
@@ -144,6 +189,7 @@ function SplitCartazPhotoTop(ctx: StyleRouteContext) {
   const p = palette(ctx)
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[2.1rem]", "text-[1.8rem]", "text-[1.5rem]")
+  const cut = imgCount < 2 && isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -162,6 +208,14 @@ function SplitCartazPhotoTop(ctx: StyleRouteContext) {
             <PhotoBox image={slide.images[0]} grayscale className="h-full" />
             <PhotoBox image={slide.images[1]} grayscale className="h-full" />
           </div>
+        ) : cut ? (
+          <PopOut
+            image={slide.images[0]}
+            blockColor={CARD_BG}
+            blockBorder={`1px solid ${p.line}`}
+            blockClass="left-[24%] right-[24%] top-[50%] bottom-0"
+            cutClass="inset-0"
+          />
         ) : (
           <PhotoFill image={slide.images[0]} />
         )}
@@ -202,6 +256,7 @@ function SplitCartazBigCard(ctx: StyleRouteContext) {
   const p = palette(ctx)
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[2.5rem]", "text-[2.1rem]", "text-[1.7rem]")
+  const cut = imgCount < 2 && isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -243,6 +298,13 @@ function SplitCartazBigCard(ctx: StyleRouteContext) {
               <PhotoBox image={slide.images[0]} grayscale className="h-full" />
               <PhotoBox image={slide.images[1]} grayscale className="h-full" />
             </div>
+          ) : cut ? (
+            <PopOut
+              image={slide.images[0]}
+              blockColor={LIGHT_BG}
+              blockClass="left-[24%] right-[24%] top-[52%] bottom-0"
+              cutClass="inset-0"
+            />
           ) : (
             <PhotoFill image={slide.images[0]} />
           )}
@@ -268,13 +330,27 @@ function SplitCartazPoster(ctx: StyleRouteContext) {
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[4rem]", "text-[3.2rem]", "text-[2.6rem]")
   const veil = `linear-gradient(to bottom, ${withAlpha(p.bg, 0.3)} 0%, ${withAlpha(p.bg, 0.55)} 45%, ${withAlpha(p.bg, 0.92)} 100%)`
+  // Recorte: o assunto desce do cabeçalho até a base (sai pela borda de baixo);
+  // o véu fica só embaixo, pro corpo sumir sob o título gigante.
+  const cut = isCutoutActive(ctx.slide.image)
 
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative flex flex-col"
       style={{ backgroundColor: p.bg, color: p.muted }}
     >
-      <PhotoFill image={slide.images[0]} overlay={veil} />
+      {cut ? (
+        <div className="absolute inset-x-0 top-[11%] bottom-0">
+          <PhotoBox
+            image={slide.images[0]}
+            grayscale
+            className="h-full w-full"
+            overlay={`linear-gradient(to bottom, ${withAlpha(p.bg, 0)} 30%, ${withAlpha(p.bg, 0.7)} 58%, ${withAlpha(p.bg, 1)} 88%)`}
+          />
+        </div>
+      ) : (
+        <PhotoFill image={slide.images[0]} overlay={veil} />
+      )}
 
       <div className="relative z-10 flex-shrink-0 px-5 pt-4 flex items-center justify-between">
         <Pill variant="light">{slide.category || "Conteúdo"}</Pill>
@@ -322,17 +398,28 @@ function SplitCartazCta(ctx: StyleRouteContext) {
   const p = palette(ctx)
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[2rem]", "text-[1.7rem]", "text-[1.45rem]")
+  const cut = isCutoutActive(ctx.slide.image)
+  const headColor = cut ? p.faint : "rgba(255,255,255,0.9)"
 
   return (
     <div
       className="aspect-[4/5] w-full rounded-xl overflow-hidden relative"
-      style={{ backgroundColor: ctx.bgOverride ?? "#1A1A1A" }}
+      style={{ backgroundColor: cut ? p.bg : ctx.bgOverride ?? "#1A1A1A" }}
     >
-      <PhotoFill image={slide.images[0]} overlay={PHOTO_VEIL} />
+      {cut ? (
+        <PopOut
+          image={slide.images[0]}
+          blockColor={p.accent}
+          blockClass="left-[10%] right-[10%] top-[24%] bottom-0"
+          cutClass="left-[2%] right-[2%] top-[7%] bottom-0"
+        />
+      ) : (
+        <PhotoFill image={slide.images[0]} overlay={PHOTO_VEIL} />
+      )}
 
       <div className="absolute z-10 top-4 left-4 right-4 flex items-center justify-between">
-        <TinyLabel color="rgba(255,255,255,0.9)">{slide.brand_label || handle}</TinyLabel>
-        <TinyLabel color="rgba(255,255,255,0.9)">{counter(orderIndex, totalSlides)}</TinyLabel>
+        <TinyLabel color={headColor}>{slide.brand_label || handle}</TinyLabel>
+        <TinyLabel color={headColor}>{counter(orderIndex, totalSlides)}</TinyLabel>
       </div>
 
       <div
@@ -361,7 +448,7 @@ function SplitCartazCta(ctx: StyleRouteContext) {
         </div>
       </div>
 
-      <Attribution attribution={slide.images[0]?.attribution || null} textColor="#FFFFFF" />
+      <Attribution attribution={slide.images[0]?.attribution || null} textColor={cut ? p.text : "#FFFFFF"} />
     </div>
   )
 }

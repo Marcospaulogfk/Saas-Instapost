@@ -16,6 +16,7 @@ import {
   Attribution,
   FitText,
   Pill,
+  isCutoutActive,
   parseBoldInline,
   splitTheme,
 } from "../editorial-shared"
@@ -26,6 +27,7 @@ import {
   SCRIPT_CLASS,
   StyledWords,
   TinyLabel,
+  shapeAttrs,
   titleSizeFor,
 } from "./shared"
 import type { StyleRenderer, StyleRouteContext } from "./types"
@@ -36,6 +38,55 @@ function PhotoFill({ image, overlay }: { image: Parameters<typeof PhotoBox>[0]["
     <div className="absolute inset-0">
       <PhotoBox image={image} grayscale className="h-full w-full" overlay={overlay} />
     </div>
+  )
+}
+
+/**
+ * FOTO RECORTADA (PNG sem fundo) — como na referência: o assunto em P&B fica
+ * solto sobre a cor da marca, grande, apoiado na base do slide (sai pela borda
+ * de baixo) e sobe um pouco por trás da zona de texto (z menor: o texto nunca
+ * é coberto). Atrás dele, um traço manuscrito solto (forma editável).
+ *   side → de que lado o assunto se apoia (alterna entre slides).
+ *   fade → funde a base no fundo (quando o assunto NÃO encosta na borda).
+ */
+function CutoutStage({
+  image,
+  swirlColor,
+  side,
+  fade,
+  className,
+}: {
+  image: Parameters<typeof PhotoBox>[0]["image"]
+  swirlColor: string
+  side: "left" | "right" | "center"
+  fade?: string
+  className: string
+}) {
+  const pos =
+    side === "right" ? "left-[18%] right-[-10%]" : side === "left" ? "left-[-10%] right-[18%]" : "left-[6%] right-[6%]"
+  const swirlPos =
+    side === "right" ? "left-[2%] top-[-6%]" : side === "left" ? "right-[2%] top-[-6%]" : "left-[-8%] top-[4%]"
+  return (
+    <>
+      <svg
+        {...shapeAttrs("text")}
+        aria-hidden
+        viewBox="0 0 200 160"
+        fill="none"
+        className={`absolute pointer-events-none w-[78%] h-auto ${swirlPos}`}
+        style={{ color: swirlColor }}
+      >
+        <path
+          d="M6 128 C 30 40, 120 6, 150 52 S 96 150, 70 98 S 150 18, 196 30"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className={`absolute bottom-0 ${pos} ${className}`}>
+        <PhotoBox image={image} grayscale className="h-full w-full" overlay={fade} />
+      </div>
+    </>
   )
 }
 
@@ -66,6 +117,8 @@ function palette(ctx: StyleRouteContext) {
     muted: th?.muted ?? "rgba(255,255,255,0.85)",
     faint: th?.faint ?? "rgba(255,255,255,0.6)",
     ghost: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
+    /** Traço manuscrito atrás do recorte. */
+    swirl: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.3)",
     /** Foto funde no fundo pelo topo (ou pela base) — efeito "recortada". */
     fadeTop: `linear-gradient(to bottom, ${bg} 0%, ${withAlpha(bg, 0)} 38%)`,
     fadeBottom: `linear-gradient(to top, ${bg} 0%, ${withAlpha(bg, 0)} 38%)`,
@@ -110,6 +163,7 @@ function CoverColagem(ctx: StyleRouteContext) {
   const words = slide.highlight_words || []
   const hasScriptInTitle = words.length > 0
   const sizeClass = titleSize(slide.title, "text-[3.5rem]", "text-[2.9rem]", "text-[2.4rem]")
+  const cut = isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -155,7 +209,11 @@ function CoverColagem(ctx: StyleRouteContext) {
 
       {/* ZONA DE IMAGEM — água: preenche o que sobra, P&B, fundindo no fundo */}
       <div className="relative z-[5] flex-1 min-h-[150px] mt-2">
-        <PhotoFill image={slide.image} overlay={p.fadeTop} />
+        {cut ? (
+          <CutoutStage image={slide.image} swirlColor={p.swirl} side="right" className="top-[-14%]" />
+        ) : (
+          <PhotoFill image={slide.image} overlay={p.fadeTop} />
+        )}
       </div>
 
       {/* Rodapé fino sobre a foto */}
@@ -180,6 +238,7 @@ function SplitColagemPhotoBottom(ctx: StyleRouteContext) {
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[3rem]", "text-[2.5rem]", "text-[2.05rem]")
   const twoPhotos = imgCount >= 2
+  const cut = !twoPhotos && isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -219,6 +278,8 @@ function SplitColagemPhotoBottom(ctx: StyleRouteContext) {
             <PhotoBox image={slide.images[0]} grayscale className="h-full" overlay={p.fadeTop} />
             <PhotoBox image={slide.images[1]} grayscale className="h-full" overlay={p.fadeTop} />
           </div>
+        ) : cut ? (
+          <CutoutStage image={slide.images[0]} swirlColor={p.swirl} side="left" className="top-[-14%]" />
         ) : (
           <PhotoFill image={slide.images[0]} overlay={p.fadeTop} />
         )}
@@ -241,6 +302,7 @@ function SplitColagemPhotoTop(ctx: StyleRouteContext) {
   const p = palette(ctx)
   const handle = handleVisivel(slide.handle)
   const sizeClass = titleSize(slide.title, "text-[3rem]", "text-[2.5rem]", "text-[2.05rem]")
+  const cut = isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -251,7 +313,11 @@ function SplitColagemPhotoTop(ctx: StyleRouteContext) {
 
       {/* ZONA DE IMAGEM — água, em cima, fundindo no fundo pela base */}
       <div className="relative z-[5] flex-1 min-h-[140px]">
-        <PhotoFill image={slide.images[0]} overlay={p.fadeBottom} />
+        {cut ? (
+          <CutoutStage image={slide.images[0]} swirlColor={p.swirl} side="center" fade={p.fadeBottom} className="top-9" />
+        ) : (
+          <PhotoFill image={slide.images[0]} overlay={p.fadeBottom} />
+        )}
         <div className="absolute top-4 left-5 right-5 flex items-center justify-between">
           <TinyLabel color={p.isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.7)"}>{handle}</TinyLabel>
           <TinyLabel color={p.isDark ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.7)"}>
@@ -308,6 +374,7 @@ function SplitColagemCta(ctx: StyleRouteContext) {
     : []
   const pillBg = p.isDark ? "#FFFFFF" : "#0A0A0F"
   const pillInk = p.isDark ? "#0A0A0F" : "#FFFFFF"
+  const cut = isCutoutActive(ctx.slide.image)
 
   return (
     <div
@@ -374,7 +441,11 @@ function SplitColagemCta(ctx: StyleRouteContext) {
       </div>
 
       <div className="relative z-[5] flex-1 min-h-[110px] mt-2">
-        <PhotoFill image={slide.images[0]} overlay={p.fadeTop} />
+        {cut ? (
+          <CutoutStage image={slide.images[0]} swirlColor={p.swirl} side="right" className="top-[-26%]" />
+        ) : (
+          <PhotoFill image={slide.images[0]} overlay={p.fadeTop} />
+        )}
       </div>
 
       <Attribution attribution={slide.images[0]?.attribution || null} textColor={p.ink} />

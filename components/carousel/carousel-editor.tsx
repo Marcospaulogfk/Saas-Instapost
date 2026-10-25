@@ -46,6 +46,7 @@ import {
   Camera,
   ChevronLeft,
   ChevronRight,
+  Scissors,
 } from "lucide-react"
 import {
   BarraBaixoMobile,
@@ -57,6 +58,8 @@ import { useTecladoAberto } from "@/hooks/use-teclado-aberto"
 import { reduzirArquivo } from "@/lib/single-posts/ler-imagem"
 import { proxiedImageUrl } from "@/lib/proxy-image"
 import { BG_IMAGE_DEFAULT_SHADE, BG_IMAGE_MAX_SHADE, type SlideBgImage } from "./slide-bg-image"
+import { CUTOUT_FRIENDLY_STYLES, ISOLATED_SUBJECT_PROMPT } from "./carousel-styles"
+import { isCutoutActive } from "./editorial-shared"
 import { CAROUSEL_STYLES } from "@/components/carousel/carousel-styles"
 import { saveCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
 import {
@@ -927,7 +930,10 @@ export function CarouselEditor({
   }, [])
 
   const [imageQuery, setImageQuery] = useState("")
-  const [imgBusy, setImgBusy] = useState<ImageMode | "upload" | null>(null)
+  const [imgBusy, setImgBusy] = useState<ImageMode | "upload" | "cutout" | null>(null)
+  // "Gerar com IA já recortada": null = segue o estilo (ligado nos estilos de
+  // foto recortada); true/false = o usuário escolheu.
+  const [gerarRecortada, setGerarRecortada] = useState<boolean | null>(null)
   const [imgError, setImgError] = useState<string | null>(null)
   const [showUrl, setShowUrl] = useState(false)
   const [urlDraft, setUrlDraft] = useState("")
@@ -993,6 +999,7 @@ export function CarouselEditor({
   ])
 
   const slide = slides[selected]
+  const recortadaAtiva = gerarRecortada ?? CUTOUT_FRIENDLY_STYLES.has(style)
 
   // ── HISTÓRICO DE EDIÇÃO (undo/redo) ────────────────────────────────────
   // Snapshot do conteúdo editável (slides/título/estilo/formato). Cada mudança
@@ -1665,6 +1672,12 @@ export function CarouselEditor({
           zoom: undefined,
         })
         break
+      case "image-cutout":
+        handleCutout()
+        break
+      case "image-uncut":
+        undoCutout()
+        break
       case "palette":
         void extractFromImage()
         break
@@ -1764,6 +1777,64 @@ export function CarouselEditor({
     )
   }
 
+  /** Recorta o fundo da foto do slide (PNG sem fundo). Guarda a original. */
+  async function cutoutImage(target: number, url: string): Promise<boolean> {
+    setImgBusy("cutout")
+    setImgError(null)
+    try {
+      const res = await fetch("/api/editorial/cutout-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success || !data?.url) {
+        setImgError(data?.error ?? "não deu pra recortar o fundo")
+        return false
+      }
+      setSlides((prev) =>
+        prev.map((s, i) =>
+          i === target && s.image.url === url
+            ? {
+                ...s,
+                image: {
+                  ...s.image,
+                  url: data.url,
+                  cutout: { url: data.url, from: url },
+                  // recorte começa apoiado embaixo, sem o zoom da foto antiga
+                  posX: undefined,
+                  posY: undefined,
+                  zoom: undefined,
+                },
+              }
+            : s,
+        ),
+      )
+      return true
+    } catch (err) {
+      setImgError(err instanceof Error ? err.message : "erro de rede")
+      return false
+    } finally {
+      setImgBusy(null)
+    }
+  }
+
+  function handleCutout() {
+    const url = slides[selected]?.image.url
+    if (url) void cutoutImage(selected, url)
+  }
+
+  /** Volta pra foto com fundo (a original de antes do recorte). */
+  function undoCutout() {
+    setSlides((prev) =>
+      prev.map((s, i) =>
+        i === selected && s.image.cutout
+          ? { ...s, image: { ...s.image, url: s.image.cutout.from, cutout: undefined } }
+          : s,
+      ),
+    )
+  }
+
   async function generateImage(mode: ImageMode) {
     const q = imageQuery.trim()
     if (!q) {
@@ -1777,10 +1848,17 @@ export function CarouselEditor({
     setImgBusy(mode)
     setImgError(null)
     try {
+      const recortar = mode === "ai" && recortadaAtiva
+      const target = selected
       const res = await fetch("/api/post-unico/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, prompt: q, query: q }),
+        body: JSON.stringify({
+          mode,
+          // Pra recortar limpo, a IA já gera o assunto isolado em fundo liso.
+          prompt: recortar ? `${q}, ${ISOLATED_SUBJECT_PROMPT}` : q,
+          query: q,
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data?.url) {
@@ -1788,6 +1866,10 @@ export function CarouselEditor({
         return
       }
       setImageUrl(data.url, data.source ?? mode)
+      if (recortar) {
+        setImgBusy(null)
+        await cutoutImage(target, data.url)
+      }
     } catch (err) {
       setImgError(err instanceof Error ? err.message : "erro de rede")
     } finally {
@@ -3705,6 +3787,49 @@ export function CarouselEditor({
                 Foto real
               </Button>
             </div>
+
+            {/* Foto recortada (sem fundo): o assunto fica solto sobre o slide. */}
+            <label className="flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={recortadaAtiva}
+                onChange={(e) => setGerarRecortada(e.target.checked)}
+                className="accent-brand-500"
+              />
+              Gerar com IA já recortada (sem fundo)
+            </label>
+            {slide.image.url && !slide.image.collage?.length && (
+              isCutoutActive(slide.image) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={undoCutout}
+                  disabled={imgBusy !== null}
+                >
+                  <Undo2 className="w-3 h-3 mr-1" />
+                  Voltar à foto original (com fundo)
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={handleCutout}
+                  disabled={imgBusy !== null}
+                  title="Tira o fundo da foto e deixa só a pessoa ou o objeto (2 tokens)"
+                >
+                  {imgBusy === "cutout" ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Scissors className="w-3 h-3 mr-1" />
+                  )}
+                  {imgBusy === "cutout" ? "Recortando o fundo…" : "Recortar fundo"}
+                </Button>
+              )
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <Button
