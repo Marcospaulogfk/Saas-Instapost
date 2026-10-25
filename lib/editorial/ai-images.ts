@@ -15,7 +15,7 @@ function ensureConfigured() {
 
 interface GenerateImageParams {
   prompt: string
-  style?: 'cinematic' | 'editorial' | 'minimal' | 'sepia'
+  style?: 'cinematic' | 'editorial' | 'minimal' | 'sepia' | 'isolated'
   aspectRatio?: '4:5' | '1:1' | '16:9' | '9:16'
 }
 
@@ -28,6 +28,11 @@ const STYLE_PROMPTS: Record<NonNullable<GenerateImageParams['style']>, string> =
     'minimalist composition, lots of negative space, simple and clean, soft natural light',
   sepia:
     'sepia tone, warm brown colors, vintage aesthetic, film photography look, slight grain',
+  // Pra recortar o fundo depois (estilos de foto recortada): assunto único,
+  // inteiro no quadro, fundo liso. Sem "dramatic lighting/deep shadows", que
+  // sujam o recorte.
+  isolated:
+    'studio photography, single main subject isolated and centered, whole subject inside the frame, plain seamless light grey studio background, soft even light, sharp edges, no text, no other objects',
 }
 
 const ASPECT_TO_SIZE: Record<NonNullable<GenerateImageParams['aspectRatio']>, string> = {

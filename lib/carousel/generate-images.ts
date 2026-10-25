@@ -27,6 +27,25 @@ function loadAspect(url: string): Promise<number> {
   })
 }
 
+/**
+ * Tira o fundo da foto (/api/editorial/cutout-image, 2 tokens). Best-effort:
+ * qualquer falha (sem saldo, Fal fora, sem login) devolve null e a foto fica
+ * com fundo — o carrossel nunca deixa de sair por causa do recorte.
+ */
+async function cutoutBackground(url: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/editorial/cutout-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    })
+    const data = await res.json()
+    return res.ok && data?.success && data?.url ? (data.url as string) : null
+  } catch {
+    return null
+  }
+}
+
 /** Acima disto a imagem é "larga demais" — provável logo/wordmark. */
 const WORDMARK_ASPECT = 1.7
 
@@ -58,7 +77,12 @@ const ALL_IMAGES: ImageChoice = { cover: true, slides: true }
 export async function generateCarouselImages(
   slides: ClaudeSlide[],
   choice: ImageChoice = ALL_IMAGES,
-  opts: { coverPhotoUrl?: string | null } = {},
+  opts: {
+    coverPhotoUrl?: string | null
+    /** Estilo de foto recortada: a foto de IA nasce isolada em fundo liso e
+     *  tem o fundo tirado (fica com fundo se o recorte falhar). */
+    cutout?: boolean
+  } = {},
 ): Promise<PreviewSlide[]> {
   return Promise.all(
     slides.map(async (slide, i): Promise<PreviewSlide> => {
@@ -224,7 +248,12 @@ export async function generateCarouselImages(
         const res = await fetch("/api/editorial/generate-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: safePrompt, aspectRatio: "4:5", role }),
+          body: JSON.stringify({
+            prompt: safePrompt,
+            aspectRatio: "4:5",
+            role,
+            ...(opts.cutout ? { style: "isolated" } : {}),
+          }),
         })
         const data = await res.json()
         if (!res.ok || !data?.success) {
@@ -233,6 +262,13 @@ export async function generateCarouselImages(
         }
         base.image.url = data.url
         base.image.source = "ai"
+        if (opts.cutout) {
+          const recorte = await cutoutBackground(data.url)
+          if (recorte) {
+            base.image.url = recorte
+            base.image.cutout = { url: recorte, from: data.url }
+          }
+        }
 
         // VALIDAÇÃO DE RELEVÂNCIA (só a capa, e só com IMAGE_RELEVANCE_CHECK=1).
         // Nada no pipeline comparava a imagem final com o assunto: uma capa

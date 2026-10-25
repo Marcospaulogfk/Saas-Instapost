@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CarouselEditor } from "@/components/carousel/carousel-editor"
 import { generateCarouselImages } from "@/lib/carousel/generate-images"
+import { CUTOUT_FRIENDLY_STYLES } from "@/components/carousel/carousel-styles"
 import type { ImageChoice } from "@/lib/tokens"
 import { loadCarouselV2, type CarouselV2Data } from "@/app/actions/carousel"
 import { getCarouselTemplate } from "@/app/actions/carousel-templates"
@@ -276,7 +277,11 @@ export default function CarrosselEditorPage() {
         const result = await generateCarouselImages(
           claudeSlides,
           payload.imageChoice ?? { cover: true, slides: true },
-          { coverPhotoUrl: payload.coverPhotoUrl ?? null },
+          {
+            coverPhotoUrl: payload.coverPhotoUrl ?? null,
+            // Estilos de foto recortada já abrem com as fotos sem fundo.
+            cutout: CUTOUT_FRIENDLY_STYLES.has(payload.editorialStyle || "auto"),
+          },
         )
         setSlides(result)
         setStatus("ready")

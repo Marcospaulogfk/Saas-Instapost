@@ -57,6 +57,7 @@ import {
   CarouselStyleCard,
 } from "@/components/carousel/carousel-style-gallery"
 import type { EditorialStyle } from "@/components/carousel/slide-preview"
+import { CUTOUT_FRIENDLY_STYLES } from "@/components/carousel/carousel-styles"
 import { AbordagemArt } from "./abordagem-art"
 import "./criar.css"
 import {
@@ -1108,6 +1109,7 @@ function CriarWizard() {
           onGerar={() => void handleGerar()}
           canFinish={canGerar()}
           testeGratis={testeGratis}
+          recorteAuto={CUTOUT_FRIENDLY_STYLES.has(carouselStyle)}
         />
       )}
 
@@ -1687,7 +1689,10 @@ function Step3({
   onGerar,
   canFinish,
   testeGratis,
+  recorteAuto,
 }: {
+  /** Estilo de foto recortada: cada foto de IA tem o fundo tirado (+2 tokens). */
+  recorteAuto: boolean
   formato: Formato
   comoCriar: ComoCriar
   imageChoice: ImageChoice
@@ -1728,7 +1733,7 @@ function Step3({
   // definição e o toggle de "demais slides" nem aparece.
   const custoTokens = isPostUnico
     ? tokenCostForSinglePost()
-    : tokenCostForCarousel(formato.slides, imageChoice)
+    : tokenCostForCarousel(formato.slides, imageChoice, { cutout: recorteAuto })
   const semSaldo = saldo != null && saldo < custoTokens
 
   /** Sugestão clicada vira o briefing e o foco volta pro campo pra editar. */
@@ -1873,6 +1878,7 @@ function Step3({
               slides={formato.slides}
               total={custoTokens}
               ocultarPrecos={testeGratis.noTeste}
+              recorte={recorteAuto}
             />
           )}
 
@@ -2400,11 +2406,14 @@ function ImagemSeletor({
   slides,
   total,
   ocultarPrecos,
+  recorte,
 }: {
   choice: ImageChoice
   onChange: (v: ImageChoice) => void
   slides: number
   total: number
+  /** Estilo de foto recortada: o preço de cada opção inclui o recorte. */
+  recorte: boolean
   /** Teste grátis: a regra é por peça, não por token — esconde os preços. */
   ocultarPrecos: boolean
 }) {
@@ -2428,17 +2437,14 @@ function ImagemSeletor({
       id: "capa",
       label: "Só na capa",
       desc: "A arte que para o scroll. Miolo só com texto.",
-      custo: TOKEN_COST.textOnly + TOKEN_COST.imageCover,
+      custo: tokenCostForCarousel(slides, { cover: true, slides: false }, { cutout: recorte }),
       value: { cover: true, slides: false },
     },
     {
       id: "todas",
       label: "Capa + todos os slides",
       desc: `Uma imagem por slide (${miolo} no miolo).`,
-      custo:
-        TOKEN_COST.textOnly +
-        TOKEN_COST.imageCover +
-        TOKEN_COST.imageSlide * miolo,
+      custo: tokenCostForCarousel(slides, { cover: true, slides: true }, { cutout: recorte }),
       value: { cover: true, slides: true },
     },
   ]
@@ -2454,6 +2460,13 @@ function ImagemSeletor({
           </span>
         )}
       </div>
+      {recorte && (
+        <p className="mb-2 text-[11px] text-text-muted">
+          Este estilo usa fotos recortadas: a IA gera a pessoa ou o objeto e o fundo
+          sai sozinho
+          {!ocultarPrecos && ` (+${TOKEN_COST.imageCutout} tokens por foto)`}.
+        </p>
+      )}
       <div role="radiogroup" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {opcoes.map((o) => {
           const ativo = modo === o.id

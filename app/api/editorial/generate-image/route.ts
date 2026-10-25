@@ -23,7 +23,8 @@ export const maxDuration = 120
  * {
  *   prompt: string,                                 // obrigatório
  *   role?: 'cover' | 'slide',                       // default 'slide'
- *   style?: 'cinematic' | 'editorial' | 'minimal' | 'sepia',
+ *   style?: 'cinematic' | 'editorial' | 'minimal' | 'sepia' | 'isolated',
+ *     ('isolated' = assunto em fundo liso, pra recortar o fundo depois)
  *   aspectRatio?: '4:5' | '1:1' | '16:9' | '9:16'
  * }
  *
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       | 'editorial'
       | 'minimal'
       | 'sepia'
+      | 'isolated'
       | undefined
     const aspectRatio = body?.aspectRatio as
       | '4:5'

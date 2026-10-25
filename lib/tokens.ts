@@ -71,11 +71,22 @@ export interface ImageChoice {
 export function tokenCostForCarousel(
   totalSlides: number,
   choice: ImageChoice,
+  opts: { cutout?: boolean } = {},
 ): number {
   const n = Math.max(1, totalSlides)
   let cost = TOKEN_COST.textOnly
-  if (choice.cover) cost += TOKEN_COST.imageCover
-  if (choice.slides) cost += TOKEN_COST.imageSlide * Math.max(0, n - 1)
+  let aiImages = 0
+  if (choice.cover) {
+    cost += TOKEN_COST.imageCover
+    aiImages += 1
+  }
+  if (choice.slides) {
+    cost += TOKEN_COST.imageSlide * Math.max(0, n - 1)
+    aiImages += Math.max(0, n - 1)
+  }
+  // Estilos de foto recortada: cada foto de IA tem o fundo tirado (TETO: se
+  // um recorte falhar, a foto fica com fundo e não é cobrada).
+  if (opts.cutout) cost += TOKEN_COST.imageCutout * aiImages
   return cost
 }
 
