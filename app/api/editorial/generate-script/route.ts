@@ -104,7 +104,7 @@ export async function POST(req: Request) {
   // Geração limitada a no máximo 7 slides por carrossel (5 no teste grátis).
   const nSlides = slidesPermitidos(
     reserva,
-    typeof body.desiredSlides === "number" && body.desiredSlides >= 3
+    typeof body.desiredSlides === "number" && body.desiredSlides >= 2
       ? Math.min(body.desiredSlides, 7)
       : 7,
   )

@@ -343,13 +343,12 @@ export default function CalendarioPage() {
         </div>
       </div>
 
-      {/* Aviso honesto: agendar aqui é planejamento, não publica sozinho ainda. */}
+      {/* O worker publica de verdade: /api/cron/publicar, a cada 15 minutos. */}
       <div className="flex items-start gap-2 mb-4 rounded-lg border border-border-subtle bg-background-secondary/40 px-3 py-2">
         <Info className="w-4 h-4 text-text-muted flex-shrink-0 mt-0.5" />
         <p className="text-[12px] text-text-muted leading-relaxed">
-          <span className="text-text-secondary font-medium">Agendado = planejado.</span>{" "}
-          Por enquanto o calendário organiza o que publicar e quando — a publicação
-          automática no Instagram ainda está em configuração.
+          <span className="text-text-secondary font-medium">Agendado sai sozinho.</span>{" "}
+          A peça vai ao ar no Instagram em até 15 minutos depois do horário marcado.
         </p>
       </div>
 
