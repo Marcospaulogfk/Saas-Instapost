@@ -35,7 +35,7 @@ import { lerImagemReduzida, LIMITE_BYTES } from "@/lib/single-posts/ler-imagem"
 import { listarImagens, trocarImagem } from "@/lib/single-posts/trocar-imagem"
 import { EditorSection as Section } from "@/components/editor/editor-section"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
-import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
+import { AgendarPublicacao } from "@/components/instagram/agendar-publicacao"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -486,8 +486,8 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     }
   }
 
-  async function handleSave() {
-    if (!spec || !brand) return
+  async function handleSave(): Promise<boolean> {
+    if (!spec || !brand) return false
     setSaving(true)
     setError(null)
     // A miniatura sai do preview na tela — sem tirar a seleção, o outline de
@@ -511,12 +511,13 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
     setSaving(false)
     if (!res.ok) {
       setError(res.error)
-      return
+      return false
     }
     setSavedId(res.postId)
     setSaveOk(true)
     setTimeout(() => setSaveOk(false), 2500)
     router.refresh()
+    return true
   }
 
   /**
@@ -669,17 +670,20 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 imageCount={1}
                 caption={caption}
                 getImageUrls={getPublishUrls}
+                comoStory={format === "story"}
               />
             )}
-            {/* Preparar pra agendar: guarda a arte final pra publicacao
-                automatica. NAO usa o atalho do bitmap do Fal (que a publicacao
+            {/* Agendar: guarda a arte final pra publicacao automatica e marca
+                dia e hora. NAO usa o atalho do bitmap do Fal (que a publicacao
                 manual usa): aquela URL expira, e agendamento so aceita arquivo
                 do nosso Storage. */}
             {spec && mobile === false && (
-              <PrepararAgendamento
+              <AgendarPublicacao
                 tipo="single_post"
                 pecaId={savedId}
                 getImageUrls={getAgendarUrls}
+                salvar={handleSave}
+                comoStory={format === "story"}
               />
             )}
             <Button
@@ -785,11 +789,13 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
                 <RefreshCw className="w-4 h-4 mr-1.5" />
                 Outra versão ({cost} tokens)
               </Button>
-              <PrepararAgendamento
+              <AgendarPublicacao
                 cheio
                 tipo="single_post"
                 pecaId={savedId}
                 getImageUrls={getAgendarUrls}
+                salvar={handleSave}
+                comoStory={format === "story"}
               />
               <Button
                 type="button"
@@ -1063,6 +1069,7 @@ export function EditorClient({ brands, balance, initialPost }: Props) {
               imageCount={1}
               caption={caption}
               getImageUrls={getPublishUrls}
+              comoStory={format === "story"}
               label="Publicar"
               className="flex-1 h-11"
             />

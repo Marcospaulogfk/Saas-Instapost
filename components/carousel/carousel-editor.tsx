@@ -109,7 +109,7 @@ import {
 } from "@/components/carousel/editable-overrides"
 import { defaultCollageLayout, isValidCollageLayout } from "@/components/carousel/editorial-shared"
 import { PublishToInstagram } from "@/components/instagram/publish-to-instagram"
-import { PrepararAgendamento } from "@/components/instagram/preparar-agendamento"
+import { AgendarPublicacao } from "@/components/instagram/agendar-publicacao"
 import { renderNodeToPng, uploadPngDataUrl } from "@/lib/instagram/render-upload"
 import {
   PanelTopBar,
@@ -2016,7 +2016,7 @@ export function CarouselEditor({
     }
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setSaveBusy(true)
     setImgError(null)
     const seq = ++saveSeqRef.current
@@ -2058,7 +2058,7 @@ export function CarouselEditor({
       console.timeEnd("[salvar] gravação")
       if (!res.ok) {
         setImgError(res.error || "erro ao salvar")
-        return
+        return false
       }
       if (!coverImageUrl) {
         // Capa atrasada: quando ficar pronta, regrava com ela. Só se nenhum
@@ -2073,8 +2073,10 @@ export function CarouselEditor({
       setSaveOk(true)
       setDirty(false)
       setTimeout(() => setSaveOk(false), 2500)
+      return true
     } catch (err) {
       setImgError(err instanceof Error ? err.message : "erro ao salvar")
+      return false
     } finally {
       setSaveBusy(false)
     }
@@ -2440,16 +2442,19 @@ export function CarouselEditor({
             getImageUrls={renderSlidesForPublish}
             imageCount={slides.length}
             caption={caption ?? ""}
+            comoStory={format === "stories"}
           />
         )}
         {/* Guarda a arte final (os N slides, na ordem) pra publicacao
-            automatica. Mesmo render do botao de publicar; a diferenca e que
-            aqui o resultado fica salvo em vez de ser descartado. */}
+            automatica e marca dia e hora. Mesmo render do botao de publicar;
+            a diferenca e que aqui o resultado fica salvo. */}
         {mobile === false && (
-          <PrepararAgendamento
+          <AgendarPublicacao
             tipo="carousel"
             pecaId={savedId}
             getImageUrls={renderSlidesForPublish}
+            salvar={dirty ? handleSave : undefined}
+            comoStory={format === "stories"}
           />
         )}
         <Button
@@ -2599,11 +2604,13 @@ export function CarouselEditor({
                     </Button>
                   </div>
                 )}
-                <PrepararAgendamento
+                <AgendarPublicacao
                   cheio
                   tipo="carousel"
                   pecaId={savedId}
                   getImageUrls={renderSlidesForPublish}
+                  salvar={dirty ? handleSave : undefined}
+                  comoStory={format === "stories"}
                 />
                 <Button
                   type="button"
@@ -4092,6 +4099,7 @@ export function CarouselEditor({
             getImageUrls={renderSlidesForPublish}
             imageCount={slides.length}
             caption={caption ?? ""}
+            comoStory={format === "stories"}
             label="Publicar"
             className="flex-1 h-11"
           />

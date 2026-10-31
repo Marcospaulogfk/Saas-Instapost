@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getValidConnection } from "@/lib/instagram/connection"
-import { publishCarousel } from "@/lib/instagram/meta"
+import { publishCarousel, publishStories } from "@/lib/instagram/meta"
 import {
   avaliarJanela,
   hojeNoFuso,
@@ -49,6 +49,7 @@ interface Pauta {
   brand_id: string
   title: string
   network: string
+  format: string
   scheduled_date: string
   scheduled_time: string | null
 }
@@ -230,12 +231,10 @@ async function publicarUma(
     .single()
 
   try {
-    const res = await publishCarousel(
-      conn.igUserId,
-      conn.accessToken,
-      arte.imagens,
-      caption,
-    )
+    const res =
+      pauta.format === "stories"
+        ? await publishStories(conn.igUserId, conn.accessToken, arte.imagens)
+        : await publishCarousel(conn.igUserId, conn.accessToken, arte.imagens, caption)
     if (tentativa?.id) {
       await admin
         .from("publish_attempts")
@@ -280,7 +279,7 @@ export async function GET(req: Request) {
   // `scheduled_date <= hoje` no fuso do Brasil, não no do container (UTC).
   const { data: pautas, error } = await admin
     .from("scheduled_posts")
-    .select("id, brand_id, title, network, scheduled_date, scheduled_time")
+    .select("id, brand_id, title, network, format, scheduled_date, scheduled_time")
     .eq("status", "agendado")
     .lte("scheduled_date", hojeNoFuso(agora))
     .order("scheduled_date", { ascending: true })

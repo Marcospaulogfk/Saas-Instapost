@@ -131,7 +131,7 @@ export function avaliarArte(peca: PecaBruta | null, baseSupabase?: string): Arte
       ...base,
       estado: "so_miniatura",
       motivo:
-        "esta peça só tem a miniatura da biblioteca (540px). Publicar assim sai com metade da resolução: abra no editor e prepare pra agendar",
+        "esta peça só tem a miniatura da biblioteca (540px). Publicar assim sai com metade da resolução: abra no editor e clique em Agendar",
       imagens: [],
     }
   }
@@ -139,7 +139,7 @@ export function avaliarArte(peca: PecaBruta | null, baseSupabase?: string): Arte
   return {
     ...base,
     estado: "sem_arte",
-    motivo: "a arte existe mas não tem imagem exportada: abra no editor e prepare pra agendar",
+    motivo: "a arte existe mas não tem imagem exportada: abra no editor e clique em Agendar",
     imagens: [],
   }
 }

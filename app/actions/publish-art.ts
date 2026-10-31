@@ -1,11 +1,13 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { urlPublicavel } from "@/lib/calendario/arte"
+import { agendarPeca, type ResultadoAgendar } from "@/lib/calendario/agendar-peca"
 
 // =====================================================================
 // app/actions/publish-art.ts
-// "Preparar pra agendar": persiste a ARTE FINAL da peça.
+// "Agendar": persiste a ARTE FINAL da peça e marca dia e hora.
 //
 // Por que isso precisa existir (26/08/2026): a arte em 1080x1350 já era
 // gerada e já era hospedada em URL pública nossa toda vez que alguém clicava
@@ -90,4 +92,25 @@ export async function prepararArteParaAgendar(
   }
 
   return { ok: true, imagens: limpas.length, preparadoEm }
+}
+
+/**
+ * Marca a peça, com a arte já preparada, pra sair sozinha no dia e hora
+ * escolhidos no editor. A regra mora em lib/calendario/agendar-peca.ts.
+ */
+export async function agendarPecaNoCalendario(
+  tipo: TipoArte,
+  id: string,
+  data: string,
+  hora: string,
+): Promise<ResultadoAgendar> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Você precisa estar logado." }
+
+  const res = await agendarPeca(supabase, user.id, { tipo, pecaId: id, data, hora })
+  if (res.ok) revalidatePath("/dashboard/calendario")
+  return res
 }

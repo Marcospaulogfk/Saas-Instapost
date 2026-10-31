@@ -1,5 +1,11 @@
-import { describe, expect, it, afterEach } from "vitest"
-import { limpaCode, redirectUri, redirectUriVeioDe, redirectUriTinhaLixo } from "./meta"
+import { describe, expect, it, afterEach, vi } from "vitest"
+import {
+  limpaCode,
+  publishStories,
+  redirectUri,
+  redirectUriVeioDe,
+  redirectUriTinhaLixo,
+} from "./meta"
 
 // =====================================================================
 // O que este arquivo protege são duas strings que a Meta compara byte a
@@ -14,6 +20,57 @@ const uriOriginal = process.env.INSTAGRAM_REDIRECT_URI
 afterEach(() => {
   if (uriOriginal === undefined) delete process.env.INSTAGRAM_REDIRECT_URI
   else process.env.INSTAGRAM_REDIRECT_URI = uriOriginal
+})
+
+describe("publishStories", () => {
+  /** Meta de mentira: guarda cada chamada e responde conforme `publish`. */
+  function metaFalsa(publish: (n: number) => Record<string, unknown>, status = "FINISHED") {
+    const chamadas: Array<{ url: string; corpo: URLSearchParams | null }> = []
+    let criados = 0
+    let publicados = 0
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      const corpo = init?.body ? new URLSearchParams(String(init.body)) : null
+      chamadas.push({ url, corpo })
+      const data = url.includes("/media_publish")
+        ? publish(++publicados)
+        : url.includes("/media")
+          ? { id: `c${++criados}` }
+          : { status_code: status }
+      return { ok: !data.error, json: async () => data } as Response
+    })
+    return chamadas
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("cria um story por imagem e publica na ordem, sem legenda", async () => {
+    const chamadas = metaFalsa((n) => ({ id: `ig${n}` }))
+    const res = await publishStories("u", "t", ["a.png", "b.png"])
+    expect(res).toEqual({ id: "ig1" })
+    const criacoes = chamadas.filter((c) => c.corpo?.has("image_url"))
+    expect(criacoes.map((c) => c.corpo?.get("image_url"))).toEqual(["a.png", "b.png"])
+    expect(criacoes.every((c) => c.corpo?.get("media_type") === "STORIES")).toBe(true)
+    expect(criacoes.every((c) => !c.corpo?.has("caption"))).toBe(true)
+    expect(chamadas.filter((c) => c.url.includes("media_publish")).map((c) => c.corpo?.get("creation_id")))
+      .toEqual(["c1", "c2"])
+  })
+
+  it("imagem recusada não publica nenhum story", async () => {
+    const chamadas = metaFalsa((n) => ({ id: `ig${n}` }), "ERROR")
+    await expect(publishStories("u", "t", ["a.png", "b.png"])).rejects.toThrow(/não aceitou a imagem do story/)
+    expect(chamadas.some((c) => c.url.includes("media_publish"))).toBe(false)
+  })
+
+  it("falha no meio diz quantos saíram", async () => {
+    metaFalsa((n) => (n === 1 ? { id: "ig1" } : { error: { message: "limite" } }))
+    await expect(publishStories("u", "t", ["a.png", "b.png"])).rejects.toThrow(/Saíram 1 de 2 stories/)
+  })
+
+  it("sem imagem não chama a Meta", async () => {
+    const chamadas = metaFalsa((n) => ({ id: `ig${n}` }))
+    await expect(publishStories("u", "t", [])).rejects.toThrow()
+    expect(chamadas).toHaveLength(0)
+  })
 })
 
 describe("limpaCode", () => {

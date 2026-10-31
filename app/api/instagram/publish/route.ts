@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { publishCarousel } from "@/lib/instagram/meta"
+import { publishCarousel, publishStories } from "@/lib/instagram/meta"
 import { getValidConnection } from "@/lib/instagram/connection"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
@@ -14,7 +14,10 @@ export const maxDuration = 120
 
 /**
  * Publica o carrossel/post no Instagram do usuário conectado.
- * Body: { imageUrls: string[], caption: string, tipo?, pecaId?, forcar? }
+ * Body: { imageUrls: string[], caption: string, tipo?, pecaId?, forcar?, comoStory? }
+ *
+ * `comoStory` publica nos stories, uma imagem por story. A Meta recusa arte
+ * 9:16 no feed, então peça em formato Stories só sai por aqui.
  *
  * `tipo` + `pecaId` ligam a publicação à pauta do calendário: sem isso o
  * agendamento publicava de novo o que já tinha saído na mão. Se a pauta já
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
     tipo?: unknown
     pecaId?: unknown
     forcar?: boolean
+    comoStory?: boolean
   }
   try {
     body = await req.json()
@@ -74,7 +78,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await publishCarousel(conn.igUserId, conn.accessToken, imageUrls, caption)
+    const result = body.comoStory
+      ? await publishStories(conn.igUserId, conn.accessToken, imageUrls)
+      : await publishCarousel(conn.igUserId, conn.accessToken, imageUrls, caption)
     // Registro do que saiu daqui: é o que liga métrica a conteúdo gerado.
     // Best-effort (migration 0019): falha aqui não desfaz a publicação.
     await supabase

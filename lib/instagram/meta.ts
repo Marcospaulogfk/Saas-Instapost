@@ -345,6 +345,50 @@ export async function publishCarousel(
   return publicarContainer(igUserId, parent.id, accessToken)
 }
 
+/**
+ * Publica nos stories, um por imagem, na ordem. Story não tem legenda.
+ *
+ * Todas as imagens são processadas ANTES do primeiro envio: imagem recusada
+ * não deixa sequência pela metade no perfil. Retorna o id do primeiro story.
+ */
+export async function publishStories(
+  igUserId: string,
+  accessToken: string,
+  imageUrls: string[],
+): Promise<{ id: string }> {
+  if (!imageUrls.length) throw new Error("sem imagens pra publicar")
+
+  const containers: string[] = []
+  const rotulos = new Map<string, string>()
+  for (const url of imageUrls.slice(0, 10)) {
+    const c = await graphPost(
+      igUserId,
+      "media",
+      { image_url: url, media_type: "STORIES" },
+      accessToken,
+    )
+    containers.push(c.id)
+    rotulos.set(c.id, `story ${containers.length}`)
+  }
+  await esperarProcessar(rotulos, accessToken)
+
+  const publicados: string[] = []
+  for (const id of containers) {
+    try {
+      const { id: publicado } = await publicarContainer(igUserId, id, accessToken)
+      publicados.push(publicado)
+    } catch (e) {
+      if (!publicados.length) throw e
+      const motivo = e instanceof Error ? e.message : "erro ao publicar"
+      throw new Error(
+        `Saíram ${publicados.length} de ${containers.length} stories, o resto não foi. ` +
+          `Confira no Instagram antes de tentar de novo. Motivo: ${motivo}`,
+      )
+    }
+  }
+  return { id: publicados[0] }
+}
+
 // ── Token de longa duração: renovação ───────────────────────────────────────
 
 /**

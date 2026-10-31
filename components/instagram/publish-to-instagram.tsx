@@ -29,6 +29,8 @@ interface Props {
    */
   tipo?: "carousel" | "single_post"
   pecaId?: string | null
+  /** Peça em formato Stories: sai nos stories, uma imagem por story, sem legenda. */
+  comoStory?: boolean
 }
 
 interface Status {
@@ -64,11 +66,13 @@ export function PublishToInstagram({
   imageCount,
   caption,
   kind = "carrossel",
-  label = "Publicar no Instagram",
+  label,
   className,
   tipo,
   pecaId,
+  comoStory = false,
 }: Props) {
+  const rotulo = label ?? (comoStory ? "Publicar nos stories" : "Publicar no Instagram")
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<Status | null>(null)
   const [busy, setBusy] = useState<"render" | "publish" | "disconnect" | null>(null)
@@ -153,7 +157,7 @@ export function PublishToInstagram({
       const res = await fetch("/api/instagram/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrls, caption, tipo, pecaId, forcar }),
+        body: JSON.stringify({ imageUrls, caption, tipo, pecaId, forcar, comoStory }),
       })
       const data = await res.json()
       if (res.status === 409 && data.erro === "ja_publicado") {
@@ -204,7 +208,7 @@ export function PublishToInstagram({
         onClick={() => setOpen(true)}
       >
         <Instagram className="w-3.5 h-3.5 mr-1.5" />
-        {label}
+        {rotulo}
       </Button>
 
       {/* No body, e nao aqui dentro: as barras do editor (topo no computador,
@@ -227,7 +231,7 @@ export function PublishToInstagram({
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold flex items-center gap-2">
                 <Instagram className="w-4 h-4 text-brand-400" />
-                Publicar no Instagram
+                {comoStory ? "Publicar nos stories" : "Publicar no Instagram"}
               </h2>
               <button
                 type="button"
@@ -247,8 +251,9 @@ export function PublishToInstagram({
                   Publicado no Instagram
                 </p>
                 <p className="text-xs text-text-secondary">
-                  O {kind} foi enviado pra sua conta. Pode levar alguns
-                  segundos pra aparecer no feed.
+                  {comoStory
+                    ? "Enviado pra sua conta. Pode levar alguns segundos pra aparecer nos stories."
+                    : `O ${kind} foi enviado pra sua conta. Pode levar alguns segundos pra aparecer no feed.`}
                 </p>
                 <Button type="button" className="w-full" onClick={reset}>
                   Entendi
@@ -322,7 +327,9 @@ export function PublishToInstagram({
                   </Aviso>
                 ) : (
                   <p className="text-xs text-text-secondary">
-                    {imageCount} imagem(ns) + legenda prontos pra publicar.
+                    {comoStory
+                      ? `${imageCount === 1 ? "1 story pronto" : `${imageCount} stories prontos`} pra publicar. Story não leva legenda.`
+                      : `${imageCount} imagem(ns) + legenda prontos pra publicar.`}
                   </p>
                 )}
                 {busy === "render" && (
